@@ -2,6 +2,14 @@ BurpSuiteLoggerPlusPlus
 =======================
 Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
 
+Released as open source by NCC Group Plc - http://www.nccgroup.com/
+
+Developed by Soroush Dalili, soroush dot dalili at nccgroup dot com
+
+http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
+
+Released under AGPL see LICENSE for more information
+
 
 <b>Using the application:</b>
 
