@@ -1,3 +1,15 @@
+//
+// Burp Suite Logger++
+// 
+// Released as open source by NCC Group Plc - http://www.nccgroup.com/
+// 
+// Developed by Soroush Dalili, soroush dot dalili at nccgroup dot com
+//
+// http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
+//
+// Released under AGPL see LICENSE for more information
+//
+
 package burp;
 
 import javax.swing.JFileChooser;

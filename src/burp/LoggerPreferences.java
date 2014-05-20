@@ -1,13 +1,25 @@
+//
+// Burp Suite Logger++
+// 
+// Released as open source by NCC Group Plc - http://www.nccgroup.com/
+// 
+// Developed by Soroush Dalili, soroush dot dalili at nccgroup dot com
+//
+// http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
+//
+// Released under AGPL see LICENSE for more information
+//
+
 package burp;
 import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 1.0;
+	private final double version = 1.1;
 	private final String appName = "Burp Suite Logger++";
-	private final String author = "Soroush Dalili (@irsdl)";
-	private final String authorLink = "https://secproject.com/";
-	private final String projectLink = "https://github.com/irsdl/BurpSuiteLoggerPlusPlus";
+	private final String author = "Soroush Dalili from NCC Group";
+	private final String authorLink = "https://www.nccgroup.com/";
+	private final String projectLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus";
 
 	private boolean isDebugMode;
 	private boolean isEnabled;
@@ -45,7 +57,7 @@ public class LoggerPreferences {
 
 	public synchronized void setDebugMode(boolean isDebugMode) {
 		prefs.putBoolean("isDebugMode", isDebugMode);
-		this.isDebugMode = prefs.getBoolean("isDebugMode", false);
+		this.isDebugMode = isDebugMode;
 	}
 
 	public synchronized boolean isEnabled() {
@@ -55,7 +67,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled(boolean isEnabled) {
 		prefs.putBoolean("isEnabled", isEnabled);
-		this.isEnabled = prefs.getBoolean("isEnabled", true);
+		this.isEnabled = isEnabled;
 	}
 
 	public synchronized boolean isRestrictedToScope() {
@@ -66,7 +78,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setRestrictedToScope(boolean isRestrictedToScope) {
 		prefs.putBoolean("isRestrictedToScope", isRestrictedToScope);
-		this.isRestrictedToScope = prefs.getBoolean("isRestrictedToScope", false);
+		this.isRestrictedToScope = isRestrictedToScope;
 	}
 
 	public synchronized boolean isEnabled4All() {
@@ -76,7 +88,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4All(boolean isEnabled4All) {
 		prefs.putBoolean("isEnabled4All", isEnabled4All);
-		this.isEnabled4All = prefs.getBoolean("isEnabled4All", true);
+		this.isEnabled4All = isEnabled4All;
 	}
 
 	public synchronized boolean isEnabled4Proxy() {
@@ -86,7 +98,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Proxy(boolean isEnabled4Proxy) {
 		prefs.putBoolean("isEnabled4Proxy", isEnabled4Proxy);
-		this.isEnabled4Proxy = prefs.getBoolean("isEnabled4Proxy", false);
+		this.isEnabled4Proxy = isEnabled4Proxy;
 	}
 
 	public synchronized boolean isEnabled4Spider() {
@@ -96,7 +108,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Spider(boolean isEnabled4Spider) {
 		prefs.putBoolean("isEnabled4Spider", isEnabled4Spider);
-		this.isEnabled4Spider = prefs.getBoolean("isEnabled4Spider", false);
+		this.isEnabled4Spider = isEnabled4Spider;
 	}
 
 	public synchronized boolean isEnabled4Intruder() {
@@ -106,7 +118,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Intruder(boolean isEnabled4Intruder) {
 		prefs.putBoolean("isEnabled4Intruder", isEnabled4Intruder);
-		this.isEnabled4Intruder = prefs.getBoolean("isEnabled4Intruder", false);
+		this.isEnabled4Intruder = isEnabled4Intruder;
 	}
 
 	public synchronized boolean isEnabled4Scanner() {
@@ -116,7 +128,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Scanner(boolean isEnabled4Scanner) {
 		prefs.putBoolean("isEnabled4Scanner", isEnabled4Scanner);
-		this.isEnabled4Scanner = prefs.getBoolean("isEnabled4Scanner", false);
+		this.isEnabled4Scanner = isEnabled4Scanner;
 	}
 
 	public synchronized boolean isEnabled4Repeater() {
@@ -126,7 +138,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Repeater(boolean isEnabled4Repeater) {
 		prefs.putBoolean("isEnabled4Repeater", isEnabled4Repeater);
-		this.isEnabled4Repeater = prefs.getBoolean("isEnabled4Repeater", false);
+		this.isEnabled4Repeater = isEnabled4Repeater;
 	}
 
 	public synchronized boolean isEnabled4Sequencer() {
@@ -136,7 +148,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Sequencer(boolean isEnabled4Sequencer) {
 		prefs.putBoolean("isEnabled4Sequencer", isEnabled4Sequencer);
-		this.isEnabled4Sequencer = prefs.getBoolean("isEnabled4Sequencer", false);
+		this.isEnabled4Sequencer = isEnabled4Sequencer;
 	}
 
 	public synchronized boolean isEnabled4Extender() {
@@ -146,7 +158,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4Extender(boolean isEnabled4Extender) {
 		prefs.putBoolean("isEnabled4Extender", isEnabled4Extender);
-		this.isEnabled4Extender = prefs.getBoolean("isEnabled4Extender", false);
+		this.isEnabled4Extender = isEnabled4Extender;
 	}
 
 	public synchronized boolean isEnabled4TargetTab() {
@@ -156,7 +168,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setEnabled4TargetTab(boolean isEnabled4TargetTab) {
 		prefs.putBoolean("isEnabled4TargetTab", isEnabled4TargetTab);
-		this.isEnabled4TargetTab = prefs.getBoolean("isEnabled4TargetTab", false);
+		this.isEnabled4TargetTab = isEnabled4TargetTab;
 	}
 
 	public synchronized boolean isOutputRedirected() {
@@ -166,7 +178,7 @@ public class LoggerPreferences {
 
 	public synchronized  void setOutputRedirected(boolean isOutputRedirected) {
 		prefs.putBoolean("isOutputRedirected", isOutputRedirected);
-		this.isOutputRedirected = prefs.getBoolean("isOutputRedirected", false);
+		this.isOutputRedirected = isOutputRedirected;
 	}
 
 
@@ -201,6 +213,7 @@ public class LoggerPreferences {
 		setEnabled4Repeater(false);
 		setEnabled4Sequencer(false);
 		setEnabled4Extender(false);
+		setEnabled4TargetTab(false);
 		setOutputRedirected(false);
 	}
 

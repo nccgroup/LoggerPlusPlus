@@ -1,3 +1,15 @@
+//
+// Burp Suite Logger++
+// 
+// Released as open source by NCC Group Plc - http://www.nccgroup.com/
+// 
+// Developed by Soroush Dalili, soroush dot dalili at nccgroup dot com
+//
+// http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
+//
+// Released under AGPL see LICENSE for more information
+//
+
 package burp;
 
 import java.awt.Component;
@@ -16,9 +28,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import org.apache.commons.lang3.*;
-
-// Bugs:
-// Unknown: it shows error if you sort a table with content and then clear it and then click on the table tab
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController
 {

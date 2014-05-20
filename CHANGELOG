@@ -1,3 +1,9 @@
+v 1.1
+=========================================================================
+- Several bug fixes
+- License has been changed to AGPL
+- Project has been transferred to NCC Group github
+
 v 1.0
 =========================================================================
 - First version of Logger++ based on Burp Suite sample: http://blog.portswigger.net/2012/12/sample-burp-suite-extension-custom.html
