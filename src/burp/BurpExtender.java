@@ -13,6 +13,7 @@
 package burp;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.DateFormat;
@@ -124,6 +125,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 				topTabs.addTab("View Logs", null, viewScrollPane, null);
 				topTabs.addTab("Options", null, optionsJPanel, null);
+				//Let the user resize the splitter at will:
+				topTabs.setMinimumSize(new Dimension(300, 150));
 				//splitPane.setRightComponent(topTabs);
 				splitPane.setLeftComponent(topTabs);
 
