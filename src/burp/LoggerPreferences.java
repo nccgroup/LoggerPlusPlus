@@ -15,7 +15,7 @@ import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 1.1;
+	private final double version = 1.2;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili from NCC Group";
 	private final String authorLink = "https://www.nccgroup.com/";
