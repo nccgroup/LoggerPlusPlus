@@ -22,7 +22,7 @@ Step 3- (Testing) Now you should be able to see the "Logger++" tab in Burp Suite
 
 <b>Requirements:</b>
 - Latest version of Burp Suite
-- Java version 7
+- Java version 6 or above
 
 <b>Features:</b>
 
