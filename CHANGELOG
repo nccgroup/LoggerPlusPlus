@@ -1,3 +1,17 @@
+v 2.0
+=========================================================================
+- Several bug fixes
+- Columns have been renamed to be compatible with Burp Proxy history
+- Columns can be moved and their order will be saved
+- Columns can be resized and their width will be saved
+- Column headers are now extendible
+- Several modules have been redesigned
+- "About" panel has been added
+
+v 1.2
+=========================================================================
+- Splitter fixed by github.com/henshin
+
 v 1.1
 =========================================================================
 - Several bug fixes
