@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 v 2.0
 =========================================================================
 - Several bug fixes
@@ -8,6 +9,8 @@ v 2.0
 - Several modules have been redesigned
 - "About" panel has been added
 
+=======
+>>>>>>> origin/master
 v 1.2
 =========================================================================
 - Splitter fixed by github.com/henshin

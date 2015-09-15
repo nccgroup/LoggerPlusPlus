@@ -20,7 +20,11 @@ public class LoggerPreferences {
 	private boolean isDebug = false;
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
+<<<<<<< HEAD
 	private final double version = 2.0;
+=======
+	private final double version = 1.2;
+>>>>>>> origin/master
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";

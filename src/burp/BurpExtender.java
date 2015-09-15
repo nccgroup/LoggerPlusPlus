@@ -13,8 +13,12 @@
 package burp;
 
 import java.awt.Component;
+<<<<<<< HEAD
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+=======
+import java.awt.Dimension;
+>>>>>>> origin/master
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
@@ -105,8 +109,24 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				// generating the table columns
 				tableHelper.generatingTableColumns();
 
+<<<<<<< HEAD
 				// main split pane for the View section
 				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT); 
+=======
+				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+				LoggerOptionsPanel optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr,logTableModel, log, canSaveCSV, loggerPreferences); //Options
+
+				// tabs with View/Options viewers
+				JTabbedPane topTabs = new JTabbedPane();
+				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+				topTabs.addTab("View Logs", null, viewScrollPane, null);
+				topTabs.addTab("Options", null, optionsJPanel, null);
+				//Let the user resize the splitter at will:
+				topTabs.setMinimumSize(new Dimension(300, 150));
+				//splitPane.setRightComponent(topTabs);
+				splitPane.setLeftComponent(topTabs);
+>>>>>>> origin/master
 
 				JScrollPane viewScrollPane = new JScrollPane(tableHelper.getLogTable(),ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
 				// tabs with request/response viewers
