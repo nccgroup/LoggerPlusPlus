@@ -12,13 +12,14 @@ Released under AGPL see LICENSE for more information
 
 
 <b>Using the application:</b>
+
 You can use this extension without using the BApp store. In order to install the latest version of this extension from the GitHub repository, follow these steps:
 
-Step 1- (Downloading) Download the ["burplogger++.jar"](burplogger++.jar) file (this is the only file you need to download if you do not wish to build it yourself).
+Step 1. (Downloading) Download the ["burplogger++.jar"](burplogger++.jar) file (this is the only file you need to download if you do not wish to build it yourself).
 
-Step 2- (Adding to Burp) In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "burplogger++.jar" file.
+Step 2. (Adding to Burp) In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "burplogger++.jar" file.
 
-Step 3- (Testing) Now you should be able to see the "Logger++" tab in Burp Suite. If it cannot log anything, check your Burp Suite extension settings. If the save buttons are disabled, make sure that the requested libraries have been loaded successfully; Unload and then reload the extension and try again. If you have found an issue, please report it in the GitHub project.
+Step 3. (Testing) Now you should be able to see the "Logger++" tab in Burp Suite. If it cannot log anything, check your Burp Suite extension settings. If the save buttons are disabled, make sure that the requested libraries have been loaded successfully; Unload and then reload the extension and try again. If you have found an issue, please report it in the GitHub project.
 
 <b>Requirements:</b>
 - Latest version of Burp Suite
@@ -47,4 +48,5 @@ This extension has been built by using Java v6 library (originally was v7) and h
 If you want to use Java v7 or v8, you need to download the source code and compile it yourself. The project has been created by Eclipse, Apache Ant (to create the JAR file automatically), and WindowBuilder (to design the UI in Eclipse).
 
 <b>Latest version:</b>
+
 Please review the ["CHANGELOG"](CHANGELOG)
