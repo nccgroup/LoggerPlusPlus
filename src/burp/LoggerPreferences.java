@@ -1,26 +1,34 @@
 //
 // Burp Suite Logger++
 // 
-// Released as open source by NCC Group Plc - http://www.nccgroup.com/
+// Released as open source by NCC Group Plc - https://www.nccgroup.trust/
 // 
-// Developed by Soroush Dalili, soroush dot dalili at nccgroup dot com
+// Developed by Soroush Dalili (@irsdl)
 //
-// http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
+// Project link: http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
 //
 // Released under AGPL see LICENSE for more information
 //
 
 package burp;
+import java.io.PrintWriter;
 import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
+	private PrintWriter stdout;
+	private PrintWriter stderr;
+	private boolean isDebug = false;
+
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 1.1;
+	private final double version = 2.0;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili from NCC Group";
-	private final String authorLink = "https://www.nccgroup.com/";
+	private final String companyLink = "https://www.nccgroup.trust/";
+	private final String authorLink = "https://soroush.secproject.com/";
 	private final String projectLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus";
-
+	private final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
+	private final String changeLog = "https://raw.githubusercontent.com/nccgroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
+	
 	private boolean isDebugMode;
 	private boolean isEnabled;
 	private boolean isRestrictedToScope;
@@ -33,13 +41,48 @@ public class LoggerPreferences {
 	private boolean isEnabled4Sequencer;
 	private boolean isEnabled4Extender;
 	private boolean isEnabled4TargetTab;
-	private boolean isOutputRedirected;
-
+	private String tableDetailsJSONString;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
+	public String getTableDetailsJSONString() {
+		return tableDetailsJSONString;
+	}
+
+	public void setTableDetailsJSONString(String tableDetailsJSONString) {
+		// this value is too long to be stored in one registry key
+		// it will be stored in multiple keys such as tableDetailsJSONString.1
+		// number of chunks is stored in tableDetailsJSONString.size
+		String value = tableDetailsJSONString;
+		String key = "tableDetailsJSONString";
+		int size = value.length();
+		int cnt = 1;
+		if (size > prefs.MAX_VALUE_LENGTH) {
+			for(int idx = 0 ; idx < size ; cnt++) {
+				if ((size - idx) > prefs.MAX_VALUE_LENGTH) {
+					prefs.put(key + "." + cnt, value.substring(idx,idx+prefs.MAX_VALUE_LENGTH));
+					idx += prefs.MAX_VALUE_LENGTH;
+				} else {
+					prefs.put(key + "." + cnt, value.substring(idx));
+					idx = size;
+				}
+			}
+			cnt--;
+		} else {
+			prefs.put(key+"."+ 1, value);
+		}
+
+		prefs.putInt("tableDetailsJSONString.size", cnt);
+
+		this.tableDetailsJSONString = tableDetailsJSONString;
+	}
+
 	public synchronized double getVersion() {
 		return version;
+	}
+
+	private synchronized void setVersion(double version) {
+		prefs.putDouble("version", version);
 	}
 
 	public synchronized String getProjectLink() {
@@ -171,26 +214,31 @@ public class LoggerPreferences {
 		this.isEnabled4TargetTab = isEnabled4TargetTab;
 	}
 
-	public synchronized boolean isOutputRedirected() {
 
-		return isOutputRedirected;
-	}
-
-	public synchronized  void setOutputRedirected(boolean isOutputRedirected) {
-		prefs.putBoolean("isOutputRedirected", isOutputRedirected);
-		this.isOutputRedirected = isOutputRedirected;
-	}
-
-
-
-	public LoggerPreferences() {
-
+	public LoggerPreferences(PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
+		this.stdout = stdout;
+		this.stderr=stderr;
+		this.isDebug=isDebug;
+		
+		if(prefs.getDouble("version", 0.0) < getVersion()){
+			// an upgrade has been detected
+			// settings should be reset
+			MoreHelp.showMessage("A new version of Logger++ has been installed. Table settings will be reset in order to prevent any errors.");
+			resetTableSettings();
+			setVersion(getVersion());
+		}else if(prefs.getDouble("version", 0.0) > getVersion()){
+			// an upgrade has been detected
+			// settings should be reset
+			MoreHelp.showMessage("A newer version of Logger++ was installed previously. Table settings will be reset in order to prevent any errors.");
+			resetTableSettings();
+			setVersion(getVersion());
+		}
+			
 		isDebugMode = prefs.getBoolean("isDebugMode", false);
 		isEnabled = prefs.getBoolean("isEnabled", true);
 		isRestrictedToScope = prefs.getBoolean("isRestrictedToScope", false);
 		isEnabled4All = prefs.getBoolean("isEnabled4All", true);
 		isEnabled4Proxy = prefs.getBoolean("isEnabled4Proxy", false);
-		isOutputRedirected = prefs.getBoolean("isOutputRedirected", false);
 		isEnabled4TargetTab = prefs.getBoolean("isEnabled4TargetTab", false);
 		isEnabled4Extender = prefs.getBoolean("isEnabled4Extender", false);
 		isEnabled4Sequencer = prefs.getBoolean("isEnabled4Sequencer", false);
@@ -198,6 +246,15 @@ public class LoggerPreferences {
 		isEnabled4Scanner = prefs.getBoolean("isEnabled4Scanner", false);
 		isEnabled4Intruder = prefs.getBoolean("isEnabled4Intruder", false);
 		isEnabled4Spider = prefs.getBoolean("isEnabled4Spider", false);
+
+		int tableDetailsJSONString_size = prefs.getInt("tableDetailsJSONString.size", 1);
+		if(tableDetailsJSONString_size > 99) tableDetailsJSONString_size = 1; // lame validation!
+		String tempTableDetailsJSONString = "";
+		for(int idx = 0 ; idx <= tableDetailsJSONString_size ; idx++) {
+			tempTableDetailsJSONString += prefs.get("tableDetailsJSONString."+idx, "");
+		}
+
+		this.tableDetailsJSONString = tempTableDetailsJSONString;
 
 	}
 
@@ -214,7 +271,34 @@ public class LoggerPreferences {
 		setEnabled4Sequencer(false);
 		setEnabled4Extender(false);
 		setEnabled4TargetTab(false);
-		setOutputRedirected(false);
+		setTableDetailsJSONString("");
+	}
+	
+	public void resetTableSettings(){
+		setTableDetailsJSONString("");
 	}
 
+	public String getProjectIssueLink() {
+		return projectIssueLink;
+	}
+
+	public String getChangeLog() {
+		return changeLog;
+	}
+
+	public String getAuthorLink() {
+		return authorLink;
+	}
+
+	public String getCompanyLink() {
+		return companyLink;
+	}
+
+	public String getAppName() {
+		return appName;
+	}
+
+	public String getAuthor() {
+		return author;
+	}
 }

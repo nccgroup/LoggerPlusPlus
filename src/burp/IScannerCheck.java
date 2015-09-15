@@ -23,7 +23,7 @@ public interface IScannerCheck
 
     /**
      * The Scanner invokes this method for each base request / response that is
-     * passively scanned. <b>Note:</b> Extensions should not only analyze the
+     * passively scanned. <b>Note:</b> Extensions should only analyze the
      * HTTP messages provided during passive scanning, and should not make any
      * new HTTP requests of their own.
      *

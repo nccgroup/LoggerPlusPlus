@@ -903,6 +903,23 @@ public interface IBurpExtenderCallbacks
     String[] getBurpVersion();
 
     /**
+     * This method retrieves the absolute path name of the file from which the
+     * current extension was loaded.
+     *
+     * @return The absolute path name of the file from which the current
+     * extension was loaded.
+     */
+    String getExtensionFilename();
+
+    /**
+     * This method determines whether the current extension was loaded as a
+     * BApp (a Burp App from the BApp Store).
+     *
+     * @return Returns true if the current extension was loaded as a BApp.
+     */
+    boolean isExtensionBapp();
+
+    /**
      * This method can be used to shut down Burp programmatically, with an
      * optional prompt to the user. If the method returns, the user canceled the
      * shutdown prompt.
