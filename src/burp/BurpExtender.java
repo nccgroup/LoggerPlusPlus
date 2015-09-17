@@ -13,12 +13,18 @@
 package burp;
 
 import java.awt.Component;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
+
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -35,6 +41,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
+
 import com.google.gson.Gson;
 
 
@@ -52,7 +59,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JTabbedPane topTabs;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
-	private boolean isDebug=false;
+	private boolean isDebug; // To enabled debugging, it needs to be true in registry
 	private TableHelper tableHelper;
 
 
@@ -379,8 +386,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		@Override
 		public int getColumnCount()
 		{
-			if(tableHelper.getTableHeader().getVisibleColumnsDefinitionList()!=null)
-				return tableHelper.getTableHeader().getVisibleColumnsDefinitionList().size();
+			if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList()!=null)
+				return tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size();
 			else
 				return 0;
 		}
@@ -388,13 +395,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		@Override
 		public String getColumnName(int columnIndex)
 		{
-			return (String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getVisibleName();
+			return (String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getVisibleName();
 		}
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex)
 		{
-			if(tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly()){
+			if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly()){
 				return false;
 			}else{
 				return true;
@@ -413,10 +420,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		{
 			Class clazz;
 
-			// switch((String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getType()){ // this works fine in Java v7
+			// switch((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType()){ // this works fine in Java v7
 
 			try{
-				String columnClassType = (String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getType();
+				String columnClassType = (String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType();
 				switch(columnClassesType.valueOf(columnClassType.toUpperCase())){
 				case INT:
 					clazz = Integer.class;
@@ -452,25 +459,25 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 			LogEntry logEntry = log.get(rowIndex);
 			//System.out.println(loggerTableDetails[columnIndex][0] +"  --- " +columnIndex);
-			String colName = tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getName();
+			String colName = tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName();
 			if(colName.equals("number")){
 				return rowIndex+1;
 			}else{
 				Object tempValue = logEntry.getValueByName(colName);
 				//stderr.println();
-				if(tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("int")){
+				if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("int")){
 					if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-						return Integer.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
+						return Integer.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
 					else return -1;
 				}
-				else if(tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("short")){
+				else if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("short")){
 					if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-						return Short.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
+						return Short.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
 					else
 						return -1;
 				}
 				else
-					return logEntry.getValueByName((String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(columnIndex).getName());
+					return logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName());
 			}
 
 		}
@@ -498,20 +505,21 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
-	class LeftTableCellRenderer extends DefaultTableCellRenderer { 
-		protected  LeftTableCellRenderer() {
-			setHorizontalAlignment(SwingConstants.LEFT);  } 
-	} 
-
-	class TableHelper {
+	public class TableHelper  {
 		private Table logTable;
 		private LogTableModel logTableModel;
-		private TableHeader tableHeader;
+		private TableHeaderColumnsDetails tableHeaderColumnsDetails;
+		private final boolean isDebug;
+		private final PrintWriter stdout;
+		private final PrintWriter stderr;
 
 		public TableHelper(LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
 			super();
+			this.isDebug = isDebug;
+			this.stdout=stdout;
+			this.stderr=stderr;
 			// creating table header object
-			setTableHeader(new TableHeader(loggerPreferences, stdout, stderr,isDebug));
+			setTableHeaderColumnsDetails(new TableHeaderColumnsDetails(loggerPreferences, stdout, stderr,isDebug));
 		}
 
 		public Table getLogTable() {
@@ -530,12 +538,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			this.logTableModel = logTableModel;
 		}
 
-		public TableHeader getTableHeader() {
-			return tableHeader;
+		public TableHeaderColumnsDetails getTableHeaderColumnsDetails() {
+			return tableHeaderColumnsDetails;
 		}
 
-		public void setTableHeader(TableHeader tblHeader) {
-			this.tableHeader = tblHeader;
+		public void setTableHeaderColumnsDetails(
+				TableHeaderColumnsDetails tableHeaderColumnsDetails) {
+			this.tableHeaderColumnsDetails = tableHeaderColumnsDetails;
 		}
 
 		public void prepareTableColumns(){
@@ -544,6 +553,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				setLogTableModel(new LogTableModel());
 				setLogTable(new Table(getLogTableModel()));
 			}
+
+			TableHeader tableHeader = new TableHeader (getLogTable().getColumnModel(),getLogTable(),tableHelper,stdout, stderr,isDebug); // This was used to create tool tips
+			getLogTable().setTableHeader(tableHeader); // This was used to create tool tips
 			getLogTable().setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
 			getLogTable().setAutoCreateRowSorter(true); // To fix the sorting
 			getLogTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
@@ -560,7 +572,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					if ( SwingUtilities.isLeftMouseButton( e ) )
 					{
 						if(isDebug){
-							stdout.println("left click detected!");
+							stdout.println("left click detected on the cells!");
 						}
 					}
 					// Right mouse click
@@ -579,7 +591,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						// variable for the beginning and end selects only that one row.
 						//model.setSelectionInterval( rowNumber, rowNumber );
 						if(isDebug){
-							stdout.println("right click detected!");
+							stdout.println("right click detected on the cells!");
 						}
 
 					}
@@ -647,9 +659,26 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				@Override
 				public void mouseReleased(MouseEvent e)
 				{
-					/* On mouse release, check if column width has changed */
-					if(getLogTable().isColumnWidthChanged())
+					if ( SwingUtilities.isRightMouseButton( e ))
 					{
+						// get the coordinates of the mouse click
+						Point p = e.getPoint();
+						int columnID = getLogTable().columnAtPoint(p);
+						TableColumn column = getLogTable().getColumnModel().getColumn(columnID);
+						TableStructure columnObj = getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
+						if(isDebug){
+							stdout.println("right click detected on the header!");
+							stdout.println("right click on item number " + String.valueOf(columnID) + " ("+getLogTable().getColumnName(columnID)+") was detected");
+						}
+						
+						//TODO
+						
+						TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(columnObj, tableHelper);
+						tblHeaderMenu.showMenu(e);
+					}
+
+					if(getLogTable().isColumnWidthChanged()){
+						/* On mouse release, check if column width has changed */
 						if(isDebug) {
 							stdout.println("Column has been resized!");
 						}
@@ -658,12 +687,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						// Reset the flag on the table.
 						getLogTable().setColumnWidthChanged(false);
 
-						saveColumnResizeTableChange(getLogTable(), getTableHeader());
-					}
+						saveColumnResizeTableChange();
+					}else if(getLogTable().isColumnMoved()){
+						/* On mouse release, check if column has moved */
 
-					/* On mouse release, check if column has moved */
-					if(getLogTable().isColumnMoved())
-					{
 						if(isDebug) {
 							stdout.println("Column has been moved!");
 						}
@@ -672,55 +699,61 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						// Reset the flag on the table.
 						getLogTable().setColumnMoved(false);
 
-						saveOrderTableChange(getLogTable(), getTableHeader());
+						saveOrderTableChange();
+					}else{
+						//TODO - Nothing for now!
 					}
 				}
 			});
 		}
-
+		
 		// generate the table columns!
 		public void generatingTableColumns(){
 			for (int i=0; i<getLogTableModel().getColumnCount(); i++) {
 				TableColumn column = getLogTable().getColumnModel().getColumn(i);
 				column.setMinWidth(50);
-				column.setIdentifier(getTableHeader().getVisibleColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
-				column.setPreferredWidth((int) getTableHeader().getVisibleColumnsDefinitionList().get(i).getWidth());
+				column.setIdentifier(getTableHeaderColumnsDetails ().getVisibleColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
+				column.setPreferredWidth((int) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getWidth());
+				
 				// to align the numerical fields to left - can't do it for all as it corrupts the boolean ones
-				if(getTableHeader().getVisibleColumnsDefinitionList().get(i).getType().equals("int") || getTableHeader().getVisibleColumnsDefinitionList().get(i).getType().equals("short") ||
-						getTableHeader().getVisibleColumnsDefinitionList().get(i).getType().equals("double")) 
+				if(getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("int") || getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("short") ||
+						getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("double")) 
 					column.setCellRenderer(new LeftTableCellRenderer()); 
 			}
 		}
-
-
+		
 		// to save the order after dragging a column
-		private void saveOrderTableChange(Table logTable, TableHeader tblHeader){
+		private void saveOrderTableChange(){
 			// check to see if the table column order has changed or it was just a click!
 			String tempTableIDsStringByOrder = "";
-			Enumeration<TableColumn> tblCols = logTable.getColumnModel().getColumns();
+			Enumeration<TableColumn> tblCols = getLogTable().getColumnModel().getColumns();
 			for (; tblCols.hasMoreElements(); ) {
-				tempTableIDsStringByOrder += tblCols.nextElement().getIdentifier() + tableHelper.getTableHeader().getIdCanaryParam();
+				tempTableIDsStringByOrder += tblCols.nextElement().getIdentifier() + getTableHeaderColumnsDetails().getIdCanaryParam();
 			}
 
 			if(isDebug){
-				stdout.println("tempTableIDsStringByOrder: " + tempTableIDsStringByOrder +" -- tableIDsStringByOrder: " + tableHelper.getTableHeader().getTableIDsStringByOrder());
+				stdout.println("tempTableIDsStringByOrder: " + tempTableIDsStringByOrder +" -- tableIDsStringByOrder: " + getTableHeaderColumnsDetails().getTableIDsStringByOrder());
 			}
 
-			if(!tableHelper.getTableHeader().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
+			if(!getTableHeaderColumnsDetails().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
 				if(isDebug){
 					stdout.println("Table has been re-ordered and needs to be saved!");
 				}
 				// Order of columns has changed! we have to save it now!
 				int counter = 1;
-				tblCols = logTable.getColumnModel().getColumns();
+				tblCols = getLogTable().getColumnModel().getColumns();
 				for (; tblCols.hasMoreElements(); ) {				
 					int columnNumber = (Integer) tblCols.nextElement().getIdentifier();
-					tableHelper.getTableHeader().getAllColumnsDefinitionList().get(columnNumber).setOrder(counter);
+					getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setOrder(counter);
 					counter++;
 				}
 
-				tableHelper.getTableHeader().setLoggerTableDetailsCurrentJSONString(new Gson().toJson(tableHelper.getTableHeader().getAllColumnsDefinitionList()), true);
-				tableHelper.getTableHeader().setTableIDsStringByOrder(tempTableIDsStringByOrder);
+				
+				getTableHeaderColumnsDetails().setTableIDsStringByOrder(tempTableIDsStringByOrder);
+				
+				saveTableChanges();
+				
+				
 
 			}
 
@@ -729,18 +762,29 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 
 		// to save the column widths after changes
-		private void saveColumnResizeTableChange(Table logTable, TableHeader tblHeader){
-			Enumeration<TableColumn> tblCols = logTable.getColumnModel().getColumns();
+		private void saveColumnResizeTableChange(){
+			Enumeration<TableColumn> tblCols = getLogTable().getColumnModel().getColumns();
 			for (; tblCols.hasMoreElements(); ) {	
 				TableColumn currentTblCol = tblCols.nextElement();
 				int columnNumber = (Integer) currentTblCol.getIdentifier();
-				tableHelper.getTableHeader().getAllColumnsDefinitionList().get(columnNumber).setWidth(currentTblCol.getWidth());
+				getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setWidth(currentTblCol.getWidth());
 			}
-			tableHelper.getTableHeader().setLoggerTableDetailsCurrentJSONString(new Gson().toJson(tableHelper.getTableHeader().getAllColumnsDefinitionList()), true);
+			saveTableChanges();
 		}
+		
+		// to save the new table changes
+		public void saveTableChanges(){
+			// save it to the relevant variables and preferences
+			getTableHeaderColumnsDetails().setLoggerTableDetailsCurrentJSONString(new Gson().toJson(getTableHeaderColumnsDetails().getAllColumnsDefinitionList()), true);
+		}
+			
+		
 	}
 
-
+	class LeftTableCellRenderer extends DefaultTableCellRenderer { 
+		protected  LeftTableCellRenderer() {
+			setHorizontalAlignment(SwingConstants.LEFT);  } 
+	} 
 
 	public static void main(String [] args){
 		System.out.println("You have built the Logger++. You shall play with the jar file now!");

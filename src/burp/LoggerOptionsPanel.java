@@ -15,26 +15,34 @@ package burp;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.GridBagLayout;
+
 import javax.swing.JButton;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.awt.GridBagConstraints;
 import java.io.*;
 import java.net.*;
 import java.util.List;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import javax.swing.JLabel;
+
 import java.awt.Insets;
+
 import javax.swing.JCheckBox;
 import javax.swing.JToggleButton;
+
 import java.awt.Font;
+
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
-import burp.BurpExtender.TableHelper;
 
+import burp.BurpExtender.TableHelper;
 
 
 public class LoggerOptionsPanel extends JPanel {
@@ -58,14 +66,16 @@ public class LoggerOptionsPanel extends JPanel {
 	private JCheckBox chckbxRepeater = new JCheckBox("Repeater");
 	private JCheckBox chckbxSequencer = new JCheckBox("Sequencer");
 	private JCheckBox chckbxProxy = new JCheckBox("Proxy");
-	private JButton btnSaveLogsButton = new JButton("Save Table Logs as CSV");
-	private JButton btnSaveFullLogs = new JButton("Save Full Logs as CSV (slow)");
+	private JButton btnSaveLogsButton = new JButton("Save log table as CSV");
+	private JButton btnSaveFullLogs = new JButton("Save fill logs as CSV (slow)");
 	private final JCheckBox chckbxExtender = new JCheckBox("Extender");
 	private final JCheckBox chckbxTarget = new JCheckBox("Target");
 	private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
 	private final JLabel lblNoteIn = new JLabel("Note 2: In order to save the data automatically, use Options > Misc > Logging");
 	private final boolean isDebug;
 	private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
+	private final JLabel lblColumnSettings = new JLabel("Column Settings:");
+	private final JLabel lblNewLabel_1 = new JLabel("Right click on the column headers");
 
 	/**
 	 * Create the panel.
@@ -80,7 +90,7 @@ public class LoggerOptionsPanel extends JPanel {
 		
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
-		gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0};
 		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		setLayout(gridBagLayout);
@@ -105,28 +115,34 @@ public class LoggerOptionsPanel extends JPanel {
 				gbc_tglbtnIsEnabled.gridy = 1;
 				add(tglbtnIsEnabled, gbc_tglbtnIsEnabled);
 		
-				JButton btnClearTheLog = new JButton("Clear the logs");
-				btnClearTheLog.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						//BurpExtender.logTableReset();
-						boolean origState = loggerPreferences.isEnabled();
-						loggerPreferences.setEnabled(false);
+				
+				btnSaveLogsButton.setToolTipText("This does not save requests and responses");
+				btnSaveLogsButton.setFont(new Font("Tahoma", Font.PLAIN, 13));
+				btnSaveLogsButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent arg0) {
+						try {
+							chooser = null;
+							obtainFileName("logger++_table");
+							if(csvFile!=null){
+								ExcelExporter exp = new ExcelExporter(); 
+								exp.exportTable(log, csvFile, false); 	
+							}
 
-						log.clear();
-						
-						tableHelper.getLogTableModel().fireTableDataChanged();
-						loggerPreferences.setEnabled(origState);	
-						setPreferencesValues();
+						} catch (IOException ex) {
+							stderr.println(ex.getMessage());
+							ex.printStackTrace();
+							
+							
+						}
 					}
 				});
-				btnClearTheLog.setFont(new Font("Tahoma", Font.PLAIN, 13));
-				GridBagConstraints gbc_btnClearTheLog = new GridBagConstraints();
-				gbc_btnClearTheLog.anchor = GridBagConstraints.SOUTH;
-				gbc_btnClearTheLog.fill = GridBagConstraints.HORIZONTAL;
-				gbc_btnClearTheLog.insets = new Insets(0, 0, 5, 5);
-				gbc_btnClearTheLog.gridx = 3;
-				gbc_btnClearTheLog.gridy = 1;
-				add(btnClearTheLog, gbc_btnClearTheLog);
+				GridBagConstraints gbc_btnSaveLogsButton = new GridBagConstraints();
+				gbc_btnSaveLogsButton.anchor = GridBagConstraints.SOUTH;
+				gbc_btnSaveLogsButton.fill = GridBagConstraints.HORIZONTAL;
+				gbc_btnSaveLogsButton.insets = new Insets(0, 0, 5, 5);
+				gbc_btnSaveLogsButton.gridx = 3;
+				gbc_btnSaveLogsButton.gridy = 1;
+				add(btnSaveLogsButton, gbc_btnSaveLogsButton);
 
 		JLabel lblScopes = new JLabel("Scope:");
 		lblScopes.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -144,34 +160,34 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxIsRestrictedToScope.gridx = 2;
 		gbc_chckbxIsRestrictedToScope.gridy = 2;
 		add(chckbxIsRestrictedToScope, gbc_chckbxIsRestrictedToScope);
-
 		
-		btnSaveLogsButton.setToolTipText("This does not save requests and responses");
-		btnSaveLogsButton.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		btnSaveLogsButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				try {
-					chooser = null;
-					obtainFileName("logger++_table");
-					if(csvFile!=null){
-						ExcelExporter exp = new ExcelExporter(); 
-						exp.exportTable(log, csvFile, false); 	
+				GridBagConstraints gbc_btnSaveFullLogs = new GridBagConstraints();
+				gbc_btnSaveFullLogs.fill = GridBagConstraints.HORIZONTAL;
+				gbc_btnSaveFullLogs.insets = new Insets(0, 0, 5, 5);
+				gbc_btnSaveFullLogs.gridx = 3;
+				gbc_btnSaveFullLogs.gridy = 2;
+				btnSaveFullLogs.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent arg0) {
+						try {
+							chooser = null;
+							obtainFileName("logger++_full");
+							if(csvFile!=null){
+								ExcelExporter exp = new ExcelExporter(); 
+								exp.exportTable(log, csvFile, true); 	
+							}
+
+						} catch (IOException ex) {
+							stderr.println(ex.getMessage());
+							ex.printStackTrace();
+
+						}
 					}
 
-				} catch (IOException ex) {
-					stderr.println(ex.getMessage());
-					ex.printStackTrace();
-					
-					
-				}
-			}
-		});
-		GridBagConstraints gbc_btnSaveLogsButton = new GridBagConstraints();
-		gbc_btnSaveLogsButton.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnSaveLogsButton.insets = new Insets(0, 0, 5, 5);
-		gbc_btnSaveLogsButton.gridx = 3;
-		gbc_btnSaveLogsButton.gridy = 2;
-		add(btnSaveLogsButton, gbc_btnSaveLogsButton);
+
+				});
+				btnSaveFullLogs.setToolTipText("This can be slow and  messy when response is more than 32760 characters - not recommended!");
+				btnSaveFullLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
+				add(btnSaveFullLogs, gbc_btnSaveFullLogs);
 
 		JLabel lblLogFrom = new JLabel("Log From:");
 		lblLogFrom.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -181,34 +197,6 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblLogFrom.gridx = 1;
 		gbc_lblLogFrom.gridy = 3;
 		add(lblLogFrom, gbc_lblLogFrom);
-
-		GridBagConstraints gbc_btnSaveFullLogs = new GridBagConstraints();
-		gbc_btnSaveFullLogs.fill = GridBagConstraints.HORIZONTAL;
-		gbc_btnSaveFullLogs.insets = new Insets(0, 0, 5, 5);
-		gbc_btnSaveFullLogs.gridx = 3;
-		gbc_btnSaveFullLogs.gridy = 3;
-		btnSaveFullLogs.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				try {
-					chooser = null;
-					obtainFileName("logger++_full");
-					if(csvFile!=null){
-						ExcelExporter exp = new ExcelExporter(); 
-						exp.exportTable(log, csvFile, true); 	
-					}
-
-				} catch (IOException ex) {
-					stderr.println(ex.getMessage());
-					ex.printStackTrace();
-
-				}
-			}
-
-
-		});
-		btnSaveFullLogs.setToolTipText("This can be slow and  messy when response is more than 32760 characters - not recommended!");
-		btnSaveFullLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		add(btnSaveFullLogs, gbc_btnSaveFullLogs);
 
 		//		JCheckBox chckbxNewCheckBox_1 = new JCheckBox("All Tools");
 		GridBagConstraints gbc_chckbxAllTools = new GridBagConstraints();
@@ -294,7 +282,7 @@ public class LoggerOptionsPanel extends JPanel {
 				boolean origState = loggerPreferences.isEnabled();
 				loggerPreferences.setEnabled(false);	
 				loggerPreferences.resetLoggerPreferences();
-				tableHelper.getTableHeader().resetVariables();			
+				tableHelper.getTableHeaderColumnsDetails().resetToDefaultVariables();			
 				tableHelper.getLogTableModel().fireTableStructureChanged();
 				tableHelper.generatingTableColumns();
 				loggerPreferences.setEnabled(origState);
@@ -304,11 +292,50 @@ public class LoggerOptionsPanel extends JPanel {
 		});
 		btnResetSettings.setFont(new Font("Tahoma", Font.PLAIN, 13));
 		GridBagConstraints gbc_btnResetSettings = new GridBagConstraints();
+		gbc_btnResetSettings.anchor = GridBagConstraints.NORTH;
 		gbc_btnResetSettings.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnResetSettings.insets = new Insets(0, 0, 5, 5);
 		gbc_btnResetSettings.gridx = 2;
 		gbc_btnResetSettings.gridy = 13;
 		add(btnResetSettings, gbc_btnResetSettings);
+		
+				JButton btnClearTheLog = new JButton("Clear the logs");
+				btnClearTheLog.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						//BurpExtender.logTableReset();
+						boolean origState = loggerPreferences.isEnabled();
+						loggerPreferences.setEnabled(false);
+
+						log.clear();
+						
+						tableHelper.getLogTableModel().fireTableDataChanged();
+						loggerPreferences.setEnabled(origState);	
+						setPreferencesValues();
+					}
+				});
+				btnClearTheLog.setFont(new Font("Tahoma", Font.PLAIN, 13));
+				GridBagConstraints gbc_btnClearTheLog = new GridBagConstraints();
+				gbc_btnClearTheLog.anchor = GridBagConstraints.NORTH;
+				gbc_btnClearTheLog.fill = GridBagConstraints.HORIZONTAL;
+				gbc_btnClearTheLog.insets = new Insets(0, 0, 5, 5);
+				gbc_btnClearTheLog.gridx = 3;
+				gbc_btnClearTheLog.gridy = 13;
+				add(btnClearTheLog, gbc_btnClearTheLog);
+		
+		GridBagConstraints gbc_lblColumnSettings = new GridBagConstraints();
+		gbc_lblColumnSettings.anchor = GridBagConstraints.WEST;
+		gbc_lblColumnSettings.insets = new Insets(0, 0, 5, 5);
+		gbc_lblColumnSettings.gridx = 1;
+		gbc_lblColumnSettings.gridy = 14;
+		lblColumnSettings.setFont(new Font("Tahoma", Font.BOLD, 14));
+		add(lblColumnSettings, gbc_lblColumnSettings);
+		
+		GridBagConstraints gbc_lblNewLabel_1 = new GridBagConstraints();
+		gbc_lblNewLabel_1.anchor = GridBagConstraints.WEST;
+		gbc_lblNewLabel_1.insets = new Insets(0, 0, 5, 5);
+		gbc_lblNewLabel_1.gridx = 2;
+		gbc_lblNewLabel_1.gridy = 14;
+		add(lblNewLabel_1, gbc_lblNewLabel_1);
 
 		GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
 		gbc_lblNewLabel.anchor = GridBagConstraints.WEST;
