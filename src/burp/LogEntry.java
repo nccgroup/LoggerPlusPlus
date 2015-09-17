@@ -103,17 +103,24 @@ public class LogEntry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 
-		this.uniqueIdentifier=java.util.UUID.randomUUID().toString();
+		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+			this.uniqueIdentifier=java.util.UUID.randomUUID().toString();
+
 		this.tool = tool;
 		this.requestResponse = requestResponse;
+
 		this.url = url;
-		this.relativeURL = url.getFile();
+		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("url")) // This is good to increase the speed when it is time consuming
+			this.relativeURL = url.getFile();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL=(this.protocol.equals("https"))? true: false;
-		this.targetPort = tempRequestResponseHttpService.getPort();
 
-		this.method = tempAnalyzedReq.getMethod();
+		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("targetPort")) // This is good to increase the speed when it is time consuming
+			this.targetPort = tempRequestResponseHttpService.getPort();
+
+		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("method")) // This is good to increase the speed when it is time consuming
+			this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
 			String tempPath = url.getPath().replaceAll("\\\\", "/");
@@ -131,13 +138,19 @@ public class LogEntry
 			if(isDebug){
 				//stdout.println("I have a message from proxy!");
 			}
-			this.listenerInterface=message.getListenerInterface();
-			this.clientIP=message.getClientIpAddress().toString();
-			this.uniqueIdentifier = "P"+String.valueOf(message.getMessageReference());
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("listenerInterface")) // This is good to increase the speed when it is time consuming
+				this.listenerInterface=message.getListenerInterface();
+
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("clientIP")) // This is good to increase the speed when it is time consuming
+				this.clientIP=message.getClientIpAddress().toString();
+
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+				this.uniqueIdentifier = "P"+String.valueOf(message.getMessageReference());
 
 
 		}
 		this.requestLength = strFullRequest.length() - tempAnalyzedReq.getBodyOffset();
+
 
 		this.hasQueryStringParam = (url.getQuery()!=null) ? true : false;
 		this.hasBodyParam = (requestLength>0) ? true : false;
@@ -145,48 +158,54 @@ public class LogEntry
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
-		for(String item:lstFullRequestHeader){
-			if(item.indexOf(":")>=0){
-				String[] headerItem = item.split(":\\s",2);
-				headerItem[0] = headerItem[0].toLowerCase();
-				if(headerItem[0].equals("cookie")){
-					this.sentCookies = headerItem[1];
-					if(!this.sentCookies.isEmpty()){
-						this.hasCookieParam = true;
-						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
+		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("sentCookies") ||
+				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("hasCookieParam") ||
+				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar") ||
+				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("referrerURL") ||
+				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("requstContentType")){ // This is good to increase the speed when it is time consuming
+			for(String item:lstFullRequestHeader){
+				if(item.indexOf(":")>=0){
+					String[] headerItem = item.split(":\\s",2);
+					headerItem[0] = headerItem[0].toLowerCase();
+					if(headerItem[0].equals("cookie")){
+						this.sentCookies = headerItem[1];
+						if(!this.sentCookies.isEmpty()){
+							this.hasCookieParam = true;
+							this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
-						// to ensure it is enabled as it is process consuming
-						if(tableHelper.getTableHeader().isTableHeaderEnabled_byName("usesCookieJar")){
-							// Check to see if it uses cookie Jars!
-							List<ICookie> cookieJars = callbacks.getCookieJarContents();
-							boolean atLeastOneDidNotMatched = false;
-							boolean anyParamMatched = false;
+							// to ensure it is enabled as it is process consuming
+							if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar")){
+								// Check to see if it uses cookie Jars!
+								List<ICookie> cookieJars = callbacks.getCookieJarContents();
+								boolean atLeastOneDidNotMatched = false;
+								boolean anyParamMatched = false;
 
-							for(ICookie cookieItem : cookieJars){
-								if(cookieItem.getDomain().equals(host)){
-									// now we want to see if any of these cookies have been set here!
-									String currentCookieJarParam = cookieItem.getName()+"="+cookieItem.getValue()+";";
-									if(this.sentCookies.contains(currentCookieJarParam)){
-										anyParamMatched = true;
-									}else{
-										atLeastOneDidNotMatched = true;
+								for(ICookie cookieItem : cookieJars){
+									if(cookieItem.getDomain().equals(this.host)){
+										// now we want to see if any of these cookies have been set here!
+										String currentCookieJarParam = cookieItem.getName()+"="+cookieItem.getValue()+";";
+										if(this.sentCookies.contains(currentCookieJarParam)){
+											anyParamMatched = true;
+										}else{
+											atLeastOneDidNotMatched = true;
+										}
+									}
+									if(anyParamMatched && atLeastOneDidNotMatched){
+										break; // we do not need to analyse it more!
 									}
 								}
-								if(anyParamMatched && atLeastOneDidNotMatched){
-									break; // we do not need to analyse it more!
+								if(atLeastOneDidNotMatched && anyParamMatched){
+									this.usesCookieJar=cookieJarStatus.PARTIALLY;
+								}else if(!atLeastOneDidNotMatched && anyParamMatched){
+									this.usesCookieJar=cookieJarStatus.YES;
 								}
 							}
-							if(atLeastOneDidNotMatched && anyParamMatched){
-								this.usesCookieJar=cookieJarStatus.PARTIALLY;
-							}else if(!atLeastOneDidNotMatched && anyParamMatched){
-								this.usesCookieJar=cookieJarStatus.YES;
-							}
 						}
+					}else if(headerItem[0].equals("referer")){
+						this.referrerURL = headerItem[1];
+					}else if(headerItem[0].equals("content-type")){
+						this.requstContentType = headerItem[1];
 					}
-				}else if(headerItem[0].equals("referer")){
-					this.referrerURL = headerItem[1];
-				}else if(headerItem[0].equals("content-type")){
-					this.requstContentType = headerItem[1];
 				}
 			}
 		}
@@ -195,10 +214,10 @@ public class LogEntry
 		// There are 5 RegEx rule for requests
 		for(int i=0;i<=5;i++){
 			String regexVarName = "regex"+String.valueOf(i+1)+"Req";
-			if(tableHelper.getTableHeader().isTableHeaderEnabled_byName(regexVarName)){
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
 				// so this rule is enabled!
 				// check to see if the RegEx is not empty
-				TableStructure regexColumn = tableHelper.getTableHeader().getEnabledTableHeader_byName(regexVarName);
+				TableStructure regexColumn = tableHelper.getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
 				String regexString = regexColumn.getRegExData().getRegExString();
 				if(!regexString.isEmpty()){
 					// now we can process it safely!
@@ -211,10 +230,21 @@ public class LogEntry
 
 						Matcher m = p.matcher(strFullRequest);
 						StringBuilder allMatches = new StringBuilder();
-
+						int counter = 1;
 						while (m.find()) {
-							allMatches.append("«" + m.group() + "»");
+							if(counter==2){
+								allMatches.insert(0, "«");
+								allMatches.append("»");
+							}
+							if(counter > 1){
+								allMatches.append("«"+m.group()+"»");
+							}else{
+								allMatches.append(m.group());
+							}
+							counter++;
+
 						}
+
 
 						this.regexAllReq[i] = allMatches.toString();
 
@@ -232,23 +262,28 @@ public class LogEntry
 			String strFullResponse = new String(requestResponse.getResponse());
 			List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 			this.status= tempAnalyzedResp.getStatusCode();
-			this.responseContentType_burp=tempAnalyzedResp.getStatedMimeType();
-			this.responseInferredContentType_burp = tempAnalyzedResp.getInferredMimeType();
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType_burp")) // This is good to increase the speed when it is time consuming
+				this.responseContentType_burp=tempAnalyzedResp.getStatedMimeType();
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
+				this.responseInferredContentType_burp = tempAnalyzedResp.getInferredMimeType();
 			this.responseLength= strFullResponse.length() - tempAnalyzedResp.getBodyOffset();
-			for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
-				this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
-			}
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("newCookies")) // This is good to increase the speed when it is time consuming
+				for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
+					this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
+				}
 			this.hasSetCookies = (!newCookies.isEmpty()) ? true : false;
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
 			this.responseTime= dateFormat.format(date);
 
-			for(String item:lstFullResponseHeader){
-				item = item.toLowerCase();
-				if(item.startsWith("content-type: ")){
-					String[] temp = item.split("content-type:\\s",2);
-					if(temp.length>0)
-						this.responseContentType = temp[1];
+			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType")){ // This is good to increase the speed when it is time consuming
+				for(String item:lstFullResponseHeader){
+					item = item.toLowerCase();
+					if(item.startsWith("content-type: ")){
+						String[] temp = item.split("content-type:\\s",2);
+						if(temp.length>0)
+							this.responseContentType = temp[1];
+					}
 				}
 			}
 
@@ -256,10 +291,10 @@ public class LogEntry
 			// There are 5 RegEx rule for requests
 			for(int i=0;i<=5;i++){
 				String regexVarName = "regex"+String.valueOf(i+1)+"Resp";
-				if(tableHelper.getTableHeader().isTableHeaderEnabled_byName(regexVarName)){
+				if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
 					// so this rule is enabled!
 					// check to see if the RegEx is not empty
-					TableStructure regexColumn = tableHelper.getTableHeader().getEnabledTableHeader_byName(regexVarName);
+					TableStructure regexColumn = tableHelper.getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
 					String regexString = regexColumn.getRegExData().getRegExString();
 					if(!regexString.isEmpty()){
 						// now we can process it safely!
@@ -273,8 +308,19 @@ public class LogEntry
 							Matcher m = p.matcher(strFullResponse);
 							StringBuilder allMatches = new StringBuilder();
 
+							int counter = 1;
 							while (m.find()) {
-								allMatches.append("«" + m.group() + "»");
+								if(counter==2){
+									allMatches.insert(0, "«");
+									allMatches.append("»");
+								}
+								if(counter > 1){
+									allMatches.append("«"+m.group()+"»");
+								}else{
+									allMatches.append(m.group());
+								}
+								counter++;
+
 							}
 
 							this.regexAllResp[i] = allMatches.toString();
@@ -320,8 +366,8 @@ public class LogEntry
 		//					result.append(",");
 		//			}
 
-		for (int i=1; i<tableHelper.getTableHeader().getVisibleColumnsDefinitionList().size(); i++) {
-			result.append(tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(i).getVisibleName());
+		for (int i=1; i<tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
+			result.append(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
 			if(i<tableHelper.getLogTableModel().getColumnCount()-1)
 				result.append(",");
 		}			
@@ -346,9 +392,9 @@ public class LogEntry
 		//					result.append(",");
 		//			}
 
-		for (int i=1; i<tableHelper.getTableHeader().getVisibleColumnsDefinitionList().size(); i++) {
+		for (int i=1; i<tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
 
-			result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) tableHelper.getTableHeader().getVisibleColumnsDefinitionList().get(i).getName()))));
+			result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getName()))));
 
 			if(i<tableHelper.getLogTableModel().getColumnCount()-1)
 				result.append(",");

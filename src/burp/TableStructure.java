@@ -32,6 +32,7 @@ public class TableStructure implements Comparator<TableStructure>{
 		private String description;
 		private boolean isRegEx;
 		private RegExData regExData;
+		private String defaultVisibleName;
 		
 		public Integer getId() {
 			return id;
@@ -106,7 +107,14 @@ public class TableStructure implements Comparator<TableStructure>{
 		public void setRegExData(RegExData regExData) {
 			this.regExData = regExData;
 		}
-
+		
+		public String getDefaultVisibleName() {
+			return defaultVisibleName;
+		}
+		public void setDefaultVisibleName(String defaultVisibleName) {
+			this.defaultVisibleName = defaultVisibleName;
+		}
+		
 	public static class RegExData{
 		private String regExString;
 		private boolean regExCaseSensitive;
@@ -130,6 +138,7 @@ public class TableStructure implements Comparator<TableStructure>{
 	public int compare(TableStructure ts1, TableStructure ts2) {
 		return ts2.getOrder().compareTo(ts1.getOrder());
 	}
+
 	
 	
 }

@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.swing.JOptionPane;
 
 public class MoreHelp {
@@ -49,7 +50,17 @@ public class MoreHelp {
 		}).start();
 		
 	}
-
+	
+	// Show a message to the user
+	public static String showPlainInputMessage(final String strMessage, final String strTitle, final String defaultValue){
+			String output = (String)JOptionPane.showInputDialog(null, 
+						strMessage,strTitle,JOptionPane.PLAIN_MESSAGE, null, null, defaultValue); 
+			if(output==null){
+				output = defaultValue;
+			}
+			return output;	
+	}
+	
 	// Common method to ask a multiple question
 	public static Integer askConfirmMessage(final String strTitle, final String strQuestion, String[] msgOptions){
 		final Object[] options = msgOptions;

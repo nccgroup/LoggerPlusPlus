@@ -1,3 +1,10 @@
+v 2.1
+=========================================================================
+- Tool tip added to the headers
+- Columns can be customised by right click on the header
+- Columns with editable regular expressions have been added
+- Minor code changes
+
 v 2.0
 =========================================================================
 - Several bug fixes
