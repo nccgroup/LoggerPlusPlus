@@ -75,7 +75,7 @@ public class LoggerOptionsPanel extends JPanel {
 	private final boolean isDebug;
 	private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
 	private final JLabel lblColumnSettings = new JLabel("Column Settings:");
-	private final JLabel lblNewLabel_1 = new JLabel("Right click on the column headers");
+	private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
 
 	/**
 	 * Create the panel.
