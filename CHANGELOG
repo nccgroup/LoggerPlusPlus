@@ -1,3 +1,12 @@
+v 2.3
+=========================================================================
+- Verify the provided regular expressions to be valid
+
+v 2.2
+=========================================================================
+- Detecting invalid RegEx strings
+- Stop refreshing the columns when clicking the Cancel button
+
 v 2.1
 =========================================================================
 - Tool tip added to the headers
