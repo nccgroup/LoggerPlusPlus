@@ -673,7 +673,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						
 						//TODO
 						
-						TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(columnObj, tableHelper);
+						TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(columnObj, tableHelper,stdout, stderr,isDebug);
 						tblHeaderMenu.showMenu(e);
 					}
 

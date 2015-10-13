@@ -5,7 +5,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -29,12 +32,17 @@ public class TableHeaderMenu extends JPopupMenu{
 	private final int	ITEM_CHECK	=	1;
 	private final int	ITEM_RADIO	=	2;
 	private final TableHelper tableHelper;
-
-	public TableHeaderMenu(TableStructure columnObj, TableHelper tableHelper)
+	private final PrintWriter stdout,stderr;
+	private final boolean isDebug;
+	
+	public TableHeaderMenu(TableStructure columnObj, TableHelper tableHelper, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
 	{
 		super();
 		this.columnObj=columnObj;
 		this.tableHelper = tableHelper;
+		this.stdout = stdout;
+		this.stderr = stderr;
+		this.isDebug = isDebug;
 
 	}
 
@@ -58,8 +66,18 @@ public class TableHeaderMenu extends JPopupMenu{
 						public void run() {
 							String newValue = MoreHelp.showPlainInputMessage("Regular expression for the \"" + columnObj.getVisibleName()+
 									"\" column", "Edit Regex", columnObj.getRegExData().getRegExString());
-							columnObj.getRegExData().setRegExString(newValue);
-							saveAndReloadTableSettings(); //TODO do we need it?
+							// Save it only if it is different! no need to refresh the columns
+							if(!newValue.equals(columnObj.getRegExData().getRegExString())){
+								// a mew RegEx string has been provided - we need to ensure that it is a valid regular expression to prevent confusion!
+								try {
+						            Pattern.compile(newValue);
+						            columnObj.getRegExData().setRegExString(newValue);
+									saveAndReloadTableSettings(); //TODO do we need it?
+						        } catch (PatternSyntaxException exception) {
+						            stderr.println("provided regular expression was wrong. It cannot be saved.");
+						            MoreHelp.showWarningMessage("The provided regular expression string was NOT in correct format. It cannot be saved.");
+						        }
+							}
 						}
 					});
 				}
@@ -90,8 +108,11 @@ public class TableHeaderMenu extends JPopupMenu{
 				if(newValue.isEmpty()){
 					newValue = columnObj.getDefaultVisibleName();
 				}
-				columnObj.setVisibleName(newValue);
-				saveAndReloadTableSettings();
+				// Save it only if it is different! no need to refresh the columns
+				if(!newValue.equals(columnObj.getDefaultVisibleName())){
+					columnObj.setVisibleName(newValue);
+					saveAndReloadTableSettings();
+				}
 			}
 		});
 		menu.add(item);

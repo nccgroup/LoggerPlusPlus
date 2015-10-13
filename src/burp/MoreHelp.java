@@ -52,6 +52,19 @@ public class MoreHelp {
 	}
 	
 	// Show a message to the user
+	public static void showWarningMessage(final String strMsg){
+		new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				JOptionPane.showMessageDialog(null, strMsg, "Warning", JOptionPane.WARNING_MESSAGE);
+			}
+		}).start();
+		
+	}
+	
+	// Show a message to the user
 	public static String showPlainInputMessage(final String strMessage, final String strTitle, final String defaultValue){
 			String output = (String)JOptionPane.showInputDialog(null, 
 						strMessage,strTitle,JOptionPane.PLAIN_MESSAGE, null, null, defaultValue); 
