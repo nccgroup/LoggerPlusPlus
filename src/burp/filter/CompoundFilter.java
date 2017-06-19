@@ -41,8 +41,8 @@ public class CompoundFilter extends Filter {
         }
     }
 
-    @Override
-    public String toString() {
-        return (this.inverted ? "INV " : "") + "(" + left + " " + op.toString() + " " + right + ")";
-    }
+//    @Override
+//    public String toString() {
+//        return (this.inverted ? "INV " : "") + "(" + left + " " + op.toString() + " " + right + ")";
+//    }
 }

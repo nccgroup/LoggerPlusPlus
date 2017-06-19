@@ -788,18 +788,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		private JPanel filterPanel;
 		private Filter filter;
 
-		public FilterHelper(){
-
-		}
+		public FilterHelper(){}
 
 		private boolean matchesFilter(LogEntry logEntry){
 			return filter == null || filter.matchesEntry(logEntry);
-		}
-
-		boolean isFiltered = false;
-		private void toggleFilter(){
-			isFiltered = !isFiltered;
-			filterExisting();
 		}
 
 		private void filterExisting(){
@@ -844,6 +836,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					try{
 						if(filterField.getText().length() == 0){
 							filter = null;
+							filterField.setBackground(Color.white);
 						}else {
 							filter = Filter.parseString(filterField.getText());
 						}
@@ -852,6 +845,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					} catch (Filter.FilterException e) {
 						e.printStackTrace();
 						filterField.setBackground(Color.red);
+						filter = null;
+						filterExisting();
 						return;
 					}
 					filterExisting();
@@ -863,22 +858,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			btnConstraints.gridx = 1;
 			btnConstraints.weightx = btnConstraints.weighty = 1.0;
 
-			JButton toggleFilterBtn = new JButton("Toggle");
-			toggleFilterBtn.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent actionEvent) {
-					toggleFilter();
-				}
-			});
-
-			GridBagConstraints toggleConstraints = new GridBagConstraints();
-			toggleConstraints.fill = GridBagConstraints.BOTH;
-			toggleConstraints.gridx = 2;
-			toggleConstraints.weightx = toggleConstraints.weighty = 1.0;
-
 			filterPanel.add(filterField, fieldConstraints);
 			filterPanel.add(filterButton, btnConstraints);
-			filterPanel.add(toggleFilterBtn, toggleConstraints);
 
 			this.filterPanel = filterPanel;
 			return filterPanel;
