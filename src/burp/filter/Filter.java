@@ -15,16 +15,20 @@ public class Filter {
     protected Filter(Object left, String operation, Object right) throws FilterException {
         LogicalOperation op;
         switch (operation){
-            case "=": op = LogicalOperation.EQ;
+            case "=":
+            case "==": op = LogicalOperation.EQ;
                 break;
+            case "=!":
             case "!=": op = LogicalOperation.NE;
                 break;
             case "<": op = LogicalOperation.LT;
                 break;
             case ">": op = LogicalOperation.GT;
                 break;
+            case "=<":
             case "<=": op = LogicalOperation.LE;
                 break;
+            case "=>":
             case ">=": op = LogicalOperation.GE;
                 break;
             default:
@@ -92,7 +96,7 @@ public class Filter {
             if (compoundMatcher.matches()) {
                 return new CompoundFilter(compoundMatcher.group(1), compoundMatcher.group(2), compoundMatcher.group(3));
             } else {
-                Pattern operation = Pattern.compile("(.*?)((?:=|<|>|!)=?)(.*?)");
+                Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
                 Matcher operationMatcher = operation.matcher(string);
                 if(operationMatcher.matches()){
                     return new Filter(operationMatcher.group(1).trim(), operationMatcher.group(2), operationMatcher.group(3).trim());
@@ -109,30 +113,60 @@ public class Filter {
                 return lValue == entry.getValueByName((String) this.right);
             }else{
                 try {
-                    return lValue.equals(lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
+                    return checkValue(lValue, this.operation,
+                            lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
                 } catch (Exception e) {
+                    e.printStackTrace();
                     return false;
                 }
             }
         }else{
             if(this.right instanceof LogEntry.columnNamesType){
-                Object rValue = entry.getValueByName((String) this.right);
+                Object rValue = entry.getValueByKey((LogEntry.columnNamesType) this.right);
                 try {
-                    return rValue.equals(rValue.getClass().getConstructor(this.left.getClass()).newInstance(this.left));
+                    return checkValue(rValue, this.operation,
+                            rValue.getClass().getConstructor(this.left.getClass()).newInstance(this.left));
                 } catch (Exception e) {
                     return false;
                 }
             }else{
-                return this.right.equals(this.left);
+                return checkValue(left, this.operation, right);
             }
         }
     }
 
-
-    @Override
-    public String toString() {
-        return (this.inverted ? "INV " : "") + left.toString() + " " + operation.toString() + " " + right.toString();
+    private boolean checkValue(Object left, LogicalOperation op, Object right){
+        switch (op){
+            case EQ: return (left instanceof String && right instanceof String
+                    && ((String) left).equalsIgnoreCase((String) right)) || left.equals(right);
+            case NE: return !((left instanceof String && right instanceof String
+                    && ((String) left).equalsIgnoreCase((String) right)) || left.equals(right));
+            case LT: {
+                return (left instanceof Comparable) && (right instanceof Comparable)
+                        && ((Comparable) left).compareTo((Comparable) right) < 0;
+            }
+            case GT: {
+                return (left instanceof Comparable) && (right instanceof Comparable)
+                        && ((Comparable) left).compareTo((Comparable) right) > 0;
+            }
+            case LE: {
+                return (left instanceof Comparable) && (right instanceof Comparable)
+                        && ((Comparable) left).compareTo((Comparable) right) <= 0;
+            }
+            case GE: {
+                return (left instanceof Comparable) && (right instanceof Comparable)
+                        && ((Comparable) left).compareTo((Comparable) right) >= 0;
+            }
+            default:
+                return false;
+        }
     }
+
+
+//    @Override
+//    public String toString() {
+//        return (this.inverted ? "INV " : "") + left.toString() + " " + operation.toString() + " " + right.toString();
+//    }
 
     public static class FilterException extends Exception{
         public FilterException(String msg) {
