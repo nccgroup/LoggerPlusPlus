@@ -13,6 +13,7 @@
 package burp;
 
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -21,9 +22,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import burp.filter.Filter;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import burp.BurpExtender.TableHelper;
+import org.apache.commons.lang3.StringUtils;
 
 //
 // class to hold details of each log entry
@@ -114,7 +117,7 @@ public class LogEntry
 			this.relativeURL = url.getFile();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
-		this.isSSL=(this.protocol.equals("https"))? true: false;
+		this.isSSL= this.protocol.equals("https");
 
 		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("targetPort")) // This is good to increase the speed when it is time consuming
 			this.targetPort = tempRequestResponseHttpService.getPort();
@@ -233,11 +236,11 @@ public class LogEntry
 						int counter = 1;
 						while (m.find()) {
 							if(counter==2){
-								allMatches.insert(0, "«");
-								allMatches.append("»");
+								allMatches.insert(0, "ï¿½");
+								allMatches.append("ï¿½");
 							}
 							if(counter > 1){
-								allMatches.append("«"+m.group()+"»");
+								allMatches.append("ï¿½"+m.group()+"ï¿½");
 							}else{
 								allMatches.append(m.group());
 							}
@@ -311,11 +314,11 @@ public class LogEntry
 							int counter = 1;
 							while (m.find()) {
 								if(counter==2){
-									allMatches.insert(0, "«");
-									allMatches.append("»");
+									allMatches.insert(0, "ï¿½");
+									allMatches.append("ï¿½");
 								}
 								if(counter > 1){
-									allMatches.append("«"+m.group()+"»");
+									allMatches.append("ï¿½"+m.group()+"ï¿½");
 								}else{
 									allMatches.append(m.group());
 								}
@@ -344,19 +347,23 @@ public class LogEntry
 
 	}
 
-	@Override 
-	public boolean equals(Object other) {
-		boolean result = false;
-		if (other instanceof LogEntry) {
-			LogEntry that = (LogEntry) other;
-			result = (this.uniqueIdentifier.equals(that.uniqueIdentifier));
-			if(isDebug){
-				stderr.println("this.uniqueIdentifier: " + this.uniqueIdentifier + " that.uniqueIdentifier: "+that.uniqueIdentifier + " result: "+result);
-			}
+	//Removed until unique identifier implemented
+//	@Override
+//	public boolean equals(Object other) {
+//		boolean result = false;
+//		if (other instanceof LogEntry) {
+//			LogEntry that = (LogEntry) other;
+//			result = (this.uniqueIdentifier.equals(that.uniqueIdentifier));
+//			if(isDebug){
+//				stderr.println("this.uniqueIdentifier: " + this.uniqueIdentifier + " that.uniqueIdentifier: "+that.uniqueIdentifier + " result: "+result);
+//			}
+//
+//		}
+//		return result;
+//	}
 
-		}
-		return result;
-	}
+
+
 
 	public String getCSVHeader(boolean isFullLog) {
 		StringBuilder result = new StringBuilder();
@@ -409,110 +416,114 @@ public class LogEntry
 		return result.toString();
 	}
 
-	public Object getValueByName(String name){
+	public Object getValueByKey(columnNamesType columnName){
 		if(isDebug){
 			//stdout.println(name);
 		}
 
 		// switch (name.toLowerCase()) // this works fine in Java v7
 		try{
-			switch(columnNamesType.valueOf(name.toUpperCase()))
+			switch(columnName)
 			{
-			case TOOL:
-				return callbacks.getToolName(tool);
-			case URL:
-				return this.relativeURL;
-			case STATUS:
-				return this.status;
-			case PROTOCOL:
-				return this.protocol;
-			case HOSTNAME:
-				return this.host;
-			case HOST:
-				return this.protocol+"://"+this.host;
-			case RESPONSECONTENTTYPE_BURP:
-				return this.responseContentType_burp;
-			case RESPONSELENGTH:
-				return this.responseLength;
-			case TARGETPORT:
-				return this.targetPort;
-			case METHOD:
-				return this.method;
-			case RESPONSETIME:
-				return this.responseTime;
-			case COMMENT:
-				return this.comment;
-			case REQUSTCONTENTTYPE:
-				return this.requstContentType;
-			case URLEXTENSION:
-				return this.urlExtension;
-			case REFERRERURL:
-				return this.referrerURL;
-			case HASQUERYSTRINGPARAM:
-				return this.hasQueryStringParam;
-			case HASBODYPARAM:
-				return this.hasBodyParam;
-			case HASCOOKIEPARAM:
-				return this.hasCookieParam;
-			case REQUESTLENGTH:
-				return this.requestLength;
-			case RESPONSECONTENTTYPE:
-				return this.responseContentType;
-			case RESPONSEINFERREDCONTENTTYPE_BURP:
-				return this.responseInferredContentType_burp;
-			case HASSETCOOKIES:
-				return this.hasSetCookies;
-			case PARAMS:
-				return this.params;
-			case TITLE:
-				return this.title;
-			case ISSSL:
-				return this.isSSL;
-			case TARGETIP:
-				return this.targetIP;
-			case NEWCOOKIES:
-				return this.newCookies;
-			case LISTENERINTERFACE:
-				return this.listenerInterface;
-			case CLIENTIP:
-				return this.clientIP;
-			case ISCOMPLETED:
-				return this.isCompleted;
-			case UNIQUEIDENTIFIER:
-				return this.uniqueIdentifier;
-			case SENTCOOKIES:
-				return this.sentCookies;
-			case USESCOOKIEJAR:
-				return this.usesCookieJar.toString();
-			case REGEX1REQ:
-				return this.regexAllReq[0];
-			case REGEX2REQ:
-				return this.regexAllReq[1];
-			case REGEX3REQ:
-				return this.regexAllReq[2];
-			case REGEX4REQ:
-				return this.regexAllReq[3];
-			case REGEX5REQ:
-				return this.regexAllReq[4];
-			case REGEX1RESP:
-				return this.regexAllResp[0];
-			case REGEX2RESP:
-				return this.regexAllResp[1];
-			case REGEX3RESP:
-				return this.regexAllResp[2];
-			case REGEX4RESP:
-				return this.regexAllResp[3];
-			case REGEX5RESP:
-				return this.regexAllResp[4];
-			default:
-				return "";
+				case TOOL:
+					return callbacks.getToolName(tool);
+				case URL:
+					return this.relativeURL;
+				case STATUS:
+					return this.status;
+				case PROTOCOL:
+					return this.protocol;
+				case HOSTNAME:
+					return this.host;
+				case HOST:
+					return this.protocol+"://"+this.host;
+				case RESPONSECONTENTTYPE_BURP:
+					return this.responseContentType_burp;
+				case RESPONSELENGTH:
+					return this.responseLength;
+				case TARGETPORT:
+					return this.targetPort;
+				case METHOD:
+					return this.method;
+				case RESPONSETIME:
+					return this.responseTime;
+				case COMMENT:
+					return this.comment;
+				case REQUSTCONTENTTYPE:
+					return this.requstContentType;
+				case URLEXTENSION:
+					return this.urlExtension;
+				case REFERRERURL:
+					return this.referrerURL;
+				case HASQUERYSTRINGPARAM:
+					return this.hasQueryStringParam;
+				case HASBODYPARAM:
+					return this.hasBodyParam;
+				case HASCOOKIEPARAM:
+					return this.hasCookieParam;
+				case REQUESTLENGTH:
+					return this.requestLength;
+				case RESPONSECONTENTTYPE:
+					return this.responseContentType;
+				case RESPONSEINFERREDCONTENTTYPE_BURP:
+					return this.responseInferredContentType_burp;
+				case HASSETCOOKIES:
+					return this.hasSetCookies;
+				case PARAMS:
+					return this.params;
+				case TITLE:
+					return this.title;
+				case ISSSL:
+					return this.isSSL;
+				case TARGETIP:
+					return this.targetIP;
+				case NEWCOOKIES:
+					return this.newCookies;
+				case LISTENERINTERFACE:
+					return this.listenerInterface;
+				case CLIENTIP:
+					return this.clientIP;
+				case ISCOMPLETED:
+					return this.isCompleted;
+				case UNIQUEIDENTIFIER:
+					return this.uniqueIdentifier;
+				case SENTCOOKIES:
+					return this.sentCookies;
+				case USESCOOKIEJAR:
+					return this.usesCookieJar.toString();
+				case REGEX1REQ:
+					return this.regexAllReq[0];
+				case REGEX2REQ:
+					return this.regexAllReq[1];
+				case REGEX3REQ:
+					return this.regexAllReq[2];
+				case REGEX4REQ:
+					return this.regexAllReq[3];
+				case REGEX5REQ:
+					return this.regexAllReq[4];
+				case REGEX1RESP:
+					return this.regexAllResp[0];
+				case REGEX2RESP:
+					return this.regexAllResp[1];
+				case REGEX3RESP:
+					return this.regexAllResp[2];
+				case REGEX4RESP:
+					return this.regexAllResp[3];
+				case REGEX5RESP:
+					return this.regexAllResp[4];
+				default:
+					return "";
 			}
 		}catch(Exception e){
 			return "";
 		}
 	}
 
-	private enum cookieJarStatus {
+	public Object getValueByName(String name){
+		return getValueByKey(columnNamesType.valueOf(name.toUpperCase()));
+	}
+
+	public enum cookieJarStatus {
 		YES("Yes"),
 		NO("No"),
 		PARTIALLY("Partially");
@@ -530,7 +541,7 @@ public class LogEntry
 	}
 
 	// This has been designed for Java v6 that cannot support String in "switch"
-	private enum columnNamesType {
+	public enum columnNamesType {
 		TOOL("TOOL"),
 		URL("URL"),
 		STATUS("STATUS"),

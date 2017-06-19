@@ -80,7 +80,7 @@ public class LoggerOptionsPanel extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final TableHelper tableHelper, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
+	public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final TableHelper tableHelper, final List<LogEntry> log, final List<LogEntry> filteredLog, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
 		this.callbacks = callbacks;
 		this.stdout = stdout;
 		this.stderr = stderr;
@@ -307,6 +307,7 @@ public class LoggerOptionsPanel extends JPanel {
 						loggerPreferences.setEnabled(false);
 
 						log.clear();
+						filteredLog.clear();
 						
 						tableHelper.getLogTableModel().fireTableDataChanged();
 						loggerPreferences.setEnabled(origState);	

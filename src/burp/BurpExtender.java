@@ -12,8 +12,7 @@
 
 package burp;
 
-import java.awt.Component;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -21,18 +20,9 @@ import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
@@ -42,8 +32,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
+import burp.filter.Filter;
 import com.google.gson.Gson;
-
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener
@@ -55,13 +45,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor requestViewer;
 	private IMessageEditor responseViewer;
 	private List<LogEntry> log = new ArrayList<LogEntry>();
+	private List<LogEntry> filteredLog = new ArrayList<LogEntry>();
 	private IHttpRequestResponse currentlyDisplayedItem;
 	private JTabbedPane topTabs;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
 	private TableHelper tableHelper;
-
+	private FilterHelper filterHelper;
 
 	//
 	// implement IBurpExtender
@@ -112,10 +103,21 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				// generating the table columns
 				tableHelper.generatingTableColumns();
 
+				filterHelper = new FilterHelper();
+
 				// main split pane for the View section
-				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT); 
+				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+				JPanel viewPanel = new JPanel();
+				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
+
+				// create isFiltered pane
+				JPanel viewFilterPanel = new JPanel(new BorderLayout());
+				viewFilterPanel.add(filterHelper.getFilterPanel(), BorderLayout.CENTER);
 
 				JScrollPane viewScrollPane = new JScrollPane(tableHelper.getLogTable(),ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+				viewPanel.add(viewFilterPanel);
+				viewPanel.add(viewScrollPane);
+
 				// tabs with request/response viewers
 				JTabbedPane tabs = new JTabbedPane();
 				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
@@ -123,12 +125,12 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				tabs.addTab("Request", requestViewer.getComponent());
 				tabs.addTab("Response", responseViewer.getComponent());
-				splitPane.setLeftComponent(viewScrollPane);
+				splitPane.setLeftComponent(viewPanel);
 				splitPane.setRightComponent(tabs);
 
 				// Option tab
 				LoggerOptionsPanel optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr,tableHelper, log, 
-						canSaveCSV, loggerPreferences, isDebug);
+						filteredLog, canSaveCSV, loggerPreferences, isDebug);
 
 				// About tab
 				AboutPanel aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
@@ -210,26 +212,15 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			// Check for the scope if it is restricted to scope
 			if (!loggerPreferences.isRestrictedToScope() || callbacks.isInScope(uUrl))
 			{
-				boolean isValidTool = false;
-				if(loggerPreferences.isEnabled4All()){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Proxy() && toolFlag==callbacks.TOOL_PROXY){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Intruder() && toolFlag==callbacks.TOOL_INTRUDER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Repeater() && toolFlag==callbacks.TOOL_REPEATER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Scanner() && toolFlag==callbacks.TOOL_SCANNER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Sequencer() && toolFlag==callbacks.TOOL_SEQUENCER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Spider() && toolFlag==callbacks.TOOL_SPIDER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4Extender() && toolFlag==callbacks.TOOL_EXTENDER){
-					isValidTool = true;
-				}else if(loggerPreferences.isEnabled4TargetTab() && toolFlag==callbacks.TOOL_TARGET){
-					isValidTool = true;
-				}
+				boolean isValidTool = (loggerPreferences.isEnabled4All() ||
+							(loggerPreferences.isEnabled4Proxy() && toolFlag==callbacks.TOOL_PROXY) ||
+							(loggerPreferences.isEnabled4Intruder() && toolFlag==callbacks.TOOL_INTRUDER) ||
+							(loggerPreferences.isEnabled4Repeater() && toolFlag==callbacks.TOOL_REPEATER) ||
+							(loggerPreferences.isEnabled4Scanner() && toolFlag==callbacks.TOOL_SCANNER) ||
+							(loggerPreferences.isEnabled4Sequencer() && toolFlag==callbacks.TOOL_SEQUENCER) ||
+							(loggerPreferences.isEnabled4Spider() && toolFlag==callbacks.TOOL_SPIDER) ||
+							(loggerPreferences.isEnabled4Extender() && toolFlag==callbacks.TOOL_EXTENDER) ||
+							(loggerPreferences.isEnabled4TargetTab() && toolFlag==callbacks.TOOL_TARGET));
 
 				//stdout.println(toolFlag +" - "+LoggerPreferences.isEnabled4All());
 				if(isValidTool){
@@ -250,12 +241,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
+						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, tableHelper, loggerPreferences, stderr, stderr, isValidTool, callbacks);
 						synchronized(log)
 						{
-
-							int row = log.size();
-							log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, tableHelper, loggerPreferences, stderr, stderr, isValidTool, callbacks));
-							tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
+							log.add(entry);
 
 							// For proxy - disabled due to the race condition bug!
 							//							if(toolFlag!=callbacks.TOOL_PROXY){
@@ -275,12 +264,23 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							//								
 							//							}
 						}
+
+						synchronized (filteredLog){
+							if(matchesFilter(entry)) {
+								int row = filteredLog.size();
+								filteredLog.add(entry);
+								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
+							}
+						}
 					}
 				}
 			}
 		}
 	}
 
+	private boolean matchesFilter(LogEntry entry){
+		return filterHelper.matchesFilter(entry);
+	}
 
 
 	//
@@ -332,8 +332,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		{
 			// show the log entry for the selected row
 			//MoreHelp.showMessage("row: "+Integer.toString(row)+" - log size: "+Integer.toString(log.size()));
-			if(log.size()>=row){
-				LogEntry logEntry = log.get(tableHelper.getLogTable().convertRowIndexToModel(row));
+			if(filteredLog.size()>=row){
+				LogEntry logEntry = filteredLog.get(tableHelper.getLogTable().convertRowIndexToModel(row));
 				requestViewer.setMessage(logEntry.requestResponse.getRequest(), true);
 				if(logEntry.requestResponse.getResponse()!=null)
 					responseViewer.setMessage(logEntry.requestResponse.getResponse(), false);
@@ -375,12 +375,12 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		public int getRowCount()
 		{
 			// To delete the Request/Response table the log section is empty (after deleting the logs when an item is already selected)
-			if(currentlyDisplayedItem!=null && log.size() <= 0){
+			if(currentlyDisplayedItem!=null && filteredLog.size() <= 0){
 				currentlyDisplayedItem = null;
 				requestViewer.setMessage(helpers.stringToBytes(""), true);
 				responseViewer.setMessage(helpers.stringToBytes(""), false);
 			}
-			return log.size();
+			return filteredLog.size();
 		}
 
 		@Override
@@ -410,7 +410,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 		@Override
 		public void setValueAt(Object value, int rowIndex, int colIndex) {
-			LogEntry logEntry = log.get(rowIndex);
+			LogEntry logEntry = filteredLog.get(rowIndex);
 			logEntry.comment = (String) value;
 			fireTableCellUpdated(rowIndex, colIndex);
 		}
@@ -455,9 +455,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex)
 		{
-			if(log.size()-1<rowIndex) return "";
+			if(filteredLog.size()-1<rowIndex) return "";
 
-			LogEntry logEntry = log.get(rowIndex);
+			LogEntry logEntry = filteredLog.get(rowIndex);
 			//System.out.println(loggerTableDetails[columnIndex][0] +"  --- " +columnIndex);
 			String colName = tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName();
 			if(colName.equals("number")){
@@ -481,6 +481,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			}
 
 		}
+
+
 
 	}
 
@@ -781,6 +783,108 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		
 	}
 
+	public class FilterHelper {
+
+		private JPanel filterPanel;
+		private Filter filter;
+
+		public FilterHelper(){
+
+		}
+
+		private boolean matchesFilter(LogEntry logEntry){
+			return filter == null || filter.matchesEntry(logEntry);
+		}
+
+		boolean isFiltered = false;
+		private void toggleFilter(){
+			isFiltered = !isFiltered;
+			filterExisting();
+		}
+
+		private void filterExisting(){
+			synchronized (filteredLog) {
+				ArrayList<LogEntry> removeEntries = new ArrayList<>();
+				for (int i = 0; i < filteredLog.size(); i++) {
+					if(!matchesFilter(filteredLog.get(i))){
+						removeEntries.add(filteredLog.get(i));
+					}
+				}
+				filteredLog.removeAll(removeEntries);
+				tableHelper.getLogTableModel().fireTableDataChanged();
+			}
+			synchronized (log) {
+				for (int i = 0; i < log.size(); i++) {
+					LogEntry entry = log.get(i);
+					if (matchesFilter(entry) && !filteredLog.contains(entry)) {
+						synchronized (filteredLog) {
+							filteredLog.add(entry);
+							tableHelper.getLogTableModel().fireTableRowsInserted(filteredLog.size()-1, filteredLog.size()-1);
+						}
+					}
+				}
+			}
+		}
+
+		public JPanel getFilterPanel(){
+			if(filterPanel != null) return filterPanel;
+
+			JPanel filterPanel = new JPanel(new GridBagLayout());
+
+			JTextField filterField = new JTextField();
+			GridBagConstraints fieldConstraints = new GridBagConstraints();
+			fieldConstraints.fill = GridBagConstraints.BOTH;
+			fieldConstraints.gridx = 0;
+			fieldConstraints.weightx = fieldConstraints.weighty = 4.0;
+
+			JButton filterButton = new JButton("filter");
+			filterButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent actionEvent) {
+					try{
+						if(filterField.getText().length() == 0){
+							filter = null;
+						}else {
+							filter = Filter.parseString(filterField.getText());
+						}
+						filterField.setBackground(Color.green);
+						filterExisting();
+					} catch (Filter.FilterException e) {
+						e.printStackTrace();
+						filterField.setBackground(Color.red);
+						return;
+					}
+					filterExisting();
+				}
+			});
+
+			GridBagConstraints btnConstraints = new GridBagConstraints();
+			btnConstraints.fill = GridBagConstraints.BOTH;
+			btnConstraints.gridx = 1;
+			btnConstraints.weightx = btnConstraints.weighty = 1.0;
+
+			JButton toggleFilterBtn = new JButton("Toggle");
+			toggleFilterBtn.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent actionEvent) {
+					toggleFilter();
+				}
+			});
+
+			GridBagConstraints toggleConstraints = new GridBagConstraints();
+			toggleConstraints.fill = GridBagConstraints.BOTH;
+			toggleConstraints.gridx = 2;
+			toggleConstraints.weightx = toggleConstraints.weighty = 1.0;
+
+			filterPanel.add(filterField, fieldConstraints);
+			filterPanel.add(filterButton, btnConstraints);
+			filterPanel.add(toggleFilterBtn, toggleConstraints);
+
+			this.filterPanel = filterPanel;
+			return filterPanel;
+		}
+	}
+
 	class LeftTableCellRenderer extends DefaultTableCellRenderer { 
 		protected  LeftTableCellRenderer() {
 			setHorizontalAlignment(SwingConstants.LEFT);  } 
@@ -788,6 +892,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public static void main(String [] args){
 		System.out.println("You have built the Logger++. You shall play with the jar file now!");
+		burp.StartBurp.main(args);
 	}
 
 
