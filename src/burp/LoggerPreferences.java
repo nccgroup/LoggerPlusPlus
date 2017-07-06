@@ -41,6 +41,7 @@ public class LoggerPreferences {
 	private boolean isEnabled4Sequencer;
 	private boolean isEnabled4Extender;
 	private boolean isEnabled4TargetTab;
+	private boolean logFiltered;
 	private String tableDetailsJSONString;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
@@ -214,6 +215,15 @@ public class LoggerPreferences {
 		this.isEnabled4TargetTab = isEnabled4TargetTab;
 	}
 
+	public synchronized void setLoggingFiltered(boolean logFiltered){
+		prefs.putBoolean("isLoggingFiltered", logFiltered);
+		this.logFiltered = logFiltered;
+	}
+
+	public synchronized boolean isLoggingFiltered(){
+		return this.logFiltered;
+	}
+
 
 	public LoggerPreferences(PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
 		this.stdout = stdout;
@@ -246,6 +256,7 @@ public class LoggerPreferences {
 		isEnabled4Scanner = prefs.getBoolean("isEnabled4Scanner", false);
 		isEnabled4Intruder = prefs.getBoolean("isEnabled4Intruder", false);
 		isEnabled4Spider = prefs.getBoolean("isEnabled4Spider", false);
+		logFiltered = prefs.getBoolean("isLoggingFiltered", false);
 
 		int tableDetailsJSONString_size = prefs.getInt("tableDetailsJSONString.size", 1);
 		if(tableDetailsJSONString_size > 99) tableDetailsJSONString_size = 1; // lame validation!
@@ -271,6 +282,7 @@ public class LoggerPreferences {
 		setEnabled4Sequencer(false);
 		setEnabled4Extender(false);
 		setEnabled4TargetTab(false);
+		setLoggingFiltered(false);
 		setTableDetailsJSONString("");
 	}
 	
