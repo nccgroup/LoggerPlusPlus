@@ -59,6 +59,7 @@ public class LoggerOptionsPanel extends JPanel {
 	
 	private JToggleButton tglbtnIsEnabled = new JToggleButton("Logger++ is running");
 	private JCheckBox chckbxIsRestrictedToScope = new JCheckBox("In scope items only");
+	private JCheckBox chckbxIsLoggingFiltered = new JCheckBox("Store logs only if matches filter");
 	private JCheckBox chckbxAllTools = new JCheckBox("All Tools");
 	private JCheckBox chckbxSpider = new JCheckBox("Spider");
 	private JCheckBox chckbxIntruder = new JCheckBox("Intruder");
@@ -72,10 +73,10 @@ public class LoggerOptionsPanel extends JPanel {
 	private final JCheckBox chckbxTarget = new JCheckBox("Target");
 	private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
 	private final JLabel lblNoteIn = new JLabel("Note 2: In order to save the data automatically, use Options > Misc > Logging");
-	private final boolean isDebug;
 	private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
 	private final JLabel lblColumnSettings = new JLabel("Column Settings:");
 	private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
+	private final boolean isDebug;
 
 	/**
 	 * Create the panel.
@@ -90,9 +91,9 @@ public class LoggerOptionsPanel extends JPanel {
 		
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
-		gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0};
+		gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0};
 		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		setLayout(gridBagLayout);
 		
 				JLabel lblLoggerStatus = new JLabel("Status:");
@@ -160,6 +161,13 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxIsRestrictedToScope.gridx = 2;
 		gbc_chckbxIsRestrictedToScope.gridy = 2;
 		add(chckbxIsRestrictedToScope, gbc_chckbxIsRestrictedToScope);
+
+		GridBagConstraints gbc_chckbxIsLoggingFiltered = new GridBagConstraints();
+		gbc_chckbxIsLoggingFiltered.anchor = GridBagConstraints.WEST;
+		gbc_chckbxIsLoggingFiltered.insets = new Insets(0, 0, 5, 5);
+		gbc_chckbxIsLoggingFiltered.gridx = 2;
+		gbc_chckbxIsLoggingFiltered.gridy = 3;
+		add(chckbxIsLoggingFiltered, gbc_chckbxIsLoggingFiltered);
 		
 				GridBagConstraints gbc_btnSaveFullLogs = new GridBagConstraints();
 				gbc_btnSaveFullLogs.fill = GridBagConstraints.HORIZONTAL;
@@ -195,7 +203,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblLogFrom.anchor = GridBagConstraints.WEST;
 		gbc_lblLogFrom.insets = new Insets(0, 0, 5, 5);
 		gbc_lblLogFrom.gridx = 1;
-		gbc_lblLogFrom.gridy = 3;
+		gbc_lblLogFrom.gridy = 4;
 		add(lblLogFrom, gbc_lblLogFrom);
 
 		//		JCheckBox chckbxNewCheckBox_1 = new JCheckBox("All Tools");
@@ -203,7 +211,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxAllTools.anchor = GridBagConstraints.WEST;
 		gbc_chckbxAllTools.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxAllTools.gridx = 2;
-		gbc_chckbxAllTools.gridy = 4;
+		gbc_chckbxAllTools.gridy = 5;
 		add(chckbxAllTools, gbc_chckbxAllTools);
 
 		//		JCheckBox chckbxSpider = new JCheckBox("Spider");
@@ -211,7 +219,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxSpider.anchor = GridBagConstraints.WEST;
 		gbc_chckbxSpider.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxSpider.gridx = 2;
-		gbc_chckbxSpider.gridy = 5;
+		gbc_chckbxSpider.gridy = 6;
 		add(chckbxSpider, gbc_chckbxSpider);
 
 		//		JCheckBox chckbxIntruder = new JCheckBox("Intruder");
@@ -219,7 +227,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxIntruder.anchor = GridBagConstraints.WEST;
 		gbc_chckbxIntruder.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxIntruder.gridx = 2;
-		gbc_chckbxIntruder.gridy = 6;
+		gbc_chckbxIntruder.gridy = 7;
 		add(chckbxIntruder, gbc_chckbxIntruder);
 
 		//		JCheckBox chckbxScanner = new JCheckBox("Scanner");
@@ -227,7 +235,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxScanner.anchor = GridBagConstraints.WEST;
 		gbc_chckbxScanner.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxScanner.gridx = 2;
-		gbc_chckbxScanner.gridy = 7;
+		gbc_chckbxScanner.gridy = 8;
 		add(chckbxScanner, gbc_chckbxScanner);
 
 		//		JCheckBox chckbxRepeater = new JCheckBox("Repeater");
@@ -235,7 +243,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxRepeater.anchor = GridBagConstraints.WEST;
 		gbc_chckbxRepeater.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxRepeater.gridx = 2;
-		gbc_chckbxRepeater.gridy = 8;
+		gbc_chckbxRepeater.gridy = 9;
 		add(chckbxRepeater, gbc_chckbxRepeater);
 
 		//		JCheckBox chckbxSequencer = new JCheckBox("Sequencer");
@@ -243,7 +251,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxSequencer.anchor = GridBagConstraints.WEST;
 		gbc_chckbxSequencer.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxSequencer.gridx = 2;
-		gbc_chckbxSequencer.gridy = 9;
+		gbc_chckbxSequencer.gridy = 10;
 		add(chckbxSequencer, gbc_chckbxSequencer);
 
 		//		JCheckBox chckbxProxy = new JCheckBox("Proxy");
@@ -251,21 +259,21 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxProxy.anchor = GridBagConstraints.WEST;
 		gbc_chckbxProxy.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxProxy.gridx = 2;
-		gbc_chckbxProxy.gridy = 10;
+		gbc_chckbxProxy.gridy = 11;
 		add(chckbxProxy, gbc_chckbxProxy);
 
 		GridBagConstraints gbc_chckbxTarget = new GridBagConstraints();
 		gbc_chckbxTarget.anchor = GridBagConstraints.WEST;
 		gbc_chckbxTarget.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxTarget.gridx = 2;
-		gbc_chckbxTarget.gridy = 11;
+		gbc_chckbxTarget.gridy = 12;
 		add(chckbxTarget, gbc_chckbxTarget);
 
 		GridBagConstraints gbc_chckbxExtender = new GridBagConstraints();
 		gbc_chckbxExtender.anchor = GridBagConstraints.WEST;
 		gbc_chckbxExtender.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxExtender.gridx = 2;
-		gbc_chckbxExtender.gridy = 12;
+		gbc_chckbxExtender.gridy = 13;
 		add(chckbxExtender, gbc_chckbxExtender);
 
 
@@ -273,7 +281,7 @@ public class LoggerOptionsPanel extends JPanel {
 		GridBagConstraints gbc_labelEmpty_1 = new GridBagConstraints();
 		gbc_labelEmpty_1.insets = new Insets(0, 0, 5, 5);
 		gbc_labelEmpty_1.gridx = 1;
-		gbc_labelEmpty_1.gridy = 13;
+		gbc_labelEmpty_1.gridy = 14;
 		add(labelEmpty_1, gbc_labelEmpty_1);
 
 		JButton btnResetSettings = new JButton("Reset all settings");
@@ -296,7 +304,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_btnResetSettings.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnResetSettings.insets = new Insets(0, 0, 5, 5);
 		gbc_btnResetSettings.gridx = 2;
-		gbc_btnResetSettings.gridy = 13;
+		gbc_btnResetSettings.gridy = 14;
 		add(btnResetSettings, gbc_btnResetSettings);
 		
 				JButton btnClearTheLog = new JButton("Clear the logs");
@@ -320,14 +328,14 @@ public class LoggerOptionsPanel extends JPanel {
 				gbc_btnClearTheLog.fill = GridBagConstraints.HORIZONTAL;
 				gbc_btnClearTheLog.insets = new Insets(0, 0, 5, 5);
 				gbc_btnClearTheLog.gridx = 3;
-				gbc_btnClearTheLog.gridy = 13;
+				gbc_btnClearTheLog.gridy = 14;
 				add(btnClearTheLog, gbc_btnClearTheLog);
 		
 		GridBagConstraints gbc_lblColumnSettings = new GridBagConstraints();
 		gbc_lblColumnSettings.anchor = GridBagConstraints.WEST;
 		gbc_lblColumnSettings.insets = new Insets(0, 0, 5, 5);
 		gbc_lblColumnSettings.gridx = 1;
-		gbc_lblColumnSettings.gridy = 14;
+		gbc_lblColumnSettings.gridy = 15;
 		lblColumnSettings.setFont(new Font("Tahoma", Font.BOLD, 14));
 		add(lblColumnSettings, gbc_lblColumnSettings);
 		
@@ -335,7 +343,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblNewLabel_1.anchor = GridBagConstraints.WEST;
 		gbc_lblNewLabel_1.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNewLabel_1.gridx = 2;
-		gbc_lblNewLabel_1.gridy = 14;
+		gbc_lblNewLabel_1.gridy = 15;
 		add(lblNewLabel_1, gbc_lblNewLabel_1);
 
 		GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
@@ -343,7 +351,7 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblNewLabel.gridwidth = 3;
 		gbc_lblNewLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNewLabel.gridx = 1;
-		gbc_lblNewLabel.gridy = 15;
+		gbc_lblNewLabel.gridy = 16;
 		add(lblNewLabel, gbc_lblNewLabel);
 
 		GridBagConstraints gbc_lblNoteIn = new GridBagConstraints();
@@ -351,15 +359,15 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblNoteIn.gridwidth = 3;
 		gbc_lblNoteIn.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNoteIn.gridx = 1;
-		gbc_lblNoteIn.gridy = 16;
+		gbc_lblNoteIn.gridy = 17;
 		add(lblNoteIn, gbc_lblNoteIn);
 		
 		GridBagConstraints gbc_lblNoteUpdating = new GridBagConstraints();
 		gbc_lblNoteUpdating.anchor = GridBagConstraints.WEST;
-		gbc_lblNoteUpdating.gridwidth = 2;
+		gbc_lblNoteUpdating.gridwidth = 3;
 		gbc_lblNoteUpdating.insets = new Insets(0, 0, 0, 5);
 		gbc_lblNoteUpdating.gridx = 1;
-		gbc_lblNoteUpdating.gridy = 17;
+		gbc_lblNoteUpdating.gridy = 18;
 		add(lblNoteUpdating, gbc_lblNoteUpdating);
 
 		setPreferencesValues();
@@ -490,6 +498,13 @@ public class LoggerOptionsPanel extends JPanel {
 		chckbxIsRestrictedToScope.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				loggerPreferences.setRestrictedToScope(chckbxIsRestrictedToScope.isSelected());
+			}
+		});
+
+		chckbxIsLoggingFiltered.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				loggerPreferences.setLoggingFiltered(chckbxIsLoggingFiltered.isSelected());
 			}
 		});
 

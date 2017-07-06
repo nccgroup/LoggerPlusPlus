@@ -242,27 +242,27 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
 						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, tableHelper, loggerPreferences, stderr, stderr, isValidTool, callbacks);
-						synchronized(log)
-						{
-							log.add(entry);
-
-							// For proxy - disabled due to the race condition bug!
-							//							if(toolFlag!=callbacks.TOOL_PROXY){
-							//								int row = log.size();
-							//								log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
-							//								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
-							//							}else{
-							//								LogEntry responseLog = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
-							//								if (log.contains(responseLog)) {
-							//									log.set(log.indexOf(responseLog),responseLog);
-							//									tableHelper.getLogTableModel().fireTableDataChanged();
-							//								}else{
-							//									if(isDebug){
-							//										stderr.println("Item was not found: " + message.getMessageReference() + " " + responseLog.uniqueIdentifier);
-							//									}
-							//								}
-							//								
-							//							}
+						if(!loggerPreferences.isLoggingFiltered()) {
+							synchronized (log) {
+								log.add(entry);
+								// For proxy - disabled due to the race condition bug!
+								//							if(toolFlag!=callbacks.TOOL_PROXY){
+								//								int row = log.size();
+								//								log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
+								//								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
+								//							}else{
+								//								LogEntry responseLog = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
+								//								if (log.contains(responseLog)) {
+								//									log.set(log.indexOf(responseLog),responseLog);
+								//									tableHelper.getLogTableModel().fireTableDataChanged();
+								//								}else{
+								//									if(isDebug){
+								//										stderr.println("Item was not found: " + message.getMessageReference() + " " + responseLog.uniqueIdentifier);
+								//									}
+								//								}
+								//
+								//							}
+							}
 						}
 
 						synchronized (filteredLog){
