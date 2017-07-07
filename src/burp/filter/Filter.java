@@ -1,10 +1,12 @@
 package burp.filter;
 import burp.LogEntry;
+import burp.LogTableModel;
 
+import javax.swing.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Filter {
+public class Filter extends RowFilter<Object, Object> {
     enum LogicalOperation {LT,LE,GT,GE,EQ,NE}
     public boolean inverted;
     public Object left;
@@ -12,6 +14,40 @@ public class Filter {
     public Object right;
 
     protected Filter(){}
+
+    @Override
+    public boolean include(Entry<? extends Object, ? extends Object> entry) {
+        LogTableModel tableModel = (LogTableModel) entry.getModel();
+        if(this.left instanceof LogEntry.columnNamesType){
+//            Object lValue = ((LogEntry) entry).getValueByKey((LogEntry.columnNamesType) this.left);
+            Object lValue = entry.getValue(tableModel.getColumnIndexByName(this.left.toString()));
+            if(this.right instanceof LogEntry.columnNamesType){
+                return lValue == ((LogEntry) entry).getValueByName((String) this.right);
+            }else{
+                try {
+                    return checkValue(lValue, this.operation,
+                            lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        }else{
+            if(this.right instanceof LogEntry.columnNamesType){
+//                Object rValue = ((LogEntry) entry).getValueByKey((LogEntry.columnNamesType) this.right);
+                Object rValue = entry.getValue(tableModel.getColumnIndexByName(this.right.toString()));
+                try {
+                    return checkValue(rValue, this.operation,
+                            rValue.getClass().getConstructor(this.left.getClass()).newInstance(this.left));
+                } catch (Exception e) {
+                    return false;
+                }
+            }else{
+                return checkValue(left, this.operation, right);
+            }
+        }
+    }
+
     protected Filter(Object left, String operation, Object right) throws FilterException {
         LogicalOperation op;
         switch (operation){
@@ -106,35 +142,6 @@ public class Filter {
         throw new FilterException("Could not parse filter");
     }
 
-    public boolean matchesEntry(LogEntry entry){
-        if(this.left instanceof LogEntry.columnNamesType){
-            Object lValue = entry.getValueByKey((LogEntry.columnNamesType) this.left);
-            if(this.right instanceof LogEntry.columnNamesType){
-                return lValue == entry.getValueByName((String) this.right);
-            }else{
-                try {
-                    return checkValue(lValue, this.operation,
-                            lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            }
-        }else{
-            if(this.right instanceof LogEntry.columnNamesType){
-                Object rValue = entry.getValueByKey((LogEntry.columnNamesType) this.right);
-                try {
-                    return checkValue(rValue, this.operation,
-                            rValue.getClass().getConstructor(this.left.getClass()).newInstance(this.left));
-                } catch (Exception e) {
-                    return false;
-                }
-            }else{
-                return checkValue(left, this.operation, right);
-            }
-        }
-    }
-
     private boolean checkValue(Object left, LogicalOperation op, Object right){
         switch (op){
             case EQ: return (left instanceof String && right instanceof String
@@ -161,12 +168,6 @@ public class Filter {
                 return false;
         }
     }
-
-
-//    @Override
-//    public String toString() {
-//        return (this.inverted ? "INV " : "") + left.toString() + " " + operation.toString() + " " + right.toString();
-//    }
 
     public static class FilterException extends Exception{
         public FilterException(String msg) {

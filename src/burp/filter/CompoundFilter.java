@@ -1,7 +1,5 @@
 package burp.filter;
 
-import burp.LogEntry;
-
 public class CompoundFilter extends Filter {
     enum CompoundOperation {AND,OR}
     CompoundOperation op;
@@ -33,16 +31,11 @@ public class CompoundFilter extends Filter {
     }
 
     @Override
-    public boolean matchesEntry(LogEntry entry){
+    public boolean include(Entry<? extends Object, ? extends Object> entry){
         switch (this.op){
-            case AND: return ((Filter) this.left).matchesEntry(entry) && ((Filter) this.right).matchesEntry(entry);
-            case OR: return ((Filter) this.left).matchesEntry(entry) || ((Filter) this.right).matchesEntry(entry);
+            case AND: return ((Filter) this.left).include(entry) && ((Filter) this.right).include(entry);
+            case OR: return ((Filter) this.left).include(entry) || ((Filter) this.right).include(entry);
             default: return false;
         }
     }
-
-//    @Override
-//    public String toString() {
-//        return (this.inverted ? "INV " : "") + "(" + left + " " + op.toString() + " " + right + ")";
-//    }
 }

@@ -59,7 +59,7 @@ public class TableHeaderColumnsDetails  {
 			+ "{'id':0,'name':'protocol','enabled':true,'defaultVisibleName':'Protocol','visibleName':'Protocol','width':80,'type':'string','readonly':true,'order':23,'visible':false,'description':'Shows the request protocol','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':0,'name':'hostname','enabled':true,'defaultVisibleName':'Host Name','visibleName':'Host Name','width':150,'type':'string','readonly':true,'order':24,'visible':false,'description':'Shows the request host name','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':0,'name':'targetPort','enabled':true,'defaultVisibleName':'Port','visibleName':'Port','width':50,'type':'int','readonly':true,'order':25,'visible':false,'description':'Shows the target port number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'requstContentType','enabled':true,'defaultVisibleName':'Request Type','visibleName':'Request Type','width':150,'type':'string','readonly':true,'order':26,'visible':false,'description':'Shows the request content-type header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':0,'name':'requestContentType','enabled':true,'defaultVisibleName':'Request Type','visibleName':'Request Type','width':150,'type':'string','readonly':true,'order':26,'visible':false,'description':'Shows the request content-type header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':0,'name':'referrerURL','enabled':true,'defaultVisibleName':'Referred','visibleName':'Referred','width':250,'type':'string','readonly':true,'order':27,'visible':false,'description':'Shows the referer header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':0,'name':'requestLength','enabled':true,'defaultVisibleName':'Request Length','visibleName':'Request Length','width':150,'type':'int','readonly':true,'order':28,'visible':false,'description':'Shows the request body length','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':0,'name':'hasSetCookies','enabled':true,'defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','width':100,'type':'boolean','readonly':true,'order':29,'visible':false,'description':'Indicates whether or not the response contains the set-cookie header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
@@ -251,7 +251,7 @@ public class TableHeaderColumnsDetails  {
 	public TableStructure getEnabledTableHeader_byName(String colName){
 		TableStructure selectedItem = null;
 		for(TableStructure colItem : getAllColumnsDefinitionList()){
-			if(colItem.getName().equals(colName)){
+			if(colItem.getName().equalsIgnoreCase(colName)){
 				selectedItem = colItem;
 				break;
 			}

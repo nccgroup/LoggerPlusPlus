@@ -56,10 +56,13 @@ public class AboutPanel extends JPanel {
 
 		ClassLoader cldr = this.getClass().getClassLoader();
 		java.net.URL imageURLMain   = cldr.getResource("resources/AboutMain.png");
-		ImageIcon imageIconMain = new ImageIcon(imageURLMain);
 		JLabel lblMain = new JLabel("Main"); // to see the label in eclipse design tab!
-		if("running".equals("running")) // to see the image while running it.
-			lblMain = new JLabel(imageIconMain);
+		ImageIcon imageIconMain;
+		if(imageURLMain != null) {
+			imageIconMain = new ImageIcon(imageURLMain);
+			if ("running".equals("running")) // to see the image while running it.
+				lblMain = new JLabel(imageIconMain);
+		}
 		GridBagConstraints gbc_lblMain = new GridBagConstraints();
 		gbc_lblMain.gridheight = 8;
 		gbc_lblMain.insets = new Insets(0, 0, 0, 5);
