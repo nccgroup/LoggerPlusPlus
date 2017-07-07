@@ -13,7 +13,6 @@
 package burp;
 
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -21,18 +20,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import burp.filter.Filter;
 import org.apache.commons.lang3.StringEscapeUtils;
-
-import burp.BurpExtender.TableHelper;
-import org.apache.commons.lang3.StringUtils;
+import javax.swing.*;
 
 //
 // class to hold details of each log entry
 //
 
-public class LogEntry
+public class LogEntry extends RowFilter.Entry
 {
 	// Request Related
 	final int tool;
@@ -83,20 +78,20 @@ public class LogEntry
 
 	// Defining necessary parameters from the caller
 	private LoggerPreferences loggerPreferences;
-	private TableHelper tableHelper;
+	private Table table;
 	private PrintWriter stdout, stderr;
 	private boolean isDebug;
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
 
-	LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponsePersisted requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message, TableHelper tableHelper, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug, IBurpExtenderCallbacks callbacks)
+	LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponsePersisted requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message, Table table, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug, IBurpExtenderCallbacks callbacks)
 	{
 		this.stdout = stdout;
 		this.stderr = stderr;
 		this.isDebug = isDebug;
 		this.loggerPreferences = loggerPreferences;
 		this.callbacks = callbacks;
-		this.tableHelper= tableHelper;
+		this.table = table;
 		this.callbacks = callbacks;
 		this.helpers = callbacks.getHelpers();
 
@@ -106,23 +101,23 @@ public class LogEntry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 
-		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+		if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
 			this.uniqueIdentifier=java.util.UUID.randomUUID().toString();
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
 
 		this.url = url;
-		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("url")) // This is good to increase the speed when it is time consuming
+		if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("url")) // This is good to increase the speed when it is time consuming
 			this.relativeURL = url.getFile();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
 
-		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("targetPort")) // This is good to increase the speed when it is time consuming
+		if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("targetPort")) // This is good to increase the speed when it is time consuming
 			this.targetPort = tempRequestResponseHttpService.getPort();
 
-		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("method")) // This is good to increase the speed when it is time consuming
+		if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("method")) // This is good to increase the speed when it is time consuming
 			this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
@@ -141,13 +136,13 @@ public class LogEntry
 			if(isDebug){
 				//stdout.println("I have a message from proxy!");
 			}
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("listenerInterface")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("listenerInterface")) // This is good to increase the speed when it is time consuming
 				this.listenerInterface=message.getListenerInterface();
 
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("clientIP")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("clientIP")) // This is good to increase the speed when it is time consuming
 				this.clientIP=message.getClientIpAddress().toString();
 
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
 				this.uniqueIdentifier = "P"+String.valueOf(message.getMessageReference());
 
 
@@ -161,11 +156,11 @@ public class LogEntry
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
-		if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("sentCookies") ||
-				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("hasCookieParam") ||
-				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar") ||
-				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("referrerURL") ||
-				tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("requstContentType")){ // This is good to increase the speed when it is time consuming
+		if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("sentCookies") ||
+				table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("hasCookieParam") ||
+				table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar") ||
+				table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("referrerURL") ||
+				table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("requstContentType")){ // This is good to increase the speed when it is time consuming
 			for(String item:lstFullRequestHeader){
 				if(item.indexOf(":")>=0){
 					String[] headerItem = item.split(":\\s",2);
@@ -177,7 +172,7 @@ public class LogEntry
 							this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
 							// to ensure it is enabled as it is process consuming
-							if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar")){
+							if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar")){
 								// Check to see if it uses cookie Jars!
 								List<ICookie> cookieJars = callbacks.getCookieJarContents();
 								boolean atLeastOneDidNotMatched = false;
@@ -217,10 +212,10 @@ public class LogEntry
 		// There are 5 RegEx rule for requests
 		for(int i=0;i<=5;i++){
 			String regexVarName = "regex"+String.valueOf(i+1)+"Req";
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
 				// so this rule is enabled!
 				// check to see if the RegEx is not empty
-				TableStructure regexColumn = tableHelper.getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
+				TableStructure regexColumn = table.getModel().getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
 				String regexString = regexColumn.getRegExData().getRegExString();
 				if(!regexString.isEmpty()){
 					// now we can process it safely!
@@ -265,12 +260,12 @@ public class LogEntry
 			String strFullResponse = new String(requestResponse.getResponse());
 			List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 			this.status= tempAnalyzedResp.getStatusCode();
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType_burp")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType_burp")) // This is good to increase the speed when it is time consuming
 				this.responseContentType_burp=tempAnalyzedResp.getStatedMimeType();
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
 				this.responseInferredContentType_burp = tempAnalyzedResp.getInferredMimeType();
 			this.responseLength= strFullResponse.length() - tempAnalyzedResp.getBodyOffset();
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("newCookies")) // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("newCookies")) // This is good to increase the speed when it is time consuming
 				for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
 					this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
 				}
@@ -279,7 +274,7 @@ public class LogEntry
 			Date date = new Date();
 			this.responseTime= dateFormat.format(date);
 
-			if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType")){ // This is good to increase the speed when it is time consuming
+			if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType")){ // This is good to increase the speed when it is time consuming
 				for(String item:lstFullResponseHeader){
 					item = item.toLowerCase();
 					if(item.startsWith("content-type: ")){
@@ -294,10 +289,10 @@ public class LogEntry
 			// There are 5 RegEx rule for requests
 			for(int i=0;i<=5;i++){
 				String regexVarName = "regex"+String.valueOf(i+1)+"Resp";
-				if(tableHelper.getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
+				if(table.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
 					// so this rule is enabled!
 					// check to see if the RegEx is not empty
-					TableStructure regexColumn = tableHelper.getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
+					TableStructure regexColumn = table.getModel().getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
 					String regexString = regexColumn.getRegExData().getRegExString();
 					if(!regexString.isEmpty()){
 						// now we can process it safely!
@@ -347,22 +342,25 @@ public class LogEntry
 
 	}
 
-	//Removed until unique identifier implemented
-//	@Override
-//	public boolean equals(Object other) {
-//		boolean result = false;
-//		if (other instanceof LogEntry) {
-//			LogEntry that = (LogEntry) other;
-//			result = (this.uniqueIdentifier.equals(that.uniqueIdentifier));
-//			if(isDebug){
-//				stderr.println("this.uniqueIdentifier: " + this.uniqueIdentifier + " that.uniqueIdentifier: "+that.uniqueIdentifier + " result: "+result);
-//			}
-//
-//		}
-//		return result;
-//	}
+	@Override
+	public Object getModel() {
+		return null;
+	}
 
+	@Override
+	public int getValueCount() {
+		return 0;
+	}
 
+	@Override
+	public Object getValue(int i) {
+		return null;
+	}
+
+	@Override
+	public Object getIdentifier() {
+		return this.uniqueIdentifier;
+	}
 
 
 	public String getCSVHeader(boolean isFullLog) {
@@ -373,9 +371,9 @@ public class LogEntry
 		//					result.append(",");
 		//			}
 
-		for (int i=1; i<tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
-			result.append(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
-			if(i<tableHelper.getLogTableModel().getColumnCount()-1)
+		for (int i=1; i<table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
+			result.append(table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
+			if(i<table.getModel().getColumnCount()-1)
 				result.append(",");
 		}			
 
@@ -399,11 +397,11 @@ public class LogEntry
 		//					result.append(",");
 		//			}
 
-		for (int i=1; i<tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
+		for (int i=1; i<table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
 
-			result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getName()))));
+			result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getName()))));
 
-			if(i<tableHelper.getLogTableModel().getColumnCount()-1)
+			if(i<table.getModel().getColumnCount()-1)
 				result.append(",");
 		}
 
@@ -597,4 +595,19 @@ public class LogEntry
 			return getValue();
 		}
 	}
+
+	//Removed until unique identifier implemented
+/*	@Override
+	public boolean equals(Object other) {
+		boolean result = false;
+		if (other instanceof LogEntry) {
+			LogEntry that = (LogEntry) other;
+			result = (this.uniqueIdentifier.equals(that.uniqueIdentifier));
+			if(isDebug){
+				stderr.println("this.uniqueIdentifier: " + this.uniqueIdentifier + " that.uniqueIdentifier: "+that.uniqueIdentifier + " result: "+result);
+			}
+
+		}
+		return result;
+	}*/
 }

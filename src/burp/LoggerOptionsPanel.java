@@ -12,38 +12,19 @@
 
 package burp;
 
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-
-import java.awt.Component;
-import java.awt.Desktop;
-import java.awt.GridBagLayout;
-
-import javax.swing.JButton;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import java.awt.GridBagConstraints;
-import java.io.*;
-import java.net.*;
-import java.util.List;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-
-import javax.swing.JLabel;
-
-import java.awt.Insets;
-
-import javax.swing.JCheckBox;
-import javax.swing.JToggleButton;
-
-import java.awt.Font;
-
-import javax.swing.event.ChangeListener;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-
-import burp.BurpExtender.TableHelper;
-
+import javax.swing.event.ChangeListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.util.List;
 
 public class LoggerOptionsPanel extends JPanel {
 
@@ -81,7 +62,7 @@ public class LoggerOptionsPanel extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final TableHelper tableHelper, final List<LogEntry> log, final List<LogEntry> filteredLog, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
+	public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final Table table, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
 		this.callbacks = callbacks;
 		this.stdout = stdout;
 		this.stderr = stderr;
@@ -167,7 +148,8 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_chckbxIsLoggingFiltered.insets = new Insets(0, 0, 5, 5);
 		gbc_chckbxIsLoggingFiltered.gridx = 2;
 		gbc_chckbxIsLoggingFiltered.gridy = 3;
-		add(chckbxIsLoggingFiltered, gbc_chckbxIsLoggingFiltered);
+		//Disabled until implemented
+//		add(chckbxIsLoggingFiltered, gbc_chckbxIsLoggingFiltered);
 		
 				GridBagConstraints gbc_btnSaveFullLogs = new GridBagConstraints();
 				gbc_btnSaveFullLogs.fill = GridBagConstraints.HORIZONTAL;
@@ -290,9 +272,9 @@ public class LoggerOptionsPanel extends JPanel {
 				boolean origState = loggerPreferences.isEnabled();
 				loggerPreferences.setEnabled(false);	
 				loggerPreferences.resetLoggerPreferences();
-				tableHelper.getTableHeaderColumnsDetails().resetToDefaultVariables();			
-				tableHelper.getLogTableModel().fireTableStructureChanged();
-				tableHelper.generatingTableColumns();
+				table.getModel().getTableHeaderColumnsDetails().resetToDefaultVariables();
+				table.getModel().fireTableStructureChanged();
+				table.generatingTableColumns();
 				loggerPreferences.setEnabled(origState);
 				setPreferencesValues();
 			}
@@ -315,9 +297,8 @@ public class LoggerOptionsPanel extends JPanel {
 						loggerPreferences.setEnabled(false);
 
 						log.clear();
-						filteredLog.clear();
 						
-						tableHelper.getLogTableModel().fireTableDataChanged();
+						table.getModel().fireTableDataChanged();
 						loggerPreferences.setEnabled(origState);	
 						setPreferencesValues();
 					}

@@ -13,11 +13,9 @@
 package burp;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -27,10 +25,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
+import javax.swing.table.*;
 
 import burp.filter.Filter;
 import com.google.gson.Gson;
@@ -46,13 +41,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor responseViewer;
 	private List<LogEntry> log = new ArrayList<LogEntry>();
 	private List<LogEntry> filteredLog = new ArrayList<LogEntry>();
-	private IHttpRequestResponse currentlyDisplayedItem;
 	private JTabbedPane topTabs;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
-	private TableHelper tableHelper;
-	private FilterHelper filterHelper;
+	private Table logTable;
+	private TableRowSorter tableRowSorter;
+	private JTextField filterField;
+
 
 	//
 	// implement IBurpExtender
@@ -61,6 +57,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
 	{
+		// set our extension name
+		callbacks.setExtensionName("Logger++");
+
 		// keep a reference to our callbacks object
 		this.callbacks = callbacks;
 
@@ -70,9 +69,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		// obtain our output stream
 		stdout = new PrintWriter(callbacks.getStdout(), true);
 		stderr = new PrintWriter(callbacks.getStderr(), true);
-
-		// set our extension name
-		callbacks.setExtensionName("Logger++");
 
 		try { 
 			Class.forName("org.apache.commons.lang3.StringEscapeUtils");
@@ -94,16 +90,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			public void run()
 			{
 
-				// use TableHelper to create ecessary items: tableHeader, logTableModel, logTable
-				tableHelper = new TableHelper(loggerPreferences, stdout, stderr,isDebug);
-
-				// preparing columns
-				tableHelper.prepareTableColumns();
+				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug);
+				tableRowSorter = new TableRowSorter(logTable.getModel());
+				logTable.setRowSorter(tableRowSorter);
 
 				// generating the table columns
-				tableHelper.generatingTableColumns();
-
-				filterHelper = new FilterHelper();
+				logTable.generatingTableColumns();
 
 				// main split pane for the View section
 				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -112,16 +106,44 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				// create isFiltered pane
 				JPanel viewFilterPanel = new JPanel(new BorderLayout());
-				viewFilterPanel.add(filterHelper.getFilterPanel(), BorderLayout.CENTER);
+				JPanel filterPanel = new JPanel(new GridBagLayout());
 
-				JScrollPane viewScrollPane = new JScrollPane(tableHelper.getLogTable(),ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+				filterField = new JTextField();
+				filterField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
+				filterField.getActionMap().put("submit", new AbstractAction() {
+					@Override
+					public void actionPerformed(ActionEvent actionEvent) {
+						setFilter();
+					}
+				});
+				GridBagConstraints fieldConstraints = new GridBagConstraints();
+				fieldConstraints.fill = GridBagConstraints.BOTH;
+				fieldConstraints.gridx = 0;
+				fieldConstraints.weightx = fieldConstraints.weighty = 4.0;
+
+				final JButton filterButton = new JButton("filter");
+				filterButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent actionEvent) {
+						setFilter();
+					}
+				});
+
+				GridBagConstraints btnConstraints = new GridBagConstraints();
+				btnConstraints.fill = GridBagConstraints.BOTH;
+				btnConstraints.gridx = 1;
+				btnConstraints.weightx = btnConstraints.weighty = 1.0;
+
+				filterPanel.add(filterField, fieldConstraints);
+				filterPanel.add(filterButton, btnConstraints);
+				viewFilterPanel.add(filterPanel, BorderLayout.CENTER);
+
+				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
 				viewPanel.add(viewFilterPanel);
 				viewPanel.add(viewScrollPane);
 
 				// tabs with request/response viewers
 				JTabbedPane tabs = new JTabbedPane();
-				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 
 				tabs.addTab("Request", requestViewer.getComponent());
 				tabs.addTab("Response", responseViewer.getComponent());
@@ -129,8 +151,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				splitPane.setRightComponent(tabs);
 
 				// Option tab
-				LoggerOptionsPanel optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr,tableHelper, log, 
-						filteredLog, canSaveCSV, loggerPreferences, isDebug);
+				LoggerOptionsPanel optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
+						canSaveCSV, loggerPreferences, isDebug);
 
 				// About tab
 				AboutPanel aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
@@ -156,6 +178,22 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 			}
 		});
+	}
+
+	private void setFilter(){
+		try{
+			if(filterField.getText().length() == 0){
+				tableRowSorter.setRowFilter(null);
+				filterField.setBackground(Color.white);
+			}else {
+				tableRowSorter.setRowFilter(Filter.parseString(filterField.getText()));
+				filterField.setBackground(Color.green);
+			}
+		} catch (Filter.FilterException e) {
+			e.printStackTrace();
+			filterField.setBackground(Color.red);
+			tableRowSorter.setRowFilter(null);
+		}
 	}
 
 	//
@@ -241,36 +279,28 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
-						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, tableHelper, loggerPreferences, stderr, stderr, isValidTool, callbacks);
-						if(!loggerPreferences.isLoggingFiltered()) {
-							synchronized (log) {
-								log.add(entry);
-								// For proxy - disabled due to the race condition bug!
-								//							if(toolFlag!=callbacks.TOOL_PROXY){
-								//								int row = log.size();
-								//								log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
-								//								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
-								//							}else{
-								//								LogEntry responseLog = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
-								//								if (log.contains(responseLog)) {
-								//									log.set(log.indexOf(responseLog),responseLog);
-								//									tableHelper.getLogTableModel().fireTableDataChanged();
-								//								}else{
-								//									if(isDebug){
-								//										stderr.println("Item was not found: " + message.getMessageReference() + " " + responseLog.uniqueIdentifier);
-								//									}
-								//								}
-								//
-								//							}
-							}
-						}
-
-						synchronized (filteredLog){
-							if(matchesFilter(entry)) {
-								int row = filteredLog.size();
-								filteredLog.add(entry);
-								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
-							}
+						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
+						synchronized (log) {
+							int row = log.size();
+							log.add(entry);
+							logTable.getModel().fireTableRowsInserted(row, row);
+							// For proxy - disabled due to the race condition bug!
+							//							if(toolFlag!=callbacks.TOOL_PROXY){
+							//								int row = log.size();
+							//								log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
+							//								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
+							//							}else{
+							//								LogEntry responseLog = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
+							//								if (log.contains(responseLog)) {
+							//									log.set(log.indexOf(responseLog),responseLog);
+							//									tableHelper.getLogTableModel().fireTableDataChanged();
+							//								}else{
+							//									if(isDebug){
+							//										stderr.println("Item was not found: " + message.getMessageReference() + " " + responseLog.uniqueIdentifier);
+							//									}
+							//								}
+							//
+							//							}
 						}
 					}
 				}
@@ -278,9 +308,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
-	private boolean matchesFilter(LogEntry entry){
-		return filterHelper.matchesFilter(entry);
-	}
+//	private boolean matchesFilter(LogEntry entry){
+//		return filterHelper.matchesFilter(entry);
+//	}
 
 
 	//
@@ -291,585 +321,27 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public byte[] getRequest()
 	{
-		if(currentlyDisplayedItem==null)
+		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
 			return "".getBytes();
-		return currentlyDisplayedItem.getRequest();
+		return logTable.getModel().getCurrentlyDisplayedItem().getRequest();
 	}
 
 	@Override
 	public byte[] getResponse()
 	{
-		if(currentlyDisplayedItem==null)
+		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
 			return "".getBytes();
-		return currentlyDisplayedItem.getResponse();
+		return logTable.getModel().getCurrentlyDisplayedItem().getResponse();
 	}
 
 	@Override
 	public IHttpService getHttpService()
 	{
-		if(currentlyDisplayedItem==null)
+		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
 			return null;
-		return currentlyDisplayedItem.getHttpService();
+		return logTable.getModel().getCurrentlyDisplayedItem().getHttpService();
 	}
 
-	//
-	// extend JTable to handle cell selection and column move/resize
-	//
-
-	public class Table extends JTable
-	{
-		private boolean columnWidthChanged;
-		private boolean columnMoved;
-
-		public Table(TableModel tableModel)
-		{
-			super(tableModel);
-
-		}
-
-		@Override
-		public void changeSelection(int row, int col, boolean toggle, boolean extend)
-		{
-			// show the log entry for the selected row
-			//MoreHelp.showMessage("row: "+Integer.toString(row)+" - log size: "+Integer.toString(log.size()));
-			if(filteredLog.size()>=row){
-				LogEntry logEntry = filteredLog.get(tableHelper.getLogTable().convertRowIndexToModel(row));
-				requestViewer.setMessage(logEntry.requestResponse.getRequest(), true);
-				if(logEntry.requestResponse.getResponse()!=null)
-					responseViewer.setMessage(logEntry.requestResponse.getResponse(), false);
-				else
-					responseViewer.setMessage(helpers.stringToBytes(""), false);
-				currentlyDisplayedItem = logEntry.requestResponse;
-
-				super.changeSelection(row, col, toggle, extend);
-			}
-		}
-
-		public boolean isColumnMoved() {
-			return columnMoved;
-		}
-
-		public void setColumnMoved(boolean columnMoved) {
-			this.columnMoved = columnMoved;
-		}
-
-		public boolean isColumnWidthChanged() {
-			return columnWidthChanged;
-		}
-
-		public void setColumnWidthChanged(boolean columnWidthChanged) {
-			this.columnWidthChanged = columnWidthChanged;
-		}
-
-
-	}
-
-	/* Extending AbstractTableModel to design the table behaviour based on the array list */
-	public class LogTableModel extends AbstractTableModel {
-
-		//
-		// extend AbstractTableModel
-		//
-
-		@Override
-		public int getRowCount()
-		{
-			// To delete the Request/Response table the log section is empty (after deleting the logs when an item is already selected)
-			if(currentlyDisplayedItem!=null && filteredLog.size() <= 0){
-				currentlyDisplayedItem = null;
-				requestViewer.setMessage(helpers.stringToBytes(""), true);
-				responseViewer.setMessage(helpers.stringToBytes(""), false);
-			}
-			return filteredLog.size();
-		}
-
-		@Override
-		public int getColumnCount()
-		{
-			if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList()!=null)
-				return tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size();
-			else
-				return 0;
-		}
-
-		@Override
-		public String getColumnName(int columnIndex)
-		{
-			return (String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getVisibleName();
-		}
-
-		@Override
-		public boolean isCellEditable(int rowIndex, int columnIndex)
-		{
-			if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly()){
-				return false;
-			}else{
-				return true;
-			}
-		}
-
-		@Override
-		public void setValueAt(Object value, int rowIndex, int colIndex) {
-			LogEntry logEntry = filteredLog.get(rowIndex);
-			logEntry.comment = (String) value;
-			fireTableCellUpdated(rowIndex, colIndex);
-		}
-
-		@Override
-		public Class<?> getColumnClass(int columnIndex)
-		{
-			Class clazz;
-
-			// switch((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType()){ // this works fine in Java v7
-
-			try{
-				String columnClassType = (String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType();
-				switch(columnClassesType.valueOf(columnClassType.toUpperCase())){
-				case INT:
-					clazz = Integer.class;
-					break;
-				case SHORT:
-					clazz =  Short.class;
-					break;
-				case DOUBLE:
-					clazz =  Double.class;
-					break;
-				case LONG:
-					clazz =  Long.class;
-					break;
-				case BOOLEAN:
-					clazz =  Boolean.class;
-					break;
-				default:
-					clazz =  String.class;
-					break;
-				}
-			}catch(Exception e){
-				clazz =  String.class;
-			}
-			//stdout.println(clazz.getName());
-			return clazz;
-
-		}
-
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex)
-		{
-			if(filteredLog.size()-1<rowIndex) return "";
-
-			LogEntry logEntry = filteredLog.get(rowIndex);
-			//System.out.println(loggerTableDetails[columnIndex][0] +"  --- " +columnIndex);
-			String colName = tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName();
-			if(colName.equals("number")){
-				return rowIndex+1;
-			}else{
-				Object tempValue = logEntry.getValueByName(colName);
-				//stderr.println();
-				if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("int")){
-					if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-						return Integer.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
-					else return -1;
-				}
-				else if(tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("short")){
-					if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-						return Short.valueOf(String.valueOf(logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
-					else
-						return -1;
-				}
-				else
-					return logEntry.getValueByName((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName());
-			}
-
-		}
-
-
-
-	}
-
-	// This has been designed for Java v6 that cannot support String in "switch"
-	private enum columnClassesType {
-		INT("INT"),
-		SHORT("SHORT"),
-		DOUBLE("DOUBLE"),
-		LONG("LONG"),
-		BOOLEAN("BOOLEAN"),
-		STRING("STRING");
-		private String value;
-		private columnClassesType(String value) {
-			this.value = value;
-		}
-		public String getValue() {
-			return value;
-		}
-		@Override
-		public String toString() {
-			return getValue();
-		}
-	}
-
-	public class TableHelper  {
-		private Table logTable;
-		private LogTableModel logTableModel;
-		private TableHeaderColumnsDetails tableHeaderColumnsDetails;
-		private final boolean isDebug;
-		private final PrintWriter stdout;
-		private final PrintWriter stderr;
-
-		public TableHelper(LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
-			super();
-			this.isDebug = isDebug;
-			this.stdout=stdout;
-			this.stderr=stderr;
-			// creating table header object
-			setTableHeaderColumnsDetails(new TableHeaderColumnsDetails(loggerPreferences, stdout, stderr,isDebug));
-		}
-
-		public Table getLogTable() {
-			return logTable;
-		}
-
-		public void setLogTable(Table logTable) {
-			this.logTable = logTable;
-		}
-
-		public LogTableModel getLogTableModel() {
-			return logTableModel;
-		}
-
-		public void setLogTableModel(LogTableModel logTableModel) {
-			this.logTableModel = logTableModel;
-		}
-
-		public TableHeaderColumnsDetails getTableHeaderColumnsDetails() {
-			return tableHeaderColumnsDetails;
-		}
-
-		public void setTableHeaderColumnsDetails(
-				TableHeaderColumnsDetails tableHeaderColumnsDetails) {
-			this.tableHeaderColumnsDetails = tableHeaderColumnsDetails;
-		}
-
-		public void prepareTableColumns(){
-			// table of log entries
-			if(getLogTableModel()==null || getLogTable()==null){
-				setLogTableModel(new LogTableModel());
-				setLogTable(new Table(getLogTableModel()));
-			}
-
-			TableHeader tableHeader = new TableHeader (getLogTable().getColumnModel(),getLogTable(),tableHelper,stdout, stderr,isDebug); // This was used to create tool tips
-			getLogTable().setTableHeader(tableHeader); // This was used to create tool tips
-			getLogTable().setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
-			getLogTable().setAutoCreateRowSorter(true); // To fix the sorting
-			getLogTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
-			getLogTable().setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
-			((JComponent) getLogTable().getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
-
-			// This will be used in future to develop right click mouse events
-			getLogTable().addMouseListener( new MouseAdapter()
-			{
-				// Detecting right click
-				public void mouseReleased( MouseEvent e )
-				{
-					// Left mouse click
-					if ( SwingUtilities.isLeftMouseButton( e ) )
-					{
-						if(isDebug){
-							stdout.println("left click detected on the cells!");
-						}
-					}
-					// Right mouse click
-					else if ( SwingUtilities.isRightMouseButton( e ))
-					{
-						// get the coordinates of the mouse click
-						//Point p = e.getPoint();
-
-						// get the row index that contains that coordinate
-						//int rowNumber = getLogTable().rowAtPoint( p );
-
-						// Get the ListSelectionModel of the JTable
-						//ListSelectionModel model = getLogTable().getSelectionModel();
-
-						// set the selected interval of rows. Using the "rowNumber"
-						// variable for the beginning and end selects only that one row.
-						//model.setSelectionInterval( rowNumber, rowNumber );
-						if(isDebug){
-							stdout.println("right click detected on the cells!");
-						}
-
-					}
-				}
-
-			});
-
-			// another way to detect column dragging to save its settings for next time loading! fooh! seems tricky!
-			//			getLogTable().setTableHeader(new JTableHeader(getLogTable().getColumnModel()) {
-			//				@Override
-			//				public void setDraggedColumn(TableColumn column) {
-			//					boolean finished = draggedColumn != null && column == null;
-			//					super.setDraggedColumn(column);
-			//					if (finished) {
-			//						saveOrderTableChange(getLogTable(), getTableHeader());
-			//
-			//					}
-			//				}
-			//			});
-
-			getLogTable().getColumnModel().addColumnModelListener(new TableColumnModelListener() {
-
-				public void columnAdded(TableColumnModelEvent e) {
-				}
-
-				public void columnRemoved(TableColumnModelEvent e) {
-				}
-
-				public void columnMoved(TableColumnModelEvent e) {
-					/* columnMoved is called continuously. Therefore, execute code below ONLY if we are not already
-	                aware of the column position having changed */
-					if(!getLogTable().isColumnMoved())
-					{
-						/* the condition  below will NOT be true if
-	                    the column width is being changed by code. */
-						if(getLogTable().getTableHeader().getDraggedColumn() != null)
-						{
-							// User must have dragged column and changed width
-							getLogTable().setColumnMoved(true);
-						}
-					}
-				}
-
-				public void columnMarginChanged(ChangeEvent e) {
-					/* columnMarginChanged is called continuously as the column width is changed
-	                by dragging. Therefore, execute code below ONLY if we are not already
-	                aware of the column width having changed */
-					if(!getLogTable().isColumnWidthChanged())
-					{
-						/* the condition  below will NOT be true if
-	                    the column width is being changed by code. */
-						if(getLogTable().getTableHeader().getResizingColumn() != null)
-						{
-							// User must have dragged column and changed width
-							getLogTable().setColumnWidthChanged(true);
-						}
-					}
-				}
-
-				public void columnSelectionChanged(ListSelectionEvent e) {
-				}
-			});
-
-			getLogTable().getTableHeader().addMouseListener(new MouseAdapter(){
-				@Override
-				public void mouseReleased(MouseEvent e)
-				{
-					if ( SwingUtilities.isRightMouseButton( e ))
-					{
-						// get the coordinates of the mouse click
-						Point p = e.getPoint();
-						int columnID = getLogTable().columnAtPoint(p);
-						TableColumn column = getLogTable().getColumnModel().getColumn(columnID);
-						TableStructure columnObj = getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
-						if(isDebug){
-							stdout.println("right click detected on the header!");
-							stdout.println("right click on item number " + String.valueOf(columnID) + " ("+getLogTable().getColumnName(columnID)+") was detected");
-						}
-						
-						//TODO
-						
-						TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(columnObj, tableHelper,stdout, stderr,isDebug);
-						tblHeaderMenu.showMenu(e);
-					}
-
-					if(getLogTable().isColumnWidthChanged()){
-						/* On mouse release, check if column width has changed */
-						if(isDebug) {
-							stdout.println("Column has been resized!");
-						}
-
-
-						// Reset the flag on the table.
-						getLogTable().setColumnWidthChanged(false);
-
-						saveColumnResizeTableChange();
-					}else if(getLogTable().isColumnMoved()){
-						/* On mouse release, check if column has moved */
-
-						if(isDebug) {
-							stdout.println("Column has been moved!");
-						}
-
-
-						// Reset the flag on the table.
-						getLogTable().setColumnMoved(false);
-
-						saveOrderTableChange();
-					}else{
-						//TODO - Nothing for now!
-					}
-				}
-			});
-		}
-		
-		// generate the table columns!
-		public void generatingTableColumns(){
-			for (int i=0; i<getLogTableModel().getColumnCount(); i++) {
-				TableColumn column = getLogTable().getColumnModel().getColumn(i);
-				column.setMinWidth(50);
-				column.setIdentifier(getTableHeaderColumnsDetails ().getVisibleColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
-				column.setPreferredWidth((int) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getWidth());
-				
-				// to align the numerical fields to left - can't do it for all as it corrupts the boolean ones
-				if(getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("int") || getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("short") ||
-						getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("double")) 
-					column.setCellRenderer(new LeftTableCellRenderer()); 
-			}
-		}
-		
-		// to save the order after dragging a column
-		private void saveOrderTableChange(){
-			// check to see if the table column order has changed or it was just a click!
-			String tempTableIDsStringByOrder = "";
-			Enumeration<TableColumn> tblCols = getLogTable().getColumnModel().getColumns();
-			for (; tblCols.hasMoreElements(); ) {
-				tempTableIDsStringByOrder += tblCols.nextElement().getIdentifier() + getTableHeaderColumnsDetails().getIdCanaryParam();
-			}
-
-			if(isDebug){
-				stdout.println("tempTableIDsStringByOrder: " + tempTableIDsStringByOrder +" -- tableIDsStringByOrder: " + getTableHeaderColumnsDetails().getTableIDsStringByOrder());
-			}
-
-			if(!getTableHeaderColumnsDetails().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
-				if(isDebug){
-					stdout.println("Table has been re-ordered and needs to be saved!");
-				}
-				// Order of columns has changed! we have to save it now!
-				int counter = 1;
-				tblCols = getLogTable().getColumnModel().getColumns();
-				for (; tblCols.hasMoreElements(); ) {				
-					int columnNumber = (Integer) tblCols.nextElement().getIdentifier();
-					getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setOrder(counter);
-					counter++;
-				}
-
-				
-				getTableHeaderColumnsDetails().setTableIDsStringByOrder(tempTableIDsStringByOrder);
-				
-				saveTableChanges();
-				
-				
-
-			}
-
-
-		}
-
-
-		// to save the column widths after changes
-		private void saveColumnResizeTableChange(){
-			Enumeration<TableColumn> tblCols = getLogTable().getColumnModel().getColumns();
-			for (; tblCols.hasMoreElements(); ) {	
-				TableColumn currentTblCol = tblCols.nextElement();
-				int columnNumber = (Integer) currentTblCol.getIdentifier();
-				getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setWidth(currentTblCol.getWidth());
-			}
-			saveTableChanges();
-		}
-		
-		// to save the new table changes
-		public void saveTableChanges(){
-			// save it to the relevant variables and preferences
-			getTableHeaderColumnsDetails().setLoggerTableDetailsCurrentJSONString(new Gson().toJson(getTableHeaderColumnsDetails().getAllColumnsDefinitionList()), true);
-		}
-			
-		
-	}
-
-	public class FilterHelper {
-
-		private JPanel filterPanel;
-		private Filter filter;
-
-		public FilterHelper(){}
-
-		private boolean matchesFilter(LogEntry logEntry){
-			return filter == null || filter.matchesEntry(logEntry);
-		}
-
-		private void filterExisting(){
-			synchronized (filteredLog) {
-				ArrayList<LogEntry> removeEntries = new ArrayList<>();
-				for (int i = 0; i < filteredLog.size(); i++) {
-					if(!matchesFilter(filteredLog.get(i))){
-						removeEntries.add(filteredLog.get(i));
-					}
-				}
-				filteredLog.removeAll(removeEntries);
-				tableHelper.getLogTableModel().fireTableDataChanged();
-			}
-			synchronized (log) {
-				for (int i = 0; i < log.size(); i++) {
-					LogEntry entry = log.get(i);
-					if (matchesFilter(entry) && !filteredLog.contains(entry)) {
-						synchronized (filteredLog) {
-							filteredLog.add(entry);
-							tableHelper.getLogTableModel().fireTableRowsInserted(filteredLog.size()-1, filteredLog.size()-1);
-						}
-					}
-				}
-			}
-		}
-
-		public JPanel getFilterPanel(){
-			if(filterPanel != null) return filterPanel;
-
-			JPanel filterPanel = new JPanel(new GridBagLayout());
-
-			JTextField filterField = new JTextField();
-			GridBagConstraints fieldConstraints = new GridBagConstraints();
-			fieldConstraints.fill = GridBagConstraints.BOTH;
-			fieldConstraints.gridx = 0;
-			fieldConstraints.weightx = fieldConstraints.weighty = 4.0;
-
-			JButton filterButton = new JButton("filter");
-			filterButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent actionEvent) {
-					try{
-						if(filterField.getText().length() == 0){
-							filter = null;
-							filterField.setBackground(Color.white);
-						}else {
-							filter = Filter.parseString(filterField.getText());
-						}
-						filterField.setBackground(Color.green);
-						filterExisting();
-					} catch (Filter.FilterException e) {
-						e.printStackTrace();
-						filterField.setBackground(Color.red);
-						filter = null;
-						filterExisting();
-						return;
-					}
-					filterExisting();
-				}
-			});
-
-			GridBagConstraints btnConstraints = new GridBagConstraints();
-			btnConstraints.fill = GridBagConstraints.BOTH;
-			btnConstraints.gridx = 1;
-			btnConstraints.weightx = btnConstraints.weighty = 1.0;
-
-			filterPanel.add(filterField, fieldConstraints);
-			filterPanel.add(filterButton, btnConstraints);
-
-			this.filterPanel = filterPanel;
-			return filterPanel;
-		}
-	}
-
-	class LeftTableCellRenderer extends DefaultTableCellRenderer { 
-		protected  LeftTableCellRenderer() {
-			setHorizontalAlignment(SwingConstants.LEFT);  } 
-	} 
 
 	public static void main(String [] args){
 		System.out.println("You have built the Logger++. You shall play with the jar file now!");
