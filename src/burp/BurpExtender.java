@@ -15,20 +15,14 @@ package burp;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.TableColumnModelEvent;
-import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.*;
 
 import burp.filter.Filter;
-import com.google.gson.Gson;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener
