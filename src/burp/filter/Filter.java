@@ -142,7 +142,7 @@ public class Filter extends RowFilter<Object, Object> {
         if(regexPattern.matcher(item).matches()){
             return item.substring(1, item.length()-1);
         }
-        return item;
+        return item.trim();
     }
 
     public static Filter parseString(String string) throws FilterException{
@@ -152,13 +152,14 @@ public class Filter extends RowFilter<Object, Object> {
         if (bracketMatcher.matches()) {
             Filter group;
             boolean inverted = "!".equals(bracketMatcher.group(2));
-            group = parseString(bracketMatcher.group(3)
-                    .substring(1, bracketMatcher.group(3).length() - 1));
+            int startBracket = regexStripped.indexOf("(");
+            int endBracket = getBracketMatch(regexStripped, startBracket);
+            group = parseString(string.substring(startBracket+1, endBracket));
             group.inverted = inverted;
             Pattern leftCompound = Pattern.compile("(.*?)(\\|++|&++)\\s*$");
             Pattern rightCompound = Pattern.compile("^(\\s*)(\\|++|&++)(.*)");
-            String left = bracketMatcher.group(1);
-            String right = bracketMatcher.group(4);
+            String left = string.substring(0, startBracket);
+            String right = string.substring(endBracket+1, regexStripped.length());
             Matcher leftMatcher = leftCompound.matcher(left);
             Matcher rightMatcher = rightCompound.matcher(right);
             if (leftMatcher.matches()) {
@@ -183,6 +184,17 @@ public class Filter extends RowFilter<Object, Object> {
         throw new FilterException("Could not parse filter");
     }
 
+    private static int getBracketMatch(String string, int start) {
+        int end = start;
+        int count = 1;
+        while (count > 0){
+            char c = string.charAt(++end);
+            if (c == '('){ count++; }
+            else if(c == ')'){ count--; }
+        }
+        return end;
+    }
+
     private static boolean isRegex(String string){
         try{
             Pattern.compile(string);
@@ -193,8 +205,13 @@ public class Filter extends RowFilter<Object, Object> {
     }
 
     private static String stripRegex(String string){
-        string = string.replace("\\\\", "").replace("\\/", "");
-        return regexPattern.matcher(string).replaceAll("");
+        Pattern hasRegex = Pattern.compile("(.*)(\\/.*\\/)(.*)");
+        string = string.replace("\\\\", "  ").replace("\\/", "  ");
+        Matcher matcher;
+        while((matcher = hasRegex.matcher(string)).matches()) {
+            string = matcher.group(1) + StringUtils.repeat(" ", matcher.group(2).length()) + matcher.group(3);
+        }
+        return string;
     }
 
     private boolean checkValue(Object left, LogicalOperation op, Object right) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
@@ -206,9 +223,15 @@ public class Filter extends RowFilter<Object, Object> {
 
         switch (op){
             case EQ: {
+                if(left instanceof String){
+                    return ((String) left).equalsIgnoreCase(right.toString());
+                }
                 return left.equals(right);
             }
             case NE: {
+                if(left instanceof String){
+                    return !((String) left).equalsIgnoreCase(right.toString());
+                }
                 return !left.equals(right);
             }
             case LT: {
