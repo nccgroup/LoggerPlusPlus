@@ -1,6 +1,7 @@
 package burp.filter;
 import burp.LogEntry;
 import burp.LogTableModel;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
@@ -14,6 +15,9 @@ public class Filter extends RowFilter<Object, Object> {
     public Object left;
     public LogicalOperation operation;
     public Object right;
+    private static Pattern regexPattern = Pattern.compile("\\/(.*)\\/");
+    private static Pattern bracketsPattern = Pattern.compile("(.*?)(!?)(\\(.*\\))(.*?)");
+    private static Pattern compoundPattern = Pattern.compile("(.*?)(\\|+|&+)(.*?)");
 
     protected Filter(){}
 
@@ -100,7 +104,7 @@ public class Filter extends RowFilter<Object, Object> {
         }
 
         if(left instanceof String){
-            if(((String) left).contains("(") || ((String) left).contains(")")) {
+            if(StringUtils.countMatches((String) left, "(") != StringUtils.countMatches((String) left, ")")) {
                 throw new FilterException("Unmatched Bracket");
             }
             this.left = parseItem((String) left);
@@ -108,7 +112,7 @@ public class Filter extends RowFilter<Object, Object> {
             this.left = left;
         }
         if(right instanceof String){
-            if(((String) right).contains("(") || ((String) right).contains(")")){
+            if(StringUtils.countMatches((String) right, "(") != StringUtils.countMatches((String) right, ")")) {
                 throw new FilterException("Unmatched Bracket");
             }
             this.right = parseItem((String) right);
@@ -125,7 +129,7 @@ public class Filter extends RowFilter<Object, Object> {
             return LogEntry.columnNamesType.valueOf(item.toUpperCase());
         }catch (IllegalArgumentException e){}
 
-        Matcher regexMatcher = Pattern.compile("\\/(.*)\\/").matcher(item);
+        Matcher regexMatcher = regexPattern.matcher(item);
         if(regexMatcher.matches()){
             try {
                 Pattern regexItem = Pattern.compile(regexMatcher.group(1));
@@ -135,16 +139,15 @@ public class Filter extends RowFilter<Object, Object> {
             }
         }
 
-        if(Pattern.compile("\\\"(.*)\\\"").matcher(item).matches()){
+        if(regexPattern.matcher(item).matches()){
             return item.substring(1, item.length()-1);
         }
         return item;
     }
 
     public static Filter parseString(String string) throws FilterException{
-        Pattern brackets = Pattern.compile("(.*?)(!?)(\\(.*\\))(.*?)");
-        Pattern compound = Pattern.compile("(.*?)(\\|+|&+)(.*?)");
-        Matcher bracketMatcher = brackets.matcher(string);
+        String regexStripped = stripRegex(string);
+        Matcher bracketMatcher = bracketsPattern.matcher(regexStripped);
 
         if (bracketMatcher.matches()) {
             Filter group;
@@ -166,7 +169,7 @@ public class Filter extends RowFilter<Object, Object> {
             }
             return group;
         } else {
-            Matcher compoundMatcher = compound.matcher(string);
+            Matcher compoundMatcher = compoundPattern.matcher(string);
             if (compoundMatcher.matches()) {
                 return new CompoundFilter(compoundMatcher.group(1), compoundMatcher.group(2), compoundMatcher.group(3));
             } else {
@@ -178,6 +181,20 @@ public class Filter extends RowFilter<Object, Object> {
             }
         }
         throw new FilterException("Could not parse filter");
+    }
+
+    private static boolean isRegex(String string){
+        try{
+            Pattern.compile(string);
+            return true;
+        }catch (PatternSyntaxException pSException){
+            return false;
+        }
+    }
+
+    private static String stripRegex(String string){
+        string = string.replace("\\\\", "").replace("\\/", "");
+        return regexPattern.matcher(string).replaceAll("");
     }
 
     private boolean checkValue(Object left, LogicalOperation op, Object right) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
