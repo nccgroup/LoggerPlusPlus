@@ -34,6 +34,7 @@ public class Table extends JTable
                  IExtensionHelpers helpers, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
         super(new LogTableModel(data, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug));
+        this.getModel().setTableOwner(this);
         this.requestViewer = requestViewer;
         this.responseViewer = responseViewer;
         this.helpers = helpers;

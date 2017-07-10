@@ -13,6 +13,7 @@ public class LogTableModel extends AbstractTableModel {
     private final IMessageEditor requestViewer;
     private final IMessageEditor responseViewer;
     private final IExtensionHelpers helpers;
+    private Table table;
 
     public LogTableModel(List<LogEntry> entries, IMessageEditor requestViewer, IMessageEditor responseViewer, IExtensionHelpers helpers,
                          LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug){
@@ -157,6 +158,14 @@ public class LogTableModel extends AbstractTableModel {
 
     public List<LogEntry> getData() {
         return this.entries;
+    }
+
+    public void setTableOwner(Table tableOwner) {
+        this.table = tableOwner;
+    }
+
+    public Table getTable() {
+        return table;
     }
 
     // This has been designed for Java v6 that cannot support String in "switch"
