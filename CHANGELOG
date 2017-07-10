@@ -1,3 +1,8 @@
+V 2.5
+=========================================================================
+- Added the use of regular expressions in filters
+- Fixed filter bracket matching
+
 v 2.4
 =========================================================================
 - Added option for basic filters to be used
