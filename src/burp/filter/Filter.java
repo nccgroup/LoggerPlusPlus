@@ -25,14 +25,15 @@ public class Filter extends RowFilter<Object, Object> {
     public boolean include(Entry<? extends Object, ? extends Object> entry) {
         LogTableModel tableModel = (LogTableModel) entry.getModel();
         Object lValue = this.left, rValue = this.right;
-        if(this.left instanceof LogEntry.columnNamesType) {
+        try {
             int columnNo = tableModel.getColumnIndexByName(this.left.toString());
             lValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
-        }
-        if(this.right instanceof LogEntry.columnNamesType) {
+        }catch (NullPointerException nPException){}
+        try {
             int columnNo = tableModel.getColumnIndexByName(this.right.toString());
             rValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
-        }
+        }catch (NullPointerException nPException){}
+
         if(this.left instanceof Pattern){
             return ((Pattern) lValue).matcher(rValue.toString()).matches();
         }else if(this.right instanceof Pattern){
