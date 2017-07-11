@@ -202,7 +202,7 @@ public class Table extends JTable
     public void changeSelection(int row, int col, boolean toggle, boolean extend)
     {
         // show the log entry for the selected row
-        MoreHelp.showMessage("col: "+col+" - adjusted col: "+this.convertColumnIndexToModel(col) + " - " + this.convertColumnIndexToView(col));
+        // MoreHelp.showMessage("col: "+col+" - adjusted col: "+this.convertColumnIndexToModel(col) + " - " + this.convertColumnIndexToView(col));
         if(this.getModel().getData().size()>=row){
             LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
             requestViewer.setMessage(logEntry.requestResponse.getRequest(), true);
