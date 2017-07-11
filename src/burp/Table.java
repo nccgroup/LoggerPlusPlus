@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -235,9 +236,9 @@ public class Table extends JTable
     private void saveOrderTableChange(){
         // check to see if the table column order has changed or it was just a click!
         String tempTableIDsStringByOrder = "";
-        Enumeration<TableColumn> tblCols = this.getColumnModel().getColumns();
-        for (; tblCols.hasMoreElements(); ) {
-            tempTableIDsStringByOrder += tblCols.nextElement().getIdentifier() +
+//        Enumeration<TableColumn> tblCols = this.getColumnModel().getColumns();
+        for (TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
+            tempTableIDsStringByOrder += tblCol.getIdentifier() +
                     this.getModel().getTableHeaderColumnsDetails().getIdCanaryParam();
         }
 
@@ -252,9 +253,9 @@ public class Table extends JTable
             }
             // Order of columns has changed! we have to save it now!
             int counter = 1;
-            tblCols = this.getColumnModel().getColumns();
-            for (; tblCols.hasMoreElements(); ) {
-                int columnNumber = (Integer) tblCols.nextElement().getIdentifier();
+//            tblCols = this.getColumnModel().getColumns();
+            for (TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
+                int columnNumber = (Integer) tblCol.getIdentifier();
                 this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setOrder(counter);
                 counter++;
             }
@@ -284,17 +285,20 @@ public class Table extends JTable
 
     // generate the table columns!
     public void generatingTableColumns(){
-        for (int i=0; i<this.getModel().getColumnCount(); i++) {
-            TableColumn column =this.getColumnModel().getColumn(i);
+        for(TableColumn column : Collections.list(this.getColumnModel().getColumns())){
+//        for (int i=0; i<this.getModel().getColumnCount(); i++) {
+            TableStructure colStructure = this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(column.getModelIndex());
+//            TableColumn column =this.getColumnModel().getColumn(i);
             column.setMinWidth(50);
-            column.setIdentifier(this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
-            column.setPreferredWidth((int) this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getWidth());
+            column.setIdentifier(colStructure.getId()); // to be able to point to a column directly later
+            column.setPreferredWidth((int) colStructure.getWidth());
 
             // to align the numerical fields to left - can't do it for all as it corrupts the boolean ones
-            if(this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("int")
-                    || this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("short")
-                    || this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("double"))
+            if(colStructure.getType().equals("int")
+                    || colStructure.getType().equals("short")
+                    || colStructure.getType().equals("double"))
                 column.setCellRenderer(new LeftTableCellRenderer());
+            if(!colStructure.isVisible()) getColumnModel().removeColumn(column);
         }
     }
 

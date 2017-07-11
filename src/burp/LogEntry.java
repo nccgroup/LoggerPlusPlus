@@ -447,7 +447,7 @@ public class LogEntry extends RowFilter.Entry
 					return this.responseTime;
 				case COMMENT:
 					return this.comment;
-				case REQUSTCONTENTTYPE:
+				case REQUESTCONTENTTYPE:
 					return this.requstContentType;
 				case URLEXTENSION:
 					return this.urlExtension;
@@ -552,7 +552,7 @@ public class LogEntry extends RowFilter.Entry
 		METHOD("METHOD"),
 		RESPONSETIME("RESPONSETIME"),
 		COMMENT("COMMENT"),
-		REQUSTCONTENTTYPE("REQUSTCONTENTTYPE"),
+		REQUESTCONTENTTYPE("REQUESTCONTENTTYPE"),
 		URLEXTENSION("URLEXTENSION"),
 		REFERRERURL("REFERRERURL"),
 		HASQUERYSTRINGPARAM("HASQUERYSTRINGPARAM"),

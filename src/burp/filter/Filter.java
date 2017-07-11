@@ -27,7 +27,7 @@ public class Filter extends RowFilter<Object, Object> {
         Object lValue = this.left, rValue = this.right;
         try {
             int columnNo = tableModel.getColumnIndexByName(this.left.toString());
-            lValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
+            lValue = entry.getValue(columnNo);
         }catch (NullPointerException nPException){}
         try {
             int columnNo = tableModel.getColumnIndexByName(this.right.toString());
