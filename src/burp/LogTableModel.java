@@ -58,7 +58,7 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex)
     {
-        return !this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly();
+        return !this.getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).isReadonly();
     }
 
     @Override
