@@ -1,4 +1,8 @@
-V 2.5
+v 2.6
+=========================================================================
+- Fixed filters working incorrectly when a column is hidden
+
+v 2.5
 =========================================================================
 - Added the use of regular expressions in filters
 - Fixed filter bracket matching
