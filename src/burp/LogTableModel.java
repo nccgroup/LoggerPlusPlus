@@ -39,8 +39,8 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public int getColumnCount()
     {
-        if(this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList()!=null)
-            return this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size();
+        if(this.getTableHeaderColumnsDetails().getAllColumnsDefinitionList()!=null)
+            return this.getTableHeaderColumnsDetails().getAllColumnsDefinitionList().size();
         else
             return 0;
     }
@@ -48,7 +48,7 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int columnIndex)
     {
-        return (String) this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getVisibleName();
+        return (String) this.getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).getVisibleName();
     }
 
     public int getColumnIndexByName(String columnName){
@@ -58,11 +58,7 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex)
     {
-        if(this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly()){
-            return false;
-        }else{
-            return true;
-        }
+        return !this.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).isReadonly();
     }
 
     @Override
@@ -80,7 +76,7 @@ public class LogTableModel extends AbstractTableModel {
         // switch((String) tableHelper.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType()){ // this works fine in Java v7
 
         try{
-            String columnClassType = (String) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType();
+            String columnClassType = (String) getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).getType();
             switch(columnClassesType.valueOf(columnClassType.toUpperCase())){
                 case INT:
                     clazz = Integer.class;
@@ -113,28 +109,28 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
-        if(entries.size()-1<rowIndex) return "";
+        if(rowIndex >= entries.size()) return null;
 
         LogEntry logEntry = entries.get(rowIndex);
         //System.out.println(loggerTableDetails[columnIndex][0] +"  --- " +columnIndex);
-        String colName = getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName();
+        String colName = getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).getName();
         if(colName.equals("number")){
             return rowIndex+1;
         }else{
             Object tempValue = logEntry.getValueByName(colName);
-            if(getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("int")){
+            if(getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).getType().equals("int")){
                 if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-                    return Integer.valueOf(String.valueOf(logEntry.getValueByName((String) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
+                    return Integer.valueOf(String.valueOf(logEntry.getValueByName(colName)));
                 else return -1;
             }
-            else if(getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getType().equals("short")){
+            else if(getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnIndex).getType().equals("short")){
                 if (tempValue!=null && !((String) tempValue.toString()).isEmpty())
-                    return Short.valueOf(String.valueOf(logEntry.getValueByName((String) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName())));
+                    return Short.valueOf(String.valueOf(logEntry.getValueByName(colName)));
                 else
                     return -1;
             }
             else
-                return logEntry.getValueByName((String) getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(columnIndex).getName());
+                return logEntry.getValueByName(colName);
         }
 
     }
