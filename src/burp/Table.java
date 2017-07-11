@@ -201,7 +201,7 @@ public class Table extends JTable
     public void changeSelection(int row, int col, boolean toggle, boolean extend)
     {
         // show the log entry for the selected row
-        //MoreHelp.showMessage("row: "+Integer.toString(row)+" - log size: "+Integer.toString(log.size()));
+        MoreHelp.showMessage("col: "+col+" - adjusted col: "+this.convertColumnIndexToModel(col) + " - " + this.convertColumnIndexToView(col));
         if(this.getModel().getData().size()>=row){
             LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
             requestViewer.setMessage(logEntry.requestResponse.getRequest(), true);
@@ -287,13 +287,13 @@ public class Table extends JTable
         for (int i=0; i<this.getModel().getColumnCount(); i++) {
             TableColumn column =this.getColumnModel().getColumn(i);
             column.setMinWidth(50);
-            column.setIdentifier(this.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
-            column.setPreferredWidth((int) this.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getWidth());
+            column.setIdentifier(this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getId()); // to be able to point to a column directly later
+            column.setPreferredWidth((int) this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getWidth());
 
             // to align the numerical fields to left - can't do it for all as it corrupts the boolean ones
-            if(this.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("int")
-                    || this.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("short")
-                    || this.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getType().equals("double"))
+            if(this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("int")
+                    || this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("short")
+                    || this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(i).getType().equals("double"))
                 column.setCellRenderer(new LeftTableCellRenderer());
         }
     }
