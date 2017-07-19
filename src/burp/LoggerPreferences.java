@@ -43,6 +43,7 @@ public class LoggerPreferences {
 	private boolean isEnabled4TargetTab;
 	private boolean logFiltered;
 	private String tableDetailsJSONString;
+	private boolean autoSave;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -243,7 +244,7 @@ public class LoggerPreferences {
 			resetTableSettings();
 			setVersion(getVersion());
 		}
-			
+
 		isDebugMode = prefs.getBoolean("isDebugMode", false);
 		isEnabled = prefs.getBoolean("isEnabled", true);
 		isRestrictedToScope = prefs.getBoolean("isRestrictedToScope", false);
@@ -312,5 +313,14 @@ public class LoggerPreferences {
 
 	public String getAuthor() {
 		return author;
+	}
+
+
+	//Do not persist over restarts.
+	public void setAutoSave(boolean autoSave) {
+		this.autoSave = autoSave;
+	}
+	public boolean getAutoSave(){
+		return this.autoSave;
 	}
 }

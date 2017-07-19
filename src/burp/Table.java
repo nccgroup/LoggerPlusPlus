@@ -29,6 +29,7 @@ public class Table extends JTable
     private final IMessageEditor requestViewer;
     private final IMessageEditor responseViewer;
     private final IExtensionHelpers helpers;
+    private final LoggerPreferences loggerPreferences;
     private boolean isDebug;
 
     public Table(List<LogEntry> data, IMessageEditor requestViewer, IMessageEditor responseViewer,
@@ -42,6 +43,7 @@ public class Table extends JTable
         this.stderr = stderr;
         this.stdout = stdout;
         this.isDebug = isDebug;
+        this.loggerPreferences = loggerPreferences;
         this.setTableHeader(new TableHeader (getColumnModel(),this,stdout,stderr,isDebug)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setAutoCreateRowSorter(true); // To fix the sorting
@@ -146,7 +148,7 @@ public class Table extends JTable
         });
 
         final Table _this = this;
-        getTableHeader().addMouseListener(new MouseAdapter(){
+        tableHeader.addMouseListener(new MouseAdapter(){
             @Override
             public void mouseReleased(MouseEvent e)
             {
@@ -305,6 +307,10 @@ public class Table extends JTable
     @Override
     public LogTableModel getModel(){
         return (LogTableModel) super.getModel();
+    }
+
+    public LoggerPreferences getLoggerPreferences() {
+        return loggerPreferences;
     }
 
     class LeftTableCellRenderer extends DefaultTableCellRenderer {

@@ -118,7 +118,10 @@ public class TableHeaderMenu extends JPopupMenu{
 				javax.swing.SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						String[] msgOptions = { "OK", "CANCEL" };
-						if(MoreHelp.askConfirmMessage("Disabling a column", "Are you sure you want to disable the \""+ columnObj.getVisibleName()+"\"? This column may not be populated when it is disabled (if it needs additional resources)", msgOptions)==JOptionPane.YES_OPTION){
+						String message = "Are you sure you want to disable the \""+ columnObj.getVisibleName()
+								+"\"? This column may not be populated when it is disabled (if it needs additional resources)";
+
+						if(MoreHelp.askConfirmMessage("Disabling a column", message, msgOptions)==JOptionPane.YES_OPTION){
 							columnObj.setEnabled(false);
 							saveAndReloadTableSettings();
 						}
@@ -198,7 +201,13 @@ public class TableHeaderMenu extends JPopupMenu{
 		menu.show(e.getComponent(), e.getX(), e.getY());
 	}
 
-	public void saveAndReloadTableSettings(){		
+	public void saveAndReloadTableSettings(){
+		//Stop automatically logging, prevents changing of csv format midway through
+		//TODO constant csv format?
+		if(table.getLoggerPreferences().getAutoSave()){
+			MoreHelp.showMessage("The table structure has been changed. Autosave was disabled to prevent invalid csv.");
+			table.getLoggerPreferences().setAutoSave(false);
+		}
 		table.saveTableChanges();
 		table.getModel().getTableHeaderColumnsDetails().resetToCurrentVariables();
 		table.getModel().fireTableStructureChanged();

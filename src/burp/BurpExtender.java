@@ -38,6 +38,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JTabbedPane topTabs;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
+	private LoggerOptionsPanel optionsJPanel;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
 	private Table logTable;
 	private TableRowSorter tableRowSorter;
@@ -145,7 +146,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				splitPane.setRightComponent(tabs);
 
 				// Option tab
-				LoggerOptionsPanel optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
+				optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
 						canSaveCSV, loggerPreferences, isDebug);
 
 				// About tab
@@ -238,7 +239,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			}
 
 			IRequestInfo analyzedReq = helpers.analyzeRequest(messageInfo);
-
 			URL uUrl = analyzedReq.getUrl();
 
 			// Check for the scope if it is restricted to scope
@@ -295,6 +295,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							//								}
 							//
 							//							}
+						}
+						if(loggerPreferences.getAutoSave()){
+							optionsJPanel.autoLogItem(entry);
 						}
 					}
 				}

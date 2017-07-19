@@ -32,11 +32,10 @@ public class LoggerOptionsPanel extends JPanel {
 	private final burp.IBurpExtenderCallbacks callbacks;
 	private final PrintWriter stdout;
 	private final PrintWriter stderr;
+	private File autoSaveCSVFile;
 	private boolean canSaveCSV;
-	private JFileChooser chooser;
-	private File csvFile;
-	private boolean cancelOp = false;
 	private final LoggerPreferences loggerPreferences;
+	private final ExcelExporter exp = new ExcelExporter();
 	
 	private JToggleButton tglbtnIsEnabled = new JToggleButton("Logger++ is running");
 	private JCheckBox chckbxIsRestrictedToScope = new JCheckBox("In scope items only");
@@ -49,7 +48,8 @@ public class LoggerOptionsPanel extends JPanel {
 	private JCheckBox chckbxSequencer = new JCheckBox("Sequencer");
 	private JCheckBox chckbxProxy = new JCheckBox("Proxy");
 	private JButton btnSaveLogsButton = new JButton("Save log table as CSV");
-	private JButton btnSaveFullLogs = new JButton("Save fill logs as CSV (slow)");
+	private JButton btnSaveFullLogs = new JButton("Save full logs as CSV (slow)");
+	private JToggleButton btnAutoSaveLogs = new JToggleButton("Autosave as CSV");
 	private final JCheckBox chckbxExtender = new JCheckBox("Extender");
 	private final JCheckBox chckbxTarget = new JCheckBox("Target");
 	private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
@@ -57,6 +57,8 @@ public class LoggerOptionsPanel extends JPanel {
 	private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
 	private final JLabel lblColumnSettings = new JLabel("Column Settings:");
 	private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
+	private final List<LogEntry> log;
+
 	private final boolean isDebug;
 
 	/**
@@ -68,7 +70,9 @@ public class LoggerOptionsPanel extends JPanel {
 		this.stderr = stderr;
 		this.canSaveCSV = canSaveCSV;
 		this.loggerPreferences = loggerPreferences;
+		this.loggerPreferences.setAutoSave(false);
 		this.isDebug  = isDebug;
+		this.log = log;
 		
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
@@ -103,18 +107,14 @@ public class LoggerOptionsPanel extends JPanel {
 				btnSaveLogsButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent arg0) {
 						try {
-							chooser = null;
-							obtainFileName("logger++_table");
+							File csvFile = getSaveFile("logger++_table", false);
 							if(csvFile!=null){
-								ExcelExporter exp = new ExcelExporter(); 
-								exp.exportTable(log, csvFile, false); 	
+								exp.exportTable(log, csvFile, false, false, true);
 							}
 
 						} catch (IOException ex) {
 							stderr.println(ex.getMessage());
 							ex.printStackTrace();
-							
-							
 						}
 					}
 				});
@@ -159,11 +159,9 @@ public class LoggerOptionsPanel extends JPanel {
 				btnSaveFullLogs.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent arg0) {
 						try {
-							chooser = null;
-							obtainFileName("logger++_full");
+							File csvFile = getSaveFile("logger++_full", false);
 							if(csvFile!=null){
-								ExcelExporter exp = new ExcelExporter(); 
-								exp.exportTable(log, csvFile, true); 	
+								exp.exportTable(log, csvFile, true, false, true);
 							}
 
 						} catch (IOException ex) {
@@ -187,6 +185,17 @@ public class LoggerOptionsPanel extends JPanel {
 		gbc_lblLogFrom.gridx = 1;
 		gbc_lblLogFrom.gridy = 4;
 		add(lblLogFrom, gbc_lblLogFrom);
+
+
+		GridBagConstraints gbc_btnAutoSaveLogs = new GridBagConstraints();
+		gbc_btnAutoSaveLogs.fill = GridBagConstraints.HORIZONTAL;
+		gbc_btnAutoSaveLogs.insets = new Insets(0, 0, 5, 5);
+		gbc_btnAutoSaveLogs.gridx = 3;
+		gbc_btnAutoSaveLogs.gridy = 4;
+
+		btnAutoSaveLogs.setToolTipText("Automatically save logs as CSV");
+		btnAutoSaveLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		add(btnAutoSaveLogs, gbc_btnAutoSaveLogs);
 
 		//		JCheckBox chckbxNewCheckBox_1 = new JCheckBox("All Tools");
 		GridBagConstraints gbc_chckbxAllTools = new GridBagConstraints();
@@ -355,23 +364,30 @@ public class LoggerOptionsPanel extends JPanel {
 		setComponentsActions();
 	}
 
+	public void autoLogItem(LogEntry entry){
+		try {
+			exp.exportItem(entry, this.autoSaveCSVFile, false, true);
+		} catch (IOException e) {
+			stderr.write("Could not write log item. Autologging has been disabled.");
+			MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
+		}
+	}
 
 
 	// source: http://book.javanb.com/swing-hacks/swinghacks-chp-3-sect-6.html
 	public class ExcelExporter {
-		public ExcelExporter() { }
-		public void exportTable(List<LogEntry> log, File file, boolean isFullLog) throws IOException {
 
-			FileWriter out = new FileWriter(file);
+		public void exportTable(List<LogEntry> log, File file, boolean isFullLog, boolean append, boolean header) throws IOException {
 
-			boolean firstRun = true;
+			FileWriter out = new FileWriter(file, append);
+
+			boolean includeHeader = header;
 
 			for(LogEntry item:log){
-				if(firstRun){
+				if(includeHeader){
 					out.write(item.getCSVHeader(isFullLog));
-
 					out.write("\n");
-					firstRun = false;
+					includeHeader = false;
 				}
 				out.write(item.toCSVString(isFullLog));
 
@@ -382,43 +398,65 @@ public class LoggerOptionsPanel extends JPanel {
 			stdout.println("write out to: " + file);
 		}
 
+		public void exportItem(LogEntry logEntry, File file, boolean isFullLog, boolean append) throws IOException {
+			FileWriter out = new FileWriter(file, append);
+			out.write(logEntry.toCSVString(isFullLog));
+			out.write("\n");
+			out.close();
+		}
+
 	}
 
 
 	// source: https://community.oracle.com/thread/1357495?start=0&tstart=0
-	private void obtainFileName(String filename) {
-		cancelOp = false;
-		csvFile = null;
+	private File getSaveFile(String filename, boolean allowAppend) {
+		File csvFile = null;
+		JFileChooser chooser = null;
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel Format (CSV)", "csv");
-		if(chooser == null) {
-			chooser = new JFileChooser();
-			chooser.setDialogTitle("Saving Database");
-			chooser.setFileFilter(filter);
-			chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			chooser.setSelectedFile( new File(filename+".csv") );
-			chooser.setAcceptAllFileFilterUsed(false);                      
-		}
+		chooser = new JFileChooser();
+		chooser.setDialogTitle("Saving Database");
+		chooser.setFileFilter(filter);
+		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		chooser.setSelectedFile( new File(filename+".csv") );
+		chooser.setAcceptAllFileFilterUsed(false);
 
 		int val = chooser.showSaveDialog((Component)null);
 
 		if(val == JFileChooser.APPROVE_OPTION) {
-			csvFile = chooser.getSelectedFile();
-			boolean fixed = fixExtension(csvFile, "csv");
-
-			if(!fixed && !cancelOp) {
+			csvFile = fixExtension(chooser.getSelectedFile(), "csv");
+			if (csvFile == null) {
 				JOptionPane.showMessageDialog(null,"File Name Specified Not Supported",
 						"File Name Error", JOptionPane.ERROR_MESSAGE);
-				obtainFileName(filename);
-				return;
+				return getSaveFile(filename, allowAppend);
 			}
 
+			try {
+				if(csvFile.exists()) {
+					if (allowAppend && validHeader(csvFile)) {
+						csvFile = appendOrOverwrite(csvFile);
+					} else {
+						csvFile = checkOverwrite(csvFile);
+					}
+				}else{
+					csvFile.createNewFile();
+				}
+			} catch (IOException e) {
+				MoreHelp.showMessage("Could not create file. Do you have permissions for the folder?");
+				return null;
+			}
+			return csvFile;
 		}
-		if (cancelOp){
-			csvFile = null;
-		}
+
+		return null;
 	}
 
-	private boolean fixExtension(File file, String prefExt) {
+	//Check if header in file matches that of the columns we will be exporting.
+	//TODO
+	private boolean validHeader(File csvFile){
+		return true;
+	}
+
+	private File fixExtension(File file, String prefExt) {
 		String fileName = file.getName();
 		String dir = file.getParentFile().getAbsolutePath();
 
@@ -432,10 +470,10 @@ public class LoggerOptionsPanel extends JPanel {
 		}
 
 		if(ext != null && !ext.equalsIgnoreCase("."+prefExt)) {
-			return false;
+			return file;
 		}
 
-		String csvName = null;
+		String csvName;
 
 		if(ext == null || ext.length() == 0) {
 			csvName = fileName + "." + prefExt;
@@ -447,32 +485,39 @@ public class LoggerOptionsPanel extends JPanel {
 
 		File csvCert = new File(dir, csvName);
 
-		if(csvCert.exists()) {
-			int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
-					JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-
-			if(val == JOptionPane.NO_OPTION) {
-				obtainFileName(file.getName());
-				cancelOp = true;
-				return false;
-			} else if(val == JOptionPane.CANCEL_OPTION) {
-				cancelOp = true;
-				return false;               
-			}
-		} 
-
-		if(!file.renameTo(csvCert)) {
-			file = new File(dir, csvName);
-			try {
-				file.createNewFile();
-			} catch(IOException ioe) {}
-		}
-
-		stdout.println("Exporting as: " + file.getAbsolutePath() );
-
-		return true;
+		return csvCert;
 	}
 
+	private File checkOverwrite(File file) throws IOException{
+		int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
+				JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+
+		if(val == JOptionPane.NO_OPTION) {
+			return getSaveFile(file.getName(), false);
+		} else if(val == JOptionPane.CANCEL_OPTION) {
+			return null;
+		}
+		file.delete();
+		file.createNewFile();
+		return file;
+	}
+
+	private File appendOrOverwrite(File file) throws IOException{
+		Object[] options = {"Append",
+				"Overwrite", "Cancel"};
+		int val = JOptionPane.showOptionDialog(null,
+				"Append to, or overwrite the existing file?", "File Exists",
+				JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE,null, options, options[0]);
+		if(val == JOptionPane.YES_OPTION){
+			return file;
+		}else if(val == JOptionPane.NO_OPTION){
+			file.delete();
+			file.createNewFile();
+			return file;
+		}else{
+			return null;
+		}
+	}
 
 
 	private void setComponentsActions(){
@@ -548,17 +593,36 @@ public class LoggerOptionsPanel extends JPanel {
 				toggleButtonAction(tglbtnIsEnabled,tglbtnIsEnabled.isSelected());
 			}
 		});
+
+		btnAutoSaveLogs.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				toggleAutoSave();
+			}
+		});
+	}
+
+	private void toggleAutoSave(){
+		boolean enabled = !loggerPreferences.getAutoSave();
+		if(enabled){
+			autoSaveCSVFile = getSaveFile("logger++_auto", true);
+			if (autoSaveCSVFile != null) {
+				loggerPreferences.setAutoSave(true);
+			}else{
+				enabled = false;
+			}
+		}else{
+			autoSaveCSVFile = null;
+		}
+		loggerPreferences.setAutoSave(enabled);
+		btnAutoSaveLogs.setSelected(enabled);
 	}
 
 	private void toggleButtonAction(JToggleButton targetToggleBtn, boolean isSelected){
-		if(targetToggleBtn==tglbtnIsEnabled){
-			if(isSelected){
-				tglbtnIsEnabled.setText("Logger++ is running");
-			}else{	
-				tglbtnIsEnabled.setText("Logger++ has been stopped");
-			}
+		if(targetToggleBtn.equals(tglbtnIsEnabled)){
+			targetToggleBtn.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
+			targetToggleBtn.setSelected(isSelected);
 			loggerPreferences.setEnabled(isSelected);
-			tglbtnIsEnabled.setSelected(isSelected);
 		}
 	}
 
@@ -581,8 +645,10 @@ public class LoggerOptionsPanel extends JPanel {
 		if(!canSaveCSV){
 			btnSaveLogsButton.setEnabled(false);
 			btnSaveFullLogs.setEnabled(false);
+			btnAutoSaveLogs.setEnabled(false);
 			btnSaveLogsButton.setToolTipText("Please look at the extension's error tab.");
 			btnSaveFullLogs.setToolTipText("Please look at the extension's error tab.");
+			btnAutoSaveLogs.setToolTipText("Please look at the extension's error tab.");
 		}
 	}
 
