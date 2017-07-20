@@ -155,6 +155,7 @@ public class LogTableModel extends AbstractTableModel {
     public List<LogEntry> getData() {
         return this.entries;
     }
+    public LogEntry getRow(int row) {return this.entries.get(row);}
 
     public void setTableOwner(Table tableOwner) {
         this.table = tableOwner;

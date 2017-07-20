@@ -71,6 +71,7 @@ public class LogEntry extends RowFilter.Entry
 	String[] regexAllResp = {"","","","",""};
 
 
+
 	// Future Implementation
 	//		final String requestTime; // I can get this only on request
 	//		final String requestResponseDelay; // I can get this only on request

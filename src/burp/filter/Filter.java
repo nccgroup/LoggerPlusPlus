@@ -5,81 +5,22 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-public class Filter extends RowFilter<Object, Object> {
-    enum LogicalOperation {LT,LE,GT,GE,EQ,NE}
+public class Filter extends RowFilter<Object, Object>{
+    enum LogicalOperation {
+        LT ("<"), LE ("<="), GT (">"), GE (">="), EQ ("=="), NE ("!=");
+        private final String representation;
+        LogicalOperation(String s) {
+            representation = s;
+        }
+    }
     public boolean inverted;
     public Object left;
     public LogicalOperation operation;
     public Object right;
-    private static Pattern regexPattern = Pattern.compile("\\/(.*)\\/");
-    private static Pattern bracketsPattern = Pattern.compile("(.*?)(!?)(\\(.*\\))(.*?)");
-    private static Pattern compoundPattern = Pattern.compile("(.*?)(\\|+|&+)(.*?)");
 
     protected Filter(){}
-
-    @Override
-    public boolean include(Entry<? extends Object, ? extends Object> entry) {
-        LogTableModel tableModel = (LogTableModel) entry.getModel();
-        Object lValue = this.left, rValue = this.right;
-        try {
-            int columnNo = tableModel.getColumnIndexByName(this.left.toString());
-            lValue = entry.getValue(columnNo);
-        }catch (NullPointerException nPException){}
-        try {
-            int columnNo = tableModel.getColumnIndexByName(this.right.toString());
-            rValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
-        }catch (NullPointerException nPException){}
-
-        if(this.left instanceof Pattern){
-            return ((Pattern) lValue).matcher(rValue.toString()).matches();
-        }else if(this.right instanceof Pattern){
-            return ((Pattern) rValue).matcher(lValue.toString()).matches();
-        }
-
-        try {
-            return checkValue(lValue, this.operation, rValue);
-        }catch (Exception e){
-            e.printStackTrace();
-            return false;
-        }
-        //return checkValue(lValue, this.operation,
-        //                lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
-    }
-//    @Override
-//    public boolean include(Entry<? extends Object, ? extends Object> entry) {
-//        LogTableModel tableModel = (LogTableModel) entry.getModel();
-//        if(this.left instanceof LogEntry.columnNamesType){
-//            int columnNo = tableModel.getColumnIndexByName(this.left.toString());
-//            Object lValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
-//            if(this.right instanceof LogEntry.columnNamesType){
-//                return lValue == ((LogEntry) entry).getValueByName((String) this.right);
-//            }else{
-//                try {
-//                    return checkValue(lValue, this.operation,
-//                            lValue.getClass().getConstructor(this.right.getClass()).newInstance(this.right));
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    return false;
-//                }
-//            }
-//        }else{
-//            if(this.right instanceof LogEntry.columnNamesType){
-//                Object rValue = entry.getValue(tableModel.getColumnIndexByName(this.right.toString()));
-//                try {
-//                    return checkValue(rValue, this.operation,
-//                            rValue.getClass().getConstructor(this.left.getClass()).newInstance(this.left));
-//                } catch (Exception e) {
-//                    return false;
-//                }
-//            }else{
-//                return checkValue(left, this.operation, right);
-//            }
-//        }
-//    }
 
     protected Filter(Object left, String operation, Object right) throws FilterException {
         LogicalOperation op;
@@ -108,7 +49,7 @@ public class Filter extends RowFilter<Object, Object> {
             if(StringUtils.countMatches((String) left, "(") != StringUtils.countMatches((String) left, ")")) {
                 throw new FilterException("Unmatched Bracket");
             }
-            this.left = parseItem((String) left);
+            this.left = FilterCompiler.parseItem((String) left);
         }else{
             this.left = left;
         }
@@ -116,7 +57,7 @@ public class Filter extends RowFilter<Object, Object> {
             if(StringUtils.countMatches((String) right, "(") != StringUtils.countMatches((String) right, ")")) {
                 throw new FilterException("Unmatched Bracket");
             }
-            this.right = parseItem((String) right);
+            this.right = FilterCompiler.parseItem((String) right);
         }else{
             this.right = right;
         }
@@ -124,96 +65,50 @@ public class Filter extends RowFilter<Object, Object> {
         this.operation = op;
     }
 
-    //TODO implement type parser?
-    private Object parseItem(String item) throws FilterException {
+    public boolean matches(LogEntry entry){
+        System.err.println("matchcheck");
+        Object lValue = this.left, rValue = this.right;
         try {
-            return LogEntry.columnNamesType.valueOf(item.toUpperCase());
-        }catch (IllegalArgumentException e){}
+            lValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.left.toString()));
+        }catch (IllegalArgumentException iAException){}
+        try {
+            rValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.right.toString()));
+        }catch (IllegalArgumentException iAException){}
 
-        Matcher regexMatcher = regexPattern.matcher(item);
-        if(regexMatcher.matches()){
-            try {
-                Pattern regexItem = Pattern.compile(regexMatcher.group(1));
-                return regexItem;
-            }catch (PatternSyntaxException pSException){
-                throw new FilterException("Invalid Regex Pattern");
-            }
-        }
-
-        if(regexPattern.matcher(item).matches()){
-            return item.substring(1, item.length()-1);
-        }
-        return item.trim();
+        return this.matches(lValue, rValue);
     }
 
-    public static Filter parseString(String string) throws FilterException{
-        String regexStripped = stripRegex(string);
-        Matcher bracketMatcher = bracketsPattern.matcher(regexStripped);
-
-        if (bracketMatcher.matches()) {
-            Filter group;
-            boolean inverted = "!".equals(bracketMatcher.group(2));
-            int startBracket = regexStripped.indexOf("(");
-            int endBracket = getBracketMatch(regexStripped, startBracket);
-            group = parseString(string.substring(startBracket+1, endBracket));
-            group.inverted = inverted;
-            Pattern leftCompound = Pattern.compile("(.*?)(\\|++|&++)\\s*$");
-            Pattern rightCompound = Pattern.compile("^(\\s*)(\\|++|&++)(.*)");
-            String left = string.substring(0, startBracket);
-            String right = string.substring(endBracket+1, regexStripped.length());
-            Matcher leftMatcher = leftCompound.matcher(left);
-            Matcher rightMatcher = rightCompound.matcher(right);
-            if (leftMatcher.matches()) {
-                group = new CompoundFilter(Filter.parseString(leftMatcher.group(1)), leftMatcher.group(2), group);
-            }
-            if (rightMatcher.matches()) {
-                group = new CompoundFilter(group, rightMatcher.group(2), Filter.parseString(rightMatcher.group(3)));
-            }
-            return group;
-        } else {
-            Matcher compoundMatcher = compoundPattern.matcher(string);
-            if (compoundMatcher.matches()) {
-                return new CompoundFilter(compoundMatcher.group(1), compoundMatcher.group(2), compoundMatcher.group(3));
-            } else {
-                Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
-                Matcher operationMatcher = operation.matcher(string);
-                if(operationMatcher.matches()){
-                    return new Filter(operationMatcher.group(1).trim(), operationMatcher.group(2), operationMatcher.group(3).trim());
-                }
-            }
+    public boolean matches(Object lValue, Object rValue) {
+        if (this.left instanceof Pattern) {
+            return ((Pattern) lValue).matcher(rValue.toString()).matches();
+        } else if (this.right instanceof Pattern) {
+            return ((Pattern) rValue).matcher(lValue.toString()).matches();
         }
-        throw new FilterException("Could not parse filter");
-    }
 
-    private static int getBracketMatch(String string, int start) {
-        int end = start;
-        int count = 1;
-        while (count > 0){
-            char c = string.charAt(++end);
-            if (c == '('){ count++; }
-            else if(c == ')'){ count--; }
-        }
-        return end;
-    }
-
-    private static boolean isRegex(String string){
-        try{
-            Pattern.compile(string);
-            return true;
-        }catch (PatternSyntaxException pSException){
+        try {
+            return checkValue(lValue, this.operation, rValue);
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    private static String stripRegex(String string){
-        Pattern hasRegex = Pattern.compile("(.*)(\\/.*\\/)(.*)");
-        string = string.replace("\\\\", "  ").replace("\\/", "  ");
-        Matcher matcher;
-        while((matcher = hasRegex.matcher(string)).matches()) {
-            string = matcher.group(1) + StringUtils.repeat(" ", matcher.group(2).length()) + matcher.group(3);
-        }
-        return string;
+    @Override
+    public boolean include(Entry<?, ?> entry) {
+        LogTableModel tableModel = (LogTableModel) entry.getModel();
+        Object lValue = this.left, rValue = this.right;
+        try {
+            int columnNo = tableModel.getColumnIndexByName(this.left.toString());
+            lValue = entry.getValue(columnNo);
+        }catch (NullPointerException nPException){}
+        try {
+            int columnNo = tableModel.getColumnIndexByName(this.right.toString());
+            rValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
+        }catch (NullPointerException nPException){}
+
+        return this.matches(lValue, rValue);
     }
+
 
     private boolean checkValue(Object left, LogicalOperation op, Object right) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         if(!(left instanceof String)){
@@ -260,5 +155,10 @@ public class Filter extends RowFilter<Object, Object> {
         public FilterException(String msg) {
             super(msg);
         }
+    }
+
+    @Override
+    public String toString(){
+        return left + " " + operation.representation + " " + right;
     }
 }

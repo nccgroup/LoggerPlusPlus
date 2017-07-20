@@ -4,19 +4,25 @@ package burp;
 // extend JTable to handle cell selection and column move/resize
 //
 
+import burp.filter.ColorFilter;
 import com.google.gson.Gson;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
+import javax.swing.plaf.UIResource;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -31,9 +37,11 @@ public class Table extends JTable
     private final IExtensionHelpers helpers;
     private final LoggerPreferences loggerPreferences;
     private boolean isDebug;
+    private ArrayList<ColorFilter> colorFilters;
 
     public Table(List<LogEntry> data, IMessageEditor requestViewer, IMessageEditor responseViewer,
-                 IExtensionHelpers helpers, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
+                 IExtensionHelpers helpers, LoggerPreferences loggerPreferences, ArrayList<ColorFilter> colorFilters,
+                 PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
         super(new LogTableModel(data, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug));
         this.getModel().setTableOwner(this);
@@ -44,13 +52,14 @@ public class Table extends JTable
         this.stdout = stdout;
         this.isDebug = isDebug;
         this.loggerPreferences = loggerPreferences;
+        this.colorFilters = colorFilters;
         this.setTableHeader(new TableHeader (getColumnModel(),this,stdout,stderr,isDebug)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setAutoCreateRowSorter(true); // To fix the sorting
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
-
+        this.setDefaultRenderer(Boolean.class, new BooleanRenderer());
         // another way to detect column dragging to save its settings for next time loading! fooh! seems tricky!
         //			getLogTable().setTableHeader(new JTableHeader(getLogTable().getColumnModel()) {
         //				@Override
@@ -63,6 +72,7 @@ public class Table extends JTable
         //					}
         //				}
         //			});
+
 
         this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
 
@@ -107,6 +117,36 @@ public class Table extends JTable
             }
         });
         registerListeners();
+
+    }
+
+    @Override
+    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
+    {
+        Component c = super.prepareRenderer(renderer, row, column);
+        Color backColor = null, foreColor = null;
+        for (ColorFilter colorFilter : colorFilters) {
+            if (colorFilter.isEnabled() && colorFilter.getFilter() != null
+                    && colorFilter.getFilter().matches(this.getModel().getRow(convertRowIndexToModel(row)))) {
+                backColor = colorFilter.getBackgroundColor();
+                foreColor = colorFilter.getForegroundColor();
+            }
+        }
+        if(this.getSelectedRow() == row){
+            c.setBackground(this.getSelectionBackground());
+            c.setForeground(this.getSelectionForeground());
+        }else {
+            if (backColor != null) {
+                c.setBackground(backColor);
+                c.setForeground(foreColor);
+            } else {
+                c.setBackground(getBackground());
+                c.setForeground(getForeground());
+            }
+        }
+
+
+        return c;
     }
 
     private void registerListeners(){
@@ -313,9 +353,45 @@ public class Table extends JTable
         return loggerPreferences;
     }
 
-    class LeftTableCellRenderer extends DefaultTableCellRenderer {
+    static class LeftTableCellRenderer extends DefaultTableCellRenderer {
         protected  LeftTableCellRenderer() {
             setHorizontalAlignment(SwingConstants.LEFT);
+        }
+    }
+    static class JTableButtonRenderer implements TableCellRenderer {
+        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            JButton button = (JButton)value;
+            return button;
+        }
+    }
+
+    //Recreate boolean renderer to fix checkbox bug
+    static class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
+        private static final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
+
+        public BooleanRenderer() {
+            this.setHorizontalAlignment(0);
+            this.setBorderPainted(true);
+            this.setOpaque(true);
+        }
+
+        public Component getTableCellRendererComponent(JTable var1, Object var2, boolean var3, boolean var4, int var5, int var6) {
+            if(var3) {
+                this.setForeground(var1.getSelectionForeground());
+                super.setBackground(var1.getSelectionBackground());
+            } else {
+                this.setForeground(var1.getForeground());
+                this.setBackground(var1.getBackground());
+            }
+
+            this.setSelected(var2 != null && ((Boolean)var2).booleanValue());
+            if(var4) {
+                this.setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
+            } else {
+                this.setBorder(noFocusBorder);
+            }
+
+            return this;
         }
     }
 

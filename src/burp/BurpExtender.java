@@ -22,7 +22,9 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.*;
 
+import burp.filter.ColorFilter;
 import burp.filter.Filter;
+import burp.filter.FilterCompiler;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener
@@ -43,6 +45,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private Table logTable;
 	private TableRowSorter tableRowSorter;
 	private JTextField filterField;
+	private ColorFilterDialog colorFilterDialog;
+	private ArrayList<ColorFilter> colorFilters;
 
 
 	//
@@ -75,7 +79,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}   
 
 		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
-
+		this.colorFilters = new ArrayList<ColorFilter>();
 		this.isDebug = loggerPreferences.isDebugMode();
 
 		// create our UI
@@ -84,10 +88,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			@Override
 			public void run()
 			{
-
 				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug);
+				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, colorFilters, stdout, stderr, isDebug);
 				tableRowSorter = new TableRowSorter(logTable.getModel());
 				logTable.setRowSorter(tableRowSorter);
 
@@ -98,9 +101,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 				JPanel viewPanel = new JPanel();
 				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
+//				colorFilterDialog = new ColorFilterDialog(colorFilters);
 
-				// create isFiltered pane
-				JPanel viewFilterPanel = new JPanel(new BorderLayout());
+
 				JPanel filterPanel = new JPanel(new GridBagLayout());
 
 				filterField = new JTextField();
@@ -114,9 +117,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				GridBagConstraints fieldConstraints = new GridBagConstraints();
 				fieldConstraints.fill = GridBagConstraints.BOTH;
 				fieldConstraints.gridx = 0;
-				fieldConstraints.weightx = fieldConstraints.weighty = 4.0;
+				fieldConstraints.weightx = fieldConstraints.weighty = 6.0;
 
-				final JButton filterButton = new JButton("filter");
+				final JButton filterButton = new JButton("Filter");
 				filterButton.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent actionEvent) {
@@ -124,17 +127,31 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					}
 				});
 
-				GridBagConstraints btnConstraints = new GridBagConstraints();
-				btnConstraints.fill = GridBagConstraints.BOTH;
-				btnConstraints.gridx = 1;
-				btnConstraints.weightx = btnConstraints.weighty = 1.0;
+				GridBagConstraints filterBtnConstraints = new GridBagConstraints();
+				filterBtnConstraints.fill = GridBagConstraints.BOTH;
+				filterBtnConstraints.gridx = 1;
+				filterBtnConstraints.weightx = filterBtnConstraints.weighty = 1.0;
+
+				final JButton colorFilterButton = new JButton("Colorize");
+				colorFilterButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent actionEvent) {
+						colorFilterDialog = new ColorFilterDialog(colorFilters);
+						colorFilterDialog.setVisible(true);
+					}
+				});
+
+				GridBagConstraints colorFilterBtnConstraints = new GridBagConstraints();
+				colorFilterBtnConstraints.fill = GridBagConstraints.BOTH;
+				colorFilterBtnConstraints.gridx = 2;
+				colorFilterBtnConstraints.weightx = colorFilterBtnConstraints.weighty = 1.0;
 
 				filterPanel.add(filterField, fieldConstraints);
-				filterPanel.add(filterButton, btnConstraints);
-				viewFilterPanel.add(filterPanel, BorderLayout.CENTER);
+				filterPanel.add(filterButton, filterBtnConstraints);
+				filterPanel.add(colorFilterButton, colorFilterBtnConstraints);
 
 				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
-				viewPanel.add(viewFilterPanel);
+				viewPanel.add(filterPanel);
 				viewPanel.add(viewScrollPane);
 
 				// tabs with request/response viewers
@@ -181,7 +198,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				tableRowSorter.setRowFilter(null);
 				filterField.setBackground(Color.white);
 			}else {
-				tableRowSorter.setRowFilter(Filter.parseString(filterField.getText()));
+				tableRowSorter.setRowFilter(FilterCompiler.parseString(filterField.getText()));
 				filterField.setBackground(Color.green);
 			}
 		} catch (Filter.FilterException e) {
@@ -278,6 +295,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							int row = log.size();
 							log.add(entry);
 							logTable.getModel().fireTableRowsInserted(row, row);
+
 							// For proxy - disabled due to the race condition bug!
 							//							if(toolFlag!=callbacks.TOOL_PROXY){
 							//								int row = log.size();

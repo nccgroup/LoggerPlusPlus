@@ -1,5 +1,8 @@
 package burp.filter;
 
+import burp.LogEntry;
+import burp.LogTableModel;
+
 public class CompoundFilter extends Filter {
     enum CompoundOperation {AND,OR}
     CompoundOperation op;
@@ -15,12 +18,12 @@ public class CompoundFilter extends Filter {
         if(left instanceof Filter){
             this.left = left;
         }else if(left instanceof String){
-            this.left = Filter.parseString((String) left);
+            this.left = FilterCompiler.parseString((String) left);
         }
         if(right instanceof Filter){
             this.right = right;
         }else if(right instanceof String){
-            this.right = Filter.parseString((String) right);
+            this.right = FilterCompiler.parseString((String) right);
         }
     }
 
@@ -31,10 +34,19 @@ public class CompoundFilter extends Filter {
     }
 
     @Override
-    public boolean include(Entry<? extends Object, ? extends Object> entry){
+    public boolean include(Entry<?, ?> entry){
         switch (this.op){
             case AND: return ((Filter) this.left).include(entry) && ((Filter) this.right).include(entry);
             case OR: return ((Filter) this.left).include(entry) || ((Filter) this.right).include(entry);
+            default: return false;
+        }
+    }
+
+    @Override
+    public boolean matches(LogEntry entry){
+        switch (this.op){
+            case AND: return ((Filter) this.left).matches(entry) && ((Filter) this.right).matches(entry);
+            case OR: return ((Filter) this.left).matches(entry) || ((Filter) this.right).matches(entry);
             default: return false;
         }
     }
