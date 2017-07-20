@@ -22,9 +22,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.List;
 
 public class Table extends JTable
@@ -37,10 +35,10 @@ public class Table extends JTable
     private final IExtensionHelpers helpers;
     private final LoggerPreferences loggerPreferences;
     private boolean isDebug;
-    private ArrayList<ColorFilter> colorFilters;
+    private Map<UUID, ColorFilter> colorFilters;
 
     public Table(List<LogEntry> data, IMessageEditor requestViewer, IMessageEditor responseViewer,
-                 IExtensionHelpers helpers, LoggerPreferences loggerPreferences, ArrayList<ColorFilter> colorFilters,
+                 IExtensionHelpers helpers, LoggerPreferences loggerPreferences, Map<UUID, ColorFilter> colorFilters,
                  PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
         super(new LogTableModel(data, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug));
@@ -125,21 +123,18 @@ public class Table extends JTable
     {
         Component c = super.prepareRenderer(renderer, row, column);
         LogEntry entry = this.getModel().getRow(convertRowIndexToModel(row));
-        Color foreColor = entry.getForegroundColor();
-        Color backColor = entry.getBackgroundColor();
+
         if(this.getSelectedRow() == row){
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
         }else {
-            if (backColor != null) {
-                c.setBackground(backColor);
-            } else {
-                c.setBackground(getBackground());
-            }
-            if(foreColor != null){
-                c.setForeground(foreColor);
+            if(entry.getMatchingColorFilters().size() != 0){
+                ColorFilter colorFilter = colorFilters.get(entry.getMatchingColorFilters().get(0));
+                c.setForeground(colorFilter.getForegroundColor());
+                c.setBackground(colorFilter.getBackgroundColor());
             }else{
-                c.setForeground(getForeground());
+                c.setForeground(this.getForeground());
+                c.setBackground(this.getBackground());
             }
         }
 

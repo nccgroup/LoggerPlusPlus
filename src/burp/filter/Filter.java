@@ -66,7 +66,6 @@ public class Filter extends RowFilter<Object, Object>{
     }
 
     public boolean matches(LogEntry entry){
-        System.err.println("matchcheck");
         Object lValue = this.left, rValue = this.right;
         try {
             lValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.left.toString()));
