@@ -17,8 +17,10 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,8 +75,7 @@ public class LogEntry extends RowFilter.Entry
 	String[] regexAllReq = {"","","","",""};
 	String[] regexAllResp = {"","","","",""};
 
-	Color backgroundColor;
-	Color foregroundColor;
+	ArrayList<UUID> matchingColorFilters;
 
 	// Future Implementation
 	//		final String requestTime; // I can get this only on request
@@ -99,7 +100,7 @@ public class LogEntry extends RowFilter.Entry
 		this.table = table;
 		this.callbacks = callbacks;
 		this.helpers = callbacks.getHelpers();
-
+		this.matchingColorFilters = new ArrayList<UUID>();
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 
 
@@ -526,20 +527,7 @@ public class LogEntry extends RowFilter.Entry
 		return getValueByKey(columnNamesType.valueOf(name.toUpperCase()));
 	}
 
-	public void setForegroundColor(Color color){
-		this.foregroundColor = color;
-	}
-	public void setBackgroundColor(Color color){
-		this.backgroundColor = color;
-	}
-
-	public Color getBackgroundColor() {
-		return backgroundColor;
-	}
-
-	public Color getForegroundColor() {
-		return foregroundColor;
-	}
+	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
 
 	public enum cookieJarStatus {
 		YES("Yes"),
@@ -616,13 +604,23 @@ public class LogEntry extends RowFilter.Entry
 		}
 	}
 
-	public boolean testColorFilter(ColorFilter colorFilter){
-		if(colorFilter.getFilter().matches(this)){
-			this.setForegroundColor(colorFilter.getForegroundColor());
-			this.setBackgroundColor(colorFilter.getBackgroundColor());
+	public boolean testColorFilter(ColorFilter colorFilter, boolean retest){
+		if(!colorFilter.isEnabled() || colorFilter.getFilter() == null) return false;
+		if(!this.matchingColorFilters.contains(colorFilter.getUid())) {
+			if (colorFilter.getFilter().matches(this)) {
+				this.matchingColorFilters.add(colorFilter.getUid());
+				return true;
+			}else{
+				return false;
+			}
+		}else if(retest){
+			if (!colorFilter.getFilter().matches(this)) {
+				this.matchingColorFilters.remove(colorFilter.getUid());
+			}
 			return true;
+		}else{
+			return false;
 		}
-		return false;
 	}
 
 	//Removed until unique identifier implemented

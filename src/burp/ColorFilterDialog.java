@@ -8,22 +8,27 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.
  */
-public class ColorFilterDialog extends JFrame {
-    private ArrayList<ColorFilter> filters;
+public class ColorFilterDialog extends JFrame implements ComponentListener {
+    private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
+    private Map<UUID, ColorFilter> originalFilters;
 
 
-    public ColorFilterDialog(ArrayList<ColorFilter> filters, ArrayList<FilterListener> listeners){
+    public ColorFilterDialog(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> listeners){
         this.filters = filters;
+        this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
+        this.addComponentListener(this);
         buildDialog();
         pack();
     }
@@ -80,5 +85,55 @@ public class ColorFilterDialog extends JFrame {
         buttonPanel.add(rightPanel, BorderLayout.EAST);
         content.add(buttonPanel, gbcFooter);
 
+    }
+
+    @Override
+    public void componentResized(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentShown(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent event) {
+        ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
+        newFilters.removeAll(originalFilters.keySet());
+
+        ArrayList<UUID> modifiedFilters = new ArrayList<UUID>(filters.keySet());
+        modifiedFilters.removeAll(newFilters);
+
+        ArrayList<UUID> removedFilters = new ArrayList<UUID>(originalFilters.keySet());
+        removedFilters.removeAll(filters.keySet());
+
+        synchronized (modifiedFilters) {
+            for (UUID uid : modifiedFilters) {
+                if (!filters.get(uid).isModified()) {
+                    modifiedFilters.remove(uid);
+                } else {
+                    filters.get(uid).setModified(false);
+                }
+            }
+        }
+        for (FilterListener listener : filterListeners) {
+            for (UUID uid : newFilters) {
+                listener.onAdd(filters.get(uid));
+            }
+            for (UUID uid : modifiedFilters) {
+                listener.onChange(filters.get(uid));
+            }
+            for (UUID uid : removedFilters){
+                listener.onRemove(originalFilters.get(uid));
+            }
+        }
+        //Update set original filters for next open
+        this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
     }
 }

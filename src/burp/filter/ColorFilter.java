@@ -1,26 +1,28 @@
 package burp.filter;
 
 import java.awt.*;
+import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.
  */
 public class ColorFilter {
+    private UUID uid;
     private String name;
     private Filter filter;
     private String filterString;
     private Color backgroundColor;
     private Color foregroundColor;
     private boolean enabled;
+    private boolean modified;
 
     public ColorFilter(){
+        this.uid = UUID.randomUUID();
         this.enabled = true;
     }
 
-    public ColorFilter(String name, Filter filter, Color backgroundColor){
-        this.name = name;
-        this.filter = filter;
-        this.backgroundColor = backgroundColor;
+    public UUID getUid() {
+        return uid;
     }
 
     public void setBackgroundColor(Color backgroundColor){
@@ -33,7 +35,10 @@ public class ColorFilter {
 
     public Color getForegroundColor() {return foregroundColor;}
 
-    public void setForegroundColor(Color foregroundColor) {this.foregroundColor = foregroundColor;}
+    public void setForegroundColor(Color foregroundColor) {
+        this.foregroundColor = foregroundColor;
+        modified = true;
+    }
 
     public Filter getFilter() {
         return filter;
@@ -41,6 +46,7 @@ public class ColorFilter {
 
     public void setFilter(Filter filter) {
         this.filter = filter;
+        modified = true;
     }
 
     public String getName() {
@@ -57,6 +63,7 @@ public class ColorFilter {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+        modified = true;
     }
 
     public String getFilterString() {
@@ -65,5 +72,21 @@ public class ColorFilter {
 
     public void setFilterString(String filterString) {
         this.filterString = filterString;
+    }
+
+    public boolean equals(Object obj){
+        if(obj instanceof ColorFilter){
+            return ((ColorFilter) obj).getUid().equals(this.uid);
+        }else{
+            return super.equals(obj);
+        }
+    }
+
+    public boolean isModified() {
+        return modified;
+    }
+
+    public void setModified(boolean modified) {
+        this.modified = modified;
     }
 }

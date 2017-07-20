@@ -10,13 +10,15 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.
  */
 public class ColorFilterTable extends JTable {
 
-    ColorFilterTable(ArrayList<ColorFilter> filters, ArrayList<FilterListener> filterListeners){
+    ColorFilterTable(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
         this.setModel(new ColorFilterTableModel(filters, filterListeners));
         this.setFillsViewportHeight(true);
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);

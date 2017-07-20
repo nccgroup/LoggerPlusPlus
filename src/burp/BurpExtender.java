@@ -47,7 +47,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private TableRowSorter tableRowSorter;
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
-	private ArrayList<ColorFilter> colorFilters;
+	private Map<UUID, ColorFilter> colorFilters;
 	private ArrayList<FilterListener> filterListeners;
 
 
@@ -81,7 +81,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}   
 
 		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
-		this.colorFilters = new ArrayList<ColorFilter>();
+		this.colorFilters = new HashMap<UUID, ColorFilter>();
 		this.filterListeners = new ArrayList<FilterListener>();
 		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
@@ -105,7 +105,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 				JPanel viewPanel = new JPanel();
 				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
-//				colorFilterDialog = new ColorFilterDialog(colorFilters);
+				colorFilterDialog = new ColorFilterDialog(colorFilters, filterListeners);
 
 
 				JPanel filterPanel = new JPanel(new GridBagLayout());
@@ -140,7 +140,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				colorFilterButton.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent actionEvent) {
-						colorFilterDialog = new ColorFilterDialog(colorFilters, filterListeners);
 						colorFilterDialog.setVisible(true);
 					}
 				});
@@ -296,8 +295,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						// create a new log entry with the message details
 						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
 						//Check entry against colorfilters.
-						for (ColorFilter colorFilter : colorFilters) {
-							entry.testColorFilter(colorFilter);
+						for (ColorFilter colorFilter : colorFilters.values()) {
+							entry.testColorFilter(colorFilter, false);
 						}
 						synchronized (log) {
 							int row = log.size();
@@ -378,7 +377,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		if(!filter.isEnabled() || filter.getFilter() == null) return;
 		synchronized (log){
 			for (int i=0; i<log.size(); i++) {
-				boolean colorResult = log.get(i).testColorFilter(filter);
+				boolean colorResult = log.get(i).testColorFilter(filter, true);
 				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
 			}
 		}
@@ -389,7 +388,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		if(!filter.isEnabled() || filter.getFilter() == null) return;
 		synchronized (log){
 			for (int i=0; i<log.size(); i++) {
-				boolean colorResult = log.get(i).testColorFilter(filter);
+				boolean colorResult = log.get(i).testColorFilter(filter, false);
 				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
 			}
 		}
@@ -397,11 +396,15 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	@Override
 	public void onRemove(ColorFilter filter) {
-
+		if(!filter.isEnabled() || filter.getFilter() == null) return;
+		synchronized (log){
+			for (int i=0; i<log.size(); i++) {
+				boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
+				if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
+			}
+		}
 	}
 
 	@Override
-	public void onRemoveAll() {
-
-	}
+	public void onRemoveAll() {}
 }
