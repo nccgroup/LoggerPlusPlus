@@ -49,6 +49,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private ColorFilterDialog colorFilterDialog;
 	private Map<UUID, ColorFilter> colorFilters;
 	private ArrayList<FilterListener> filterListeners;
+	private JScrollBar tableScrollBar;
 
 
 	//
@@ -154,6 +155,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				filterPanel.add(colorFilterButton, colorFilterBtnConstraints);
 
 				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+				tableScrollBar = viewScrollPane.getVerticalScrollBar();
 				viewPanel.add(filterPanel);
 				viewPanel.add(viewScrollPane);
 
@@ -298,6 +300,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						for (ColorFilter colorFilter : colorFilters.values()) {
 							entry.testColorFilter(colorFilter, false);
 						}
+
+						int v = (int) (tableScrollBar.getValue() + (tableScrollBar.getHeight()*1.1));
+						int m = tableScrollBar.getMaximum();
+						boolean isAtBottom = v >= m;
+
 						synchronized (log) {
 							int row = log.size();
 							log.add(entry);
@@ -321,6 +328,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							//
 							//							}
 						}
+						if(isAtBottom)
+							tableScrollBar.setValue(tableScrollBar.getMaximum() + logTable.getRowHeight());
 						if(loggerPreferences.getAutoSave()){
 							optionsJPanel.autoLogItem(entry);
 						}
