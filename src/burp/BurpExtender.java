@@ -295,7 +295,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
-						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
+						LogEntry entry = new LogEntry(logTable.getModel(), toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
 						//Check entry against colorfilters.
 						for (ColorFilter colorFilter : colorFilters.values()) {
 							entry.testColorFilter(colorFilter, false);

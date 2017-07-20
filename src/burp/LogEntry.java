@@ -35,6 +35,7 @@ import javax.swing.table.TableModel;
 
 public class LogEntry extends RowFilter.Entry
 {
+	private final LogTableModel model;
 	// Request Related
 	final int tool;
 	final IHttpRequestResponsePersisted requestResponse;
@@ -91,8 +92,9 @@ public class LogEntry extends RowFilter.Entry
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
 
-	LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponsePersisted requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message, Table table, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug, IBurpExtenderCallbacks callbacks)
+	LogEntry(LogTableModel model, int tool, boolean messageIsRequest, IHttpRequestResponsePersisted requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message, Table table, LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug, IBurpExtenderCallbacks callbacks)
 	{
+		this.model = model;
 		this.stdout = stdout;
 		this.stderr = stderr;
 		this.isDebug = isDebug;
@@ -351,7 +353,7 @@ public class LogEntry extends RowFilter.Entry
 
 	@Override
 	public Object getModel() {
-		return null;
+		return model;
 	}
 
 	@Override
