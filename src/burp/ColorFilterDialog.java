@@ -113,13 +113,12 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         ArrayList<UUID> removedFilters = new ArrayList<UUID>(originalFilters.keySet());
         removedFilters.removeAll(filters.keySet());
 
-        synchronized (modifiedFilters) {
-            for (UUID uid : modifiedFilters) {
-                if (!filters.get(uid).isModified()) {
-                    modifiedFilters.remove(uid);
-                } else {
-                    filters.get(uid).setModified(false);
-                }
+        for (int i=0; i<modifiedFilters.size(); i++) {
+            UUID uid = modifiedFilters.get(i);
+            if (!filters.get(uid).isModified()) {
+                modifiedFilters.remove(uid);
+            } else {
+                filters.get(uid).setModified(false);
             }
         }
         for (FilterListener listener : filterListeners) {
