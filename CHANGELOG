@@ -2,6 +2,7 @@ v 2.7
 =========================================================================
 - Added automatic log saving.
 - Added setting of colorization rules using filters.
+- Added export feedback.
 
 v 2.6
 =========================================================================

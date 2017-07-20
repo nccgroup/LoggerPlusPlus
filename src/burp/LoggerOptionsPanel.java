@@ -57,6 +57,7 @@ public class LoggerOptionsPanel extends JPanel {
 	private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
 	private final List<LogEntry> log;
 	private final LogTableModel tableModel;
+	private FileWriter autoSaveWriter;
 
 	private final boolean isDebug;
 
@@ -406,10 +407,9 @@ public class LoggerOptionsPanel extends JPanel {
 		}
 
 		public void exportItem(LogEntry logEntry, File file, boolean isFullLog, boolean append) throws IOException {
-			FileWriter out = new FileWriter(file, append);
-			out.write(logEntry.toCSVString(isFullLog));
-			out.write("\n");
-			out.close();
+			autoSaveWriter = new FileWriter(file, append);
+			autoSaveWriter.write(logEntry.toCSVString(isFullLog));
+			autoSaveWriter.write("\n");
 		}
 
 	}
@@ -630,6 +630,7 @@ public class LoggerOptionsPanel extends JPanel {
 				if(autoSaveCSVFile.length() == 0){
 					try {
 						exp.addHeader(autoSaveCSVFile, false);
+						autoSaveWriter = new FileWriter(autoSaveCSVFile, true);
 					}catch (IOException ioException){
 						enabled = false;
 						autoSaveCSVFile = null;
@@ -640,6 +641,14 @@ public class LoggerOptionsPanel extends JPanel {
 			}
 		}else{
 			autoSaveCSVFile = null;
+		}
+		if(!enabled && autoSaveWriter != null){
+			try {
+				autoSaveWriter.close();
+				autoSaveCSVFile = null;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		loggerPreferences.setAutoSave(enabled);
 		btnAutoSaveLogs.setSelected(enabled);
