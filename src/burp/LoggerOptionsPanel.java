@@ -16,13 +16,11 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.URI;
 import java.util.List;
 
@@ -58,6 +56,7 @@ public class LoggerOptionsPanel extends JPanel {
 	private final JLabel lblColumnSettings = new JLabel("Column Settings:");
 	private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
 	private final List<LogEntry> log;
+	private final LogTableModel tableModel;
 
 	private final boolean isDebug;
 
@@ -73,6 +72,7 @@ public class LoggerOptionsPanel extends JPanel {
 		this.loggerPreferences.setAutoSave(false);
 		this.isDebug  = isDebug;
 		this.log = log;
+		this.tableModel = table.getModel();
 		
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
@@ -281,8 +281,8 @@ public class LoggerOptionsPanel extends JPanel {
 				boolean origState = loggerPreferences.isEnabled();
 				loggerPreferences.setEnabled(false);	
 				loggerPreferences.resetLoggerPreferences();
-				table.getModel().getTableHeaderColumnsDetails().resetToDefaultVariables();
-				table.getModel().fireTableStructureChanged();
+				tableModel.getTableHeaderColumnsDetails().resetToDefaultVariables();
+				tableModel.fireTableStructureChanged();
 				table.generatingTableColumns();
 				loggerPreferences.setEnabled(origState);
 				setPreferencesValues();
@@ -307,7 +307,7 @@ public class LoggerOptionsPanel extends JPanel {
 
 						log.clear();
 						
-						table.getModel().fireTableDataChanged();
+						tableModel.fireTableDataChanged();
 						loggerPreferences.setEnabled(origState);	
 						setPreferencesValues();
 					}
@@ -377,6 +377,13 @@ public class LoggerOptionsPanel extends JPanel {
 	// source: http://book.javanb.com/swing-hacks/swinghacks-chp-3-sect-6.html
 	public class ExcelExporter {
 
+		public void addHeader(File file, boolean isFullLog) throws IOException{
+			FileWriter out = new FileWriter(file, true);
+			out.write(LogEntry.getCSVHeader(tableModel, isFullLog));
+			out.write("\n");
+			out.close();
+		}
+
 		public void exportTable(List<LogEntry> log, File file, boolean isFullLog, boolean append, boolean header) throws IOException {
 
 			FileWriter out = new FileWriter(file, append);
@@ -385,7 +392,7 @@ public class LoggerOptionsPanel extends JPanel {
 
 			for(LogEntry item:log){
 				if(includeHeader){
-					out.write(item.getCSVHeader(isFullLog));
+					out.write(LogEntry.getCSVHeader((LogTableModel) item.getModel(), isFullLog));
 					out.write("\n");
 					includeHeader = false;
 				}
@@ -395,7 +402,7 @@ public class LoggerOptionsPanel extends JPanel {
 			}
 
 			out.close();
-			stdout.println("write out to: " + file);
+			MoreHelp.showMessage("Log saved to " + file.getAbsolutePath() + file.getName());
 		}
 
 		public void exportItem(LogEntry logEntry, File file, boolean isFullLog, boolean append) throws IOException {
@@ -432,7 +439,7 @@ public class LoggerOptionsPanel extends JPanel {
 
 			try {
 				if(csvFile.exists()) {
-					if (allowAppend && validHeader(csvFile)) {
+					if (allowAppend && validHeader(csvFile, false)) {
 						csvFile = appendOrOverwrite(csvFile);
 					} else {
 						csvFile = checkOverwrite(csvFile);
@@ -452,8 +459,20 @@ public class LoggerOptionsPanel extends JPanel {
 
 	//Check if header in file matches that of the columns we will be exporting.
 	//TODO
-	private boolean validHeader(File csvFile){
-		return true;
+	private boolean validHeader(File csvFile, boolean isFullLog){
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(csvFile));
+		} catch (FileNotFoundException e) {
+			return true;
+		}
+		try {
+			String thisHeader = LogEntry.getCSVHeader(tableModel, isFullLog);
+			String oldHeader = reader.readLine();
+			return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
+		} catch (IOException e) {
+			return true;
+		}
 	}
 
 	private File fixExtension(File file, String prefExt) {
@@ -608,6 +627,14 @@ public class LoggerOptionsPanel extends JPanel {
 			autoSaveCSVFile = getSaveFile("logger++_auto", true);
 			if (autoSaveCSVFile != null) {
 				loggerPreferences.setAutoSave(true);
+				if(autoSaveCSVFile.length() == 0){
+					try {
+						exp.addHeader(autoSaveCSVFile, false);
+					}catch (IOException ioException){
+						enabled = false;
+						autoSaveCSVFile = null;
+					}
+				}
 			}else{
 				enabled = false;
 			}

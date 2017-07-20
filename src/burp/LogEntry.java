@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import burp.filter.ColorFilter;
 import org.apache.commons.lang3.StringEscapeUtils;
 import javax.swing.*;
+import javax.swing.table.TableModel;
 
 //
 // class to hold details of each log entry
@@ -369,17 +370,12 @@ public class LogEntry extends RowFilter.Entry
 	}
 
 
-	public String getCSVHeader(boolean isFullLog) {
+	public static String getCSVHeader(LogTableModel model, boolean isFullLog) {
 		StringBuilder result = new StringBuilder();
-		//			for (int i=1; i<loggerTableDetails.length; i++) {
-		//				result.append(loggerTableDetails[i][1]);
-		//				if(i<tableHelper.getLogTableModel().getColumnCount()-1)
-		//					result.append(",");
-		//			}
 
-		for (int i=1; i<table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
-			result.append(table.getModel().getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
-			if(i<table.getModel().getColumnCount()-1)
+		for (int i=1; i<model.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
+			result.append(model.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
+			if(i<model.getColumnCount()-1)
 				result.append(",");
 		}			
 
