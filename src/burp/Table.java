@@ -124,23 +124,21 @@ public class Table extends JTable
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
     {
         Component c = super.prepareRenderer(renderer, row, column);
-        Color backColor = null, foreColor = null;
-        for (ColorFilter colorFilter : colorFilters) {
-            if (colorFilter.isEnabled() && colorFilter.getFilter() != null
-                    && colorFilter.getFilter().matches(this.getModel().getRow(convertRowIndexToModel(row)))) {
-                backColor = colorFilter.getBackgroundColor();
-                foreColor = colorFilter.getForegroundColor();
-            }
-        }
+        LogEntry entry = this.getModel().getRow(convertRowIndexToModel(row));
+        Color foreColor = entry.getForegroundColor();
+        Color backColor = entry.getBackgroundColor();
         if(this.getSelectedRow() == row){
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
         }else {
             if (backColor != null) {
                 c.setBackground(backColor);
-                c.setForeground(foreColor);
             } else {
                 c.setBackground(getBackground());
+            }
+            if(foreColor != null){
+                c.setForeground(foreColor);
+            }else{
                 c.setForeground(getForeground());
             }
         }

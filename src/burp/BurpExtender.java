@@ -25,9 +25,10 @@ import javax.swing.table.*;
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
 import burp.filter.FilterCompiler;
+import burp.filter.FilterListener;
 
 
-public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener
+public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
 {
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
@@ -35,7 +36,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private PrintWriter stderr;
 	private IMessageEditor requestViewer;
 	private IMessageEditor responseViewer;
-	private List<LogEntry> log = new ArrayList<LogEntry>();
+	private final List<LogEntry> log = new ArrayList<LogEntry>();
 	private List<LogEntry> filteredLog = new ArrayList<LogEntry>();
 	private JTabbedPane topTabs;
 	private boolean canSaveCSV = false;
@@ -47,6 +48,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
 	private ArrayList<ColorFilter> colorFilters;
+	private ArrayList<FilterListener> filterListeners;
 
 
 	//
@@ -80,6 +82,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
 		this.colorFilters = new ArrayList<ColorFilter>();
+		this.filterListeners = new ArrayList<FilterListener>();
+		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
 
 		// create our UI
@@ -136,7 +140,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				colorFilterButton.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent actionEvent) {
-						colorFilterDialog = new ColorFilterDialog(colorFilters);
+						colorFilterDialog = new ColorFilterDialog(colorFilters, filterListeners);
 						colorFilterDialog.setVisible(true);
 					}
 				});
@@ -291,6 +295,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
 						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
+						//Check entry against colorfilters.
+						for (ColorFilter colorFilter : colorFilters) {
+							entry.testColorFilter(colorFilter);
+						}
 						synchronized (log) {
 							int row = log.size();
 							log.add(entry);
@@ -364,4 +372,36 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	}
 
 
+	//FilterListeners
+	@Override
+	public void onChange(ColorFilter filter) {
+		if(!filter.isEnabled() || filter.getFilter() == null) return;
+		synchronized (log){
+			for (int i=0; i<log.size(); i++) {
+				boolean colorResult = log.get(i).testColorFilter(filter);
+				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
+			}
+		}
+	}
+
+	@Override
+	public void onAdd(ColorFilter filter) {
+		if(!filter.isEnabled() || filter.getFilter() == null) return;
+		synchronized (log){
+			for (int i=0; i<log.size(); i++) {
+				boolean colorResult = log.get(i).testColorFilter(filter);
+				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
+			}
+		}
+	}
+
+	@Override
+	public void onRemove(ColorFilter filter) {
+
+	}
+
+	@Override
+	public void onRemoveAll() {
+
+	}
 }

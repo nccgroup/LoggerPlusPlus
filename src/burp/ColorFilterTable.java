@@ -2,6 +2,7 @@ package burp;
 
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
+import burp.filter.FilterListener;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -15,9 +16,8 @@ import java.util.ArrayList;
  */
 public class ColorFilterTable extends JTable {
 
-    ColorFilterTable(ArrayList<ColorFilter> filters){
-
-        this.setModel(new ColorFilterTableModel(filters));
+    ColorFilterTable(ArrayList<ColorFilter> filters, ArrayList<FilterListener> filterListeners){
+        this.setModel(new ColorFilterTableModel(filters, filterListeners));
         this.setFillsViewportHeight(true);
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         this.setAutoCreateRowSorter(false);
