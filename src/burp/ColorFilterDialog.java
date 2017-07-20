@@ -1,6 +1,7 @@
 package burp;
 
 import burp.filter.ColorFilter;
+import burp.filter.FilterListener;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -17,11 +18,12 @@ import java.util.List;
  */
 public class ColorFilterDialog extends JFrame {
     private ArrayList<ColorFilter> filters;
-    private JPanel filterListPanel;
+    private ArrayList<FilterListener> filterListeners;
 
 
-    public ColorFilterDialog(ArrayList<ColorFilter> filters){
+    public ColorFilterDialog(ArrayList<ColorFilter> filters, ArrayList<FilterListener> listeners){
         this.filters = filters;
+        this.filterListeners = listeners;
         buildDialog();
         pack();
     }
@@ -32,7 +34,7 @@ public class ColorFilterDialog extends JFrame {
         JPanel content = new JPanel(new GridBagLayout());
         this.add(content, BorderLayout.CENTER);
 
-        final ColorFilterTable filterTable = new ColorFilterTable(filters);
+        final ColorFilterTable filterTable = new ColorFilterTable(filters, filterListeners);
         final JScrollPane filterListWrapper = new JScrollPane(filterTable);
         GridBagConstraints gbcFilterWrapper = new GridBagConstraints();
         gbcFilterWrapper.gridx = 0;

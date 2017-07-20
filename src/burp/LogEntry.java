@@ -12,6 +12,7 @@
 
 package burp;
 
+import java.awt.*;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.DateFormat;
@@ -20,6 +21,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import burp.filter.ColorFilter;
 import org.apache.commons.lang3.StringEscapeUtils;
 import javax.swing.*;
 
@@ -70,7 +73,8 @@ public class LogEntry extends RowFilter.Entry
 	String[] regexAllReq = {"","","","",""};
 	String[] regexAllResp = {"","","","",""};
 
-
+	Color backgroundColor;
+	Color foregroundColor;
 
 	// Future Implementation
 	//		final String requestTime; // I can get this only on request
@@ -522,6 +526,21 @@ public class LogEntry extends RowFilter.Entry
 		return getValueByKey(columnNamesType.valueOf(name.toUpperCase()));
 	}
 
+	public void setForegroundColor(Color color){
+		this.foregroundColor = color;
+	}
+	public void setBackgroundColor(Color color){
+		this.backgroundColor = color;
+	}
+
+	public Color getBackgroundColor() {
+		return backgroundColor;
+	}
+
+	public Color getForegroundColor() {
+		return foregroundColor;
+	}
+
 	public enum cookieJarStatus {
 		YES("Yes"),
 		NO("No"),
@@ -595,6 +614,15 @@ public class LogEntry extends RowFilter.Entry
 		public String toString() {
 			return getValue();
 		}
+	}
+
+	public boolean testColorFilter(ColorFilter colorFilter){
+		if(colorFilter.getFilter().matches(this)){
+			this.setForegroundColor(colorFilter.getForegroundColor());
+			this.setBackgroundColor(colorFilter.getBackgroundColor());
+			return true;
+		}
+		return false;
 	}
 
 	//Removed until unique identifier implemented

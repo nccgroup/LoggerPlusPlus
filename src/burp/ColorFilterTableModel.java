@@ -3,6 +3,7 @@ package burp;
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
 import burp.filter.FilterCompiler;
+import burp.filter.FilterListener;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -15,11 +16,13 @@ import java.util.ArrayList;
 public class ColorFilterTableModel extends AbstractTableModel{
 
     private ArrayList<ColorFilter> filters;
+    private ArrayList<FilterListener> filterListeners;
     private String[] columnNames = {"Title", "Filter", "Foreground Color", "Background Color", "Enabled", ""};
     private JButton removeButton = new JButton("Remove");
 
-    ColorFilterTableModel(ArrayList<ColorFilter> filters){
+    ColorFilterTableModel(ArrayList<ColorFilter> filters, ArrayList<FilterListener> filterListeners){
         this.filters = filters;
+        this.filterListeners = filterListeners;
     }
 
     @Override
@@ -88,6 +91,9 @@ public class ColorFilterTableModel extends AbstractTableModel{
             default:
                 return;
         }
+        for(FilterListener listener : filterListeners){
+            listener.onChange(filters.get(row));
+        }
     }
 
 
@@ -112,6 +118,9 @@ public class ColorFilterTableModel extends AbstractTableModel{
 
     public void addFilter(ColorFilter filter){
         filters.add(filter);
+        for(FilterListener listener : filterListeners){
+            listener.onAdd(filter);
+        }
         this.fireTableDataChanged();
     }
 
@@ -124,6 +133,9 @@ public class ColorFilterTableModel extends AbstractTableModel{
 
     public void removeAll() {
         this.filters.clear();
+        for(FilterListener listener : filterListeners){
+            listener.onRemoveAll();
+        }
         this.fireTableDataChanged();
     }
 }
