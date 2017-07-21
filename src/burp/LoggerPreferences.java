@@ -11,13 +11,25 @@
 //
 
 package burp;
+import burp.filter.ColorFilter;
+import burp.filter.Filter;
+import burp.filter.FilterSerializer;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import jdk.nashorn.internal.parser.JSONParser;
+
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
 import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private PrintWriter stdout;
 	private PrintWriter stderr;
 	private boolean isDebug = false;
+	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new FilterSerializer()).create();
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
 	private final double version = 2.7;
@@ -44,6 +56,7 @@ public class LoggerPreferences {
 	private boolean logFiltered;
 	private String tableDetailsJSONString;
 	private boolean autoSave;
+	private Map<UUID, ColorFilter> colorFilters;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -225,6 +238,12 @@ public class LoggerPreferences {
 		return this.logFiltered;
 	}
 
+	public Map<UUID, ColorFilter> getColorFilters() { return colorFilters; }
+
+	public synchronized void setColorFilters(Map<UUID, ColorFilter> colorFilters) {
+		prefs.put("colorFilters", gson.toJson(colorFilters));
+		this.colorFilters = colorFilters;
+	}
 
 	public LoggerPreferences(PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
 		this.stdout = stdout;
@@ -267,7 +286,8 @@ public class LoggerPreferences {
 		}
 
 		this.tableDetailsJSONString = tempTableDetailsJSONString;
-
+		String c = prefs.get("colorFilters", "");
+		this.colorFilters = gson.fromJson(prefs.get("colorFilters", ""), new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
 	}
 
 	public void resetLoggerPreferences(){
@@ -314,6 +334,7 @@ public class LoggerPreferences {
 	public String getAuthor() {
 		return author;
 	}
+
 
 
 	//Do not persist over restarts.

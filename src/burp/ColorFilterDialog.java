@@ -22,12 +22,14 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
     private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
     private Map<UUID, ColorFilter> originalFilters;
+    private LoggerPreferences prefs;
 
 
-    public ColorFilterDialog(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> listeners){
-        this.filters = filters;
+    public ColorFilterDialog(LoggerPreferences prefs, ArrayList<FilterListener> listeners){
+        this.filters = prefs.getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
+        this.prefs = prefs;
         this.addComponentListener(this);
         buildDialog();
         pack();
@@ -134,5 +136,6 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         }
         //Update set original filters for next open
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
+        prefs.setColorFilters(filters);
     }
 }

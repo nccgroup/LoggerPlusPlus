@@ -1,5 +1,7 @@
 package burp.filter;
 
+import com.google.gson.JsonObject;
+
 import java.awt.*;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class ColorFilter {
 
     public void setBackgroundColor(Color backgroundColor){
         this.backgroundColor = backgroundColor;
+        this.modified = true;
     }
 
     public Color getBackgroundColor() {
@@ -89,4 +92,6 @@ public class ColorFilter {
     public void setModified(boolean modified) {
         this.modified = modified;
     }
+
+
 }
