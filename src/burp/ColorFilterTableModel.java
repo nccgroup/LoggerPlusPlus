@@ -23,6 +23,9 @@ public class ColorFilterTableModel extends AbstractTableModel{
 
     ColorFilterTableModel(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
         this.filters = filters;
+        for (UUID uid : filters.keySet()) {
+            rowUUIDs.put(rowUUIDs.size(), uid);
+        }
         this.filterListeners = filterListeners;
     }
 

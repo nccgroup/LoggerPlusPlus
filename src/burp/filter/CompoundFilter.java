@@ -4,7 +4,11 @@ import burp.LogEntry;
 import burp.LogTableModel;
 
 public class CompoundFilter extends Filter {
-    enum CompoundOperation {AND,OR}
+    enum CompoundOperation {
+        AND("&&"),OR("||");
+        private final String representation;
+        CompoundOperation(String s){representation = s;}
+    }
     CompoundOperation op;
 
     public CompoundFilter(Object left, Object op, Object right) throws FilterException {
@@ -49,5 +53,10 @@ public class CompoundFilter extends Filter {
             case OR: return ((Filter) this.left).matches(entry) || ((Filter) this.right).matches(entry);
             default: return false;
         }
+    }
+
+    @Override
+    public String toString(){
+        return left.toString() + " " + op.representation + " " + right.toString();
     }
 }

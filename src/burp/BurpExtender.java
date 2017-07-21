@@ -22,10 +22,9 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.*;
 
-import burp.filter.ColorFilter;
-import burp.filter.Filter;
-import burp.filter.FilterCompiler;
-import burp.filter.FilterListener;
+import burp.filter.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
@@ -47,7 +46,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private TableRowSorter tableRowSorter;
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
-	private Map<UUID, ColorFilter> colorFilters;
 	private ArrayList<FilterListener> filterListeners;
 	private JScrollBar tableScrollBar;
 
@@ -82,7 +80,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}   
 
 		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
-		this.colorFilters = new HashMap<UUID, ColorFilter>();
+		if(loggerPreferences.getColorFilters() == null) loggerPreferences.setColorFilters(new HashMap<UUID, ColorFilter>());
 		this.filterListeners = new ArrayList<FilterListener>();
 		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
@@ -95,7 +93,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			{
 				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, colorFilters, stdout, stderr, isDebug);
+				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, loggerPreferences.getColorFilters(), stdout, stderr, isDebug);
 				tableRowSorter = new TableRowSorter(logTable.getModel());
 				logTable.setRowSorter(tableRowSorter);
 
@@ -106,7 +104,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 				JPanel viewPanel = new JPanel();
 				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
-				colorFilterDialog = new ColorFilterDialog(colorFilters, filterListeners);
+				colorFilterDialog = new ColorFilterDialog(loggerPreferences, filterListeners);
 
 
 				JPanel filterPanel = new JPanel(new GridBagLayout());
@@ -297,7 +295,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						// create a new log entry with the message details
 						LogEntry entry = new LogEntry(logTable.getModel(), toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
 						//Check entry against colorfilters.
-						for (ColorFilter colorFilter : colorFilters.values()) {
+						for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
 							entry.testColorFilter(colorFilter, false);
 						}
 

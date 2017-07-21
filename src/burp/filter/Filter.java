@@ -1,13 +1,16 @@
 package burp.filter;
 import burp.LogEntry;
 import burp.LogTableModel;
+import com.google.gson.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.regex.Pattern;
 
-public class Filter extends RowFilter<Object, Object>{
+public class Filter extends RowFilter<Object, Object> {
+
     enum LogicalOperation {
         LT ("<"), LE ("<="), GT (">"), GE (">="), EQ ("=="), NE ("!=");
         private final String representation;
@@ -158,6 +161,10 @@ public class Filter extends RowFilter<Object, Object>{
 
     @Override
     public String toString(){
-        return left + " " + operation.representation + " " + right;
+        String lString = left.toString();
+        if(left instanceof Pattern) lString = "/" + left + "/";
+        String rString = right.toString();
+        if(right instanceof Pattern) rString = "/" + right + "/";
+        return lString + " " + operation.representation + " " + rString;
     }
 }

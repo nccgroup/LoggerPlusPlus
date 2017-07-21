@@ -64,7 +64,9 @@ public class FilterCompiler {
         } else {
             Matcher compoundMatcher = compoundPattern.matcher(regexStripped);
             if (compoundMatcher.matches()) {
-                return new CompoundFilter(compoundMatcher.group(1), compoundMatcher.group(2), compoundMatcher.group(3));
+                String left = string.substring(0, compoundMatcher.group(1).length()).trim();
+                String right = string.substring(compoundMatcher.group(1).length() + compoundMatcher.group(2).length()).trim();
+                return new CompoundFilter(left, compoundMatcher.group(2), right);
             } else {
                 Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
                 Matcher operationMatcher = operation.matcher(regexStripped);
