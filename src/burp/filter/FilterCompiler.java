@@ -62,14 +62,16 @@ public class FilterCompiler {
             }
             return group;
         } else {
-            Matcher compoundMatcher = compoundPattern.matcher(string);
+            Matcher compoundMatcher = compoundPattern.matcher(regexStripped);
             if (compoundMatcher.matches()) {
                 return new CompoundFilter(compoundMatcher.group(1), compoundMatcher.group(2), compoundMatcher.group(3));
             } else {
                 Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
-                Matcher operationMatcher = operation.matcher(string);
+                Matcher operationMatcher = operation.matcher(regexStripped);
                 if(operationMatcher.matches()){
-                    return new Filter(operationMatcher.group(1).trim(), operationMatcher.group(2), operationMatcher.group(3).trim());
+                    String left = string.substring(0, operationMatcher.group(1).length()).trim();
+                    String right = string.substring(operationMatcher.group(1).length() + operationMatcher.group(2).length()).trim();
+                    return new Filter(left, operationMatcher.group(2), right);
                 }
             }
         }
