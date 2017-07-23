@@ -14,17 +14,21 @@ package burp;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.*;
 
 import burp.filter.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import sun.swing.ImageIconUIResource;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
@@ -48,8 +52,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private ColorFilterDialog colorFilterDialog;
 	private ArrayList<FilterListener> filterListeners;
 	private JScrollBar tableScrollBar;
-
-
+	private JSplitPane splitPane;
+	private burp.ilf textAreaTitle;
+	private burp.qqh extensionTabs;
+	private burp.jr titleContainer;
 	//
 	// implement IBurpExtender
 	//
@@ -101,7 +107,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				logTable.generatingTableColumns();
 
 				// main split pane for the View section
-				JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+				splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 				JPanel viewPanel = new JPanel();
 				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
 				colorFilterDialog = new ColorFilterDialog(loggerPreferences, filterListeners);
@@ -154,8 +160,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
 				tableScrollBar = viewScrollPane.getVerticalScrollBar();
-				viewPanel.add(filterPanel);
-				viewPanel.add(viewScrollPane);
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.weighty = 1;
+				viewPanel.add(filterPanel, gbc);
+				gbc.weighty = 999;
+				viewPanel.add(viewScrollPane, gbc);
 
 				// tabs with request/response viewers
 				JTabbedPane tabs = new JTabbedPane();
@@ -182,6 +191,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				// customize our UI components
 				//callbacks.customizeUiComponent(topTabs); // disabled to be able to drag and drop columns
 
+
 				// add the custom tab to Burp's UI
 				callbacks.addSuiteTab(BurpExtender.this);
 
@@ -190,7 +200,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				// register ourselves as an HTTP proxy listener as well!
 				callbacks.registerProxyListener(BurpExtender.this);
-
 			}
 		});
 	}
