@@ -35,6 +35,10 @@ public class ColorFilterTable extends JTable {
         this.getColumnModel().getColumn(3).setCellEditor(new ColorEditor());
         this.getColumnModel().getColumn(5).setCellRenderer(new Table.JTableButtonRenderer());
 
+
+        this.setDragEnabled(true);
+        this.setDropMode(DropMode.INSERT);
+
         int[] minWidths = {100, 250, 50, 50, 100, 100};
         for(int i=0; i<minWidths.length; i++) {
             this.getColumnModel().getColumn(i).setMinWidth(minWidths[i]);

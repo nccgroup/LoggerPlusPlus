@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Created by corey on 19/07/17.
  */
-public class ColorFilter {
+public class ColorFilter implements Comparable<ColorFilter>{
     private UUID uid;
     private String name;
     private Filter filter;
@@ -17,6 +17,7 @@ public class ColorFilter {
     private Color foregroundColor;
     private boolean enabled;
     private boolean modified;
+    private short priority;
 
     public ColorFilter(){
         this.uid = UUID.randomUUID();
@@ -93,5 +94,16 @@ public class ColorFilter {
         this.modified = modified;
     }
 
+    public void setPriority(short priority){
+        this.priority = priority;
+    }
 
+    public short getPriority() {
+        return priority;
+    }
+
+    @Override
+    public int compareTo(ColorFilter colorFilter) {
+        return ((Comparable) this.priority).compareTo(colorFilter.getPriority());
+    }
 }
