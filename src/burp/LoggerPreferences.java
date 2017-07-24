@@ -40,7 +40,8 @@ public class LoggerPreferences {
 	private final String projectLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus";
 	private final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
 	private final String changeLog = "https://raw.githubusercontent.com/nccgroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
-	
+	enum View {HORIZONTAL, VERTICAL, TABS}
+
 	private boolean isDebugMode;
 	private boolean isEnabled;
 	private boolean isRestrictedToScope;
@@ -57,6 +58,8 @@ public class LoggerPreferences {
 	private String tableDetailsJSONString;
 	private boolean autoSave;
 	private Map<UUID, ColorFilter> colorFilters;
+	private View view;
+
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -288,6 +291,7 @@ public class LoggerPreferences {
 		this.tableDetailsJSONString = tempTableDetailsJSONString;
 		String c = prefs.get("colorFilters", "");
 		this.colorFilters = gson.fromJson(prefs.get("colorFilters", ""), new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
+		this.view = View.valueOf(prefs.get("layout", "HORIZONTAL"));
 	}
 
 	public void resetLoggerPreferences(){
@@ -305,6 +309,7 @@ public class LoggerPreferences {
 		setEnabled4TargetTab(false);
 		setLoggingFiltered(false);
 		setTableDetailsJSONString("");
+		setView(View.VERTICAL);
 	}
 	
 	public void resetTableSettings(){
@@ -343,5 +348,14 @@ public class LoggerPreferences {
 	}
 	public boolean getAutoSave(){
 		return this.autoSave;
+	}
+
+    public View getView() {
+        return this.view;
+    }
+
+    public void setView(View view){
+		prefs.put("layout", view.toString());
+		this.view = view;
 	}
 }

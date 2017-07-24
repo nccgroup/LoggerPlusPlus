@@ -16,7 +16,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -284,7 +283,7 @@ public class LoggerOptionsPanel extends JPanel {
 				loggerPreferences.resetLoggerPreferences();
 				tableModel.getTableHeaderColumnsDetails().resetToDefaultVariables();
 				tableModel.fireTableStructureChanged();
-				table.generatingTableColumns();
+				table.generateTableColumns();
 				loggerPreferences.setEnabled(origState);
 				setPreferencesValues();
 			}

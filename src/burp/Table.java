@@ -5,6 +5,7 @@ package burp;
 //
 
 import burp.filter.ColorFilter;
+import burp.filter.Filter;
 import com.google.gson.Gson;
 
 import javax.swing.*;
@@ -18,6 +19,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -70,6 +72,7 @@ public class Table extends JTable
         //					}
         //				}
         //			});
+        setRowSorter(new TableRowSorter<>(this.getModel()));
 
 
         this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
@@ -115,7 +118,11 @@ public class Table extends JTable
             }
         });
         registerListeners();
+        generateTableColumns();
+    }
 
+    public void setFilter(Filter filter){
+        ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
     }
 
     @Override
@@ -319,7 +326,7 @@ public class Table extends JTable
     }
 
     // generate the table columns!
-    public void generatingTableColumns(){
+    public void generateTableColumns(){
         for(TableColumn column : Collections.list(this.getColumnModel().getColumns())){
 //        for (int i=0; i<this.getModel().getColumnCount(); i++) {
             TableStructure colStructure = this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(column.getModelIndex());

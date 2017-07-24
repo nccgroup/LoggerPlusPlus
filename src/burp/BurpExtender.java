@@ -14,21 +14,14 @@ package burp;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.table.*;
 
 import burp.filter.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import sun.swing.ImageIconUIResource;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
@@ -41,21 +34,24 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor responseViewer;
 	private final List<LogEntry> log = new ArrayList<LogEntry>();
 	private List<LogEntry> filteredLog = new ArrayList<LogEntry>();
-	private JTabbedPane topTabs;
+	private JTabbedPane mainUI;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
 	private LoggerOptionsPanel optionsJPanel;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
 	private Table logTable;
-	private TableRowSorter tableRowSorter;
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
 	private ArrayList<FilterListener> filterListeners;
-	private JScrollBar tableScrollBar;
-	private JSplitPane splitPane;
-	private burp.ilf textAreaTitle;
-	private burp.qqh extensionTabs;
-	private burp.jr titleContainer;
+	private JScrollBar logTableScrollBar;
+	private JPanel logViewJPanelWrapper;
+	private JSplitPane logViewSplit;
+	private JTabbedPane logViewTabbed;
+	private JPanel logTablePanel;
+	private JTabbedPane reqRespTabbedPane;
+	private JSplitPane reqRespSplitPane;
+	private JMenu loggerMenu;
+	private LoggerPreferences.View currentView;
 	//
 	// implement IBurpExtender
 	//
@@ -97,100 +93,68 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			@Override
 			public void run()
 			{
+				mainUI = new JTabbedPane(){
+					@Override
+					public void removeNotify(){
+						super.removeNotify();
+						if(loggerMenu != null){
+							loggerMenu.getParent().remove(loggerMenu);
+						}
+					}
+				};
+				//Let the user resize the splitter at will:
+				//mainUI.setMinimumSize(new Dimension(0, 0));
 				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, loggerPreferences.getColorFilters(), stdout, stderr, isDebug);
-				tableRowSorter = new TableRowSorter(logTable.getModel());
-				logTable.setRowSorter(tableRowSorter);
 
-				// generating the table columns
-				logTable.generatingTableColumns();
-
-				// main split pane for the View section
-				splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-				JPanel viewPanel = new JPanel();
-				viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
-				colorFilterDialog = new ColorFilterDialog(loggerPreferences, filterListeners);
-
-
-				JPanel filterPanel = new JPanel(new GridBagLayout());
-
-				filterField = new JTextField();
-				filterField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
-				filterField.getActionMap().put("submit", new AbstractAction() {
-					@Override
-					public void actionPerformed(ActionEvent actionEvent) {
-						setFilter();
-					}
-				});
-				GridBagConstraints fieldConstraints = new GridBagConstraints();
-				fieldConstraints.fill = GridBagConstraints.BOTH;
-				fieldConstraints.gridx = 0;
-				fieldConstraints.weightx = fieldConstraints.weighty = 6.0;
-
-				final JButton filterButton = new JButton("Filter");
-				filterButton.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent actionEvent) {
-						setFilter();
-					}
-				});
-
-				GridBagConstraints filterBtnConstraints = new GridBagConstraints();
-				filterBtnConstraints.fill = GridBagConstraints.BOTH;
-				filterBtnConstraints.gridx = 1;
-				filterBtnConstraints.weightx = filterBtnConstraints.weighty = 1.0;
-
-				final JButton colorFilterButton = new JButton("Colorize");
-				colorFilterButton.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent actionEvent) {
-						colorFilterDialog.setVisible(true);
-					}
-				});
-
-				GridBagConstraints colorFilterBtnConstraints = new GridBagConstraints();
-				colorFilterBtnConstraints.fill = GridBagConstraints.BOTH;
-				colorFilterBtnConstraints.gridx = 2;
-				colorFilterBtnConstraints.weightx = colorFilterBtnConstraints.weighty = 1.0;
-
-				filterPanel.add(filterField, fieldConstraints);
-				filterPanel.add(filterButton, filterBtnConstraints);
-				filterPanel.add(colorFilterButton, colorFilterBtnConstraints);
-
-				JScrollPane viewScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
-				tableScrollBar = viewScrollPane.getVerticalScrollBar();
-				GridBagConstraints gbc = new GridBagConstraints();
-				gbc.weighty = 1;
-				viewPanel.add(filterPanel, gbc);
-				gbc.weighty = 999;
-				viewPanel.add(viewScrollPane, gbc);
-
-				// tabs with request/response viewers
-				JTabbedPane tabs = new JTabbedPane();
-
-				tabs.addTab("Request", requestViewer.getComponent());
-				tabs.addTab("Response", responseViewer.getComponent());
-				splitPane.setLeftComponent(viewPanel);
-				splitPane.setRightComponent(tabs);
-
-				// Option tab
+				// Options Panel
 				optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
 						canSaveCSV, loggerPreferences, isDebug);
-
-				// About tab
+				// About Panel
 				AboutPanel aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
 
-				topTabs = new JTabbedPane();
-				//Let the user resize the splitter at will:
-				//topTabs.setMinimumSize(new Dimension(0, 0));
-				topTabs.addTab("View Logs", null, splitPane, null);
-				topTabs.addTab("Options", null, optionsJPanel, null);				
-				topTabs.addTab("About", null, aboutJPanel, null);	
+				// Log View Panel
+				logViewJPanelWrapper = new JPanel(new BorderLayout());
+				logViewSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+				logViewTabbed = new JTabbedPane();
+
+				//LogTablePanel
+				logTablePanel = new JPanel(new GridBagLayout());
+				JScrollPane logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+				logTableScrollBar = logTableScrollPane.getVerticalScrollBar();
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.weighty = 1;
+				gbc.gridy = 0;
+				gbc.fill = GridBagConstraints.BOTH;
+				gbc.weightx = 1;
+				logTablePanel.add(getFilterPanel(), gbc);
+				gbc.weighty = 999;
+				gbc.gridy = 1;
+				logTablePanel.add(logTableScrollPane, gbc);
+				//LogTablePanel
+
+
+				//Split
+				logViewSplit.setBottomComponent(reqRespTabbedPane);
+				logViewSplit.setResizeWeight(0.5);
+				reqRespTabbedPane = new JTabbedPane();
+				reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
+				reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
+
+				//Tabbed
+				reqRespSplitPane = new JSplitPane();
+				reqRespSplitPane.setResizeWeight(0.5);
+				logViewTabbed.addTab("Log Table", logTablePanel);
+				logViewTabbed.addTab("Request/Response", reqRespSplitPane);
+
+				setLayout(loggerPreferences.getView());
 
 				// customize our UI components
-				//callbacks.customizeUiComponent(topTabs); // disabled to be able to drag and drop columns
-
+				//callbacks.customizeUiComponent(mainUI); // disabled to be able to drag and drop columns
+				mainUI.addTab("View Logs", null, logViewJPanelWrapper, null);
+				mainUI.addTab("Options", null, optionsJPanel, null);
+				mainUI.addTab("About", null, aboutJPanel, null);
 
 				// add the custom tab to Burp's UI
 				callbacks.addSuiteTab(BurpExtender.this);
@@ -200,23 +164,152 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				// register ourselves as an HTTP proxy listener as well!
 				callbacks.registerProxyListener(BurpExtender.this);
+
+				JFrame rootFrame = (JFrame) SwingUtilities.getWindowAncestor(mainUI);
+				try{
+					JMenuBar menuBar = rootFrame.getJMenuBar();
+					loggerMenu = new JMenu(getTabCaption());
+					JMenuItem colorFilters = new JMenuItem(new AbstractAction("Color Filters") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							colorFilterDialog.setVisible(true);
+						}
+					});
+					loggerMenu.add(colorFilters);
+					JMenu viewMenu = new JMenu("View");
+					ButtonGroup bGroup = new ButtonGroup();
+					JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setLayout(LoggerPreferences.View.VERTICAL);
+						}
+					});
+					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
+					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
+					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setLayout(LoggerPreferences.View.HORIZONTAL);
+						}
+					});
+					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
+					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setLayout(LoggerPreferences.View.TABS);
+						}
+					});
+					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
+					loggerMenu.add(viewMenu);
+					menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
+				}catch (NullPointerException nPException){
+					loggerMenu = null;
+				}
 			}
 		});
+	}
+
+	private void setLayout(LoggerPreferences.View view){
+		if(view == null) return;
+
+		if((currentView == LoggerPreferences.View.TABS || currentView == null) && view != LoggerPreferences.View.TABS){
+			logViewJPanelWrapper.removeAll();
+			//SplitResetup
+			logViewSplit.setTopComponent(logTablePanel);
+			reqRespTabbedPane.removeAll();
+			reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
+			reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
+			logViewSplit.setBottomComponent(reqRespTabbedPane);
+			logViewJPanelWrapper.add(logViewSplit);
+		}else if((currentView != LoggerPreferences.View.TABS || currentView == null) && view == LoggerPreferences.View.TABS){
+			logViewJPanelWrapper.removeAll();
+			//TabbedResetup
+			logViewTabbed.removeAll();
+			logViewTabbed.addTab("Logs", logTablePanel);
+			reqRespSplitPane.setLeftComponent(requestViewer.getComponent());
+			reqRespSplitPane.setRightComponent(responseViewer.getComponent());
+			logViewTabbed.addTab("Request / Response", reqRespSplitPane);
+			logViewJPanelWrapper.add(logViewTabbed);
+		}
+
+		switch (view) {
+			case VERTICAL:
+				logViewSplit.setOrientation(JSplitPane.VERTICAL_SPLIT);
+				break;
+			case HORIZONTAL:
+				logViewSplit.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+				break;
+		}
+
+		loggerPreferences.setView(view);
+		currentView = view;
+	}
+
+	private JPanel getFilterPanel(){
+		JPanel filterPanel = new JPanel(new GridBagLayout());
+		colorFilterDialog = new ColorFilterDialog(loggerPreferences, filterListeners);
+
+		filterField = new JTextField();
+		filterField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
+		filterField.getActionMap().put("submit", new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				setFilter();
+			}
+		});
+		GridBagConstraints fieldConstraints = new GridBagConstraints();
+		fieldConstraints.fill = GridBagConstraints.BOTH;
+		fieldConstraints.gridx = 0;
+		fieldConstraints.weightx = fieldConstraints.weighty = 6.0;
+
+		final JButton filterButton = new JButton("Filter");
+		filterButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				setFilter();
+			}
+		});
+
+		GridBagConstraints filterBtnConstraints = new GridBagConstraints();
+		filterBtnConstraints.fill = GridBagConstraints.BOTH;
+		filterBtnConstraints.gridx = 1;
+		filterBtnConstraints.weightx = filterBtnConstraints.weighty = 1.0;
+
+		final JButton colorFilterButton = new JButton("Colorize");
+		colorFilterButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				colorFilterDialog.setVisible(true);
+			}
+		});
+
+		GridBagConstraints colorFilterBtnConstraints = new GridBagConstraints();
+		colorFilterBtnConstraints.fill = GridBagConstraints.BOTH;
+		colorFilterBtnConstraints.gridx = 2;
+		colorFilterBtnConstraints.weightx = colorFilterBtnConstraints.weighty = 1.0;
+
+		filterPanel.add(filterField, fieldConstraints);
+		filterPanel.add(filterButton, filterBtnConstraints);
+		filterPanel.add(colorFilterButton, colorFilterBtnConstraints);
+
+		return filterPanel;
 	}
 
 	private void setFilter(){
 		try{
 			if(filterField.getText().length() == 0){
-				tableRowSorter.setRowFilter(null);
+				logTable.setFilter(null);
 				filterField.setBackground(Color.white);
 			}else {
-				tableRowSorter.setRowFilter(FilterCompiler.parseString(filterField.getText()));
+				logTable.setFilter(FilterCompiler.parseString(filterField.getText()));
 				filterField.setBackground(Color.green);
 			}
 		} catch (Filter.FilterException e) {
-			e.printStackTrace();
 			filterField.setBackground(Color.red);
-			tableRowSorter.setRowFilter(null);
+			logTable.setFilter(null);
 		}
 	}
 
@@ -233,7 +326,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public Component getUiComponent()
 	{
-		return topTabs;
+		return mainUI;
 	}
 
 	//
@@ -308,8 +401,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							entry.testColorFilter(colorFilter, false);
 						}
 
-						int v = (int) (tableScrollBar.getValue() + (tableScrollBar.getHeight()*1.1));
-						int m = tableScrollBar.getMaximum();
+						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight()*1.1));
+						int m = logTableScrollBar.getMaximum();
 						boolean isAtBottom = v >= m;
 
 						synchronized (log) {
@@ -336,7 +429,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							//							}
 						}
 						if(isAtBottom)
-							tableScrollBar.setValue(tableScrollBar.getMaximum() + logTable.getRowHeight());
+							logTableScrollBar.setValue(logTableScrollBar.getMaximum() + logTable.getRowHeight());
 						if(loggerPreferences.getAutoSave()){
 							optionsJPanel.autoLogItem(entry);
 						}
