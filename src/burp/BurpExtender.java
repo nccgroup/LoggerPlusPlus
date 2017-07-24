@@ -213,7 +213,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	}
 
 	private void setLayout(LoggerPreferences.View view){
-		if(view == null) return;
+		if(view == null) view = LoggerPreferences.View.HORIZONTAL;
 
 		if((currentView == LoggerPreferences.View.TABS || currentView == null) && view != LoggerPreferences.View.TABS){
 			logViewJPanelWrapper.removeAll();
