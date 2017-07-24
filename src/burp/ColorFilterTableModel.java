@@ -147,6 +147,16 @@ public class ColorFilterTableModel extends AbstractTableModel {
         }
     }
 
+    public void switchRows(int from, int to) {
+        UUID toUid = this.rowUUIDs.get((short) to);
+        rowUUIDs.put((short) to, rowUUIDs.get((short) from));
+        rowUUIDs.put((short) from, toUid);
+        filters.get(rowUUIDs.get((short) to)).setPriority((short) to);
+        filters.get(rowUUIDs.get((short) from)).setPriority((short) from);
+        this.fireTableRowsUpdated(from, from);
+        this.fireTableRowsUpdated(to, to);
+    }
+
     public void removeAll() {
         this.filters.clear();
         for(FilterListener listener : filterListeners){

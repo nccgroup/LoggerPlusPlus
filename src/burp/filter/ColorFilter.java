@@ -96,6 +96,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
 
     public void setPriority(short priority){
         this.priority = priority;
+        this.modified = true;
     }
 
     public short getPriority() {

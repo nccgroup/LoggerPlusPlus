@@ -62,6 +62,19 @@ public class ColorFilterTable extends JTable {
         });
     }
 
+    public void moveSelectedUp() {
+        if(this.getSelectedRow() > 0){
+            ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()-1);
+            this.getSelectionModel().setSelectionInterval(this.getSelectedRow()-1, this.getSelectedRow()-1);
+        }
+    }
+    public void moveSelectedDown() {
+        if(this.getSelectedRow() >= 0 && this.getSelectedRow() < this.getRowCount()){
+            ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
+            this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
+        }
+    }
+
     static class FilterRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
