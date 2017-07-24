@@ -47,16 +47,35 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         gbcFilterWrapper.gridx = 0;
         gbcFilterWrapper.gridy = 0;
         gbcFilterWrapper.weighty = 999;
-        gbcFilterWrapper.weightx = 1;
+        gbcFilterWrapper.weightx = 999;
         gbcFilterWrapper.fill = GridBagConstraints.BOTH;
         this.setMinimumSize(filterTable.getMinimumSize());
         content.add(filterListWrapper, gbcFilterWrapper);
+
+        gbcFilterWrapper.gridx = 1;
+        gbcFilterWrapper.weightx = 1;
+        gbcFilterWrapper.fill = GridBagConstraints.HORIZONTAL;
+        final JPanel priorityControls = new JPanel(new GridLayout(0,1));
+        priorityControls.add(new JButton(new AbstractAction("▲") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterTable.moveSelectedUp();
+            }
+        }));
+        priorityControls.add(new JButton(new AbstractAction("▼") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                filterTable.moveSelectedDown();
+            }
+        }));
+        content.add(priorityControls, gbcFilterWrapper);
 
         GridBagConstraints gbcFooter = new GridBagConstraints();
         gbcFooter.gridx = 0;
         gbcFooter.gridy = 1;
         gbcFooter.fill = GridBagConstraints.BOTH;
         gbcFooter.weighty = gbcFooter.weightx = 1;
+        gbcFooter.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new BorderLayout());
         JButton btnDeleteAll = new JButton("Delete All");
         btnDeleteAll.addActionListener(new ActionListener() {

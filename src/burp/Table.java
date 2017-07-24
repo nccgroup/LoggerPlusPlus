@@ -136,7 +136,12 @@ public class Table extends JTable
             c.setForeground(this.getSelectionForeground());
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
-                ColorFilter colorFilter = colorFilters.get(entry.getMatchingColorFilters().get(0));
+                ColorFilter colorFilter = null;
+                for (UUID uid : entry.getMatchingColorFilters()) {
+                    if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
+                        colorFilter = colorFilters.get(uid);
+                    }
+                }
                 c.setForeground(colorFilter.getForegroundColor());
                 c.setBackground(colorFilter.getBackgroundColor());
             }else{
