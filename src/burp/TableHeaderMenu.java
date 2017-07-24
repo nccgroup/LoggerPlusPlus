@@ -211,7 +211,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		table.saveTableChanges();
 		table.getModel().getTableHeaderColumnsDetails().resetToCurrentVariables();
 		table.getModel().fireTableStructureChanged();
-		table.generatingTableColumns();
+		table.generateTableColumns();
 	}
 
 
