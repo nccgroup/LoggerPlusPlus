@@ -32,14 +32,16 @@ public class LoggerPreferences {
 	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new FilterSerializer()).create();
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 2.71;
+	private final double version = 2.81;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";
 	private final String authorLink = "https://soroush.secproject.com/";
-	private final String projectLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus";
+	private final String projectLink = "https://github.com/CoreyD97/BurpSuiteLoggerPlusPlus";
 	private final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
-	private final String changeLog = "https://raw.githubusercontent.com/nccgroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
+	private final String changeLog = "https://raw.githubusercontent.com/CoreyD97/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
+	private final String updateURL = "https://raw.githubusercontent.com/CoreyD97/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
+
 	enum View {HORIZONTAL, VERTICAL, TABS}
 
 	private boolean isDebugMode;
@@ -106,6 +108,7 @@ public class LoggerPreferences {
 	public synchronized String getProjectLink() {
 		return projectLink;
 	}
+
 	public synchronized String getAppInfo() {
 		return "Name: "+appName + " | Version: " + String.valueOf(version) + " | Source: " + projectLink + " | Author: " + author;
 	}
@@ -340,6 +343,7 @@ public class LoggerPreferences {
 		return author;
 	}
 
+	public String getUpdateURL() { return updateURL; }
 
 
 	//Do not persist over restarts.
