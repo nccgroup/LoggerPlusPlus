@@ -14,6 +14,7 @@ public class FilterCompiler {
     private static Pattern regexPattern = Pattern.compile("\\/(.*)\\/");
     private static Pattern bracketsPattern = Pattern.compile("(.*?)(!?)(\\(.*\\))(.*?)");
     private static Pattern compoundPattern = Pattern.compile("(.*?)(\\|+|&+)(.*?)");
+    private static Pattern inQuotes = Pattern.compile("([\"'])(.*)(\\1)");
 
     //TODO implement type parser?
     public static Object parseItem(String item) throws Filter.FilterException {
@@ -33,6 +34,11 @@ public class FilterCompiler {
 
         if(regexPattern.matcher(item).matches()){
             return item.substring(1, item.length()-1);
+        }
+
+        Matcher inQuotesMatcher = inQuotes.matcher(item);
+        if(inQuotesMatcher.matches()){
+            item = inQuotesMatcher.group(2);
         }
         return item.trim();
     }

@@ -9,7 +9,8 @@ package burp;
  * and Burp Suite Professional, provided that this usage does not violate the
  * license terms for those products.
  */
-import java.awt.Component;
+
+import java.awt.*;
 
 /**
  * Extensions that register an

@@ -1,7 +1,6 @@
 package burp;
 
 import burp.filter.ColorFilter;
-import burp.filter.Filter;
 import burp.filter.FilterListener;
 
 import javax.swing.*;
@@ -33,7 +32,7 @@ public class ColorFilterTable extends JTable {
         this.getColumnModel().getColumn(2).setCellEditor(new ColorEditor());
         this.getColumnModel().getColumn(3).setCellRenderer(new ColorRenderer(true));
         this.getColumnModel().getColumn(3).setCellEditor(new ColorEditor());
-        this.getColumnModel().getColumn(5).setCellRenderer(new Table.JTableButtonRenderer());
+        this.getColumnModel().getColumn(5).setCellRenderer(new LogTable.JTableButtonRenderer());
 
 
         this.setDragEnabled(true);

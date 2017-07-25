@@ -92,9 +92,6 @@ public class TableStructure implements Comparator<TableStructure>{
 		public String getDescription() {
 			return description;
 		}
-		public void setDescription(String description) {
-			this.description = description;
-		}
 		public boolean isRegEx() {
 			return isRegEx;
 		}
@@ -110,9 +107,6 @@ public class TableStructure implements Comparator<TableStructure>{
 		
 		public String getDefaultVisibleName() {
 			return defaultVisibleName;
-		}
-		public void setDefaultVisibleName(String defaultVisibleName) {
-			this.defaultVisibleName = defaultVisibleName;
 		}
 		
 	public static class RegExData{

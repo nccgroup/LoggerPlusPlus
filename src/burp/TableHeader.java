@@ -10,11 +10,11 @@ import java.io.PrintWriter;
 // This was used to create tool tips
 public class TableHeader extends JTableHeader {
 
-	private final Table logTable;
+	private final LogTable logTable;
 	private final boolean isDebug;
 	private final PrintWriter stdout, stderr;
 	
-	TableHeader(TableColumnModel tcm, Table logTable, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
+	TableHeader(TableColumnModel tcm, LogTable logTable, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
 		super(tcm);
 		this.logTable = logTable;
 		this.isDebug=isDebug;
@@ -29,10 +29,10 @@ public class TableHeader extends JTableHeader {
 		Point p = e.getPoint();
 		int columnID = logTable.columnAtPoint(p);
 		TableColumn column = logTable.getColumnModel().getColumn(columnID);
-		TableStructure columnObj = ((LogTableModel) logTable.getModel()).getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
+		TableStructure columnObj = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
 		if(isDebug){
 			stdout.println("right click detected on the header!");
-			stdout.println("right click on item number " + String.valueOf(columnID) + " ("+logTable.getColumnName(columnID)+") was detected");
+			stdout.println("right click on item number " + String.valueOf(columnID) + " ("+ logTable.getColumnName(columnID)+") was detected");
 		}
 
 		String retStr;

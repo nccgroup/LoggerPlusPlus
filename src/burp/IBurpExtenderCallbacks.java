@@ -9,7 +9,8 @@ package burp;
  * and Burp Suite Professional, provided that this usage does not violate the
  * license terms for those products.
  */
-import java.awt.Component;
+
+import java.awt.*;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;

@@ -5,7 +5,9 @@ package burp;
 //
 
 import burp.filter.ColorFilter;
+import burp.filter.CompoundFilter;
 import burp.filter.Filter;
+import burp.filter.FilterCompiler;
 import com.google.gson.Gson;
 
 import javax.swing.*;
@@ -20,46 +22,35 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.List;
 
-public class Table extends JTable
+public class LogTable extends JTable
 {
     private boolean columnWidthChanged;
     private boolean columnMoved;
     private PrintWriter stdout, stderr;
-    private final IMessageEditor requestViewer;
-    private final IMessageEditor responseViewer;
-    private final IExtensionHelpers helpers;
-    private final LoggerPreferences loggerPreferences;
     private boolean isDebug;
-    private Map<UUID, ColorFilter> colorFilters;
 
-    public Table(List<LogEntry> data, IMessageEditor requestViewer, IMessageEditor responseViewer,
-                 IExtensionHelpers helpers, LoggerPreferences loggerPreferences, Map<UUID, ColorFilter> colorFilters,
-                 PrintWriter stdout, PrintWriter stderr, boolean isDebug)
+    public LogTable(List<LogEntry> data, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
-        super(new LogTableModel(data, requestViewer, responseViewer, helpers, loggerPreferences, stdout, stderr, isDebug));
-        this.getModel().setTableOwner(this);
-        this.requestViewer = requestViewer;
-        this.responseViewer = responseViewer;
-        this.helpers = helpers;
+        super(new LogTableModel(data, stdout, stderr, isDebug));
         this.stderr = stderr;
         this.stdout = stdout;
         this.isDebug = isDebug;
-        this.loggerPreferences = loggerPreferences;
-        this.colorFilters = colorFilters;
         this.setTableHeader(new TableHeader (getColumnModel(),this,stdout,stderr,isDebug)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setAutoCreateRowSorter(true); // To fix the sorting
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
+        this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
-        this.setDefaultRenderer(Boolean.class, new BooleanRenderer());
         // another way to detect column dragging to save its settings for next time loading! fooh! seems tricky!
         //			getLogTable().setTableHeader(new JTableHeader(getLogTable().getColumnModel()) {
         //				@Override
@@ -121,10 +112,7 @@ public class Table extends JTable
         generateTableColumns();
     }
 
-    public void setFilter(Filter filter){
-        ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
-    }
-
+    //Sneak in row coloring just before rendering the cell.
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
     {
@@ -137,6 +125,7 @@ public class Table extends JTable
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
+                Map<UUID, ColorFilter> colorFilters = BurpExtender.getInstance().getLoggerPreferences().getColorFilters();
                 for (UUID uid : entry.getMatchingColorFilters()) {
                     if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
                         colorFilter = colorFilters.get(uid);
@@ -154,45 +143,104 @@ public class Table extends JTable
         return c;
     }
 
+
     private void registerListeners(){
-        // This will be used in future to develop right click mouse events
         this.addMouseListener( new MouseAdapter()
         {
-            // Detecting right click
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if ( SwingUtilities.isRightMouseButton( e )) {
+                    Point p = e.getPoint();
+                    final int row = rowAtPoint(p);
+                    final int col = columnAtPoint(p);
+                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                        showContextMenu(e, row, col);
+                    }
+                }
+            }
+
+            @Override
             public void mouseReleased( MouseEvent e )
             {
-                // Left mouse click
-                if ( SwingUtilities.isLeftMouseButton( e ) )
+                if ( SwingUtilities.isRightMouseButton( e ))
                 {
-                    if(isDebug){
-                        stdout.println("left click detected on the cells!");
+                    Point p = e.getPoint();
+                    final int row = convertRowIndexToModel(rowAtPoint(p));
+                    final int col = convertColumnIndexToModel(columnAtPoint(p));
+                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                        showContextMenu(e, row, col);
                     }
                 }
-                // Right mouse click
-                else if ( SwingUtilities.isRightMouseButton( e ))
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if ( SwingUtilities.isRightMouseButton( e ))
                 {
-                    // get the coordinates of the mouse click
-                    //Point p = e.getPoint();
-
-                    // get the row index that contains that coordinate
-                    //int rowNumber = getLogTable().rowAtPoint( p );
-
-                    // Get the ListSelectionModel of the JTable
-                    //ListSelectionModel model = getLogTable().getSelectionModel();
-
-                    // set the selected interval of rows. Using the "rowNumber"
-                    // variable for the beginning and end selects only that one row.
-                    //model.setSelectionInterval( rowNumber, rowNumber );
-                    if(isDebug){
-                        stdout.println("right click detected on the cells!");
+                    Point p = e.getPoint();
+                    final int row = convertRowIndexToModel(rowAtPoint(p));
+                    final int col = convertColumnIndexToModel(columnAtPoint(p));
+                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                        showContextMenu(e, row, col);
                     }
-
                 }
+            }
+
+            private void showContextMenu(MouseEvent e, final int row, final int col){
+                JPopupMenu popup = new JPopupMenu();
+                JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use as filter") {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        String columnName = getModel().getColumnName(col);
+                        String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
+                        try {
+                            Filter filter = new Filter(columnName, "==", value);
+                            setFilter(filter, BurpExtender.getInstance().getFilterField());
+                        } catch (Filter.FilterException e1) {return;}
+                    }
+                });
+                popup.add(useAsFilter);
+
+                if(getCurrentFilter() != null) {
+                    JMenu addToCurrentFilter = new JMenu("Add To Filter");
+                    JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
+                        @Override
+                        public void actionPerformed(ActionEvent actionEvent) {
+                            String columnName = getModel().getColumnName(col);
+                            String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
+                            try {
+                                Filter rFilter = new Filter(columnName, "==", value);
+                                Filter filter = new CompoundFilter(getCurrentFilter(), "&&", rFilter);
+                                setFilter(filter, BurpExtender.getInstance().getFilterField());
+                            } catch (Filter.FilterException e1) {
+                                return;
+                            }
+                        }
+                    });
+                    JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
+                        @Override
+                        public void actionPerformed(ActionEvent actionEvent) {
+                            String columnName = getModel().getColumnName(col);
+                            String value = (String) getModel().getValueAt(row, col);
+                            try {
+                                Filter rFilter = new Filter(columnName, "==", value);
+                                Filter filter = new CompoundFilter(getCurrentFilter(), "||", rFilter);
+                                setFilter(filter, BurpExtender.getInstance().getFilterField());
+                            } catch (Filter.FilterException e1) {
+                                return;
+                            }
+                        }
+                    });
+                    addToCurrentFilter.add(andFilter);
+                    addToCurrentFilter.add(orFilter);
+                    popup.add(addToCurrentFilter);
+                }
+                popup.show(e.getComponent(), e.getX(), e.getY());
             }
 
         });
 
-        final Table _this = this;
+        final LogTable _this = this;
         tableHeader.addMouseListener(new MouseAdapter(){
             @Override
             public void mouseReleased(MouseEvent e)
@@ -210,17 +258,15 @@ public class Table extends JTable
                     }
 
                     //TODO
-
                     TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(_this, columnObj, stdout, stderr,isDebug);
                     tblHeaderMenu.showMenu(e);
                 }
 
                 if(isColumnWidthChanged()){
-						/* On mouse release, check if column width has changed */
+					/* On mouse release, check if column width has changed */
                     if(isDebug) {
                         stdout.println("Column has been resized!");
                     }
-
 
                     // Reset the flag on the table.
                     setColumnWidthChanged(false);
@@ -232,17 +278,45 @@ public class Table extends JTable
                     if(isDebug) {
                         stdout.println("Column has been moved!");
                     }
-
-
                     // Reset the flag on the table.
                     setColumnMoved(false);
-
                     saveOrderTableChange();
-                }else{
-                    //TODO - Nothing for now!
                 }
             }
         });
+    }
+
+    private Filter getCurrentFilter(){
+        return (Filter) ((TableRowSorter) this.getRowSorter()).getRowFilter();
+    }
+
+    public void setFilter(Filter filter){
+        ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
+    }
+
+    public void setFilter(JTextComponent filterField){
+        if(filterField.getText().length() == 0){
+            setFilter(null, filterField);
+        }else{
+            try{
+                Filter filter = FilterCompiler.parseString(filterField.getText());
+                setFilter(filter);
+            }catch (Filter.FilterException fException){
+                setFilter((Filter) null);
+                filterField.setBackground(Color.RED);
+            }
+        }
+    }
+
+    public void setFilter(Filter filter, JTextComponent filterField){
+        if(filter == null){
+            setFilter((Filter) null);
+            filterField.setBackground(Color.white);
+        } else {
+            setFilter(filter);
+            filterField.setText(filter.toString());
+            filterField.setBackground(Color.green);
+        }
     }
 
     @Override
@@ -252,11 +326,11 @@ public class Table extends JTable
         // MoreHelp.showMessage("col: "+col+" - adjusted col: "+this.convertColumnIndexToModel(col) + " - " + this.convertColumnIndexToView(col));
         if(this.getModel().getData().size()>=row){
             LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
-            requestViewer.setMessage(logEntry.requestResponse.getRequest(), true);
+            BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
             if(logEntry.requestResponse.getResponse()!=null)
-                responseViewer.setMessage(logEntry.requestResponse.getResponse(), false);
+                BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
             else
-                responseViewer.setMessage(helpers.stringToBytes(""), false);
+                BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
             this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
 
             super.changeSelection(row, col, toggle, extend);
@@ -296,7 +370,7 @@ public class Table extends JTable
 
         if(!this.getModel().getTableHeaderColumnsDetails().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
             if(isDebug){
-                stdout.println("Table has been re-ordered and needs to be saved!");
+                stdout.println("LogTable has been re-ordered and needs to be saved!");
             }
             // Order of columns has changed! we have to save it now!
             int counter = 1;
@@ -333,9 +407,7 @@ public class Table extends JTable
     // generate the table columns!
     public void generateTableColumns(){
         for(TableColumn column : Collections.list(this.getColumnModel().getColumns())){
-//        for (int i=0; i<this.getModel().getColumnCount(); i++) {
             TableStructure colStructure = this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(column.getModelIndex());
-//            TableColumn column =this.getColumnModel().getColumn(i);
             column.setMinWidth(50);
             column.setIdentifier(colStructure.getId()); // to be able to point to a column directly later
             column.setPreferredWidth((int) colStructure.getWidth());
@@ -352,10 +424,6 @@ public class Table extends JTable
     @Override
     public LogTableModel getModel(){
         return (LogTableModel) super.getModel();
-    }
-
-    public LoggerPreferences getLoggerPreferences() {
-        return loggerPreferences;
     }
 
     static class LeftTableCellRenderer extends DefaultTableCellRenderer {
@@ -391,7 +459,7 @@ public class Table extends JTable
 
             this.setSelected(var2 != null && ((Boolean)var2).booleanValue());
             if(var4) {
-                this.setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
+                this.setBorder(UIManager.getBorder("LogTable.focusCellHighlightBorder"));
             } else {
                 this.setBorder(noFocusBorder);
             }

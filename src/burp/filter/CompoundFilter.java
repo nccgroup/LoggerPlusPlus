@@ -1,7 +1,6 @@
 package burp.filter;
 
 import burp.LogEntry;
-import burp.LogTableModel;
 
 public class CompoundFilter extends Filter {
     enum CompoundOperation {

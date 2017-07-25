@@ -1,11 +1,10 @@
 package burp;
 
+import javax.swing.*;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.swing.JOptionPane;
 
 public class MoreHelp {
 	

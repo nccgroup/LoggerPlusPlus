@@ -4,13 +4,11 @@ package burp;
  * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
  * https://docs.oracle.com/javase/tutorial/uiswing/examples/components/TableDialogEditDemoProject/src/components/ColorRenderer.java
 */
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JTable;
+
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.TableCellRenderer;
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.*;
 
 public class ColorRenderer extends JLabel
         implements TableCellRenderer {
