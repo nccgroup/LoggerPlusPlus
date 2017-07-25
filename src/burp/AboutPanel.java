@@ -12,21 +12,25 @@
 
 package burp;
 
-import javax.swing.ImageIcon;
-import javax.swing.JPanel;
+import javax.swing.*;
 import java.awt.GridBagLayout;
-import javax.swing.JLabel;
 import java.awt.Desktop;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -265,9 +269,26 @@ public class AboutPanel extends JPanel {
 			stdout.println(updateMessage);
 			break;
 		case 1:
-			updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
 			if(callbacks.isExtensionBapp()){
-				updateMessage += "\\nAs you are using BApp Store, you have to remove it first and download the Jar file from the GitHub repository. ";
+				updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
+				updateMessage += "\nAs you are using BApp Store, you have to remove it first and download the Jar file from the GitHub repository. ";
+			}else{
+				if(callbacks.getExtensionFilename() != null){
+					int res = MoreHelp.askConfirmMessage("Update Available", "An update is available. Would you like to update now?", new String[]{"Yes", "No"});
+					if(res == JOptionPane.OK_OPTION){
+						try {
+							URL updateUrl = new URL(loggerPreferences.getUpdateURL());
+							InputStream input = updateUrl.openStream();
+							Path outputPath = Paths.get(callbacks.getExtensionFilename());
+							Files.copy(input, outputPath, StandardCopyOption.REPLACE_EXISTING);
+						} catch (Exception e) {
+							MoreHelp.showMessage("Could not update the plugin. Please visit the extension page to update manually.");
+							return;
+						}
+						MoreHelp.showMessage("Update complete. Re-enable the plugin in the extensions tab to continue.");
+						callbacks.unloadExtension();
+					}
+				}
 			}
 			stdout.println(updateMessage);
 			break;
@@ -276,9 +297,8 @@ public class AboutPanel extends JPanel {
 			stdout.println(updateMessage);
 			break;
 		}
-
 		MoreHelp.showMessage(updateMessage);
-
 	}
+
 
 }
