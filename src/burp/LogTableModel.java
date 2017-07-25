@@ -4,34 +4,26 @@ import javax.swing.table.AbstractTableModel;
 import java.io.PrintWriter;
 import java.util.List;
 
-/* Extending AbstractTableModel to design the table behaviour based on the array list */
+/* Extending AbstractTableModel to design the logTable behaviour based on the array list */
 public class LogTableModel extends AbstractTableModel {
 
     private TableHeaderColumnsDetails tableHeaderColumnsDetails;
     private IHttpRequestResponse currentlyDisplayedItem;
     private List<LogEntry> entries;
-    private final IMessageEditor requestViewer;
-    private final IMessageEditor responseViewer;
-    private final IExtensionHelpers helpers;
-    private Table table;
 
-    public LogTableModel(List<LogEntry> entries, IMessageEditor requestViewer, IMessageEditor responseViewer, IExtensionHelpers helpers,
-                         LoggerPreferences loggerPreferences, PrintWriter stdout, PrintWriter stderr, boolean isDebug){
+    public LogTableModel(List<LogEntry> entries, PrintWriter stdout, PrintWriter stderr, boolean isDebug){
         this.entries = entries;
-        this.requestViewer = requestViewer;
-        this.responseViewer = responseViewer;
-        this.helpers = helpers;
-        this.setTableHeaderColumnsDetails(new TableHeaderColumnsDetails(loggerPreferences, stdout, stderr,isDebug));
+        this.setTableHeaderColumnsDetails(new TableHeaderColumnsDetails(stdout, stderr,isDebug));
     }
 
     @Override
     public int getRowCount()
     {
-        // To delete the Request/Response table the log section is empty (after deleting the logs when an item is already selected)
+        // To delete the Request/Response logTable the log section is empty (after deleting the logs when an item is already selected)
         if(currentlyDisplayedItem!=null && entries.size() <= 0){
             currentlyDisplayedItem = null;
-            requestViewer.setMessage(helpers.stringToBytes(""), true);
-            responseViewer.setMessage(helpers.stringToBytes(""), false);
+            BurpExtender.getInstance().getRequestViewer().setMessage(new byte[0], true);
+            BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
         }
         return entries.size();
     }
@@ -156,14 +148,6 @@ public class LogTableModel extends AbstractTableModel {
         return this.entries;
     }
     public LogEntry getRow(int row) {return this.entries.get(row);}
-
-    public void setTableOwner(Table tableOwner) {
-        this.table = tableOwner;
-    }
-
-    public Table getTable() {
-        return table;
-    }
 
     // This has been designed for Java v6 that cannot support String in "switch"
     private enum columnClassesType {

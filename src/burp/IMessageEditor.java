@@ -9,7 +9,8 @@ package burp;
  * and Burp Suite Professional, provided that this usage does not violate the
  * license terms for those products.
  */
-import java.awt.Component;
+
+import java.awt.*;
 
 /**
  * This interface is used to provide extensions with an instance of Burp's HTTP

@@ -12,20 +12,25 @@
 
 package burp;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.*;
-import java.util.List;
+import burp.filter.ColorFilter;
+import burp.filter.FilterListener;
 
 import javax.swing.*;
-
-import burp.filter.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
 {
+	private static BurpExtender instance;
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
 	private PrintWriter stdout;
@@ -33,14 +38,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor requestViewer;
 	private IMessageEditor responseViewer;
 	private final List<LogEntry> log = new ArrayList<LogEntry>();
-	private List<LogEntry> filteredLog = new ArrayList<LogEntry>();
 	private JTabbedPane mainUI;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
 	private AboutPanel aboutJPanel;
 	private LoggerOptionsPanel optionsJPanel;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
-	private Table logTable;
+	private LogTable logTable;
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
 	private ArrayList<FilterListener> filterListeners;
@@ -60,12 +64,12 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
 	{
+		this.instance = this;
 		// set our extension name
 		callbacks.setExtensionName("Logger++");
 
 		// keep a reference to our callbacks object
 		this.callbacks = callbacks;
-
 		// obtain an extension helpers object
 		this.helpers = callbacks.getHelpers();
 
@@ -91,7 +95,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		// create our UI
 		requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
 		responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-		logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, loggerPreferences.getColorFilters(), stdout, stderr, isDebug);
+		logTable = new LogTable(log, stdout, stderr, isDebug);
 
 		// Options Panel
 		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
@@ -148,7 +152,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				//Tabbed
 				reqRespSplitPane = new JSplitPane();
 				reqRespSplitPane.setResizeWeight(0.5);
-				logViewTabbed.addTab("Log Table", logTablePanel);
+				logViewTabbed.addTab("Log LogTable", logTablePanel);
 				logViewTabbed.addTab("Request/Response", reqRespSplitPane);
 
 				setLayout(loggerPreferences.getView());
@@ -219,6 +223,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
+	public static BurpExtender getInstance() {
+		return instance;
+	}
+
 	private void setLayout(LoggerPreferences.View view){
 		if(view == null) view = LoggerPreferences.View.HORIZONTAL;
 
@@ -264,7 +272,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		filterField.getActionMap().put("submit", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				setFilter();
+				logTable.setFilter(filterField);
 			}
 		});
 		GridBagConstraints fieldConstraints = new GridBagConstraints();
@@ -276,7 +284,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		filterButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				setFilter();
+				logTable.setFilter(filterField);
 			}
 		});
 
@@ -305,21 +313,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return filterPanel;
 	}
 
-	private void setFilter(){
-		try{
-			if(filterField.getText().length() == 0){
-				logTable.setFilter(null);
-				filterField.setBackground(Color.white);
-			}else {
-				logTable.setFilter(FilterCompiler.parseString(filterField.getText()));
-				filterField.setBackground(Color.green);
-			}
-		} catch (Filter.FilterException e) {
-			filterField.setBackground(Color.red);
-			logTable.setFilter(null);
-		}
-	}
-
 	//
 	// implement ITab
 	//
@@ -341,8 +334,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	//
 
 	@Override
-	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo)
-	{
+	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
 		if(toolFlag!=callbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, messageInfo, null);
 	}
 
@@ -352,10 +344,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	//
 
 	@Override
-	public void processProxyMessage(boolean messageIsRequest,
-			IInterceptedProxyMessage message) {
+	public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
 		logIt(callbacks.TOOL_PROXY, messageIsRequest, null, message);
-
 	}
 
 	private void logIt(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo,IInterceptedProxyMessage message){
@@ -402,7 +392,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 					}else if(!messageIsRequest){
 						// create a new log entry with the message details
-						LogEntry entry = new LogEntry(logTable.getModel(), toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message, logTable, loggerPreferences, stderr, stderr, isValidTool, callbacks);
+						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
 						//Check entry against colorfilters.
 						for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
 							entry.testColorFilter(colorFilter, false);
@@ -445,10 +435,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			}
 		}
 	}
-
-//	private boolean matchesFilter(LogEntry entry){
-//		return filterHelper.matchesFilter(entry);
-//	}
 
 
 	//
@@ -523,4 +509,35 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	@Override
 	public void onRemoveAll() {}
+
+	public JTextField getFilterField() {
+		return filterField;
+	}
+
+	public IMessageEditor getRequestViewer() { return requestViewer; }
+	public IMessageEditor getResponseViewer() { return responseViewer; }
+
+	public LoggerPreferences getLoggerPreferences() {
+		return loggerPreferences;
+	}
+
+	public LogTable getLogTable() {
+		return logTable;
+	}
+
+	public IExtensionHelpers getHelpers() {
+		return helpers;
+	}
+
+	public boolean isDebug() {
+		return isDebug;
+	}
+
+	public PrintWriter getStderr() {
+		return stderr;
+	}
+
+	public IBurpExtenderCallbacks getCallbacks() {
+		return callbacks;
+	}
 }

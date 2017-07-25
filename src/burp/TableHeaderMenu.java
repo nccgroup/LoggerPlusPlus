@@ -12,7 +12,7 @@ import java.util.regex.PatternSyntaxException;
 
 public class TableHeaderMenu extends JPopupMenu{
 
-	private final Table table;
+	private final LogTable logTable;
 	private final TableStructure columnObj;
 	private final int	ITEM_PLAIN	=	0;	// Item types
 	private final int	ITEM_CHECK	=	1;
@@ -20,10 +20,10 @@ public class TableHeaderMenu extends JPopupMenu{
 	private final PrintWriter stdout,stderr;
 	private final boolean isDebug;
 
-	public TableHeaderMenu(Table table, TableStructure columnObj, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
+	public TableHeaderMenu(LogTable logTable, TableStructure columnObj, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
 	{
 		super();
-		this.table = table;
+		this.logTable = logTable;
 		this.columnObj=columnObj;
 		this.stdout = stdout;
 		this.stderr = stderr;
@@ -135,7 +135,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (Iterator<TableStructure> iterator = table.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
+				for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
 					final TableStructure columnDefinition = iterator.next();
 					if(columnDefinition.isEnabled() && !columnDefinition.isVisible()){
 						columnDefinition.setVisible(true);
@@ -150,7 +150,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all enabled");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (Iterator<TableStructure> iterator = table.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
+				for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
 					final TableStructure columnDefinition = iterator.next();
 					if(!columnDefinition.isEnabled()){
 						columnDefinition.setEnabled(true);
@@ -162,7 +162,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		subMenuEnabledCols.add(item);
 		
-		for (Iterator<TableStructure> iterator = table.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
+		for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
 			final TableStructure columnDefinition = iterator.next();
 
 			if(columnDefinition.isEnabled()){
@@ -204,14 +204,14 @@ public class TableHeaderMenu extends JPopupMenu{
 	public void saveAndReloadTableSettings(){
 		//Stop automatically logging, prevents changing of csv format midway through
 		//TODO constant csv format?
-		if(table.getLoggerPreferences().getAutoSave()){
-			MoreHelp.showMessage("The table structure has been changed. Autosave was disabled to prevent invalid csv.");
-			table.getLoggerPreferences().setAutoSave(false);
+		if(BurpExtender.getInstance().getLoggerPreferences().getAutoSave()){
+			BurpExtender.getInstance().getLoggerPreferences().setAutoSave(false);
+			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
-		table.saveTableChanges();
-		table.getModel().getTableHeaderColumnsDetails().resetToCurrentVariables();
-		table.getModel().fireTableStructureChanged();
-		table.generateTableColumns();
+		logTable.saveTableChanges();
+		logTable.getModel().getTableHeaderColumnsDetails().resetToCurrentVariables();
+		logTable.getModel().fireTableStructureChanged();
+		logTable.generateTableColumns();
 	}
 
 

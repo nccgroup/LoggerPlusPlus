@@ -1,12 +1,11 @@
 package burp.filter;
+import burp.BurpExtender;
 import burp.LogEntry;
 import burp.LogTableModel;
-import com.google.gson.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 import java.util.regex.Pattern;
 
 public class Filter extends RowFilter<Object, Object> {
@@ -25,7 +24,7 @@ public class Filter extends RowFilter<Object, Object> {
 
     protected Filter(){}
 
-    protected Filter(Object left, String operation, Object right) throws FilterException {
+    public Filter(Object left, String operation, Object right) throws FilterException {
         LogicalOperation op;
         switch (operation){
             case "=":
@@ -101,11 +100,11 @@ public class Filter extends RowFilter<Object, Object> {
         Object lValue = this.left, rValue = this.right;
         try {
             int columnNo = tableModel.getColumnIndexByName(this.left.toString());
-            lValue = entry.getValue(columnNo);
+            lValue = entry.getValue(BurpExtender.getInstance().getLogTable().convertColumnIndexToModel(columnNo));
         }catch (NullPointerException nPException){}
         try {
             int columnNo = tableModel.getColumnIndexByName(this.right.toString());
-            rValue = entry.getValue(tableModel.getTable().convertColumnIndexToModel(columnNo));
+            rValue = entry.getValue(BurpExtender.getInstance().getLogTable().convertColumnIndexToModel(columnNo));
         }catch (NullPointerException nPException){}
 
         return this.matches(lValue, rValue);

@@ -11,16 +11,15 @@
 //
 
 package burp;
+
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
 import burp.filter.FilterSerializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import jdk.nashorn.internal.parser.JSONParser;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.prefs.Preferences;
@@ -268,13 +267,13 @@ public class LoggerPreferences {
 		if(prefs.getDouble("version", 0.0) < getVersion()){
 			// an upgrade has been detected
 			// settings should be reset
-			MoreHelp.showMessage("A new version of Logger++ has been installed. Table settings will be reset in order to prevent any errors.");
+			MoreHelp.showMessage("A new version of Logger++ has been installed. LogTable settings will be reset in order to prevent any errors.");
 			resetTableSettings();
 			setVersion(getVersion());
 		}else if(prefs.getDouble("version", 0.0) > getVersion()){
 			// an upgrade has been detected
 			// settings should be reset
-			MoreHelp.showMessage("A newer version of Logger++ was installed previously. Table settings will be reset in order to prevent any errors.");
+			MoreHelp.showMessage("A newer version of Logger++ was installed previously. LogTable settings will be reset in order to prevent any errors.");
 			resetTableSettings();
 			setVersion(getVersion());
 		}

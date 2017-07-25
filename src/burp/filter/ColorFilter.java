@@ -1,7 +1,5 @@
 package burp.filter;
 
-import com.google.gson.JsonObject;
-
 import java.awt.*;
 import java.util.UUID;
 

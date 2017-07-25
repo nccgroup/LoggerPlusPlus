@@ -65,7 +65,7 @@ public class LoggerOptionsPanel extends JPanel {
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final Table table, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
+    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final LogTable logTable, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
         this.callbacks = callbacks;
         this.stdout = stdout;
         this.stderr = stderr;
@@ -74,7 +74,7 @@ public class LoggerOptionsPanel extends JPanel {
         this.loggerPreferences.setAutoSave(false);
         this.isDebug = isDebug;
         this.log = log;
-        this.tableModel = table.getModel();
+        this.tableModel = logTable.getModel();
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
@@ -201,7 +201,7 @@ public class LoggerOptionsPanel extends JPanel {
                 loggerPreferences.resetLoggerPreferences();
                 tableModel.getTableHeaderColumnsDetails().resetToDefaultVariables();
                 tableModel.fireTableStructureChanged();
-                table.generateTableColumns();
+                logTable.generateTableColumns();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
