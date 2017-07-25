@@ -269,8 +269,8 @@ public class AboutPanel extends JPanel {
 			stdout.println(updateMessage);
 			break;
 		case 1:
+			updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
 			if(callbacks.isExtensionBapp()){
-				updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
 				updateMessage += "\nAs you are using BApp Store, you have to remove it first and download the Jar file from the GitHub repository. ";
 			}else{
 				if(callbacks.getExtensionFilename() != null){
@@ -287,6 +287,7 @@ public class AboutPanel extends JPanel {
 						}
 						MoreHelp.showMessage("Update complete. Re-enable the plugin in the extensions tab to continue.");
 						callbacks.unloadExtension();
+						return;
 					}
 				}
 			}
