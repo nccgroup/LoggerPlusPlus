@@ -37,6 +37,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JTabbedPane mainUI;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
+	private AboutPanel aboutJPanel;
 	private LoggerOptionsPanel optionsJPanel;
 	private boolean isDebug; // To enabled debugging, it needs to be true in registry
 	private Table logTable;
@@ -88,6 +89,17 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		this.isDebug = loggerPreferences.isDebugMode();
 
 		// create our UI
+		requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+		responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
+		logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, loggerPreferences.getColorFilters(), stdout, stderr, isDebug);
+
+		// Options Panel
+		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
+				canSaveCSV, loggerPreferences, isDebug);
+		// About Panel
+		aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
+
+		//Add ui elements to ui.
 		SwingUtilities.invokeLater(new Runnable() 
 		{
 			@Override
@@ -104,15 +116,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				};
 				//Let the user resize the splitter at will:
 				//mainUI.setMinimumSize(new Dimension(0, 0));
-				requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-				responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-				logTable = new Table(log, requestViewer, responseViewer, helpers, loggerPreferences, loggerPreferences.getColorFilters(), stdout, stderr, isDebug);
-
-				// Options Panel
-				optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
-						canSaveCSV, loggerPreferences, isDebug);
-				// About Panel
-				AboutPanel aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
 
 				// Log View Panel
 				logViewJPanelWrapper = new JPanel(new BorderLayout());
@@ -210,6 +213,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				}
 			}
 		});
+
+		if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
+			aboutJPanel.checkForUpdate(false);
+		}
 	}
 
 	private void setLayout(LoggerPreferences.View view){

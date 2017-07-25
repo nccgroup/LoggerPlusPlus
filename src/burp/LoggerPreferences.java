@@ -32,7 +32,7 @@ public class LoggerPreferences {
 	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new FilterSerializer()).create();
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 2.82;
+	private final double version = 2.83;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";
@@ -61,6 +61,7 @@ public class LoggerPreferences {
 	private boolean autoSave;
 	private Map<UUID, ColorFilter> colorFilters;
 	private View view;
+	private boolean updateOnStartup;
 
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
@@ -114,7 +115,6 @@ public class LoggerPreferences {
 	}
 
 	public synchronized boolean isDebugMode() {
-
 		return isDebugMode;
 	}
 
@@ -122,6 +122,15 @@ public class LoggerPreferences {
 	public synchronized void setDebugMode(boolean isDebugMode) {
 		prefs.putBoolean("isDebugMode", isDebugMode);
 		this.isDebugMode = isDebugMode;
+	}
+
+	public synchronized boolean checkUpdatesOnStartup(){
+		return updateOnStartup;
+	}
+
+	public synchronized void setUpdateOnStartup(Boolean b){
+		this.updateOnStartup = b;
+		prefs.putBoolean("updateOnStartup", b);
 	}
 
 	public synchronized boolean isEnabled() {
@@ -271,6 +280,7 @@ public class LoggerPreferences {
 		}
 
 		isDebugMode = prefs.getBoolean("isDebugMode", false);
+		updateOnStartup = prefs.getBoolean("updateOnStartup", true);
 		isEnabled = prefs.getBoolean("isEnabled", true);
 		isRestrictedToScope = prefs.getBoolean("isRestrictedToScope", false);
 		isEnabled4All = prefs.getBoolean("isEnabled4All", true);
