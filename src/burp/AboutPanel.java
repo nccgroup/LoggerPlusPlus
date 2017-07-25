@@ -181,7 +181,7 @@ public class AboutPanel extends JPanel {
 					@Override
 					public void run()
 					{
-						checkForUpdate();
+						checkForUpdate(true);
 					}
 				}).start();
 			}
@@ -221,7 +221,7 @@ public class AboutPanel extends JPanel {
 		}
 	}
 
-	public void checkForUpdate() {
+	public void checkForUpdate(boolean showMessages) {
 		IExtensionHelpers helper = callbacks.getHelpers();
 		Double currenVersion = loggerPreferences.getVersion();
 		Double latestVersion = 0.0;
@@ -237,7 +237,7 @@ public class AboutPanel extends JPanel {
 				String strFullMessage = new String(response,"UTF-8");
 				if(strFullMessage.contains("\r\n\r\n")){
 					String strBody = strFullMessage.split("\r\n\r\n",2)[1];
-					Pattern MY_PATTERN = Pattern.compile("(?im)^[\\s]*v[\\s]*(\\d+(\\.*\\d*){0,1})$"); 
+					Pattern MY_PATTERN = Pattern.compile("(?im)^[\\s]*v[\\s]*(\\d+(\\.*\\d*){0,1})$");
 
 					Matcher m = MY_PATTERN.matcher(strBody);
 
@@ -298,6 +298,7 @@ public class AboutPanel extends JPanel {
 			stdout.println(updateMessage);
 			break;
 		}
+		if(!showMessages) return;
 		MoreHelp.showMessage(updateMessage);
 	}
 
