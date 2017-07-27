@@ -1,11 +1,14 @@
 package burp.filter;
 import burp.BurpExtender;
 import burp.LogEntry;
+import burp.LogTable;
 import burp.LogTableModel;
+import com.google.gson.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.regex.Pattern;
 
 public class Filter extends RowFilter<Object, Object> {
@@ -96,15 +99,15 @@ public class Filter extends RowFilter<Object, Object> {
 
     @Override
     public boolean include(Entry<?, ?> entry) {
-        LogTableModel tableModel = (LogTableModel) entry.getModel();
+        LogTable logTable = BurpExtender.getInstance().getLogTable();
         Object lValue = this.left, rValue = this.right;
         try {
-            int columnNo = tableModel.getColumnIndexByName(this.left.toString());
-            lValue = entry.getValue(BurpExtender.getInstance().getLogTable().convertColumnIndexToModel(columnNo));
+            int columnNo = logTable.getColumnModel().getColumnIndexByName(this.left.toString());
+            lValue = entry.getValue(columnNo);
         }catch (NullPointerException nPException){}
         try {
-            int columnNo = tableModel.getColumnIndexByName(this.right.toString());
-            rValue = entry.getValue(BurpExtender.getInstance().getLogTable().convertColumnIndexToModel(columnNo));
+            int columnNo = logTable.getColumnModel().getColumnIndexByName(this.right.toString());
+            rValue = entry.getValue(columnNo);
         }catch (NullPointerException nPException){}
 
         return this.matches(lValue, rValue);
@@ -165,5 +168,23 @@ public class Filter extends RowFilter<Object, Object> {
         String rString = right.toString();
         if(right instanceof Pattern) rString = "/" + right + "/";
         return lString + " " + operation.representation + " " + rString;
+    }
+
+    public static class FilterSerializer implements JsonSerializer<Filter>, JsonDeserializer<Filter> {
+        @Override
+        public JsonElement serialize(Filter filter, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject object = new JsonObject();
+            object.addProperty("filter", filter.toString());
+            return object;
+        }
+
+        @Override
+        public Filter deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            Filter filter = null;
+            try {
+                filter = FilterCompiler.parseString(jsonElement.getAsJsonObject().get("filter").getAsString());
+            } catch (Filter.FilterException e) {}
+            return filter;
+        }
     }
 }

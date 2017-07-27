@@ -1,25 +1,68 @@
 package burp;
 
+import javax.swing.*;
+import javax.swing.event.TableColumnModelEvent;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
 
 // This was used to create tool tips
 public class TableHeader extends JTableHeader {
 
+	private final LogTableColumnModel tableColumnModel;
 	private final LogTable logTable;
 	private final boolean isDebug;
 	private final PrintWriter stdout, stderr;
 	
-	TableHeader(TableColumnModel tcm, LogTable logTable, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
+	TableHeader(TableColumnModel tcm, final LogTable logTable, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
 		super(tcm);
+		this.tableColumnModel = (LogTableColumnModel) tcm;
 		this.logTable = logTable;
 		this.isDebug=isDebug;
 		this.stdout = stdout;
 		this.stderr=stderr;
+
+		this.addMouseListener(new MouseAdapter(){
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				if ( SwingUtilities.isRightMouseButton( e ))
+				{
+					// get the coordinates of the mouse click
+					Point p = e.getPoint();
+					int columnID = columnAtPoint(p);
+					LogTableColumn column = tableColumnModel.getColumn(columnID);
+					//TODO
+					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTable, column);
+					tblHeaderMenu.showMenu(e);
+				}
+
+//				if(isColumnWidthChanged()){
+//					/* On mouse release, check if column width has changed */
+//					if(isDebug) {
+//						stdout.println("Column has been resized!");
+//					}
+//
+//					// Reset the flag on the table.
+//					setColumnWidthChanged(false);
+//
+//					saveColumnResizeTableChange();
+//				}else if(isColumnMoved()){
+//						/* On mouse release, check if column has moved */
+//
+//					if(isDebug) {
+//						stdout.println("Column has been moved!");
+//					}
+//					// Reset the flag on the table.
+//					setColumnMoved(false);
+//					saveOrderTableChange();
+//				}
+			}
+		});
+
 	}
 
 	@Override
@@ -28,19 +71,16 @@ public class TableHeader extends JTableHeader {
 		// get the coordinates of the mouse click
 		Point p = e.getPoint();
 		int columnID = logTable.columnAtPoint(p);
-		TableColumn column = logTable.getColumnModel().getColumn(columnID);
-		TableStructure columnObj = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
+		LogTableColumn column = logTable.getColumnModel().getColumn(columnID);
 		if(isDebug){
 			stdout.println("right click detected on the header!");
-			stdout.println("right click on item number " + String.valueOf(columnID) + " ("+ logTable.getColumnName(columnID)+") was detected");
+			stdout.println("right click on item number " + columnID + " ("+ column.getVisibleName() +") was detected");
 		}
 
 		String retStr;
 		try {
-			retStr = columnObj.getDescription();
-		} catch (NullPointerException ex) {
-			retStr = "";
-		} catch (ArrayIndexOutOfBoundsException ex) {
+			retStr = column.getDescription();
+		} catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
 			retStr = "";
 		}
 		if (retStr.length() < 1) {
@@ -49,4 +89,21 @@ public class TableHeader extends JTableHeader {
 		return retStr;
 
 	}
+
+	@Override
+	public void columnAdded(TableColumnModelEvent var1) {
+
+		this.resizeAndRepaint();
+	}
+
+	public void columnRemoved(TableColumnModelEvent var1) {
+		this.resizeAndRepaint();
+	}
+
+//	public void columnMoved(TableColumnModelEvent var1) {
+//		this.repaint();
+//		if(var1.getFromIndex() != var1.getToIndex()){
+//			System.out.println("MOVE");
+//		}
+//	}
 }

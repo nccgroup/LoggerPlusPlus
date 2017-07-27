@@ -14,7 +14,6 @@ package burp;
 
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
-import burp.filter.FilterSerializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -28,7 +27,7 @@ public class LoggerPreferences {
 	private PrintWriter stdout;
 	private PrintWriter stderr;
 	private boolean isDebug = false;
-	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new FilterSerializer()).create();
+	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
 	private final double version = 2.83;

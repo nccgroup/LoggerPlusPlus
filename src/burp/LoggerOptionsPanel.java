@@ -57,7 +57,6 @@ public class LoggerOptionsPanel extends JPanel {
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
     private final List<LogEntry> log;
-    private final LogTableModel tableModel;
     private FileWriter autoSaveWriter;
 
     private final boolean isDebug;
@@ -65,7 +64,7 @@ public class LoggerOptionsPanel extends JPanel {
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final LogTable logTable, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
+    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
         this.callbacks = callbacks;
         this.stdout = stdout;
         this.stderr = stderr;
@@ -74,7 +73,6 @@ public class LoggerOptionsPanel extends JPanel {
         this.loggerPreferences.setAutoSave(false);
         this.isDebug = isDebug;
         this.log = log;
-        this.tableModel = logTable.getModel();
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
@@ -199,9 +197,8 @@ public class LoggerOptionsPanel extends JPanel {
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
                 loggerPreferences.resetLoggerPreferences();
-                tableModel.getTableHeaderColumnsDetails().resetToDefaultVariables();
-                tableModel.fireTableStructureChanged();
-                logTable.generateTableColumns();
+                BurpExtender.getInstance().getLogTable().getColumnModel().resetToDefaultVariables();
+                BurpExtender.getInstance().getLogTable().getModel().fireTableStructureChanged();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
@@ -221,7 +218,7 @@ public class LoggerOptionsPanel extends JPanel {
 
                 log.clear();
 
-                tableModel.fireTableDataChanged();
+                BurpExtender.getInstance().getLogTable().getModel().fireTableDataChanged();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
@@ -273,7 +270,7 @@ public class LoggerOptionsPanel extends JPanel {
 
         public void addHeader(File file, boolean isFullLog) throws IOException {
             FileWriter out = new FileWriter(file, true);
-            out.write(LogEntry.getCSVHeader(tableModel, isFullLog));
+            out.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog));
             out.write("\n");
             out.close();
         }
@@ -286,7 +283,7 @@ public class LoggerOptionsPanel extends JPanel {
 
             for (LogEntry item : log) {
                 if (includeHeader) {
-                    out.write(LogEntry.getCSVHeader((LogTableModel) item.getModel(), isFullLog));
+                    out.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog));
                     out.write("\n");
                     includeHeader = false;
                 }
@@ -360,7 +357,7 @@ public class LoggerOptionsPanel extends JPanel {
             return true;
         }
         try {
-            String thisHeader = LogEntry.getCSVHeader(tableModel, isFullLog);
+            String thisHeader = LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog);
             String oldHeader = reader.readLine();
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {

@@ -16,13 +16,11 @@ import burp.filter.ColorFilter;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,7 +77,6 @@ public class LogEntry extends RowFilter.Entry
 	//		final String requestUID; // I need something like this when I want to get the requests to match them with their responses
 
 	// Defining necessary parameters from the caller
-	private IExtensionHelpers helpers;
 
 	LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponsePersisted requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message)
 	{
@@ -90,24 +87,24 @@ public class LogEntry extends RowFilter.Entry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		LogTable logTable = BurpExtender.getInstance().getLogTable();
-		if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+		if(logTable.getColumnModel().isColumnEnabled("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
 			this.uniqueIdentifier=java.util.UUID.randomUUID().toString();
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
 
 		this.url = url;
-		if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("url")) // This is good to increase the speed when it is time consuming
+		if(logTable.getColumnModel().isColumnEnabled("url")) // This is good to increase the speed when it is time consuming
 			this.relativeURL = url.getFile();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
 
-		if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("targetPort")) // This is good to increase the speed when it is time consuming
+		if(logTable.getColumnModel().isColumnEnabled("targetPort")) // This is good to increase the speed when it is time consuming
 			this.targetPort = tempRequestResponseHttpService.getPort();
 
-		if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("method")) // This is good to increase the speed when it is time consuming
-			this.method = tempAnalyzedReq.getMethod();
+		if(logTable.getColumnModel().isColumnEnabled("method")) // This is good to increase the speed when it is time consuming
+ 			this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
 			String tempPath = url.getPath().replaceAll("\\\\", "/");
@@ -122,13 +119,13 @@ public class LogEntry extends RowFilter.Entry
 		}
 
 		if(message!=null){
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("listenerInterface")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("listenerInterface")) // This is good to increase the speed when it is time consuming
 				this.listenerInterface=message.getListenerInterface();
 
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("clientIP")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("clientIP")) // This is good to increase the speed when it is time consuming
 				this.clientIP=message.getClientIpAddress().toString();
 
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
 				this.uniqueIdentifier = "P"+String.valueOf(message.getMessageReference());
 
 
@@ -142,11 +139,11 @@ public class LogEntry extends RowFilter.Entry
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
-		if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("sentCookies") ||
-				logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("hasCookieParam") ||
-				logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar") ||
-				logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("referrerURL") ||
-				logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("requestContentType")){ // This is good to increase the speed when it is time consuming
+		if(logTable.getColumnModel().isColumnEnabled("sentCookies") ||
+				logTable.getColumnModel().isColumnEnabled("hasCookieParam") ||
+				logTable.getColumnModel().isColumnEnabled("usesCookieJar") ||
+				logTable.getColumnModel().isColumnEnabled("referrerURL") ||
+				logTable.getColumnModel().isColumnEnabled("requestContentType")){ // This is good to increase the speed when it is time consuming
 			for(String item:lstFullRequestHeader){
 				if(item.indexOf(":")>=0){
 					String[] headerItem = item.split(":\\s",2);
@@ -158,7 +155,7 @@ public class LogEntry extends RowFilter.Entry
 							this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
 							// to ensure it is enabled as it is process consuming
-							if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("usesCookieJar")){
+							if(logTable.getColumnModel().isColumnEnabled("usesCookieJar")){
 								// Check to see if it uses cookie Jars!
 								List<ICookie> cookieJars = BurpExtender.getInstance().getCallbacks().getCookieJarContents();
 								boolean atLeastOneDidNotMatched = false;
@@ -196,12 +193,12 @@ public class LogEntry extends RowFilter.Entry
 
 		// RegEx processing for requests - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
-		for(int i=0;i<=5;i++){
+		for(int i=0;i<5;i++){
 			String regexVarName = "regex"+String.valueOf(i+1)+"Req";
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
+			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
 				// so this rule is enabled!
 				// check to see if the RegEx is not empty
-				TableStructure regexColumn = logTable.getModel().getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
+				LogTableColumn regexColumn = logTable.getColumnModel().getColumnByName(regexVarName);
 				String regexString = regexColumn.getRegExData().getRegExString();
 				if(!regexString.isEmpty()){
 					// now we can process it safely!
@@ -242,16 +239,16 @@ public class LogEntry extends RowFilter.Entry
 
 
 		if(!messageIsRequest){
-			IResponseInfo tempAnalyzedResp = helpers.analyzeResponse(requestResponse.getResponse());
+			IResponseInfo tempAnalyzedResp = BurpExtender.getInstance().getHelpers().analyzeResponse(requestResponse.getResponse());
 			String strFullResponse = new String(requestResponse.getResponse());
 			List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 			this.status= tempAnalyzedResp.getStatusCode();
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType_burp")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("responseContentType_burp")) // This is good to increase the speed when it is time consuming
 				this.responseContentType_burp=tempAnalyzedResp.getStatedMimeType();
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
 				this.responseInferredContentType_burp = tempAnalyzedResp.getInferredMimeType();
 			this.responseLength= strFullResponse.length() - tempAnalyzedResp.getBodyOffset();
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("newCookies")) // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("newCookies")) // This is good to increase the speed when it is time consuming
 				for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
 					this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
 				}
@@ -260,7 +257,7 @@ public class LogEntry extends RowFilter.Entry
 			Date date = new Date();
 			this.responseTime= dateFormat.format(date);
 
-			if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName("responseContentType")){ // This is good to increase the speed when it is time consuming
+			if(logTable.getColumnModel().isColumnEnabled("responseContentType")){ // This is good to increase the speed when it is time consuming
 				for(String item:lstFullResponseHeader){
 					item = item.toLowerCase();
 					if(item.startsWith("content-type: ")){
@@ -275,10 +272,10 @@ public class LogEntry extends RowFilter.Entry
 			// There are 5 RegEx rule for requests
 			for(int i=0;i<=5;i++){
 				String regexVarName = "regex"+String.valueOf(i+1)+"Resp";
-				if(logTable.getModel().getTableHeaderColumnsDetails().isTableHeaderEnabled_byName(regexVarName)){
+				if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
 					// so this rule is enabled!
 					// check to see if the RegEx is not empty
-					TableStructure regexColumn = logTable.getModel().getTableHeaderColumnsDetails().getEnabledTableHeader_byName(regexVarName);
+					LogTableColumn regexColumn = logTable.getColumnModel().getColumnByName(regexVarName);
 					String regexString = regexColumn.getRegExData().getRegExString();
 					if(!regexString.isEmpty()){
 						// now we can process it safely!
@@ -330,7 +327,7 @@ public class LogEntry extends RowFilter.Entry
 
 	@Override
 	public Object getModel() {
-		return this;
+		return null;
 	}
 
 	@Override
@@ -344,13 +341,13 @@ public class LogEntry extends RowFilter.Entry
 			case 0://number
 				return uniqueIdentifier;
 			case 1://tool
-				return tool;
+				return BurpExtender.getInstance().getCallbacks().getToolName(tool);
 			case 2://host
-				return host;
+				return this.protocol + "://" + this.host;
 			case 3://method
 				return method;
 			case 4: //url
-				return url;
+				return relativeURL;
 			case 5: //params
 				return params;
 			case 6: //status
@@ -390,7 +387,7 @@ public class LogEntry extends RowFilter.Entry
 			case 23: //protocol
 				return protocol;
 			case 24: //hostname
-				return this.protocol + "://" + this.host;
+				return this.host;
 			case 25: //targetPort
 				return targetPort;
 			case 26: //requestContentType
@@ -436,13 +433,19 @@ public class LogEntry extends RowFilter.Entry
 	}
 
 
-	public static String getCSVHeader(LogTableModel model, boolean isFullLog) {
+	public static String getCSVHeader(LogTable table, boolean isFullLog) {
 		StringBuilder result = new StringBuilder();
 
-		for (int i=1; i<model.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
-			result.append(model.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getVisibleName());
-			if(i<model.getColumnCount()-1)
-				result.append(",");
+		short count = 0;
+		ArrayList<LogTableColumn> columns = table.getColumnModel().getAllColumns();
+		Collections.sort(columns);
+		for (LogTableColumn logTableColumn : columns) {
+			if(logTableColumn.isVisible() && logTableColumn.isEnabled()) {
+				result.append(logTableColumn.getVisibleName());
+				if(count < columns.size()-1)
+					result.append(",");
+			}
+			count++;
 		}			
 
 		if(isFullLog){
@@ -465,13 +468,17 @@ public class LogEntry extends RowFilter.Entry
 		//					result.append(",");
 		//			}
 
-		LogTableModel logTableModel = BurpExtender.getInstance().getLogTable().getModel();
-		for (int i = 1; i< logTableModel.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().size(); i++) {
-
-			result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) logTableModel.getTableHeaderColumnsDetails().getVisibleColumnsDefinitionList().get(i).getName()))));
-
-			if(i< logTableModel.getColumnCount()-1)
-				result.append(",");
+		LogTableColumnModel columnModel = BurpExtender.getInstance().getLogTable().getColumnModel();
+		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
+		Collections.sort(columns);
+		short count = 0;
+		for (LogTableColumn logTableColumn : columns) {
+			if(logTableColumn.isVisible() && logTableColumn.isEnabled()){
+				result.append(StringEscapeUtils.escapeCsv(getValueByName(logTableColumn.getName()).toString()));
+				if (count < columnModel.getColumnCount() - 1)
+					result.append(",");
+			}
+			count++;
 		}
 
 		if(isFullLog){

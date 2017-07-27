@@ -98,7 +98,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		logTable = new LogTable(log, stdout, stderr, isDebug);
 
 		// Options Panel
-		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, logTable, log,
+		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, log,
 				canSaveCSV, loggerPreferences, isDebug);
 		// About Panel
 		aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
