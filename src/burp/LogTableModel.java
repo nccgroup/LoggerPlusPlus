@@ -55,7 +55,7 @@ public class LogTableModel extends DefaultTableModel {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return !this.columnModel.getColumn(columnIndex).isReadonly();
+        return !this.columnModel.getModelColumn(columnIndex).isReadonly();
     }
 
     @Override
@@ -68,18 +68,14 @@ public class LogTableModel extends DefaultTableModel {
     @Override
     public Class<?> getColumnClass(int columnIndex) {
         String type = columnModel.getModelColumn(columnIndex).getType();
-        try {
-            return Class.forName(type);
-        } catch (ClassNotFoundException e) {
-            switch (type.toUpperCase()){
-                case "INTEGER":
-                case "INT": return Integer.class;
-                case "SHORT": return Short.class;
-                case "BOOLEAN":
-                case "BOOL": return Boolean.class;
-                case "STRING": return String.class;
-                default: return String.class;
-            }
+        switch (type.toUpperCase()){
+            case "INTEGER":
+            case "INT": return Integer.class;
+            case "SHORT": return Short.class;
+            case "BOOLEAN":
+            case "BOOL": return Boolean.class;
+            case "STRING": return String.class;
+            default: return String.class;
         }
     }
 

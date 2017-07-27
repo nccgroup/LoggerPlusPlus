@@ -38,7 +38,10 @@ public class TableHeader extends JTableHeader {
 					//TODO
 					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTable, column);
 					tblHeaderMenu.showMenu(e);
+				}else if(SwingUtilities.isLeftMouseButton(e)){
+
 				}
+
 
 //				if(isColumnWidthChanged()){
 //					/* On mouse release, check if column width has changed */
@@ -72,10 +75,6 @@ public class TableHeader extends JTableHeader {
 		Point p = e.getPoint();
 		int columnID = logTable.columnAtPoint(p);
 		LogTableColumn column = logTable.getColumnModel().getColumn(columnID);
-		if(isDebug){
-			stdout.println("right click detected on the header!");
-			stdout.println("right click on item number " + columnID + " ("+ column.getVisibleName() +") was detected");
-		}
 
 		String retStr;
 		try {
@@ -92,7 +91,6 @@ public class TableHeader extends JTableHeader {
 
 	@Override
 	public void columnAdded(TableColumnModelEvent var1) {
-
 		this.resizeAndRepaint();
 	}
 
@@ -100,10 +98,8 @@ public class TableHeader extends JTableHeader {
 		this.resizeAndRepaint();
 	}
 
-//	public void columnMoved(TableColumnModelEvent var1) {
-//		this.repaint();
-//		if(var1.getFromIndex() != var1.getToIndex()){
-//			System.out.println("MOVE");
-//		}
-//	}
+	@Override
+	public void columnMoved(TableColumnModelEvent var1) {
+		this.resizeAndRepaint();
+	}
 }

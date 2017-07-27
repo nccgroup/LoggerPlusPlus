@@ -174,17 +174,18 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
 	@Override
 	public void addColumn(TableColumn tableColumn) {
-		addColumnToViewMap((Integer) tableColumn.getIdentifier(), 0);
+		addColumnToViewMap((Integer) tableColumn.getIdentifier());
 		super.addColumn(tableColumn);
 	}
 
 	private void removeColumnFromViewMap(int viewColumn){
 		viewToModelMap.remove(viewColumn);
-		//Reorder
+		reorderViewColumns();
 	}
 
-	private void addColumnToViewMap(int modelColumn, int viewLocation){
-		viewToModelMap.add((Integer) modelColumn);
+	private void addColumnToViewMap(int modelColumn){
+		viewToModelMap.add(modelColumn);
+		reorderViewColumns();
 	}
 
 	@Override
@@ -242,6 +243,16 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		return st;
 	}
 
+	private void reorderViewColumns(){
+		Collections.sort(viewToModelMap, new Comparator<Integer>() {
+			@Override
+			public int compare(Integer colModelId, Integer otherColModelId) {
+				return columnMap.get(colModelId).compareTo(columnMap.get(otherColModelId));
+			}
+		});
+		System.out.println("Saving columns...");
+	}
+
 	@Override
 	public void moveColumn(int viewFrom, int viewTo) {
 //		viewToModelMap
@@ -250,10 +261,12 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			for (int i = viewFrom + 1; i <= viewTo; i++) {
 				columnMap.get(viewToModelMap.get(i)).setOrder(i-1);
 			}
+			reorderViewColumns();
 		}else if(viewFrom > viewTo){
 			for (int i = viewFrom-1; i >= viewTo; i--) {
 				columnMap.get(viewToModelMap.get(i)).setOrder(i+1);
 			}
+			reorderViewColumns();
 		}else{
 			//no change
 		}
