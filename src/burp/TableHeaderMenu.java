@@ -1,11 +1,12 @@
 package burp;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.PrintWriter;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -13,21 +14,16 @@ import java.util.regex.PatternSyntaxException;
 public class TableHeaderMenu extends JPopupMenu{
 
 	private final LogTable logTable;
-	private final TableStructure columnObj;
+	private final LogTableColumn columnObj;
 	private final int	ITEM_PLAIN	=	0;	// Item types
 	private final int	ITEM_CHECK	=	1;
 	private final int	ITEM_RADIO	=	2;
-	private final PrintWriter stdout,stderr;
-	private final boolean isDebug;
 
-	public TableHeaderMenu(LogTable logTable, TableStructure columnObj, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
+	public TableHeaderMenu(LogTable logTable, LogTableColumn columnObj)
 	{
 		super();
 		this.logTable = logTable;
 		this.columnObj=columnObj;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.isDebug = isDebug;
 
 	}
 
@@ -47,7 +43,7 @@ public class TableHeaderMenu extends JPopupMenu{
 			item = new JMenuItem("Edit");
 			item.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					javax.swing.SwingUtilities.invokeLater(new Runnable() {
+					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
 							String newValue = MoreHelp.showPlainInputMessage("Regular expression for the \"" + columnObj.getVisibleName()+
 									"\" column", "Edit Regex", columnObj.getRegExData().getRegExString());
@@ -59,7 +55,7 @@ public class TableHeaderMenu extends JPopupMenu{
 						            columnObj.getRegExData().setRegExString(newValue);
 									saveAndReloadTableSettings(); //TODO do we need it?
 						        } catch (PatternSyntaxException exception) {
-						            stderr.println("provided regular expression was wrong. It cannot be saved.");
+						            BurpExtender.getInstance().getStderr().println("provided regular expression was wrong. It cannot be saved.");
 						            MoreHelp.showWarningMessage("The provided regular expression string was NOT in correct format. It cannot be saved.");
 						        }
 							}
@@ -105,7 +101,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Hide");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				columnObj.setVisible(false);
+				logTable.getColumnModel().toggleHidden(columnObj);
 				saveAndReloadTableSettings();
 			}
 		});
@@ -115,14 +111,14 @@ public class TableHeaderMenu extends JPopupMenu{
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				javax.swing.SwingUtilities.invokeLater(new Runnable() {
+				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						String[] msgOptions = { "OK", "CANCEL" };
-						String message = "Are you sure you want to disable the \""+ columnObj.getVisibleName()
+						String message = "Are you sure you want to toggleDisabled the \""+ columnObj.getVisibleName()
 								+"\"? This column may not be populated when it is disabled (if it needs additional resources)";
 
 						if(MoreHelp.askConfirmMessage("Disabling a column", message, msgOptions)==JOptionPane.YES_OPTION){
-							columnObj.setEnabled(false);
+							logTable.getColumnModel().toggleDisabled(columnObj);
 							saveAndReloadTableSettings();
 						}
 					}
@@ -131,61 +127,55 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		menu.add(item);
 
-		JMenu subMenuVisibleCols = new JMenu("Visbile columns");
+		JMenu subMenuVisibleCols = new JMenu("Visible columns");
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
-					final TableStructure columnDefinition = iterator.next();
-					if(columnDefinition.isEnabled() && !columnDefinition.isVisible()){
-						columnDefinition.setVisible(true);
+				for (LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()) {
+					if(logTableColumn.isEnabled() && !logTableColumn.isVisible()){
+						logTable.getColumnModel().toggleHidden(logTableColumn);
 					}
 				}
 				saveAndReloadTableSettings();
 			}
 		});
 		subMenuVisibleCols.add(item);
-		
+
 		JMenu subMenuEnabledCols = new JMenu("Enabled columns");
 		item = new JMenuItem("Make all enabled");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
-					final TableStructure columnDefinition = iterator.next();
-					if(!columnDefinition.isEnabled()){
-						columnDefinition.setEnabled(true);
-						columnDefinition.setVisible(true);
+				for (LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()){
+					if(!logTableColumn.isEnabled()){
+						logTable.getColumnModel().toggleDisabled(logTableColumn);
 					}
 				}
 				saveAndReloadTableSettings();
 			}
 		});
 		subMenuEnabledCols.add(item);
-		
-		for (Iterator<TableStructure> iterator = logTable.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().iterator(); iterator.hasNext(); ) {
-			final TableStructure columnDefinition = iterator.next();
 
-			if(columnDefinition.isEnabled()){
-				JMenuItem visibleItem = new JCheckBoxMenuItem(columnDefinition.getVisibleName());
-				visibleItem.setSelected(columnDefinition.isVisible());
+		for (final LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()) {
+			if(logTableColumn.isEnabled()){
+				JMenuItem visibleItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
+				visibleItem.setSelected(logTableColumn.isVisible());
 				visibleItem.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						columnDefinition.setVisible(!columnDefinition.isVisible());
+						logTable.getColumnModel().toggleHidden(logTableColumn);
 						saveAndReloadTableSettings();
 					}
 				});
 				subMenuVisibleCols.add(visibleItem);
 			}
 
-			JMenuItem enabledItem = new JCheckBoxMenuItem(columnDefinition.getVisibleName());
-			enabledItem.setSelected(columnDefinition.isEnabled());
+			JMenuItem enabledItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
+			enabledItem.setSelected(logTableColumn.isEnabled());
 			enabledItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					columnDefinition.setEnabled(!columnDefinition.isEnabled());
-					columnDefinition.setVisible(true); // when a field is enabled, then it becomes visible automatically
-					javax.swing.SwingUtilities.invokeLater(new Runnable() {
+					logTable.getColumnModel().toggleDisabled(logTableColumn);
+					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
-							if(columnDefinition.isEnabled())
+							if(logTableColumn.isEnabled())
 								MoreHelp.showMessage("The new field might not have been populated previously. It will be populated for the new messages.");
 						}
 					});
@@ -209,9 +199,7 @@ public class TableHeaderMenu extends JPopupMenu{
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
 		logTable.saveTableChanges();
-		logTable.getModel().getTableHeaderColumnsDetails().resetToCurrentVariables();
 		logTable.getModel().fireTableStructureChanged();
-		logTable.generateTableColumns();
 	}
 
 

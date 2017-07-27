@@ -40,7 +40,8 @@ public class LogTable extends JTable
 
     public LogTable(List<LogEntry> data, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
-        super(new LogTableModel(data, stdout, stderr, isDebug));
+        super(new LogTableModel(data, stdout, stderr, isDebug), new LogTableColumnModel(stdout, stderr, isDebug));
+        this.getModel().setColumnModel((LogTableColumnModel) this.getColumnModel());
         this.stderr = stderr;
         this.stdout = stdout;
         this.isDebug = isDebug;
@@ -51,10 +52,11 @@ public class LogTable extends JTable
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
+
         // another way to detect column dragging to save its settings for next time loading! fooh! seems tricky!
         //			getLogTable().setTableHeader(new JTableHeader(getLogTable().getColumnModel()) {
         //				@Override
-        //				public void setDraggedColumn(TableColumn column) {
+        //				public void setDraggedColumn(LogTableColumn column) {
         //					boolean finished = draggedColumn != null && column == null;
         //					super.setDraggedColumn(column);
         //					if (finished) {
@@ -66,50 +68,49 @@ public class LogTable extends JTable
         setRowSorter(new TableRowSorter<>(this.getModel()));
 
 
-        this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
-
-            public void columnAdded(TableColumnModelEvent e) {
-            }
-
-            public void columnRemoved(TableColumnModelEvent e) {
-            }
-
-            public void columnMoved(TableColumnModelEvent e) {
-					/* columnMoved is called continuously. Therefore, execute code below ONLY if we are not already
-	                aware of the column position having changed */
-                if(!isColumnMoved())
-                {
-						/* the condition  below will NOT be true if
-	                    the column width is being changed by code. */
-                    if(getTableHeader().getDraggedColumn() != null)
-                    {
-                        // User must have dragged column and changed width
-                        setColumnMoved(true);
-                    }
-                }
-            }
-
-            public void columnMarginChanged(ChangeEvent e) {
-					/* columnMarginChanged is called continuously as the column width is changed
-	                by dragging. Therefore, execute code below ONLY if we are not already
-	                aware of the column width having changed */
-                if(!isColumnWidthChanged())
-                {
-						/* the condition  below will NOT be true if
-	                    the column width is being changed by code. */
-                    if(getTableHeader().getResizingColumn() != null)
-                    {
-                        // User must have dragged column and changed width
-                        setColumnWidthChanged(true);
-                    }
-                }
-            }
-
-            public void columnSelectionChanged(ListSelectionEvent e) {
-            }
-        });
+//        this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
+//
+//            public void columnAdded(TableColumnModelEvent e) {
+//            }
+//
+//            public void columnRemoved(TableColumnModelEvent e) {
+//            }
+//
+//            public void columnMoved(TableColumnModelEvent e) {
+//					/* columnMoved is called continuously. Therefore, execute code below ONLY if we are not already
+//	                aware of the column position having changed */
+//                if(!isColumnMoved())
+//                {
+//						/* the condition  below will NOT be true if
+//	                    the column width is being changed by code. */
+//                    if(getTableHeader().getDraggedColumn() != null)
+//                    {
+//                        // User must have dragged column and changed width
+//                        setColumnMoved(true);
+//                    }
+//                }
+//            }
+//
+//            public void columnMarginChanged(ChangeEvent e) {
+//					/* columnMarginChanged is called continuously as the column width is changed
+//	                by dragging. Therefore, execute code below ONLY if we are not already
+//	                aware of the column width having changed */
+//                if(!isColumnWidthChanged())
+//                {
+//						/* the condition  below will NOT be true if
+//	                    the column width is being changed by code. */
+//                    if(getTableHeader().getResizingColumn() != null)
+//                    {
+//                        // User must have dragged column and changed width
+//                        setColumnWidthChanged(true);
+//                    }
+//                }
+//            }
+//
+//            public void columnSelectionChanged(ListSelectionEvent e) {
+//            }
+//        });
         registerListeners();
-        generateTableColumns();
     }
 
     //Sneak in row coloring just before rendering the cell.
@@ -131,8 +132,13 @@ public class LogTable extends JTable
                         colorFilter = colorFilters.get(uid);
                     }
                 }
-                c.setForeground(colorFilter.getForegroundColor());
-                c.setBackground(colorFilter.getBackgroundColor());
+                if (colorFilter == null) {
+                    c.setForeground(this.getForeground());
+                    c.setBackground(this.getBackground());
+                } else {
+                    c.setForeground(colorFilter.getForegroundColor());
+                    c.setBackground(colorFilter.getBackgroundColor());
+                }
             }else{
                 c.setForeground(this.getForeground());
                 c.setBackground(this.getBackground());
@@ -143,6 +149,15 @@ public class LogTable extends JTable
         return c;
     }
 
+    @Override
+    public int convertColumnIndexToModel(int viewColumn) {
+        return (int) this.getColumnModel().getColumnByViewLocation(viewColumn).getIdentifier();
+    }
+
+    @Override
+    public int convertColumnIndexToView(int i) {
+        return this.getColumnModel().getColumnViewLocation(i);
+    }
 
     private void registerListeners(){
         this.addMouseListener( new MouseAdapter()
@@ -191,7 +206,7 @@ public class LogTable extends JTable
                 JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use as filter") {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String columnName = getModel().getColumnName(col);
+                        String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
                         String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                         try {
                             Filter filter = new Filter(columnName, "==", value);
@@ -206,7 +221,7 @@ public class LogTable extends JTable
                     JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            String columnName = getModel().getColumnName(col);
+                            String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
                             String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
@@ -239,51 +254,6 @@ public class LogTable extends JTable
             }
 
         });
-
-        final LogTable _this = this;
-        tableHeader.addMouseListener(new MouseAdapter(){
-            @Override
-            public void mouseReleased(MouseEvent e)
-            {
-                if ( SwingUtilities.isRightMouseButton( e ))
-                {
-                    // get the coordinates of the mouse click
-                    Point p = e.getPoint();
-                    int columnID = columnAtPoint(p);
-                    TableColumn column = getColumnModel().getColumn(columnID);
-                    TableStructure columnObj = getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get((Integer) column.getIdentifier());
-                    if(isDebug){
-                        stdout.println("right click detected on the header!");
-                        stdout.println("right click on item number " + String.valueOf(columnID) + " ("+getColumnName(columnID)+") was detected");
-                    }
-
-                    //TODO
-                    TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(_this, columnObj, stdout, stderr,isDebug);
-                    tblHeaderMenu.showMenu(e);
-                }
-
-                if(isColumnWidthChanged()){
-					/* On mouse release, check if column width has changed */
-                    if(isDebug) {
-                        stdout.println("Column has been resized!");
-                    }
-
-                    // Reset the flag on the table.
-                    setColumnWidthChanged(false);
-
-                    saveColumnResizeTableChange();
-                }else if(isColumnMoved()){
-						/* On mouse release, check if column has moved */
-
-                    if(isDebug) {
-                        stdout.println("Column has been moved!");
-                    }
-                    // Reset the flag on the table.
-                    setColumnMoved(false);
-                    saveOrderTableChange();
-                }
-            }
-        });
     }
 
     private Filter getCurrentFilter(){
@@ -301,6 +271,7 @@ public class LogTable extends JTable
             try{
                 Filter filter = FilterCompiler.parseString(filterField.getText());
                 setFilter(filter);
+                filterField.setBackground(Color.green);
             }catch (Filter.FilterException fException){
                 setFilter((Filter) null);
                 filterField.setBackground(Color.RED);
@@ -357,42 +328,42 @@ public class LogTable extends JTable
     private void saveOrderTableChange(){
         // check to see if the table column order has changed or it was just a click!
         String tempTableIDsStringByOrder = "";
-//        Enumeration<TableColumn> tblCols = this.getColumnModel().getColumns();
-        for (TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
+//        Enumeration<LogTableColumn> tblCols = this.getColumnModel().getColumns();
+        for (javax.swing.table.TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
             tempTableIDsStringByOrder += tblCol.getIdentifier() +
-                    this.getModel().getTableHeaderColumnsDetails().getIdCanaryParam();
+                    this.getColumnModel().getIdCanaryParam();
         }
 
         if(isDebug){
             stdout.println("tempTableIDsStringByOrder: " + tempTableIDsStringByOrder +" -- tableIDsStringByOrder: "
-                    + this.getModel().getTableHeaderColumnsDetails().getTableIDsStringByOrder());
+                    + this.getColumnModel().getTableIDsStringByOrder());
         }
 
-        if(!this.getModel().getTableHeaderColumnsDetails().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
+        if(!this.getColumnModel().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
             if(isDebug){
                 stdout.println("LogTable has been re-ordered and needs to be saved!");
             }
             // Order of columns has changed! we have to save it now!
             int counter = 1;
 //            tblCols = this.getColumnModel().getColumns();
-            for (TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
-                int columnNumber = (Integer) tblCol.getIdentifier();
-                this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setOrder(counter);
+            for (javax.swing.table.TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
+                Integer tblColIdentifier = (Integer) tblCol.getIdentifier();
+                this.getColumnModel().getModelColumn(tblColIdentifier).setOrder(counter);
                 counter++;
             }
 
-            this.getModel().getTableHeaderColumnsDetails().setTableIDsStringByOrder(tempTableIDsStringByOrder);
+//            this.getColumnModel().setTableIDsStringByOrder(tempTableIDsStringByOrder);
             saveTableChanges();
         }
     }
 
     // to save the column widths after changes
     private void saveColumnResizeTableChange(){
-        Enumeration<TableColumn> tblCols = this.getColumnModel().getColumns();
+        Enumeration<javax.swing.table.TableColumn> tblCols = this.getColumnModel().getColumns();
         for (; tblCols.hasMoreElements(); ) {
-            TableColumn currentTblCol = tblCols.nextElement();
-            int columnNumber = (Integer) currentTblCol.getIdentifier();
-            this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(columnNumber).setWidth(currentTblCol.getWidth());
+            javax.swing.table.TableColumn currentTblCol = tblCols.nextElement();
+            Integer columnIdentifier = (Integer) currentTblCol.getIdentifier();
+            this.getColumnModel().getColumn(columnIdentifier).setWidth(currentTblCol.getWidth());
         }
         saveTableChanges();
     }
@@ -400,31 +371,16 @@ public class LogTable extends JTable
     // to save the new table changes
     public void saveTableChanges(){
         // save it to the relevant variables and preferences
-        this.getModel().getTableHeaderColumnsDetails().setLoggerTableDetailsCurrentJSONString(
-                new Gson().toJson(this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList()), true);
-    }
-
-    // generate the table columns!
-    public void generateTableColumns(){
-        for(TableColumn column : Collections.list(this.getColumnModel().getColumns())){
-            TableStructure colStructure = this.getModel().getTableHeaderColumnsDetails().getAllColumnsDefinitionList().get(column.getModelIndex());
-            column.setMinWidth(50);
-            column.setIdentifier(colStructure.getId()); // to be able to point to a column directly later
-            column.setPreferredWidth((int) colStructure.getWidth());
-
-            // to align the numerical fields to left - can't do it for all as it corrupts the boolean ones
-            if(colStructure.getType().equals("int")
-                    || colStructure.getType().equals("short")
-                    || colStructure.getType().equals("double"))
-                column.setCellRenderer(new LeftTableCellRenderer());
-            if(!colStructure.isVisible()) getColumnModel().removeColumn(column);
-        }
+        this.getColumnModel().saveColumnJSON();
     }
 
     @Override
     public LogTableModel getModel(){
         return (LogTableModel) super.getModel();
     }
+
+    @Override
+    public LogTableColumnModel getColumnModel(){ return (LogTableColumnModel) super.getColumnModel(); }
 
     static class LeftTableCellRenderer extends DefaultTableCellRenderer {
         protected  LeftTableCellRenderer() {
