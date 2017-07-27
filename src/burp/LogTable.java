@@ -206,7 +206,7 @@ public class LogTable extends JTable
                 JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use as filter") {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
+                        String columnName = getColumnModel().getColumn(convertColumnIndexToView(col)).getName();
                         String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                         try {
                             Filter filter = new Filter(columnName, "==", value);
@@ -235,7 +235,7 @@ public class LogTable extends JTable
                     JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            String columnName = getModel().getColumnName(col);
+                            String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
                             String value = (String) getModel().getValueAt(row, col);
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);

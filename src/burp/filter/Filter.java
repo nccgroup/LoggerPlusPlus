@@ -165,8 +165,10 @@ public class Filter extends RowFilter<Object, Object> {
     public String toString(){
         String lString = left.toString();
         if(left instanceof Pattern) lString = "/" + left + "/";
+        if(left instanceof String) lString = "\"" + left + "\"";
         String rString = right.toString();
         if(right instanceof Pattern) rString = "/" + right + "/";
+        if(right instanceof String) rString = "\"" + right + "\"";
         return lString + " " + operation.representation + " " + rString;
     }
 
