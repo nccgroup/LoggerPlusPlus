@@ -34,6 +34,16 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	private String defaultVisibleName;
 
 	@Override
+	public void setPreferredWidth(int width){
+		super.setPreferredWidth(width);
+	}
+	@Override
+	public void setWidth(int width){
+		super.setWidth(width);
+		this.setPreferredWidth(width);
+	}
+
+	@Override
 	public Integer getIdentifier() { return this.id; }
 	@Override
 	public void setIdentifier(Object id) {

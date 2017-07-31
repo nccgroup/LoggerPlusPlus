@@ -12,7 +12,7 @@ public class LogTableModel extends DefaultTableModel {
     private IHttpRequestResponse currentlyDisplayedItem;
     private List<LogEntry> entries;
 
-    public LogTableModel(List<LogEntry> entries, PrintWriter stdout, PrintWriter stderr, boolean isDebug){
+    public LogTableModel(List<LogEntry> entries){
         this.entries = entries;
     }
 
@@ -34,14 +34,14 @@ public class LogTableModel extends DefaultTableModel {
         return entries.size();
     }
 
-//    @Override
-//    public int getColumnCount()
-//    {
-//        if(this.columnModel != null && columnModel.getEnabledColumns() != null)
-//            return this.columnModel.getEnabledColumns().size();
-//        else
-//            return 0;
-//    }
+    @Override
+    public int getColumnCount()
+    {
+        if(this.columnModel != null)
+            return this.columnModel.getColumnCount();
+        else
+            return 0;
+    }
 
 //    @Override
 //    public String getColumnName(int columnIndex)
@@ -101,27 +101,5 @@ public class LogTableModel extends DefaultTableModel {
         return this.entries;
     }
     public LogEntry getRow(int row) {return this.entries.get(row);}
-
-    // This has been designed for Java v6 that cannot support String in "switch"
-    private enum columnClassesType {
-        INT("INT"),
-        SHORT("SHORT"),
-        DOUBLE("DOUBLE"),
-        LONG("LONG"),
-        BOOLEAN("BOOLEAN"),
-        STRING("STRING");
-        private String value;
-        private columnClassesType(String value) {
-            this.value = value;
-        }
-        public String getValue() {
-            return value;
-        }
-        @Override
-        public String toString() {
-            return getValue();
-        }
-    }
-
 
 }
