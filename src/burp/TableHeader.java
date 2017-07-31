@@ -41,28 +41,6 @@ public class TableHeader extends JTableHeader {
 				}else if(SwingUtilities.isLeftMouseButton(e)){
 
 				}
-
-
-//				if(isColumnWidthChanged()){
-//					/* On mouse release, check if column width has changed */
-//					if(isDebug) {
-//						stdout.println("Column has been resized!");
-//					}
-//
-//					// Reset the flag on the table.
-//					setColumnWidthChanged(false);
-//
-//					saveColumnResizeTableChange();
-//				}else if(isColumnMoved()){
-//						/* On mouse release, check if column has moved */
-//
-//					if(isDebug) {
-//						stdout.println("Column has been moved!");
-//					}
-//					// Reset the flag on the table.
-//					setColumnMoved(false);
-//					saveOrderTableChange();
-//				}
 			}
 		});
 
@@ -87,19 +65,5 @@ public class TableHeader extends JTableHeader {
 		}
 		return retStr;
 
-	}
-
-	@Override
-	public void columnAdded(TableColumnModelEvent var1) {
-		this.resizeAndRepaint();
-	}
-
-	public void columnRemoved(TableColumnModelEvent var1) {
-		this.resizeAndRepaint();
-	}
-
-	@Override
-	public void columnMoved(TableColumnModelEvent var1) {
-		this.resizeAndRepaint();
 	}
 }

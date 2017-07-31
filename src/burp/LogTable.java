@@ -18,10 +18,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
 import javax.swing.plaf.UIResource;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableRowSorter;
+import javax.swing.table.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -33,21 +30,13 @@ import java.util.List;
 
 public class LogTable extends JTable
 {
-    private boolean columnWidthChanged;
-    private boolean columnMoved;
-    private PrintWriter stdout, stderr;
-    private boolean isDebug;
 
     public LogTable(List<LogEntry> data, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
-        super(new LogTableModel(data, stdout, stderr, isDebug), new LogTableColumnModel(stdout, stderr, isDebug));
-        this.getModel().setColumnModel((LogTableColumnModel) this.getColumnModel());
-        this.stderr = stderr;
-        this.stdout = stdout;
-        this.isDebug = isDebug;
+        super(new LogTableModel(data), new LogTableColumnModel(stdout, stderr, isDebug));
+        this.getModel().setColumnModel(this.getColumnModel());
         this.setTableHeader(new TableHeader (getColumnModel(),this,stdout,stderr,isDebug)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
-        this.setAutoCreateRowSorter(true); // To fix the sorting
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
@@ -65,51 +54,8 @@ public class LogTable extends JTable
         //					}
         //				}
         //			});
-        setRowSorter(new TableRowSorter<>(this.getModel()));
+        setRowSorter(new TableRowSorter<LogTableModel>(this.getModel()));
 
-
-//        this.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
-//
-//            public void columnAdded(TableColumnModelEvent e) {
-//            }
-//
-//            public void columnRemoved(TableColumnModelEvent e) {
-//            }
-//
-//            public void columnMoved(TableColumnModelEvent e) {
-//					/* columnMoved is called continuously. Therefore, execute code below ONLY if we are not already
-//	                aware of the column position having changed */
-//                if(!isColumnMoved())
-//                {
-//						/* the condition  below will NOT be true if
-//	                    the column width is being changed by code. */
-//                    if(getTableHeader().getDraggedColumn() != null)
-//                    {
-//                        // User must have dragged column and changed width
-//                        setColumnMoved(true);
-//                    }
-//                }
-//            }
-//
-//            public void columnMarginChanged(ChangeEvent e) {
-//					/* columnMarginChanged is called continuously as the column width is changed
-//	                by dragging. Therefore, execute code below ONLY if we are not already
-//	                aware of the column width having changed */
-//                if(!isColumnWidthChanged())
-//                {
-//						/* the condition  below will NOT be true if
-//	                    the column width is being changed by code. */
-//                    if(getTableHeader().getResizingColumn() != null)
-//                    {
-//                        // User must have dragged column and changed width
-//                        setColumnWidthChanged(true);
-//                    }
-//                }
-//            }
-//
-//            public void columnSelectionChanged(ListSelectionEvent e) {
-//            }
-//        });
         registerListeners();
     }
 
@@ -306,66 +252,6 @@ public class LogTable extends JTable
 
             super.changeSelection(row, col, toggle, extend);
         }
-    }
-
-    public boolean isColumnMoved() {
-        return columnMoved;
-    }
-
-    public void setColumnMoved(boolean columnMoved) {
-        this.columnMoved = columnMoved;
-    }
-
-    public boolean isColumnWidthChanged() {
-        return columnWidthChanged;
-    }
-
-    public void setColumnWidthChanged(boolean columnWidthChanged) {
-        this.columnWidthChanged = columnWidthChanged;
-    }
-
-    // to save the order after dragging a column
-    private void saveOrderTableChange(){
-        // check to see if the table column order has changed or it was just a click!
-        String tempTableIDsStringByOrder = "";
-//        Enumeration<LogTableColumn> tblCols = this.getColumnModel().getColumns();
-        for (javax.swing.table.TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
-            tempTableIDsStringByOrder += tblCol.getIdentifier() +
-                    this.getColumnModel().getIdCanaryParam();
-        }
-
-        if(isDebug){
-            stdout.println("tempTableIDsStringByOrder: " + tempTableIDsStringByOrder +" -- tableIDsStringByOrder: "
-                    + this.getColumnModel().getTableIDsStringByOrder());
-        }
-
-        if(!this.getColumnModel().getTableIDsStringByOrder().equals(tempTableIDsStringByOrder)){
-            if(isDebug){
-                stdout.println("LogTable has been re-ordered and needs to be saved!");
-            }
-            // Order of columns has changed! we have to save it now!
-            int counter = 1;
-//            tblCols = this.getColumnModel().getColumns();
-            for (javax.swing.table.TableColumn tblCol: Collections.list(this.getColumnModel().getColumns())) {
-                Integer tblColIdentifier = (Integer) tblCol.getIdentifier();
-                this.getColumnModel().getModelColumn(tblColIdentifier).setOrder(counter);
-                counter++;
-            }
-
-//            this.getColumnModel().setTableIDsStringByOrder(tempTableIDsStringByOrder);
-            saveTableChanges();
-        }
-    }
-
-    // to save the column widths after changes
-    private void saveColumnResizeTableChange(){
-        Enumeration<javax.swing.table.TableColumn> tblCols = this.getColumnModel().getColumns();
-        for (; tblCols.hasMoreElements(); ) {
-            javax.swing.table.TableColumn currentTblCol = tblCols.nextElement();
-            Integer columnIdentifier = (Integer) currentTblCol.getIdentifier();
-            this.getColumnModel().getColumn(columnIdentifier).setWidth(currentTblCol.getWidth());
-        }
-        saveTableChanges();
     }
 
     // to save the new table changes
