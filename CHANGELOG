@@ -1,3 +1,9 @@
+v 2.84
+=========================================================================
+- Enable request and response filters.
+- Add context menu to quickly create filters and color filters.
+- Behind the scenes refactoring.
+
 v 2.83
 =========================================================================
 - Update on startup.

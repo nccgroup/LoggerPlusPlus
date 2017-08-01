@@ -483,9 +483,9 @@ public class LogEntry extends RowFilter.Entry
 
 		if(isFullLog){
 			result.append(",");		    
-			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
+			result.append(StringEscapeUtils.escapeCsv(String.valueOf(requestResponse.getRequest())));
 			result.append(",");
-			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));
+			result.append(StringEscapeUtils.escapeCsv(String.valueOf(requestResponse.getResponse())));
 		}
 		return result.toString();
 	}
