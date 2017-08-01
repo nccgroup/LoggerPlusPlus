@@ -12,17 +12,13 @@
 
 package burp;
 
-import burp.filter.Filter;
-import burp.filter.FilterCompiler;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
-import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
+import java.beans.PropertyChangeEvent;
 import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -34,50 +30,52 @@ import java.util.List;
 public class LogTableColumnModel extends DefaultTableColumnModel {
 	private final String defaultLogTableColumnsJson = "["
 			+ "{'id':0,'name':'number','enabled':true,'defaultVisibleName':'#','visibleName':'#','preferredWidth':50,'type':'int','readonly':true,'order':1,'visible':true,'description':'Item index number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'tool','enabled':true,'defaultVisibleName':'Tool','visibleName':'Tool','preferredWidth':70,'type':'string','readonly':true,'order':2,'visible':true,'description':'Tool name','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'host','enabled':true,'defaultVisibleName':'Host','visibleName':'Host','preferredWidth':150,'type':'string','readonly':true,'order':3,'visible':true,'description':'Host and Protocol (similar to the Proxy tab)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'method','enabled':true,'defaultVisibleName':'Method','visibleName':'Method','preferredWidth':65,'type':'string','readonly':true,'order':4,'visible':true,'description':'HTTP request method','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'url','enabled':true,'defaultVisibleName':'URL','visibleName':'URL','preferredWidth':250,'type':'string','readonly':true,'order':5,'visible':false,'description':'Destination relative URL','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'path','enabled':true,'defaultVisibleName':'Path','visibleName':'Path','preferredWidth':250,'type':'string','readonly':true,'order':6,'visible':true,'description':'Request Path','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'query','enabled':true,'defaultVisibleName':'Query','visibleName':'Query','preferredWidth':250,'type':'string','readonly':true,'order':7,'visible':true,'description':'Query Parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'params','enabled':true,'defaultVisibleName':'Params','visibleName':'Params','preferredWidth':65,'type':'boolean','readonly':true,'order':7,'visible':true,'description':'Indicates whether or not the request has GET or POST parameter(s)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'status','enabled':true,'defaultVisibleName':'Status','visibleName':'Status','preferredWidth':55,'type':'short','readonly':true,'order':8,'visible':true,'description':'Response status header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'responseLength','enabled':true,'defaultVisibleName':'Response Length','visibleName':'Response Length','preferredWidth':100,'type':'int','readonly':true,'order':9,'visible':true,'description':'Length of response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'responseContentType_burp','enabled':true,'defaultVisibleName':'MIME type','visibleName':'MIME type','preferredWidth':100,'type':'string','readonly':true,'order':10,'visible':true,'description':'Response content type using Burp API','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'urlExtension','enabled':true,'defaultVisibleName':'Extension','visibleName':'Extension','preferredWidth':70,'type':'string','readonly':true,'order':11,'visible':true,'description':'Target page extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0, 'name':'comment','enabled':true,'defaultVisibleName':'Comment','visibleName':'Comment','preferredWidth':200,'type':'string','readonly':false,'order':12,'visible':true,'description':'Editable comment','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'isSSL','enabled':true,'defaultVisibleName':'SSL','visibleName':'SSL','preferredWidth':50,'type':'boolean','readonly':true,'order':13,'visible':true,'description':'Indicates whether or not the HTTP protocol is HTTPS','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'newCookies','enabled':true,'defaultVisibleName':'New Cookies','visibleName':'New Cookies','preferredWidth':150,'type':'string','readonly':true,'order':14,'visible':true,'description':'Shows any new cookies in the response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'responseTime','enabled':true,'defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of receiving the response in this extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'listenerInterface','enabled':true,'defaultVisibleName':'Proxy Listener interface','visibleName':'Proxy Listener interface','preferredWidth':150,'type':'string','readonly':true,'order':16,'visible':true,'description':'Shows the proxy listener interface for proxied requests','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':1,'name':'tool','enabled':true,'defaultVisibleName':'Tool','visibleName':'Tool','preferredWidth':70,'type':'string','readonly':true,'order':2,'visible':true,'description':'Tool name','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':2,'name':'host','enabled':true,'defaultVisibleName':'Host','visibleName':'Host','preferredWidth':150,'type':'string','readonly':true,'order':3,'visible':true,'description':'Host and Protocol (similar to the Proxy tab)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':3,'name':'method','enabled':true,'defaultVisibleName':'Method','visibleName':'Method','preferredWidth':65,'type':'string','readonly':true,'order':4,'visible':true,'description':'HTTP request method','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':4,'name':'url','enabled':true,'defaultVisibleName':'URL','visibleName':'URL','preferredWidth':250,'type':'string','readonly':true,'order':5,'visible':false,'description':'Destination relative URL','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':5,'name':'path','enabled':true,'defaultVisibleName':'Path','visibleName':'Path','preferredWidth':250,'type':'string','readonly':true,'order':6,'visible':true,'description':'Request Path','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':6,'name':'query','enabled':true,'defaultVisibleName':'Query','visibleName':'Query','preferredWidth':250,'type':'string','readonly':true,'order':7,'visible':true,'description':'Query Parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':7,'name':'params','enabled':true,'defaultVisibleName':'Params','visibleName':'Params','preferredWidth':65,'type':'boolean','readonly':true,'order':7,'visible':true,'description':'Indicates whether or not the request has GET or POST parameter(s)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':8,'name':'status','enabled':true,'defaultVisibleName':'Status','visibleName':'Status','preferredWidth':55,'type':'short','readonly':true,'order':8,'visible':true,'description':'Response status header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':9,'name':'responseLength','enabled':true,'defaultVisibleName':'Response Length','visibleName':'Response Length','preferredWidth':100,'type':'int','readonly':true,'order':9,'visible':true,'description':'Length of response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':10,'name':'responseContentType_burp','enabled':true,'defaultVisibleName':'MIME type','visibleName':'MIME type','preferredWidth':100,'type':'string','readonly':true,'order':10,'visible':true,'description':'Response content type using Burp API','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':11,'name':'urlExtension','enabled':true,'defaultVisibleName':'Extension','visibleName':'Extension','preferredWidth':70,'type':'string','readonly':true,'order':11,'visible':true,'description':'Target page extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':12, 'name':'comment','enabled':true,'defaultVisibleName':'Comment','visibleName':'Comment','preferredWidth':200,'type':'string','readonly':false,'order':12,'visible':true,'description':'Editable comment','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':13,'name':'isSSL','enabled':true,'defaultVisibleName':'SSL','visibleName':'SSL','preferredWidth':50,'type':'boolean','readonly':true,'order':13,'visible':true,'description':'Indicates whether or not the HTTP protocol is HTTPS','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':14,'name':'newCookies','enabled':true,'defaultVisibleName':'New Cookies','visibleName':'New Cookies','preferredWidth':150,'type':'string','readonly':true,'order':14,'visible':true,'description':'Shows any new cookies in the response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':15,'name':'responseTime','enabled':true,'defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of receiving the response in this extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':16,'name':'listenerInterface','enabled':true,'defaultVisibleName':'Proxy Listener interface','visibleName':'Proxy Listener interface','preferredWidth':150,'type':'string','readonly':true,'order':16,'visible':true,'description':'Shows the proxy listener interface for proxied requests','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			/*below field should not be visible by default when users can customise them*/
-			+ "{'id':0,'name':'clientIP','enabled':true,'defaultVisibleName':'Proxy Client IP','visibleName':'Proxy Client IP','preferredWidth':150,'type':'string','readonly':true,'order':17,'visible':false,'description':'Shows the client IP address when using the Proxy tab','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'responseContentType','enabled':true,'defaultVisibleName':'Response Content-Type','visibleName':'Response Content-Type','preferredWidth':150,'type':'string','readonly':true,'order':18,'visible':false,'description':'Shows the content-type header in the response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'responseInferredContentType_burp','enabled':true,'defaultVisibleName':'Inferred Type','visibleName':'Inferred Type','preferredWidth':150,'type':'string','readonly':true,'order':19,'visible':false,'description':'Shows the content type which was inferred by Burp','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'hasQueryStringParam','enabled':true,'defaultVisibleName':'QueryString?','visibleName':'QueryString?','preferredWidth':50,'type':'boolean','readonly':true,'order':20,'visible':false,'description':'Indicates whether or not the request has any querystring parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'hasBodyParam','enabled':true,'defaultVisibleName':'Body Params?','visibleName':'Body Params?','preferredWidth':50,'type':'boolean','readonly':true,'order':21,'visible':false,'description':'Indicates whether or not the request contains any POST parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'hasCookieParam','enabled':true,'defaultVisibleName':'Sent Cookie?','visibleName':'Sent Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':22,'visible':false,'description':'Indicates whether or not the request has any Cookie parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'sentCookies','enabled':true,'defaultVisibleName':'Sent Cookies','visibleName':'Sent Cookies','preferredWidth':150,'type':'string','readonly':true,'order':23,'visible':false,'description':'Shows the cookies which was sent in the request','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'usesCookieJar','enabled':true,'defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'type':'string','readonly':true,'order':24,'visible':false,'description':'Compares the cookies with the cookie jar ones to see if any of them in use','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'protocol','enabled':true,'defaultVisibleName':'Protocol','visibleName':'Protocol','preferredWidth':80,'type':'string','readonly':true,'order':25,'visible':false,'description':'Shows the request protocol','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'hostname','enabled':true,'defaultVisibleName':'Host Name','visibleName':'Host Name','preferredWidth':150,'type':'string','readonly':true,'order':26,'visible':false,'description':'Shows the request host name','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'targetPort','enabled':true,'defaultVisibleName':'Port','visibleName':'Port','preferredWidth':50,'type':'int','readonly':true,'order':27,'visible':false,'description':'Shows the target port number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'requestContentType','enabled':true,'defaultVisibleName':'Request Type','visibleName':'Request Type','preferredWidth':150,'type':'string','readonly':true,'order':28,'visible':false,'description':'Shows the request content-type header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'referrerURL','enabled':true,'defaultVisibleName':'Referred','visibleName':'Referred','preferredWidth':250,'type':'string','readonly':true,'order':29,'visible':false,'description':'Shows the referer header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'requestLength','enabled':true,'defaultVisibleName':'Request Length','visibleName':'Request Length','preferredWidth':150,'type':'int','readonly':true,'order':30,'visible':false,'description':'Shows the request body length','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'hasSetCookies','enabled':true,'defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':31,'visible':false,'description':'Indicates whether or not the response contains the set-cookie header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'isCompleted','enabled':false,'defaultVisibleName':'Is Completed?','visibleName':'Is Completed?','preferredWidth':50,'type':'boolean','readonly':true,'order':32,'visible':true,'description':'DONTUSE: Indicates whether or not the request has a response (currently does not work due to Burp extension limitations)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'uniqueIdentifier','enabled':false,'defaultVisibleName':'UID','visibleName':'UID','preferredWidth':100,'type':'string','readonly':true,'order':33,'visible':true,'description':'DONTUSE: Shows a unique identifier for request/response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex1Req','enabled':true,'defaultVisibleName':'Request RegEx 1','visibleName':'Request RegEx 1','preferredWidth':150,'type':'string','readonly':true,'order':34,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex2Req','enabled':false,'defaultVisibleName':'Request RegEx 2','visibleName':'Request RegEx 2','preferredWidth':150,'type':'string','readonly':true,'order':35,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex3Req','enabled':false,'defaultVisibleName':'Request RegEx 3','visibleName':'Request RegEx 3','preferredWidth':150,'type':'string','readonly':true,'order':36,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex4Req','enabled':false,'defaultVisibleName':'Request RegEx 4','visibleName':'Request RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':37,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex5Req','enabled':false,'defaultVisibleName':'Request RegEx 5','visibleName':'Request RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':38,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex1Resp','enabled':true,'defaultVisibleName':'Response RegEx 1','visibleName':'Response RegEx 1 - Title','preferredWidth':220,'type':'string','readonly':true,'order':39,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'(?<=\\<title\\>)(.)+(?=\\<\\/title\\>)','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex2Resp','enabled':false,'defaultVisibleName':'Response RegEx 2','visibleName':'Response RegEx 2','preferredWidth':150,'type':'string','readonly':true,'order':40,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex3Resp','enabled':false,'defaultVisibleName':'Response RegEx 3','visibleName':'Response RegEx 3','preferredWidth':150,'type':'string','readonly':true,'order':41,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':true}},"
-			+ "{'id':0,'name':'regex4Resp','enabled':false,'defaultVisibleName':'Response RegEx 4','visibleName':'Response RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':42,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':0,'name':'regex5Resp','enabled':false,'defaultVisibleName':'Response RegEx 5','visibleName':'Response RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':43,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}}"
+			+ "{'id':17,'name':'clientIP','enabled':true,'defaultVisibleName':'Proxy Client IP','visibleName':'Proxy Client IP','preferredWidth':150,'type':'string','readonly':true,'order':17,'visible':false,'description':'Shows the client IP address when using the Proxy tab','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':18,'name':'responseContentType','enabled':true,'defaultVisibleName':'Response Content-Type','visibleName':'Response Content-Type','preferredWidth':150,'type':'string','readonly':true,'order':18,'visible':false,'description':'Shows the content-type header in the response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':19,'name':'responseInferredContentType_burp','enabled':true,'defaultVisibleName':'Inferred Type','visibleName':'Inferred Type','preferredWidth':150,'type':'string','readonly':true,'order':19,'visible':false,'description':'Shows the content type which was inferred by Burp','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':20,'name':'hasQueryStringParam','enabled':true,'defaultVisibleName':'QueryString?','visibleName':'QueryString?','preferredWidth':50,'type':'boolean','readonly':true,'order':20,'visible':false,'description':'Indicates whether or not the request has any querystring parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':21,'name':'hasBodyParam','enabled':true,'defaultVisibleName':'Body Params?','visibleName':'Body Params?','preferredWidth':50,'type':'boolean','readonly':true,'order':21,'visible':false,'description':'Indicates whether or not the request contains any POST parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':22,'name':'hasCookieParam','enabled':true,'defaultVisibleName':'Sent Cookie?','visibleName':'Sent Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':22,'visible':false,'description':'Indicates whether or not the request has any Cookie parameters','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':23,'name':'sentCookies','enabled':true,'defaultVisibleName':'Sent Cookies','visibleName':'Sent Cookies','preferredWidth':150,'type':'string','readonly':true,'order':23,'visible':false,'description':'Shows the cookies which was sent in the request','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':24,'name':'usesCookieJar','enabled':true,'defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'type':'string','readonly':true,'order':24,'visible':false,'description':'Compares the cookies with the cookie jar ones to see if any of them in use','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':25,'name':'protocol','enabled':true,'defaultVisibleName':'Protocol','visibleName':'Protocol','preferredWidth':80,'type':'string','readonly':true,'order':25,'visible':false,'description':'Shows the request protocol','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':26,'name':'hostname','enabled':true,'defaultVisibleName':'Host Name','visibleName':'Host Name','preferredWidth':150,'type':'string','readonly':true,'order':26,'visible':false,'description':'Shows the request host name','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':27,'name':'targetPort','enabled':true,'defaultVisibleName':'Port','visibleName':'Port','preferredWidth':50,'type':'int','readonly':true,'order':27,'visible':false,'description':'Shows the target port number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':28,'name':'requestContentType','enabled':true,'defaultVisibleName':'Request Type','visibleName':'Request Type','preferredWidth':150,'type':'string','readonly':true,'order':28,'visible':false,'description':'Shows the request content-type header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':29,'name':'referrerURL','enabled':true,'defaultVisibleName':'Referred','visibleName':'Referred','preferredWidth':250,'type':'string','readonly':true,'order':29,'visible':false,'description':'Shows the referer header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':30,'name':'requestLength','enabled':true,'defaultVisibleName':'Request Length','visibleName':'Request Length','preferredWidth':150,'type':'int','readonly':true,'order':30,'visible':false,'description':'Shows the request body length','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':31,'name':'hasSetCookies','enabled':true,'defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':31,'visible':false,'description':'Indicates whether or not the response contains the set-cookie header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':32,'name':'isCompleted','enabled':false,'defaultVisibleName':'Is Completed?','visibleName':'Is Completed?','preferredWidth':50,'type':'boolean','readonly':true,'order':32,'visible':true,'description':'DONTUSE: Indicates whether or not the request has a response (currently does not work due to Burp extension limitations)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':33,'name':'uniqueIdentifier','enabled':false,'defaultVisibleName':'UID','visibleName':'UID','preferredWidth':100,'type':'string','readonly':true,'order':33,'visible':true,'description':'DONTUSE: Shows a unique identifier for request/response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':34,'name':'regex1Req','enabled':true,'defaultVisibleName':'Request RegEx 1','visibleName':'Request RegEx 1','preferredWidth':150,'type':'string','readonly':true,'order':34,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':35,'name':'regex2Req','enabled':false,'defaultVisibleName':'Request RegEx 2','visibleName':'Request RegEx 2','preferredWidth':150,'type':'string','readonly':true,'order':35,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':36,'name':'regex3Req','enabled':false,'defaultVisibleName':'Request RegEx 3','visibleName':'Request RegEx 3','preferredWidth':150,'type':'string','readonly':true,'order':36,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':37,'name':'regex4Req','enabled':false,'defaultVisibleName':'Request RegEx 4','visibleName':'Request RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':37,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':38,'name':'regex5Req','enabled':false,'defaultVisibleName':'Request RegEx 5','visibleName':'Request RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':38,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':39,'name':'regex1Resp','enabled':true,'defaultVisibleName':'Response RegEx 1','visibleName':'Response RegEx 1 - Title','preferredWidth':220,'type':'string','readonly':true,'order':39,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'(?<=\\<title\\>)(.)+(?=\\<\\/title\\>)','regExCaseSensitive':false}},"
+			+ "{'id':40,'name':'regex2Resp','enabled':false,'defaultVisibleName':'Response RegEx 2','visibleName':'Response RegEx 2','preferredWidth':150,'type':'string','readonly':true,'order':40,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':41,'name':'regex3Resp','enabled':false,'defaultVisibleName':'Response RegEx 3','visibleName':'Response RegEx 3','preferredWidth':150,'type':'string','readonly':true,'order':41,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':true}},"
+			+ "{'id':42,'name':'regex4Resp','enabled':false,'defaultVisibleName':'Response RegEx 4','visibleName':'Response RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':42,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':43,'name':'regex5Resp','enabled':false,'defaultVisibleName':'Response RegEx 5','visibleName':'Response RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':43,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':44,'name':'request','enabled':true,'defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'type':'bytes','readonly':true,'order':44,'visible':true,'description':'Full Request Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':45,'name':'response','enabled':true,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'bytes','readonly':true,'order':45,'visible':true,'description':'Full Response Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}"
 			+ "]";
 
 	private Map<Integer, LogTableColumn> columnMap;
@@ -116,18 +114,19 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		}
 
 		// Sorting based on order number
-		Collections.sort(tempColumnDefList);
+		if(tempColumnDefList != null)
+			Collections.sort(tempColumnDefList);
 
 		columnMap = new HashMap<Integer, LogTableColumn>();
 		nameToModelIndexMap = new HashMap<String, Integer>();
 		viewToModelMap = new ArrayList<>();
 		for(LogTableColumn column : tempColumnDefList){
-			column.setIdentifier(columnMap.size());
 			column.setModelIndex(columnMap.size());
 			columnMap.put(column.getIdentifier(), column);
 			nameToModelIndexMap.put(column.getName().toUpperCase(), column.getIdentifier());
 			if(column.isEnabled() && column.isVisible()){
-				addColumn(column);
+				super.addColumn(column);
+				addColumnToViewMap(column.getIdentifier(), false);
 			}
 			if(column.getType().equals("int")
 					|| column.getType().equals("short")
@@ -149,6 +148,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		ArrayList<LogTableColumn> columns = new ArrayList<LogTableColumn>(columnMap.values());
 		Gson gson = new GsonBuilder().registerTypeAdapter(LogTableColumn.class, new ColumnSerializer()).create();
 		saveColumnJSON(gson.toJson(columns));
+		System.out.println("Saving columns...");
 	}
 
 	public void saveColumnJSON(String logTableColumnsJSON) {
@@ -179,24 +179,24 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
 	@Override
 	public void addColumn(TableColumn tableColumn) {
-		addColumnToViewMap((Integer) tableColumn.getIdentifier());
 		super.addColumn(tableColumn);
+		addColumnToViewMap((Integer) tableColumn.getIdentifier(), true);
 	}
 
-	private void removeColumnFromViewMap(int viewColumn){
+	private void removeColumnFromViewMap(int viewColumn, boolean saveToPrefs){
 		viewToModelMap.remove(viewColumn);
-		reorderViewColumns();
+		reorderViewColumns(saveToPrefs);
 	}
 
-	private void addColumnToViewMap(int modelColumn){
+	private void addColumnToViewMap(int modelColumn, boolean saveToPrefs){
 		viewToModelMap.add(modelColumn);
-		reorderViewColumns();
+		reorderViewColumns(saveToPrefs);
 	}
 
 	@Override
 	public void removeColumn(TableColumn tableColumn) {
 		int viewLoc = getColumnViewLocation(tableColumn.getModelIndex());
-		removeColumnFromViewMap(viewLoc);
+		removeColumnFromViewMap(viewLoc, true);
 		super.removeColumn(tableColumn);
 	}
 
@@ -239,22 +239,29 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		return viewToModelMap.indexOf((Integer) modelColumnIndex);
 	}
 
-	public String getTableIDsStringByOrder() {
-		String st = "";
-		for(Integer modelIndex : viewToModelMap){
-			st += columnMap.get(modelIndex).getName() + getIdCanaryParam();
-		}
-		return st;
-	}
+//	public String getTableIDsStringByOrder() {
+//		String st = "";
+//		for(Integer modelIndex : viewToModelMap){
+//			st += columnMap.get(modelIndex).getName() + getIdCanaryParam();
+//		}
+//		return st;
+//	}
 
-	private void reorderViewColumns(){
+	private void reorderViewColumns(boolean saveToPrefs){
 		Collections.sort(viewToModelMap, new Comparator<Integer>() {
 			@Override
 			public int compare(Integer colModelId, Integer otherColModelId) {
 				return columnMap.get(colModelId).compareTo(columnMap.get(otherColModelId));
 			}
 		});
-		System.out.println("Saving columns...");
+		if(saveToPrefs) {
+			saveColumnJSON();
+		}
+	}
+
+	@Override
+	public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
+		super.propertyChange(propertyChangeEvent);
 	}
 
 	@Override
@@ -265,12 +272,12 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			for (int i = viewFrom + 1; i <= viewTo; i++) {
 				columnMap.get(viewToModelMap.get(i)).setOrder(i-1);
 			}
-			reorderViewColumns();
+			reorderViewColumns(true);
 		}else if(viewFrom > viewTo){
 			for (int i = viewFrom-1; i >= viewTo; i--) {
 				columnMap.get(viewToModelMap.get(i)).setOrder(i+1);
 			}
-			reorderViewColumns();
+			reorderViewColumns(true);
 		}else{
 			//no change
 		}
@@ -331,7 +338,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			LogTableColumn column = null;
 			column = new LogTableColumn();
 			JsonObject object = jsonElement.getAsJsonObject();
-			column.setIdentifier(object.get("id"));
+			column.setIdentifier(object.get("id").getAsInt());
 			column.setName(object.get("name").getAsString());
 			column.setEnabled(object.get("enabled").getAsBoolean());
 			column.setDefaultVisibleName(object.get("defaultVisibleName").getAsString());

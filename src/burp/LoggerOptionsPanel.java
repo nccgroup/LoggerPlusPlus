@@ -19,11 +19,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.io.*;
 import java.net.URI;
 import java.util.List;
 
-public class LoggerOptionsPanel extends JPanel {
+public class LoggerOptionsPanel extends JPanel{
 
 
     private final burp.IBurpExtenderCallbacks callbacks;
@@ -57,7 +59,6 @@ public class LoggerOptionsPanel extends JPanel {
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
     private final List<LogEntry> log;
-    private FileWriter autoSaveWriter;
 
     private final boolean isDebug;
 
@@ -257,10 +258,12 @@ public class LoggerOptionsPanel extends JPanel {
 
     public void autoLogItem(LogEntry entry) {
         try {
-            exp.exportItem(entry, this.autoSaveCSVFile, false, true);
+            exp.exportItem(entry, false, true);
         } catch (IOException e) {
             stderr.write("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
+            this.autoSaveCSVFile = null;
+            this.loggerPreferences.setAutoSave(false);
         }
     }
 
@@ -296,10 +299,20 @@ public class LoggerOptionsPanel extends JPanel {
             MoreHelp.showMessage("Log saved to " + file.getAbsolutePath() + file.getName());
         }
 
-        public void exportItem(LogEntry logEntry, File file, boolean isFullLog, boolean append) throws IOException {
-            autoSaveWriter = new FileWriter(file, append);
-            autoSaveWriter.write(logEntry.toCSVString(isFullLog));
-            autoSaveWriter.write("\n");
+        public void exportItem(LogEntry logEntry, boolean isFullLog, boolean append) throws IOException {
+            FileWriter autoSaveWriter = null;
+            try {
+                autoSaveWriter = new FileWriter(autoSaveCSVFile, append);
+                autoSaveWriter.write(logEntry.toCSVString(isFullLog));
+                autoSaveWriter.write("\n");
+            }catch (Exception e){
+                MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
+                loggerPreferences.setAutoSave(false);
+            }finally {
+                if(autoSaveWriter != null) {
+                    autoSaveWriter.close();
+                }
+            }
         }
 
     }
@@ -513,13 +526,16 @@ public class LoggerOptionsPanel extends JPanel {
         btnAutoSaveLogs.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                toggleAutoSave();
+                setAutoSave(!loggerPreferences.getAutoSave());
             }
         });
     }
 
-    private void toggleAutoSave() {
-        boolean enabled = !loggerPreferences.getAutoSave();
+    public void setAutoSaveBtn(boolean enabled){
+        btnAutoSaveLogs.setSelected(enabled);
+    }
+
+    private void setAutoSave(boolean enabled) {
         if (enabled) {
             autoSaveCSVFile = getSaveFile("logger++_auto", true);
             if (autoSaveCSVFile != null) {
@@ -527,7 +543,6 @@ public class LoggerOptionsPanel extends JPanel {
                 if (autoSaveCSVFile.length() == 0) {
                     try {
                         exp.addHeader(autoSaveCSVFile, false);
-                        autoSaveWriter = new FileWriter(autoSaveCSVFile, true);
                     } catch (IOException ioException) {
                         enabled = false;
                         autoSaveCSVFile = null;
@@ -538,14 +553,6 @@ public class LoggerOptionsPanel extends JPanel {
             }
         } else {
             autoSaveCSVFile = null;
-        }
-        if (!enabled && autoSaveWriter != null) {
-            try {
-                autoSaveWriter.close();
-                autoSaveCSVFile = null;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         loggerPreferences.setAutoSave(enabled);
         btnAutoSaveLogs.setSelected(enabled);

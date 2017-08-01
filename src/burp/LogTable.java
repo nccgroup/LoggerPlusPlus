@@ -167,7 +167,7 @@ public class LogTable extends JTable
                     JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
+                            String columnName = getColumnModel().getColumn(convertColumnIndexToView(col)).getName();
                             String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
@@ -181,7 +181,7 @@ public class LogTable extends JTable
                     JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            String columnName = getColumnModel().getColumn(convertColumnIndexToModel(col)).getName();
+                            String columnName = getColumnModel().getColumn(convertColumnIndexToView(col)).getName();
                             String value = (String) getModel().getValueAt(row, col);
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
@@ -195,7 +195,25 @@ public class LogTable extends JTable
                     addToCurrentFilter.add(andFilter);
                     addToCurrentFilter.add(orFilter);
                     popup.add(addToCurrentFilter);
+
                 }
+
+                JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set as Color Filter") {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        String columnName = getColumnModel().getColumn(convertColumnIndexToView(col)).getName();
+                        String value = (String) getModel().getValueAt(row, col);
+                        try {
+                            ColorFilter colorFilter = new ColorFilter();
+                            colorFilter.setFilter(new Filter(columnName, "==", value));
+                            BurpExtender.getInstance().addColorFilter(colorFilter, true);
+                        } catch (Filter.FilterException e1) {
+                            return;
+                        }
+                    }
+                });
+                popup.add(colorFilterItem);
+
                 popup.show(e.getComponent(), e.getX(), e.getY());
             }
 
