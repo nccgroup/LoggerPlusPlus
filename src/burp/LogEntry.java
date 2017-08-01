@@ -348,79 +348,83 @@ public class LogEntry extends RowFilter.Entry
 				return method;
 			case 4: //url
 				return relativeURL;
-			case 5: //params
+			case 5: //path
+				return (this.url.getPath() == null ? "" : this.url.getPath());
+			case 6: //query
+				return (this.url.getQuery() == null ? "" : this.url.getQuery());
+			case 7: //params
 				return params;
-			case 6: //status
+			case 8: //status
 				return status;
-			case 7: //responseLength
+			case 9: //responseLength
 				return responseLength;
-			case 8: //responseContentType_burp
+			case 10: //responseContentType_burp
 				return responseContentType_burp;
-			case 9: //urlExtension
+			case 11: //urlExtension
 				return urlExtension;
-			case 10: //comment
+			case 12: //comment
 				return comment;
-			case 11: //isSSL
+			case 13: //isSSL
 				return isSSL;
-			case 12: //newCookies
+			case 14: //newCookies
 				return newCookies;
-			case 13: //responseTime
+			case 15: //responseTime
 				return responseTime;
-			case 14: //listenerInterface
+			case 16: //listenerInterface
 				return listenerInterface;
-			case 15: //clientIP
+			case 17: //clientIP
 				return clientIP;
-			case 16: //responseContentType
+			case 18: //responseContentType
 				return responseContentType;
-			case 17: //responseInferredContentType_burp
+			case 19: //responseInferredContentType_burp
 				return responseInferredContentType_burp;
-			case 18: //hasQueryStringParam
+			case 20: //hasQueryStringParam
 				return hasQueryStringParam;
-			case 19: //hasBodyParam
+			case 21: //hasBodyParam
 				return hasBodyParam;
-			case 20: //hasCookieParam
+			case 22: //hasCookieParam
 				return hasCookieParam;
-			case 21: //sentCookies
+			case 23: //sentCookies
 				return sentCookies;
-			case 22: //usesCookieJar
+			case 24: //usesCookieJar
 				return usesCookieJar.toString();
-			case 23: //protocol
+			case 25: //protocol
 				return protocol;
-			case 24: //hostname
+			case 26: //hostname
 				return this.host;
-			case 25: //targetPort
+			case 27: //targetPort
 				return targetPort;
-			case 26: //requestContentType
+			case 28: //requestContentType
 				return requestContentType;
-			case 27: //referrerURL
+			case 29: //referrerURL
 				return referrerURL;
-			case 28: //requestLength
+			case 30: //requestLength
 				return requestLength;
-			case 29: //hasSetCookies
+			case 31: //hasSetCookies
 				return hasSetCookies;
-			case 30: //isCompleted
+			case 32: //isCompleted
 				return isCompleted;
-			case 31: //uniqueIdentifier
+			case 33: //uniqueIdentifier
 				return uniqueIdentifier;
-			case 32: //regex1Req
+			case 34: //regex1Req
 				return regexAllReq[0];
-			case 33: //regex2Req
+			case 35: //regex2Req
 				return regexAllReq[1];
-			case 34: //regex3Req
+			case 36: //regex3Req
 				return regexAllReq[2];
-			case 35: //regex4Req
+			case 37: //regex4Req
 				return regexAllReq[3];
-			case 36: //regex5Req
+			case 38: //regex5Req
 				return regexAllReq[4];
-			case 37: //regex1Resp
+			case 39: //regex1Resp
 				return regexAllResp[0];
-			case 38: //regex2Resp
+			case 40: //regex2Resp
 				return regexAllResp[1];
-			case 39: //regex3Resp
+			case 41: //regex3Resp
 				return regexAllResp[2];
-			case 40: //regex4Resp
+			case 42: //regex4Resp
 				return regexAllResp[3];
-			case 41: //regex5Resp
+			case 43: //regex5Resp
 				return regexAllResp[4];
 			default:
 				return null;
@@ -500,6 +504,10 @@ public class LogEntry extends RowFilter.Entry
 					return BurpExtender.getInstance().getCallbacks().getToolName(tool);
 				case URL:
 					return this.relativeURL;
+				case PATH:
+					return this.url.getPath();
+				case QUERY:
+					return this.url.getQuery();
 				case STATUS:
 					return this.status;
 				case PROTOCOL:
@@ -617,6 +625,8 @@ public class LogEntry extends RowFilter.Entry
 	public enum columnNamesType {
 		TOOL("TOOL"),
 		URL("URL"),
+		PATH("PATH"),
+		QUERY("QUERY"),
 		STATUS("STATUS"),
 		PROTOCOL("PROTOCOL"),
 		HOSTNAME("HOSTNAME"),
