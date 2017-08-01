@@ -48,6 +48,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
 
     public void setFilter(Filter filter) {
         this.filter = filter;
+        this.filterString = filter.toString();
         modified = true;
     }
 

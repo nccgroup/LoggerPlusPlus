@@ -39,7 +39,6 @@ public class LogEntry extends RowFilter.Entry
 	String relativeURL="";
 	boolean params=false;
 	Short status=-1;
-	boolean hasQueryStringParam=false;
 	boolean hasBodyParam=false;
 	boolean hasCookieParam=false;
 	String targetIP=""; // Burp Suite API does not give it to me!
@@ -133,9 +132,8 @@ public class LogEntry extends RowFilter.Entry
 		this.requestLength = strFullRequest.length() - tempAnalyzedReq.getBodyOffset();
 
 
-		this.hasQueryStringParam = (url.getQuery()!=null) ? true : false;
-		this.hasBodyParam = (requestLength>0) ? true : false;
-		this.params = (this.hasQueryStringParam || this.hasBodyParam) ? true : false;
+		this.hasBodyParam = requestLength > 0;
+		this.params = this.url.getQuery() != null || this.hasBodyParam;
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
@@ -158,7 +156,7 @@ public class LogEntry extends RowFilter.Entry
 							if(logTable.getColumnModel().isColumnEnabled("usesCookieJar")){
 								// Check to see if it uses cookie Jars!
 								List<ICookie> cookieJars = BurpExtender.getInstance().getCallbacks().getCookieJarContents();
-								boolean atLeastOneDidNotMatched = false;
+								boolean oneNotMatched = false;
 								boolean anyParamMatched = false;
 
 								for(ICookie cookieItem : cookieJars){
@@ -168,16 +166,16 @@ public class LogEntry extends RowFilter.Entry
 										if(this.sentCookies.contains(currentCookieJarParam)){
 											anyParamMatched = true;
 										}else{
-											atLeastOneDidNotMatched = true;
+											oneNotMatched = true;
 										}
 									}
-									if(anyParamMatched && atLeastOneDidNotMatched){
+									if(anyParamMatched && oneNotMatched){
 										break; // we do not need to analyse it more!
 									}
 								}
-								if(atLeastOneDidNotMatched && anyParamMatched){
+								if(oneNotMatched && anyParamMatched){
 									this.usesCookieJar=cookieJarStatus.PARTIALLY;
-								}else if(!atLeastOneDidNotMatched && anyParamMatched){
+								}else if(!oneNotMatched && anyParamMatched){
 									this.usesCookieJar=cookieJarStatus.YES;
 								}
 							}
@@ -314,15 +312,9 @@ public class LogEntry extends RowFilter.Entry
 				}
 			}
 			this.isCompleted = true;
-			tempAnalyzedResp = null;
 		}
 
 		this.comment = "";
-
-		tempRequestResponseHttpService = null;
-
-		tempAnalyzedReq = null;
-
 	}
 
 	@Override
@@ -379,7 +371,7 @@ public class LogEntry extends RowFilter.Entry
 			case 19: //responseInferredContentType_burp
 				return responseInferredContentType_burp;
 			case 20: //hasQueryStringParam
-				return hasQueryStringParam;
+				return this.url.getQuery() != null;
 			case 21: //hasBodyParam
 				return hasBodyParam;
 			case 22: //hasCookieParam
@@ -426,6 +418,10 @@ public class LogEntry extends RowFilter.Entry
 				return regexAllResp[3];
 			case 43: //regex5Resp
 				return regexAllResp[4];
+			case 44: //request
+				return new String(requestResponse.getRequest());
+			case 45: //response
+				return new String(requestResponse.getResponse());
 			default:
 				return null;
 		}
@@ -478,7 +474,7 @@ public class LogEntry extends RowFilter.Entry
 		short count = 0;
 		for (LogTableColumn logTableColumn : columns) {
 			if(logTableColumn.isVisible() && logTableColumn.isEnabled()){
-				result.append(StringEscapeUtils.escapeCsv(getValueByName(logTableColumn.getName()).toString()));
+				result.append(StringEscapeUtils.escapeCsv(getValue(logTableColumn.getIdentifier()).toString()));
 				if (count < columnModel.getColumnCount() - 1)
 					result.append(",");
 			}
@@ -535,7 +531,7 @@ public class LogEntry extends RowFilter.Entry
 				case REFERRERURL:
 					return this.referrerURL;
 				case HASQUERYSTRINGPARAM:
-					return this.hasQueryStringParam;
+					return this.url.getQuery() != null;
 				case HASBODYPARAM:
 					return this.hasBodyParam;
 				case HASCOOKIEPARAM:
@@ -590,16 +586,16 @@ public class LogEntry extends RowFilter.Entry
 					return this.regexAllResp[3];
 				case REGEX5RESP:
 					return this.regexAllResp[4];
+				case REQUEST: //request
+					return new String(requestResponse.getRequest());
+				case RESPONSE: //response
+					return new String(requestResponse.getResponse());
 				default:
 					return "";
 			}
 		}catch(Exception e){
 			return "";
 		}
-	}
-
-	public Object getValueByName(String name){
-		return getValueByKey(columnNamesType.valueOf(name.toUpperCase()));
 	}
 
 	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
@@ -667,7 +663,9 @@ public class LogEntry extends RowFilter.Entry
 		REGEX2RESP("REGEX2RESP"),
 		REGEX3RESP("REGEX3RESP"),
 		REGEX4RESP("REGEX4RESP"),
-		REGEX5RESP("REGEX5RESP");
+		REGEX5RESP("REGEX5RESP"),
+		REQUEST("REQUEST"),
+		RESPONSE("RESPONSE");
 		private String value;
 		private columnNamesType(String value) {
 			this.value = value;

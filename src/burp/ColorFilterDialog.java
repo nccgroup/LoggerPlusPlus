@@ -22,12 +22,13 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
     private ArrayList<FilterListener> filterListeners;
     private Map<UUID, ColorFilter> originalFilters;
     private LoggerPreferences prefs;
-
+    private final ColorFilterTable filterTable;
 
     public ColorFilterDialog(LoggerPreferences prefs, ArrayList<FilterListener> listeners){
         this.filters = prefs.getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
+        this.filterTable = new ColorFilterTable(filters, filterListeners);
         this.prefs = prefs;
         this.addComponentListener(this);
         buildDialog();
@@ -39,8 +40,6 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         this.setTitle("Color Filters");
         JPanel content = new JPanel(new GridBagLayout());
         this.add(content, BorderLayout.CENTER);
-
-        final ColorFilterTable filterTable = new ColorFilterTable(filters, filterListeners);
         final JScrollPane filterListWrapper = new JScrollPane(filterTable);
         GridBagConstraints gbcFilterWrapper = new GridBagConstraints();
         gbcFilterWrapper.gridx = 0;
@@ -155,5 +154,9 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         //Update set original filters for next open
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         prefs.setColorFilters(filters);
+    }
+
+    public ColorFilterTable getFilterTable() {
+        return filterTable;
     }
 }

@@ -20,7 +20,6 @@ package burp;
 import javax.swing.table.TableColumn;
 
 public class LogTableColumn extends TableColumn implements Comparable<LogTableColumn>{
-	private Integer id;
 	private String name;
 	private boolean enabled;
 	private String visibleName;
@@ -44,11 +43,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	}
 
 	@Override
-	public Integer getIdentifier() { return this.id; }
-	@Override
-	public void setIdentifier(Object id) {
-		if(id instanceof Integer) this.id = (Integer) id;
-	}
+	public Integer getIdentifier() { return (Integer) this.identifier; }
 	public String getName() {
 		return name;
 	}

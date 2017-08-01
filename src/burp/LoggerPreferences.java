@@ -353,21 +353,24 @@ public class LoggerPreferences {
 
 	public String getUpdateURL() { return updateURL; }
 
+	public View getView() {
+		return this.view;
+	}
+
+	public void setView(View view){
+		prefs.put("layout", view.toString());
+		this.view = view;
+	}
+
 
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
 		this.autoSave = autoSave;
+		if(BurpExtender.getInstance().getLoggerOptionsPanel() != null)
+			BurpExtender.getInstance().getLoggerOptionsPanel().setAutoSaveBtn(autoSave);
 	}
 	public boolean getAutoSave(){
 		return this.autoSave;
 	}
 
-    public View getView() {
-        return this.view;
-    }
-
-    public void setView(View view){
-		prefs.put("layout", view.toString());
-		this.view = view;
-	}
 }

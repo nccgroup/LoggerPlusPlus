@@ -436,6 +436,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
+	public void addColorFilter(ColorFilter colorFilter, boolean showDialog){
+		((ColorFilterTableModel) colorFilterDialog.getFilterTable().getModel()).addFilter(colorFilter);
+		if(showDialog) colorFilterDialog.setVisible(true);
+	}
+
 
 	//
 	// implement IMessageEditorController
@@ -539,5 +544,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public IBurpExtenderCallbacks getCallbacks() {
 		return callbacks;
+	}
+
+	public ColorFilterDialog getColorFilterDialog() {
+		return colorFilterDialog;
+	}
+
+	public LoggerOptionsPanel getLoggerOptionsPanel() {
+		return optionsJPanel;
 	}
 }
