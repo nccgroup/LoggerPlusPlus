@@ -30,9 +30,9 @@ public class LoggerPreferences {
 	Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
 
 	private Preferences prefs=Preferences.userRoot().node("Logger++");
-	private final double version = 2.83;
+	private final double version = 2.84;
 	private final String appName = "Burp Suite Logger++";
-	private final String author = "Soroush Dalili from NCC Group";
+	private final String author = "Soroush Dalili from NCC Group, Corey Arthur @CoreyD97";
 	private final String companyLink = "https://www.nccgroup.trust/";
 	private final String authorLink = "https://soroush.secproject.com/";
 	private final String projectLink = "https://github.com/CoreyD97/BurpSuiteLoggerPlusPlus";

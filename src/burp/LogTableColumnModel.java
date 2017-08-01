@@ -74,8 +74,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			+ "{'id':41,'name':'regex3Resp','enabled':false,'defaultVisibleName':'Response RegEx 3','visibleName':'Response RegEx 3','preferredWidth':150,'type':'string','readonly':true,'order':41,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':true}},"
 			+ "{'id':42,'name':'regex4Resp','enabled':false,'defaultVisibleName':'Response RegEx 4','visibleName':'Response RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':42,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':43,'name':'regex5Resp','enabled':false,'defaultVisibleName':'Response RegEx 5','visibleName':'Response RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':43,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':44,'name':'request','enabled':true,'defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'type':'bytes','readonly':true,'order':44,'visible':true,'description':'Full Request Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':45,'name':'response','enabled':true,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'bytes','readonly':true,'order':45,'visible':true,'description':'Full Response Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}"
+			+ "{'id':44,'name':'request','enabled':false,'defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'type':'string','readonly':true,'order':44,'visible':false,'description':'Full Request Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':45,'name':'response','enabled':false,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'string','readonly':true,'order':45,'visible':false,'description':'Full Response Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}"
 			+ "]";
 
 	private Map<Integer, LogTableColumn> columnMap;
@@ -98,6 +98,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		if(logTableColumnsJSON.isEmpty()) {
 			// we have to start fresh! nothing was saved so the default string will be used.
 			saveColumnJSON(defaultLogTableColumnsJson);
+			logTableColumnsJSON = defaultLogTableColumnsJson;
 		}
 
 		Type listType = new TypeToken<List<LogTableColumn>>() {}.getType();
@@ -114,8 +115,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		}
 
 		// Sorting based on order number
-		if(tempColumnDefList != null)
-			Collections.sort(tempColumnDefList);
+		Collections.sort(tempColumnDefList);
 
 		columnMap = new HashMap<Integer, LogTableColumn>();
 		nameToModelIndexMap = new HashMap<String, Integer>();

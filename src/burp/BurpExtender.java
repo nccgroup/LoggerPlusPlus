@@ -398,7 +398,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							entry.testColorFilter(colorFilter, false);
 						}
 
-						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight()*1.1));
+						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight()*1.25));
 						int m = logTableScrollBar.getMaximum();
 						boolean isAtBottom = v >= m;
 
