@@ -680,7 +680,9 @@ public class LogEntry extends RowFilter.Entry
 	}
 
 	public boolean testColorFilter(ColorFilter colorFilter, boolean retest){
-		if(!colorFilter.isEnabled() || colorFilter.getFilter() == null) return false;
+		if(!colorFilter.isEnabled() || colorFilter.getFilter() == null){
+			return this.getMatchingColorFilters().remove(colorFilter.getUid());
+		}
 		if(!this.matchingColorFilters.contains(colorFilter.getUid())) {
 			if (colorFilter.getFilter().matches(this)) {
 				this.matchingColorFilters.add(colorFilter.getUid());

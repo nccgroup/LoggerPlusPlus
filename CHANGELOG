@@ -1,3 +1,7 @@
+v 2.85
+=========================================================================
+- Fix color filters not updating when the filter is disabled.
+
 v 2.84
 =========================================================================
 - Enable request and response filters.
