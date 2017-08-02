@@ -481,7 +481,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	//FilterListeners
 	@Override
 	public void onChange(ColorFilter filter) {
-		if(!filter.isEnabled() || filter.getFilter() == null) return;
 		synchronized (log){
 			for (int i=0; i<log.size(); i++) {
 				boolean colorResult = log.get(i).testColorFilter(filter, true);
