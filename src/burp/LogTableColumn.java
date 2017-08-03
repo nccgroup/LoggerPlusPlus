@@ -43,6 +43,11 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	}
 
 	@Override
+	public int getModelIndex() {
+		return this.getIdentifier();
+	}
+
+	@Override
 	public Integer getIdentifier() { return (Integer) this.identifier; }
 	public String getName() {
 		return name;
