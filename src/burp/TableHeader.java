@@ -57,7 +57,9 @@ public class TableHeader extends JTableHeader {
 		String retStr;
 		try {
 			retStr = column.getDescription();
-		} catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
+		} catch (NullPointerException ex) {
+			retStr = "";
+		} catch (ArrayIndexOutOfBoundsException ex) {
 			retStr = "";
 		}
 		if (retStr.length() < 1) {
