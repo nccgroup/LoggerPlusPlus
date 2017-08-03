@@ -1,3 +1,8 @@
+v 2.86
+=========================================================================
+- Live viewing of incomplete requests.
+- Fix column sorting bug.
+
 v 2.85
 =========================================================================
 - Fix color filters not updating when the filter is disabled.
