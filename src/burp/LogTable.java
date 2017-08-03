@@ -54,7 +54,9 @@ public class LogTable extends JTable
         //					}
         //				}
         //			});
-        setRowSorter(new TableRowSorter<LogTableModel>(this.getModel()));
+        TableRowSorter rowSorter = new LogTableRowSorter();
+        rowSorter.setModel(this.getModel());
+        setRowSorter(rowSorter);
 
         registerListeners();
     }
@@ -93,11 +95,6 @@ public class LogTable extends JTable
 
 
         return c;
-    }
-
-    @Override
-    public int convertColumnIndexToModel(int viewColumn) {
-        return (int) this.getColumnModel().getColumnByViewLocation(viewColumn).getIdentifier();
     }
 
     @Override
@@ -328,4 +325,58 @@ public class LogTable extends JTable
         }
     }
 
+
+    //Custom sorter to fix issues with columnModel having different model column and view column counts.
+    class LogTableRowSorter extends TableRowSorter {
+        public TableModel tableModel;
+
+        @Override
+        public void setModel(TableModel model) {
+            this.tableModel = model;
+            super.setModel(model);
+            this.setModelWrapper(new TableRowSorterModelWrapper());
+        }
+
+        private class TableRowSorterModelWrapper extends ModelWrapper<LogTableModel, Integer> {
+            private TableRowSorterModelWrapper() {
+            }
+
+            public LogTableModel getModel() {
+                return (LogTableModel) LogTableRowSorter.this.tableModel;
+            }
+
+            public int getColumnCount() {
+                return LogTableRowSorter.this.tableModel == null?0:((LogTableModel)LogTableRowSorter.this.tableModel).getModelColumnCount();
+            }
+
+            public int getRowCount() {
+                return LogTableRowSorter.this.tableModel == null?0:LogTableRowSorter.this.tableModel.getRowCount();
+            }
+
+            public Object getValueAt(int row, int column) {
+                return LogTableRowSorter.this.tableModel.getValueAt(row, column);
+            }
+
+            public String getStringValueAt(int row, int column) {
+                TableStringConverter converter = LogTableRowSorter.this.getStringConverter();
+                if(converter != null) {
+                    String value = converter.toString(LogTableRowSorter.this.tableModel, row, column);
+                    return value != null?value:"";
+                } else {
+                    Object o = this.getValueAt(row, column);
+                    if(o == null) {
+                        return "";
+                    } else {
+                        String string = o.toString();
+                        return string == null?"":string;
+                    }
+                }
+            }
+
+            public Integer getIdentifier(int index) {
+                return Integer.valueOf(index);
+            }
+        }
+        
+    }
 }

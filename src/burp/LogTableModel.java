@@ -102,4 +102,7 @@ public class LogTableModel extends DefaultTableModel {
     }
     public LogEntry getRow(int row) {return this.entries.get(row);}
 
+    public int getModelColumnCount() {
+        return columnModel.getModelColumnCount();
+    }
 }
