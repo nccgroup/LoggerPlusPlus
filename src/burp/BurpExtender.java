@@ -14,6 +14,7 @@ package burp;
 
 import burp.filter.ColorFilter;
 import burp.filter.FilterListener;
+import sun.security.util.PendingException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -38,6 +39,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor requestViewer;
 	private IMessageEditor responseViewer;
 	private final List<LogEntry> log = new ArrayList<LogEntry>();
+	private final HashMap<Integer, LogEntry.PendingRequestEntry> pendingRequests = new HashMap<Integer, LogEntry.PendingRequestEntry>();
 	private JTabbedPane mainUI;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
@@ -47,7 +49,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private LogTable logTable;
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
-	private ArrayList<FilterListener> filterListeners;
+	private final ArrayList<FilterListener> filterListeners = new ArrayList<FilterListener>();
 	private JScrollBar logTableScrollBar;
 	private JPanel logViewJPanelWrapper;
 	private JSplitPane logViewSplit;
@@ -88,7 +90,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
 		if(loggerPreferences.getColorFilters() == null) loggerPreferences.setColorFilters(new HashMap<UUID, ColorFilter>());
-		this.filterListeners = new ArrayList<FilterListener>();
 		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
 
@@ -373,62 +374,63 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							(loggerPreferences.isEnabled4Extender() && toolFlag==callbacks.TOOL_EXTENDER) ||
 							(loggerPreferences.isEnabled4TargetTab() && toolFlag==callbacks.TOOL_TARGET));
 
-				//stdout.println(toolFlag +" - "+LoggerPreferences.isEnabled4All());
 				if(isValidTool){
-					// only process responses
 
-
-					if (messageIsRequest && toolFlag==callbacks.TOOL_PROXY){
+					LogEntry logEntry = null;
+					if (messageIsRequest){
 						// Burp does not provide any way to trace a request to its response - only in proxy there is a unique reference
-						// BUG: The unique reference is added multiple times to the View table due to the race condition
-						// This needs to be fixed in future versions so then we can at least show the live requests that are sent via the proxy section
-						// create a new log entry with the message details
-						//						synchronized(log)
-						//						{
-						//							int row = log.size();
-						//							log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
-						//							tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
-						//						}
+						if(toolFlag==callbacks.TOOL_PROXY) {
+							//We need to change messageInfo when we get a response so do not save to buffers
+							logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, messageInfo, uUrl, analyzedReq, message);
 
-					}else if(!messageIsRequest){
-						// create a new log entry with the message details
-						LogEntry entry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
-						//Check entry against colorfilters.
-						for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
-							entry.testColorFilter(colorFilter, false);
+							for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
+								logEntry.testColorFilter(colorFilter, false);
+							}
+							pendingRequests.put(message.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
 						}
+					}else{
+						if(toolFlag==callbacks.TOOL_PROXY){
+							//Get from pending list
+							LogEntry.PendingRequestEntry pendingRequest = pendingRequests.remove(message.getMessageReference());
+							if(pendingRequest != null) {
+								//Fill in gaps of request with response
+								pendingRequest.processResponse(messageInfo);
 
-						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight()*1.25));
+								for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
+									pendingRequest.testColorFilter(colorFilter, true);
+								}
+								logTable.getModel().fireTableRowsUpdated(pendingRequest.logRow, pendingRequest.logRow);
+							}
+							return;
+						}else {
+							//We will not need to change messageInfo so save to temp file
+							logEntry = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
+							//Check entry against colorfilters.
+							for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
+								logEntry.testColorFilter(colorFilter, false);
+							}
+						}
+					}
+
+					if(logEntry != null) {
+						//After handling request / response log generation.
+						//Add to table / modify existing entry.
+						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight() * 1.25));
 						int m = logTableScrollBar.getMaximum();
 						boolean isAtBottom = v >= m;
 
 						synchronized (log) {
 							int row = log.size();
-							log.add(entry);
+							log.add(logEntry);
 							logTable.getModel().fireTableRowsInserted(row, row);
-
-							// For proxy - disabled due to the race condition bug!
-							//							if(toolFlag!=callbacks.TOOL_PROXY){
-							//								int row = log.size();
-							//								log.add(new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message));
-							//								tableHelper.getLogTableModel().fireTableRowsInserted(row, row);
-							//							}else{
-							//								LogEntry responseLog = new LogEntry(toolFlag, messageIsRequest, callbacks.saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
-							//								if (log.contains(responseLog)) {
-							//									log.set(log.indexOf(responseLog),responseLog);
-							//									tableHelper.getLogTableModel().fireTableDataChanged();
-							//								}else{
-							//									if(isDebug){
-							//										stderr.println("Item was not found: " + message.getMessageReference() + " " + responseLog.uniqueIdentifier);
-							//									}
-							//								}
-							//
-							//							}
+							if(logEntry instanceof LogEntry.PendingRequestEntry){
+								((LogEntry.PendingRequestEntry) logEntry).logRow = row;
+							}
 						}
-						if(isAtBottom)
+						if (isAtBottom)
 							logTableScrollBar.setValue(logTableScrollBar.getMaximum() + logTable.getRowHeight());
-						if(loggerPreferences.getAutoSave()){
-							optionsJPanel.autoLogItem(entry);
+						if (loggerPreferences.getAutoSave()) {
+							optionsJPanel.autoLogItem(logEntry);
 						}
 					}
 				}

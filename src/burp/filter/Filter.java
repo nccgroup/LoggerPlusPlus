@@ -74,18 +74,20 @@ public class Filter extends RowFilter<Object, Object> {
         Object lValue = this.left, rValue = this.right;
         try {
             lValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.left.toString()));
+            if(lValue == null) return false;
         }catch (IllegalArgumentException iAException){}
         try {
             rValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.right.toString()));
+            if(rValue == null) return false;
         }catch (IllegalArgumentException iAException){}
 
         return this.matches(lValue, rValue);
     }
 
     public boolean matches(Object lValue, Object rValue) {
-        if (this.left instanceof Pattern) {
+        if (lValue instanceof Pattern) {
             return ((Pattern) lValue).matcher(rValue.toString()).matches();
-        } else if (this.right instanceof Pattern) {
+        } else if (rValue instanceof Pattern) {
             return ((Pattern) rValue).matcher(lValue.toString()).matches();
         }
 

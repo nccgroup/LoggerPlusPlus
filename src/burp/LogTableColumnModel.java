@@ -44,7 +44,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			+ "{'id':12, 'name':'comment','enabled':true,'defaultVisibleName':'Comment','visibleName':'Comment','preferredWidth':200,'type':'string','readonly':false,'order':12,'visible':true,'description':'Editable comment','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':13,'name':'isSSL','enabled':true,'defaultVisibleName':'SSL','visibleName':'SSL','preferredWidth':50,'type':'boolean','readonly':true,'order':13,'visible':true,'description':'Indicates whether or not the HTTP protocol is HTTPS','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':14,'name':'newCookies','enabled':true,'defaultVisibleName':'New Cookies','visibleName':'New Cookies','preferredWidth':150,'type':'string','readonly':true,'order':14,'visible':true,'description':'Shows any new cookies in the response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':15,'name':'responseTime','enabled':true,'defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of receiving the response in this extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':15,'name':'requestTime','enabled':true,'defaultVisibleName':'Request Time','visibleName':'Request Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of making the request in this extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':16,'name':'listenerInterface','enabled':true,'defaultVisibleName':'Proxy Listener interface','visibleName':'Proxy Listener interface','preferredWidth':150,'type':'string','readonly':true,'order':16,'visible':true,'description':'Shows the proxy listener interface for proxied requests','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			/*below field should not be visible by default when users can customise them*/
 			+ "{'id':17,'name':'clientIP','enabled':true,'defaultVisibleName':'Proxy Client IP','visibleName':'Proxy Client IP','preferredWidth':150,'type':'string','readonly':true,'order':17,'visible':false,'description':'Shows the client IP address when using the Proxy tab','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
@@ -62,7 +62,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			+ "{'id':29,'name':'referrerURL','enabled':true,'defaultVisibleName':'Referred','visibleName':'Referred','preferredWidth':250,'type':'string','readonly':true,'order':29,'visible':false,'description':'Shows the referer header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':30,'name':'requestLength','enabled':true,'defaultVisibleName':'Request Length','visibleName':'Request Length','preferredWidth':150,'type':'int','readonly':true,'order':30,'visible':false,'description':'Shows the request body length','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':31,'name':'hasSetCookies','enabled':true,'defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':31,'visible':false,'description':'Indicates whether or not the response contains the set-cookie header','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':32,'name':'isCompleted','enabled':false,'defaultVisibleName':'Is Completed?','visibleName':'Is Completed?','preferredWidth':50,'type':'boolean','readonly':true,'order':32,'visible':true,'description':'DONTUSE: Indicates whether or not the request has a response (currently does not work due to Burp extension limitations)','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':32,'name':'isCompleted','enabled':true,'defaultVisibleName':'Complete','visibleName':'Complete','preferredWidth':80,'type':'boolean','readonly':true,'order':3,'visible':true,'description':'Indicates if a response has been received.','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':33,'name':'uniqueIdentifier','enabled':false,'defaultVisibleName':'UID','visibleName':'UID','preferredWidth':100,'type':'string','readonly':true,'order':33,'visible':true,'description':'DONTUSE: Shows a unique identifier for request/response','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':34,'name':'regex1Req','enabled':true,'defaultVisibleName':'Request RegEx 1','visibleName':'Request RegEx 1','preferredWidth':150,'type':'string','readonly':true,'order':34,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':35,'name':'regex2Req','enabled':false,'defaultVisibleName':'Request RegEx 2','visibleName':'Request RegEx 2','preferredWidth':150,'type':'string','readonly':true,'order':35,'visible':true,'description':'Custom regular expression for request header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
@@ -75,7 +75,9 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			+ "{'id':42,'name':'regex4Resp','enabled':false,'defaultVisibleName':'Response RegEx 4','visibleName':'Response RegEx 4','preferredWidth':150,'type':'string','readonly':true,'order':42,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':43,'name':'regex5Resp','enabled':false,'defaultVisibleName':'Response RegEx 5','visibleName':'Response RegEx 5','preferredWidth':150,'type':'string','readonly':true,'order':43,'visible':true,'description':'Custom regular expression for response header/body','isRegEx':true,'regExData':{'regExString':'','regExCaseSensitive':false}},"
 			+ "{'id':44,'name':'request','enabled':false,'defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'type':'string','readonly':true,'order':44,'visible':false,'description':'Full Request Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
-			+ "{'id':45,'name':'response','enabled':false,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'string','readonly':true,'order':45,'visible':false,'description':'Full Response Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}"
+			+ "{'id':45,'name':'response','enabled':false,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'string','readonly':true,'order':45,'visible':false,'description':'Full Response Body','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':46,'name':'responseTime','enabled':true,'defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of receiving the response in this extension','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}},"
+			+ "{'id':47,'name':'responseDelay','enabled':true,'defaultVisibleName':'Response Delay','visibleName':'Response Delay','preferredWidth':100,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows delay between making the request, and receiving the response.','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}"
 			+ "]";
 
 	private Map<Integer, LogTableColumn> columnMap;
@@ -119,7 +121,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
 		columnMap = new HashMap<Integer, LogTableColumn>();
 		nameToModelIndexMap = new HashMap<String, Integer>();
-		viewToModelMap = new ArrayList<>();
+		viewToModelMap = new ArrayList<Integer>();
 		for(LogTableColumn column : tempColumnDefList){
 			column.setModelIndex(columnMap.size());
 			columnMap.put(column.getIdentifier(), column);
@@ -207,7 +209,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
 	@Override
 	public Enumeration<TableColumn> getColumns() {
-		ArrayList<TableColumn> columns = new ArrayList<>();
+		ArrayList<TableColumn> columns = new ArrayList<TableColumn>();
 		for (Integer colIndex : viewToModelMap) {
 			columns.add(columnMap.get(colIndex));
 		}
@@ -215,7 +217,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	public ArrayList<LogTableColumn> getAllColumns(){
-		return new ArrayList<>(columnMap.values());
+		return new ArrayList<LogTableColumn>(columnMap.values());
 	}
 
 	@Override
