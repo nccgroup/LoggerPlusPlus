@@ -40,6 +40,9 @@ public class FilterCompiler {
         if(inQuotesMatcher.matches()){
             item = inQuotesMatcher.group(2);
         }
+
+        if(item.trim().equalsIgnoreCase("true")) return true;
+        if(item.trim().equalsIgnoreCase("false")) return false;
         return item.trim();
     }
 
@@ -56,7 +59,7 @@ public class FilterCompiler {
             group.inverted = inverted;
             Pattern leftCompound = Pattern.compile("(.*?)(\\|++|&++)\\s*$");
             Pattern rightCompound = Pattern.compile("^(\\s*)(\\|++|&++)(.*)");
-            String left = string.substring(0, startBracket);
+            String left = string.substring(0, inverted ? startBracket-1 : startBracket);
             String right = string.substring(endBracket+1, regexStripped.length());
             Matcher leftMatcher = leftCompound.matcher(left);
             Matcher rightMatcher = rightCompound.matcher(right);
@@ -80,6 +83,8 @@ public class FilterCompiler {
                     String left = string.substring(0, operationMatcher.group(1).length()).trim();
                     String right = string.substring(operationMatcher.group(1).length() + operationMatcher.group(2).length()).trim();
                     return new Filter(left, operationMatcher.group(2), right);
+                }else if(!regexPattern.matcher(string).matches() && !string.trim().contains(" ")){
+                    return new Filter(string, Filter.LogicalOperation.EQ, true);
                 }
             }
         }

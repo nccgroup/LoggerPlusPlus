@@ -27,6 +27,26 @@ public class Filter extends RowFilter<Object, Object> {
 
     protected Filter(){}
 
+    public Filter(Object left, LogicalOperation op, Object right) throws FilterException{
+        if(left instanceof String){
+            if(StringUtils.countMatches((String) left, "(") != StringUtils.countMatches((String) left, ")")) {
+                throw new FilterException("Unmatched Bracket");
+            }
+            this.left = FilterCompiler.parseItem((String) left);
+        }else{
+            this.left = left;
+        }
+        if(right instanceof String){
+            if(StringUtils.countMatches((String) right, "(") != StringUtils.countMatches((String) right, ")")) {
+                throw new FilterException("Unmatched Bracket");
+            }
+            this.right = FilterCompiler.parseItem((String) right);
+        }else{
+            this.right = right;
+        }
+        this.operation = op;
+    }
+
     public Filter(Object left, String operation, Object right) throws FilterException {
         LogicalOperation op;
         switch (operation){
@@ -117,9 +137,9 @@ public class Filter extends RowFilter<Object, Object> {
 
 
     private boolean checkValue(Object left, LogicalOperation op, Object right) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        if(!(left instanceof String)){
+        if(!(left instanceof String) && !(left instanceof Boolean)){
             right = left.getClass().getConstructor(this.right.getClass()).newInstance(this.right);
-        }else if(!(right instanceof String)){
+        }else if(!(right instanceof String) && !(right instanceof Boolean)){
             left = right.getClass().getConstructor(this.left.getClass()).newInstance(this.left);
         }
 
@@ -165,6 +185,12 @@ public class Filter extends RowFilter<Object, Object> {
 
     @Override
     public String toString(){
+        if(left instanceof Boolean){
+            return ((Boolean) left ? "" : "!") + right;
+        }
+        if(right instanceof Boolean){
+            return ((Boolean) right ? "" : "!") + left;
+        }
         String lString = left.toString();
         if(left instanceof Pattern) lString = "/" + left + "/";
         if(left instanceof String) lString = "\"" + left + "\"";

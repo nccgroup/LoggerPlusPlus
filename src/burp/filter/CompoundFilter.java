@@ -2,6 +2,8 @@ package burp.filter;
 
 import burp.LogEntry;
 
+import java.awt.event.ComponentListener;
+
 public class CompoundFilter extends Filter {
     enum CompoundOperation {
         AND("&&"),OR("||");
@@ -56,6 +58,20 @@ public class CompoundFilter extends Filter {
 
     @Override
     public String toString(){
-        return left.toString() + " " + op.representation + " " + right.toString();
+        String result = "";
+        if(left instanceof CompoundFilter && !((CompoundFilter) left).op.equals(op)){
+            result += "(" + left.toString() + ")";
+        }else{
+            result += left.toString();
+        }
+        result += " " + op.representation + " ";
+        if(right instanceof CompoundFilter && !((CompoundFilter) right).op.equals(op)){
+            result += "(" + right.toString() + ")";
+        }else{
+            result += right.toString();
+        }
+
+        return (inverted ? "!(" + result + ")" : result);
+//        return  + left.toString() + " " + op.representation + " " + right.toString() + ")";
     }
 }
