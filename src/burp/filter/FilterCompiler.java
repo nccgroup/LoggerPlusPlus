@@ -25,7 +25,7 @@ public class FilterCompiler {
         Matcher regexMatcher = regexPattern.matcher(item);
         if(regexMatcher.matches()){
             try {
-                Pattern regexItem = Pattern.compile(regexMatcher.group(1), Pattern.DOTALL);
+                Pattern regexItem = Pattern.compile(regexMatcher.group(1), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
                 return regexItem;
             }catch (PatternSyntaxException pSException){
                 throw new Filter.FilterException("Invalid Regex Pattern");
