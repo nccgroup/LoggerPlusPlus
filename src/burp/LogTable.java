@@ -232,6 +232,7 @@ public class LogTable extends JTable
             try{
                 Filter filter = FilterCompiler.parseString(filterField.getText());
                 setFilter(filter);
+                filterField.setText(filter.toString());
                 filterField.setBackground(Color.green);
             }catch (Filter.FilterException fException){
                 setFilter((Filter) null);
