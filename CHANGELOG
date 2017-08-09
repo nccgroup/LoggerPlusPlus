@@ -1,3 +1,10 @@
+v 2.87
+=========================================================================
+- Fix row selection when requests/responses are disabled.
+- Better parsing of filter. Compound filter display improvements.
+- Fix proper processing of regex filters using !=
+- QOL Filter display fix.
+
 v 2.86
 =========================================================================
 - Live viewing of incomplete requests.
