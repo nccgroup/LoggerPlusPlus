@@ -324,6 +324,10 @@ public class LogEntry extends RowFilter.Entry
 				}
 			}
 		}
+		if(!logTable.getColumnModel().isColumnEnabled("response") && !logTable.getColumnModel().isColumnEnabled("request")){
+			this.requestResponse = null;
+		}
+
 		this.isCompleted = true;
 	}
 
@@ -440,9 +444,9 @@ public class LogEntry extends RowFilter.Entry
 			case 43: //regex5Resp
 				return regexAllResp[4];
 			case 44: //request
-				return new String(requestResponse.getRequest());
+				return requestResponse != null ? new String(requestResponse.getRequest()) : "";
 			case 45: //response
-				return new String(requestResponse.getResponse());
+				return requestResponse != null ? new String(requestResponse.getResponse()) : "";
 			case 46: //responseTime
 				return responseTime;
 			case 47: //requestResponseDelay

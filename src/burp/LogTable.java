@@ -179,7 +179,7 @@ public class LogTable extends JTable
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
                             String columnName = getColumnModel().getColumn(convertColumnIndexToView(col)).getName();
-                            String value = (String) getModel().getValueAt(row, col);
+                            String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
                                 Filter filter = new CompoundFilter(getCurrentFilter(), "||", rFilter);
@@ -258,14 +258,15 @@ public class LogTable extends JTable
         // show the log entry for the selected row
         // MoreHelp.showMessage("col: "+col+" - adjusted col: "+this.convertColumnIndexToModel(col) + " - " + this.convertColumnIndexToView(col));
         if(this.getModel().getData().size()>=row){
-            LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
-            BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
-            if(logEntry.requestResponse.getResponse()!=null)
-                BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
-            else
-                BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
-            this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
-
+            if((getColumnModel().isColumnEnabled("response") || getColumnModel().isColumnEnabled("request"))) {
+                LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
+                BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                if (logEntry.requestResponse.getResponse() != null)
+                    BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                else
+                    BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
+            }
             super.changeSelection(row, col, toggle, extend);
         }
     }
