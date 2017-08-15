@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -132,8 +133,9 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         ArrayList<UUID> removedFilters = new ArrayList<UUID>(originalFilters.keySet());
         removedFilters.removeAll(filters.keySet());
 
-        for (int i=0; i<modifiedFilters.size(); i++) {
-            UUID uid = modifiedFilters.get(i);
+        ArrayList<UUID> tempFilters = new ArrayList<>(modifiedFilters);
+        for (int i=0; i<tempFilters.size(); i++) {
+            UUID uid = tempFilters.get(i);
             if (!filters.get(uid).isModified()) {
                 modifiedFilters.remove(uid);
             } else {
