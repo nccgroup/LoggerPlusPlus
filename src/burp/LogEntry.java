@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.table.TableColumn;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Time;
 import java.text.DateFormat;
@@ -30,7 +31,7 @@ import java.util.regex.Pattern;
 //
 // class to hold details of each log entry
 //
-
+//TODO Better column to value mapping.
 public class LogEntry extends RowFilter.Entry
 {
 	IHttpRequestResponse requestResponse;
@@ -366,9 +367,9 @@ public class LogEntry extends RowFilter.Entry
 			case 4: //url
 				return relativeURL;
 			case 5: //path
-				return (this.url.getPath() == null ? "" : this.url.getPath());
+				return (this.url != null ? (this.url.getPath() == null ? "" : this.url.getPath()) : "");
 			case 6: //query
-				return (this.url.getQuery() == null ? "" : this.url.getQuery());
+				return this.url != null ? (this.url.getQuery() == null ? "" : this.url.getQuery()) : "";
 			case 7: //params
 				return params;
 			case 8: //status
@@ -470,7 +471,7 @@ public class LogEntry extends RowFilter.Entry
 		Collections.sort(columns);
 		for (LogTableColumn logTableColumn : columns) {
 			if(logTableColumn.isVisible() && logTableColumn.isEnabled()) {
-				result.append(logTableColumn.getVisibleName());
+				result.append(logTableColumn.getName());
 				if(count < columns.size()-1)
 					result.append(",");
 			}

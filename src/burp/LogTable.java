@@ -260,12 +260,15 @@ public class LogTable extends JTable
         if(this.getModel().getData().size()>=row){
             if((getColumnModel().isColumnEnabled("response") || getColumnModel().isColumnEnabled("request"))) {
                 LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
-                BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
-                if (logEntry.requestResponse.getResponse() != null)
-                    BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
-                else
-                    BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
-                this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
+                if(logEntry.requestResponse != null) {
+                    if(logEntry.requestResponse.getRequest() != null)
+                        BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                    if (logEntry.requestResponse.getResponse() != null)
+                        BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                    else
+                        BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                    this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
+                }
             }
             super.changeSelection(row, col, toggle, extend);
         }

@@ -93,11 +93,15 @@ public class Filter extends RowFilter<Object, Object> {
     public boolean matches(LogEntry entry){
         Object lValue = this.left, rValue = this.right;
         try {
-            lValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.left.toString()));
+            if(this.left instanceof LogEntry.columnNamesType){
+                lValue = entry.getValueByKey((LogEntry.columnNamesType) this.left);
+            }
             if(lValue == null) return false;
         }catch (IllegalArgumentException iAException){}
         try {
-            rValue = entry.getValueByKey(LogEntry.columnNamesType.valueOf(this.right.toString()));
+            if(this.right instanceof LogEntry.columnNamesType) {
+                rValue = entry.getValueByKey((LogEntry.columnNamesType) this.right);
+            }
             if(rValue == null) return false;
         }catch (IllegalArgumentException iAException){}
 
