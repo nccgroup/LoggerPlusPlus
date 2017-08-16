@@ -15,6 +15,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
     private Color foregroundColor;
     private boolean enabled;
     private boolean modified;
+    private boolean shouldRetest;
     private short priority;
 
     public ColorFilter(){
@@ -51,6 +52,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
         if(filter != null)
             this.filterString = filter.toString();
         modified = true;
+        shouldRetest = true;
     }
 
     public String getName() {
@@ -68,6 +70,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         modified = true;
+        shouldRetest = true;
     }
 
     public String getFilterString() {
@@ -106,5 +109,9 @@ public class ColorFilter implements Comparable<ColorFilter>{
     @Override
     public int compareTo(ColorFilter colorFilter) {
         return ((Comparable) this.priority).compareTo(colorFilter.getPriority());
+    }
+
+    public boolean shouldRetest() {
+        return shouldRetest;
     }
 }

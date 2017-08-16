@@ -80,11 +80,21 @@ public class FilterCompiler {
                 Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
                 Matcher operationMatcher = operation.matcher(regexStripped);
                 if(operationMatcher.matches()){
-                    String left = string.substring(0, operationMatcher.group(1).length()).trim();
-                    String right = string.substring(operationMatcher.group(1).length() + operationMatcher.group(2).length()).trim();
-                    return new Filter(left, operationMatcher.group(2), right);
+                    if(operationMatcher.group(2).equals("!")){
+                        try{
+                            LogEntry.columnNamesType col = LogEntry.columnNamesType.valueOf(operationMatcher.group(3));
+                            return new Filter(col, Filter.LogicalOperation.EQ, false);
+                        }catch (IllegalArgumentException iAException){}
+                    }else {
+                        String left = string.substring(0, operationMatcher.group(1).length()).trim();
+                        String right = string.substring(operationMatcher.group(1).length() + operationMatcher.group(2).length()).trim();
+                        return new Filter(left, operationMatcher.group(2), right);
+                    }
                 }else if(!regexPattern.matcher(string).matches() && !string.trim().contains(" ")){
-                    return new Filter(string, Filter.LogicalOperation.EQ, true);
+                    try{
+                        LogEntry.columnNamesType col = LogEntry.columnNamesType.valueOf(string);
+                        return new Filter(col, Filter.LogicalOperation.EQ, true);
+                    }catch (IllegalArgumentException iAException){}
                 }
             }
         }

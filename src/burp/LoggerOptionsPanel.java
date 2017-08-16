@@ -23,6 +23,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.io.*;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class LoggerOptionsPanel extends JPanel{
@@ -50,6 +52,7 @@ public class LoggerOptionsPanel extends JPanel{
     private JButton btnSaveLogsButton = new JButton("Save log table as CSV");
     private JButton btnSaveFullLogs = new JButton("Save full logs as CSV (slow)");
     private JToggleButton btnAutoSaveLogs = new JToggleButton("Autosave as CSV");
+    private JButton btnImport = new JButton("Import from CSV");
     private final JCheckBox chckbxExtender = new JCheckBox("Extender");
     private final JCheckBox chckbxTarget = new JCheckBox("Target");
     private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
@@ -173,6 +176,14 @@ public class LoggerOptionsPanel extends JPanel{
         gbc.gridx = 1;
         gbc.gridy++;
         add(lblLogFrom, gbc);
+        gbc.gridx = 3;
+        btnImport.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                importFromFile();
+            }
+        });
+//        add(btnImport, gbc);
         gbc.gridx = 2;
         add(chckbxAllTools, gbc);
         gbc.gridy++;
@@ -360,8 +371,7 @@ public class LoggerOptionsPanel extends JPanel{
         return null;
     }
 
-    //Check if header in file matches that of the columns we will be exporting.
-    //TODO
+    //TODO Check if header in file matches that of the columns we will be exporting.
     private boolean validHeader(File csvFile, boolean isFullLog) {
         BufferedReader reader;
         try {
@@ -439,6 +449,57 @@ public class LoggerOptionsPanel extends JPanel{
         } else {
             return null;
         }
+    }
+
+    private void importFromFile(){
+        File csvFile = null;
+        JFileChooser chooser = null;
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel Format (CSV)", "csv");
+        chooser = new JFileChooser();
+        chooser.setDialogTitle("Opening Database");
+        chooser.setFileFilter(filter);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.showOpenDialog(this);
+        csvFile = chooser.getSelectedFile();
+
+
+        if(csvFile != null && csvFile.exists()){
+            try {
+                BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+                String line = reader.readLine();
+                ArrayList<String> foundColumns = columnsFromHeadString(line);
+                if(foundColumns != null){
+                    log.clear();
+                    while((line = reader.readLine()) != null) {
+                        //TODO Generate and logentry from csv
+                    }
+                }else{
+                    MoreHelp.showMessage("Could not import from file. Column titles not recognised.");
+                    return;
+                }
+            } catch (FileNotFoundException e) {
+                MoreHelp.showMessage("Could not import from file. The file does not exist.");
+                return;
+            } catch (IOException e) {
+                MoreHelp.showMessage("Could not import from file. The file could not be read.");
+                return;
+            }
+        }
+    }
+
+    private ArrayList<String> columnsFromHeadString(String headerString){
+        ArrayList<String> columns = new ArrayList<>();
+        String[] colNames = headerString.split(",");
+        for (String columnName : colNames) {
+            LogTableColumn col;
+            if((col = BurpExtender.getInstance().getLogTable().getColumnModel().getColumnByName(columnName)) != null){
+                columns.add(col.getName().toUpperCase());
+            }else{
+                return null;
+            }
+        }
+        return columns;
     }
 
 

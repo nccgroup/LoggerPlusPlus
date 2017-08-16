@@ -14,7 +14,6 @@ package burp;
 
 import burp.filter.ColorFilter;
 import burp.filter.FilterListener;
-import sun.security.util.PendingException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,10 +22,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.UUID;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
@@ -479,38 +476,59 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		burp.StartBurp.main(args);
 	}
 
-
 	//FilterListeners
 	@Override
-	public void onChange(ColorFilter filter) {
-		synchronized (log){
-			for (int i=0; i<log.size(); i++) {
-				boolean colorResult = log.get(i).testColorFilter(filter, true);
-				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
+	public void onChange(final ColorFilter filter) {
+		Thread onChangeThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				int updateCount = 0;
+				synchronized (log){
+					for (int i=0; i<log.size(); i++) {
+						boolean colorResult = log.get(i).testColorFilter(filter, filter.shouldRetest());
+						if(colorResult || filter.isModified()){
+							logTable.getModel().fireTableRowsUpdated(i, i);
+							updateCount++;
+						}
+					}
+				}
 			}
-		}
+		});
+		onChangeThread.start();
 	}
 
 	@Override
-	public void onAdd(ColorFilter filter) {
+	public void onAdd(final ColorFilter filter) {
 		if(!filter.isEnabled() || filter.getFilter() == null) return;
-		synchronized (log){
-			for (int i=0; i<log.size(); i++) {
-				boolean colorResult = log.get(i).testColorFilter(filter, false);
-				if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
+		Thread onAddThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (log){
+					for (int i=0; i<log.size(); i++) {
+						boolean colorResult = log.get(i).testColorFilter(filter, false);
+						if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
+					}
+				}
 			}
-		}
+		});
+		onAddThread.start();
 	}
 
 	@Override
-	public void onRemove(ColorFilter filter) {
+	public void onRemove(final ColorFilter filter) {
 		if(!filter.isEnabled() || filter.getFilter() == null) return;
-		synchronized (log){
-			for (int i=0; i<log.size(); i++) {
-				boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
-				if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
+		Thread onRemoveThread = new Thread(new Runnable(){
+			@Override
+			public void run() {
+				synchronized (log){
+					for (int i=0; i<log.size(); i++) {
+						boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
+						if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
+					}
+				}
 			}
-		}
+		});
+		onRemoveThread.start();
 	}
 
 	@Override
