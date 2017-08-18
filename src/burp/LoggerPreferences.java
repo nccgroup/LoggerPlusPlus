@@ -24,9 +24,9 @@ import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	private final double version = 2.87;
+	private final double version = 2.88;
 	private final String appName = "Burp Suite Logger++";
-	private final String author = "Soroush Dalili from NCC Group, Corey Arthur @CoreyD97";
+	private final String author = "Soroush Dalili from NCC Group (@irsdl), Corey Arthur (@CoreyD97)";
 	private final String companyLink = "https://www.nccgroup.trust/";
 	private final String authorLink = "https://soroush.secproject.com/";
 	private final String projectLink = "https://github.com/NCCGroup/BurpSuiteLoggerPlusPlus";

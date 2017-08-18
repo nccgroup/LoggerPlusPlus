@@ -1,3 +1,11 @@
+v 2.88
+=========================================================================
+- Ability to set a maximum limit on number of items logged.
+- Pop out view.
+- Multiple views for request / response panel.
+- Automatic clean up of pending requests.
+- Extension settings saved via burp.
+
 v 2.87
 =========================================================================
 - Fix row selection when requests/responses are disabled.
