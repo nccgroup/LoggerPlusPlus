@@ -17,13 +17,17 @@ import burp.filter.FilterListener;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 
 public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
@@ -37,6 +41,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private IMessageEditor responseViewer;
 	private final List<LogEntry> log = new ArrayList<LogEntry>();
 	private final HashMap<Integer, LogEntry.PendingRequestEntry> pendingRequests = new HashMap<Integer, LogEntry.PendingRequestEntry>();
+	private JPanel mainUIWrapper;
 	private JTabbedPane mainUI;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
@@ -52,10 +57,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JSplitPane logViewSplit;
 	private JTabbedPane logViewTabbed;
 	private JPanel logTablePanel;
+	private JPanel reqRespPanel;
 	private JTabbedPane reqRespTabbedPane;
 	private JSplitPane reqRespSplitPane;
 	private JMenu loggerMenu;
 	private LoggerPreferences.View currentView;
+	private LoggerPreferences.View currentReqRespView;
+	ScheduledFuture cleanup;
+	int totalRequests = 0;
 	//
 	// implement IBurpExtender
 	//
@@ -63,7 +72,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
 	{
-		this.instance = this;
+		instance = this;
 		// set our extension name
 		callbacks.setExtensionName("Logger++");
 
@@ -85,7 +94,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					+ "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
 		}   
 
-		loggerPreferences = new LoggerPreferences(stdout,stderr,isDebug);
+		loggerPreferences = new LoggerPreferences();
 		if(loggerPreferences.getColorFilters() == null) loggerPreferences.setColorFilters(new HashMap<UUID, ColorFilter>());
 		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
@@ -96,8 +105,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		logTable = new LogTable(log, stdout, stderr, isDebug);
 
 		// Options Panel
-		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, log,
-				canSaveCSV, loggerPreferences, isDebug);
+		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, canSaveCSV, loggerPreferences, isDebug);
 		// About Panel
 		aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
 
@@ -107,15 +115,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			@Override
 			public void run()
 			{
-				mainUI = new JTabbedPane(){
-					@Override
-					public void removeNotify(){
-						super.removeNotify();
-						if(loggerMenu != null){
-							loggerMenu.getParent().remove(loggerMenu);
-						}
-					}
-				};
+				mainUI = new JTabbedPane();
 				//Let the user resize the splitter at will:
 				//mainUI.setMinimumSize(new Dimension(0, 0));
 
@@ -139,27 +139,40 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				logTablePanel.add(logTableScrollPane, gbc);
 				//LogTablePanel
 
+				reqRespPanel = new JPanel(new BorderLayout());
+				reqRespTabbedPane = new JTabbedPane();
+				reqRespSplitPane = new JSplitPane();
+
+				LoggerPreferences.View reqRespView = LoggerPreferences.View.HORIZONTAL;
+				setRequestResponseLayout(reqRespView);
+
 
 				//Split
-				logViewSplit.setBottomComponent(reqRespTabbedPane);
+				logViewSplit.setBottomComponent(reqRespPanel);
 				logViewSplit.setResizeWeight(0.5);
-				reqRespTabbedPane = new JTabbedPane();
-				reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
-				reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
 
-				//Tabbed
-				reqRespSplitPane = new JSplitPane();
-				reqRespSplitPane.setResizeWeight(0.5);
 				logViewTabbed.addTab("Log LogTable", logTablePanel);
-				logViewTabbed.addTab("Request/Response", reqRespSplitPane);
+				logViewTabbed.addTab("Request/Response", reqRespPanel);
 
 				setLayout(loggerPreferences.getView());
+				setRequestResponseLayout(loggerPreferences.getReqRespView());
 
 				// customize our UI components
 				//callbacks.customizeUiComponent(mainUI); // disabled to be able to drag and drop columns
 				mainUI.addTab("View Logs", null, logViewJPanelWrapper, null);
 				mainUI.addTab("Options", null, optionsJPanel, null);
 				mainUI.addTab("About", null, aboutJPanel, null);
+
+				mainUIWrapper = new JPanel(new BorderLayout()){
+					@Override
+					public void removeNotify(){
+						super.removeNotify();
+						if(loggerMenu != null){
+							loggerMenu.getParent().remove(loggerMenu);
+						}
+					}
+				};
+				mainUIWrapper.add(mainUI, BorderLayout.CENTER);
 
 				// add the custom tab to Burp's UI
 				callbacks.addSuiteTab(BurpExtender.this);
@@ -181,6 +194,15 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						}
 					});
 					loggerMenu.add(colorFilters);
+
+					final JMenuItem popout = new JMenuItem(new AbstractAction("Pop Out") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							popOut();
+						}
+					});
+					loggerMenu.add(popout);
+
 					JMenu viewMenu = new JMenu("View");
 					ButtonGroup bGroup = new ButtonGroup();
 					JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
@@ -189,7 +211,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.VERTICAL);
 						}
 					});
-					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
+//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
@@ -198,6 +220,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.HORIZONTAL);
 						}
 					});
+//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.HORIZONTAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
@@ -206,8 +229,37 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.TABS);
 						}
 					});
+//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.TABS);
+					viewMenu.add(viewMenuItem);
+					loggerMenu.add(viewMenu);
+
+					viewMenu = new JMenu("Request/Response View");
+					bGroup = new ButtonGroup();
+					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setRequestResponseLayout(LoggerPreferences.View.VERTICAL);
+						}
+					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
+					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setRequestResponseLayout(LoggerPreferences.View.HORIZONTAL);
+						}
+					});
+					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
+					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
+						@Override
+						public void actionPerformed(ActionEvent actionEvent) {
+							setRequestResponseLayout(LoggerPreferences.View.TABS);
+						}
+					});
+					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
+
 					loggerMenu.add(viewMenu);
 					menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
 				}catch (NullPointerException nPException){
@@ -219,32 +271,56 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
 			aboutJPanel.checkForUpdate(false);
 		}
+
+		//Create incomplete request cleanup thread so map doesn't get too big.
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		Runnable cleanupTask = new Runnable() {
+			@Override
+			public void run() {
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+				int count = 0;
+				String refs = "";
+				Set<Integer> keys = new HashSet<>(pendingRequests.keySet());
+				synchronized (pendingRequests){
+					for (Integer reference : keys) {
+						try {
+							Date date = dateFormat.parse(pendingRequests.get(reference).requestTime);
+							if(new Date().getTime() - date.getTime() > BurpExtender.getInstance().getLoggerPreferences().getResponseTimeout()){
+								pendingRequests.remove(reference);
+								refs += reference + ", ";
+								count++;
+							}
+						} catch (ParseException e) {
+							pendingRequests.remove(reference);
+						}
+					}
+				}
+			}
+		};
+
+		cleanup = executor.scheduleAtFixedRate(cleanupTask, 30000, 30000, TimeUnit.MILLISECONDS);
 	}
 
 	public static BurpExtender getInstance() {
 		return instance;
 	}
 
-	private void setLayout(LoggerPreferences.View view){
+	public void setLayout(LoggerPreferences.View view){
 		if(view == null) view = LoggerPreferences.View.HORIZONTAL;
 
 		if((currentView == LoggerPreferences.View.TABS || currentView == null) && view != LoggerPreferences.View.TABS){
 			logViewJPanelWrapper.removeAll();
 			//SplitResetup
 			logViewSplit.setTopComponent(logTablePanel);
-			reqRespTabbedPane.removeAll();
-			reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
-			reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
-			logViewSplit.setBottomComponent(reqRespTabbedPane);
+			logViewSplit.setBottomComponent(reqRespPanel);
+			logViewSplit.setDividerLocation(0.5);
 			logViewJPanelWrapper.add(logViewSplit);
-		}else if((currentView != LoggerPreferences.View.TABS || currentView == null) && view == LoggerPreferences.View.TABS){
+		}else if((currentView != LoggerPreferences.View.TABS) && view == LoggerPreferences.View.TABS){
 			logViewJPanelWrapper.removeAll();
 			//TabbedResetup
 			logViewTabbed.removeAll();
 			logViewTabbed.addTab("Logs", logTablePanel);
-			reqRespSplitPane.setLeftComponent(requestViewer.getComponent());
-			reqRespSplitPane.setRightComponent(responseViewer.getComponent());
-			logViewTabbed.addTab("Request / Response", reqRespSplitPane);
+			logViewTabbed.addTab("Request / Response", reqRespPanel);
 			logViewJPanelWrapper.add(logViewTabbed);
 		}
 
@@ -259,6 +335,36 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 		loggerPreferences.setView(view);
 		currentView = view;
+	}
+
+	public void setRequestResponseLayout(LoggerPreferences.View view){
+		if(view == null) view = LoggerPreferences.View.VERTICAL;
+
+		if(view == LoggerPreferences.View.HORIZONTAL || view == LoggerPreferences.View.VERTICAL) {
+			reqRespPanel.remove(reqRespTabbedPane);
+			reqRespSplitPane.setResizeWeight(0.5);
+			reqRespSplitPane.setLeftComponent(requestViewer.getComponent());
+			reqRespSplitPane.setRightComponent(responseViewer.getComponent());
+			reqRespPanel.add(reqRespSplitPane, BorderLayout.CENTER);
+			switch (view) {
+				case VERTICAL:
+					reqRespSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+					break;
+				case HORIZONTAL:
+					reqRespSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+					break;
+			}
+			reqRespSplitPane.setDividerLocation(0.5);
+		}else {
+			reqRespPanel.remove(reqRespSplitPane);
+			reqRespTabbedPane.removeAll();
+			reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
+			reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
+			reqRespPanel.add(reqRespTabbedPane, BorderLayout.CENTER);
+		}
+
+		loggerPreferences.setReqRespView(view);
+		currentReqRespView = view;
 	}
 
 	private JPanel getFilterPanel(){
@@ -324,7 +430,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public Component getUiComponent()
 	{
-		return mainUI;
+		return mainUIWrapper;
 	}
 
 	//
@@ -333,7 +439,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	@Override
 	public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-		if(toolFlag!=callbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, messageInfo, null);
+		if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, messageInfo, null);
 	}
 
 	//
@@ -343,9 +449,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	@Override
 	public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
-		logIt(callbacks.TOOL_PROXY, messageIsRequest, null, message);
+		logIt(IBurpExtenderCallbacks.TOOL_PROXY, messageIsRequest, null, message);
 	}
-
+	short lateResponses = 0;
 	private void logIt(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo,IInterceptedProxyMessage message){
 		// Is it enabled?
 		// We also have a separate module for the Proxy tool and we do it under processProxyMessage
@@ -362,41 +468,51 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			if (!loggerPreferences.isRestrictedToScope() || callbacks.isInScope(uUrl))
 			{
 				boolean isValidTool = (loggerPreferences.isEnabled4All() ||
-							(loggerPreferences.isEnabled4Proxy() && toolFlag==callbacks.TOOL_PROXY) ||
-							(loggerPreferences.isEnabled4Intruder() && toolFlag==callbacks.TOOL_INTRUDER) ||
-							(loggerPreferences.isEnabled4Repeater() && toolFlag==callbacks.TOOL_REPEATER) ||
-							(loggerPreferences.isEnabled4Scanner() && toolFlag==callbacks.TOOL_SCANNER) ||
-							(loggerPreferences.isEnabled4Sequencer() && toolFlag==callbacks.TOOL_SEQUENCER) ||
-							(loggerPreferences.isEnabled4Spider() && toolFlag==callbacks.TOOL_SPIDER) ||
-							(loggerPreferences.isEnabled4Extender() && toolFlag==callbacks.TOOL_EXTENDER) ||
-							(loggerPreferences.isEnabled4TargetTab() && toolFlag==callbacks.TOOL_TARGET));
+							(loggerPreferences.isEnabled4Proxy() && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
+							(loggerPreferences.isEnabled4Intruder() && toolFlag== IBurpExtenderCallbacks.TOOL_INTRUDER) ||
+							(loggerPreferences.isEnabled4Repeater() && toolFlag== IBurpExtenderCallbacks.TOOL_REPEATER) ||
+							(loggerPreferences.isEnabled4Scanner() && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
+							(loggerPreferences.isEnabled4Sequencer() && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
+							(loggerPreferences.isEnabled4Spider() && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
+							(loggerPreferences.isEnabled4Extender() && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
+							(loggerPreferences.isEnabled4TargetTab() && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
 
 				if(isValidTool){
 
 					LogEntry logEntry = null;
 					if (messageIsRequest){
 						// Burp does not provide any way to trace a request to its response - only in proxy there is a unique reference
-						if(toolFlag==callbacks.TOOL_PROXY) {
+						if(toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) {
 							//We need to change messageInfo when we get a response so do not save to buffers
 							logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, messageInfo, uUrl, analyzedReq, message);
 
 							for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
 								logEntry.testColorFilter(colorFilter, false);
 							}
-							pendingRequests.put(message.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
+							synchronized (pendingRequests) {
+								pendingRequests.put(message.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
+							}
 						}
 					}else{
-						if(toolFlag==callbacks.TOOL_PROXY){
+						if(toolFlag== IBurpExtenderCallbacks.TOOL_PROXY){
 							//Get from pending list
-							LogEntry.PendingRequestEntry pendingRequest = pendingRequests.remove(message.getMessageReference());
-							if(pendingRequest != null) {
-								//Fill in gaps of request with response
-								pendingRequest.processResponse(messageInfo);
+							synchronized (pendingRequests) {
+								LogEntry.PendingRequestEntry pendingRequest = pendingRequests.remove(message.getMessageReference());
+								if (pendingRequest != null) {
+									//Fill in gaps of request with response
+									pendingRequest.processResponse(messageInfo);
 
-								for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
-									pendingRequest.testColorFilter(colorFilter, true);
+									for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
+										pendingRequest.testColorFilter(colorFilter, true);
+									}
+									int newRow = pendingRequest.logRow - loggerPreferences.getMaximumEntries() - totalRequests;
+									logTable.getModel().fireTableRowsUpdated(newRow, newRow);
+								} else {
+									lateResponses++;
+									if(log.size() > 100 && ((float)lateResponses)/log.size() > 0.1){
+										MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+									}
 								}
-								logTable.getModel().fireTableRowsUpdated(pendingRequest.logRow, pendingRequest.logRow);
 							}
 							return;
 						}else {
@@ -415,13 +531,20 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight() * 1.25));
 						int m = logTableScrollBar.getMaximum();
 						boolean isAtBottom = v >= m;
-
 						synchronized (log) {
 							int row = log.size();
 							log.add(logEntry);
-							logTable.getModel().fireTableRowsInserted(row, row);
+							totalRequests++;
+							if(log.size() > loggerPreferences.getMaximumEntries()){
+								for (int i = 0; i <= log.size() - loggerPreferences.getMaximumEntries(); i++) {
+									log.remove(0);
+									logTable.getModel().fireTableRowsDeleted(0,0);
+								}
+							}else {
+								logTable.getModel().fireTableRowsInserted(row, row);
+							}
 							if(logEntry instanceof LogEntry.PendingRequestEntry){
-								((LogEntry.PendingRequestEntry) logEntry).logRow = row;
+								((LogEntry.PendingRequestEntry) logEntry).logRow = totalRequests;
 							}
 						}
 						if (isAtBottom)
@@ -433,6 +556,40 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				}
 			}
 		}
+	}
+
+	public void popOut(){
+		final JFrame popout = new JFrame();
+		popout.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		popout.setVisible(true);
+		popout.addWindowListener(new WindowListener() {
+			@Override
+			public void windowOpened(WindowEvent windowEvent) {
+				popout.add(mainUI);
+				popout.pack();
+			}
+
+			@Override
+			public void windowClosing(WindowEvent windowEvent) {
+				mainUIWrapper.add(mainUI, BorderLayout.CENTER);
+				mainUIWrapper.revalidate();
+			}
+
+			@Override
+			public void windowClosed(WindowEvent windowEvent) {}
+
+			@Override
+			public void windowIconified(WindowEvent windowEvent) {}
+
+			@Override
+			public void windowDeiconified(WindowEvent windowEvent) {}
+
+			@Override
+			public void windowActivated(WindowEvent windowEvent) {}
+
+			@Override
+			public void windowDeactivated(WindowEvent windowEvent) {}
+		});
 	}
 
 	public void addColorFilter(ColorFilter colorFilter, boolean showDialog){
@@ -482,14 +639,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		Thread onChangeThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				int updateCount = 0;
-				synchronized (log){
-					for (int i=0; i<log.size(); i++) {
-						boolean colorResult = log.get(i).testColorFilter(filter, filter.shouldRetest());
-						if(colorResult || filter.isModified()){
-							logTable.getModel().fireTableRowsUpdated(i, i);
-							updateCount++;
-						}
+				for (int i=0; i<log.size(); i++) {
+					boolean colorResult = log.get(i).testColorFilter(filter, filter.shouldRetest());
+					if(colorResult || filter.isModified()){
+						logTable.getModel().fireTableRowsUpdated(i, i);
 					}
 				}
 			}
@@ -503,11 +656,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		Thread onAddThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (log){
-					for (int i=0; i<log.size(); i++) {
-						boolean colorResult = log.get(i).testColorFilter(filter, false);
-						if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
-					}
+				for (int i=0; i<log.size(); i++) {
+					boolean colorResult = log.get(i).testColorFilter(filter, false);
+					if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
 				}
 			}
 		});
@@ -520,11 +671,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		Thread onRemoveThread = new Thread(new Runnable(){
 			@Override
 			public void run() {
-				synchronized (log){
-					for (int i=0; i<log.size(); i++) {
-						boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
-						if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
-					}
+				for (int i=0; i<log.size(); i++) {
+					boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
+					if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
 				}
 			}
 		});
@@ -533,6 +682,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	@Override
 	public void onRemoveAll() {}
+
+	public void reset(){
+		this.log.clear();
+		this.pendingRequests.clear();
+		this.totalRequests = 0;
+		this.logTable.getModel().fireTableDataChanged();
+	}
 
 	public JTextField getFilterField() {
 		return filterField;
@@ -547,6 +703,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public LogTable getLogTable() {
 		return logTable;
+	}
+
+	public HashMap<Integer, LogEntry.PendingRequestEntry> getPendingRequests() {
+		return pendingRequests;
 	}
 
 	public IExtensionHelpers getHelpers() {
@@ -565,11 +725,15 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return callbacks;
 	}
 
-	public ColorFilterDialog getColorFilterDialog() {
-		return colorFilterDialog;
-	}
-
 	public LoggerOptionsPanel getLoggerOptionsPanel() {
 		return optionsJPanel;
+	}
+
+	public List<LogEntry> getLog() {
+		return log;
+	}
+
+	public PrintWriter getStdout() {
+		return stdout;
 	}
 }

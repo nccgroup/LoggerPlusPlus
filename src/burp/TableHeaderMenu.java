@@ -31,7 +31,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		boolean isRegex=columnObj.isRegEx();
 
 		JPopupMenu menu = new JPopupMenu("Popup");
-		JMenuItem item = new JMenuItem(columnObj.getVisibleName());
+		JMenuItem item = new JMenuItem(columnObj.getVisibleName() + " (" + columnObj.getName() + ")");
 
 		item.setEnabled(false);
 		menu.add(item);

@@ -16,19 +16,16 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.DefaultFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class LoggerOptionsPanel extends JPanel{
-
 
     private final burp.IBurpExtenderCallbacks callbacks;
     private final PrintWriter stdout;
@@ -61,14 +58,13 @@ public class LoggerOptionsPanel extends JPanel{
     private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
-    private final List<LogEntry> log;
 
     private final boolean isDebug;
 
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, final List<LogEntry> log, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
+    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
         this.callbacks = callbacks;
         this.stdout = stdout;
         this.stderr = stderr;
@@ -76,13 +72,12 @@ public class LoggerOptionsPanel extends JPanel{
         this.loggerPreferences = loggerPreferences;
         this.loggerPreferences.setAutoSave(false);
         this.isDebug = isDebug;
-        this.log = log;
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
-        gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0};
+        gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         setLayout(gridBagLayout);
 
         JLabel lblLoggerStatus = new JLabel("Status:");
@@ -109,7 +104,7 @@ public class LoggerOptionsPanel extends JPanel{
                 try {
                     File csvFile = getSaveFile("logger++_table", false);
                     if (csvFile != null) {
-                        exp.exportTable(log, csvFile, false, false, true);
+                        exp.exportTable(csvFile, false, false, true);
                     }
 
                 } catch (IOException ex) {
@@ -141,7 +136,7 @@ public class LoggerOptionsPanel extends JPanel{
                 try {
                     File csvFile = getSaveFile("logger++_full", false);
                     if (csvFile != null) {
-                        exp.exportTable(log, csvFile, true, false, true);
+                        exp.exportTable(csvFile, true, false, true);
                     }
 
                 } catch (IOException ex) {
@@ -203,6 +198,39 @@ public class LoggerOptionsPanel extends JPanel{
         gbc.gridy++;
         add(chckbxExtender, gbc);
 
+        gbc.gridx = 1;
+        gbc.gridy++;
+        JLabel lblResponseSettings = new JLabel("Response Timeout (s):");
+        lblResponseSettings.setFont(new Font("Tahoma", Font.BOLD, 14));
+        add(lblResponseSettings, gbc);
+        gbc.gridx++;
+        final JSpinner spnResponseTimeout = new JSpinner();
+        spnResponseTimeout.setModel(new SpinnerNumberModel(BurpExtender.getInstance().getLoggerPreferences().getResponseTimeout()/1000, 10, 600, 1));
+        spnResponseTimeout.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                BurpExtender.getInstance().getLoggerPreferences().setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
+            }
+        });
+        add(spnResponseTimeout, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy++;
+        JLabel lblMaxEntries = new JLabel("Maximum Log Entries:");
+        lblMaxEntries.setFont(new Font("Tahoma", Font.BOLD, 14));
+        add(lblMaxEntries, gbc);
+        gbc.gridx++;
+        final JSpinner spnMaxEntries = new JSpinner();
+        spnMaxEntries.setModel(new SpinnerNumberModel(BurpExtender.getInstance().getLoggerPreferences().getMaximumEntries(), 10, 20000, 10));
+        spnMaxEntries.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                BurpExtender.getInstance().getLoggerPreferences().setMaximumEntries((Integer) spnMaxEntries.getValue());
+            }
+        });
+        add(spnMaxEntries, gbc);
+
+
         JButton btnResetSettings = new JButton("Reset all settings");
         btnResetSettings.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
@@ -228,7 +256,7 @@ public class LoggerOptionsPanel extends JPanel{
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
 
-                log.clear();
+                BurpExtender.getInstance().reset();
 
                 BurpExtender.getInstance().getLogTable().getModel().fireTableDataChanged();
                 loggerPreferences.setEnabled(origState);
@@ -289,13 +317,13 @@ public class LoggerOptionsPanel extends JPanel{
             out.close();
         }
 
-        public void exportTable(List<LogEntry> log, File file, boolean isFullLog, boolean append, boolean header) throws IOException {
+        public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
 
             FileWriter out = new FileWriter(file, append);
 
             boolean includeHeader = header;
 
-            for (LogEntry item : log) {
+            for (LogEntry item : BurpExtender.getInstance().getLog()) {
                 if (includeHeader) {
                     out.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog));
                     out.write("\n");
@@ -470,7 +498,7 @@ public class LoggerOptionsPanel extends JPanel{
                 String line = reader.readLine();
                 ArrayList<String> foundColumns = columnsFromHeadString(line);
                 if(foundColumns != null){
-                    log.clear();
+                    BurpExtender.getInstance().reset();
                     while((line = reader.readLine()) != null) {
                         //TODO Generate and logentry from csv
                     }

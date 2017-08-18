@@ -8,15 +8,10 @@ import burp.filter.ColorFilter;
 import burp.filter.CompoundFilter;
 import burp.filter.Filter;
 import burp.filter.FilterCompiler;
-import com.google.gson.Gson;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.TableColumnModelEvent;
-import javax.swing.event.TableColumnModelListener;
 import javax.swing.plaf.UIResource;
 import javax.swing.table.*;
 import javax.swing.text.JTextComponent;
@@ -33,7 +28,7 @@ public class LogTable extends JTable
 
     public LogTable(List<LogEntry> data, PrintWriter stdout, PrintWriter stderr, boolean isDebug)
     {
-        super(new LogTableModel(data), new LogTableColumnModel(stdout, stderr, isDebug));
+        super(new LogTableModel(data), new LogTableColumnModel());
         this.getModel().setColumnModel(this.getColumnModel());
         this.setTableHeader(new TableHeader (getColumnModel(),this,stdout,stderr,isDebug)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
@@ -55,7 +50,13 @@ public class LogTable extends JTable
         //				}
         //			});
         TableRowSorter rowSorter = new LogTableRowSorter();
-        rowSorter.setModel(this.getModel());
+        try {
+            rowSorter.setModel(this.getModel());
+        }catch (NullPointerException nPException){
+            getColumnModel().resetToDefaultVariables();
+            BurpExtender.getInstance().getStderr().println("Failed to create table from stored preferences. Table structure has been reset.");
+            rowSorter.setModel(this.getModel());
+        }
         setRowSorter(rowSorter);
 
         registerListeners();
