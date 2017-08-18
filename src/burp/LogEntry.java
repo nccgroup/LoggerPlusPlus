@@ -16,11 +16,7 @@ import burp.filter.ColorFilter;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.swing.*;
-import javax.swing.table.TableColumn;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Time;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -35,7 +31,6 @@ import java.util.regex.Pattern;
 public class LogEntry extends RowFilter.Entry
 {
 	IHttpRequestResponse requestResponse;
-	String uniqueIdentifier="NA";
 	final int tool;
 	String host="";
 	String method="";
@@ -60,11 +55,11 @@ public class LogEntry extends RowFilter.Entry
 	String clientIP="";
 	boolean hasSetCookies=false;
 	String responseTime="";
-	String responseContentType_burp="";
-	String responseInferredContentType_burp="";
+	String responseMimeType ="";
+	String responseInferredMimeType ="";
 	int responseLength=-1;
 	String responseContentType="";
-	boolean isCompleted = false;
+	boolean complete = false;
 	cookieJarStatus usesCookieJar = cookieJarStatus.NO;
 	// User Related
 	String comment="";
@@ -87,8 +82,6 @@ public class LogEntry extends RowFilter.Entry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		LogTable logTable = BurpExtender.getInstance().getLogTable();
-		if(logTable.getColumnModel().isColumnEnabled("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
-			this.uniqueIdentifier=java.util.UUID.randomUUID().toString();
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
@@ -124,9 +117,6 @@ public class LogEntry extends RowFilter.Entry
 
 			if(logTable.getColumnModel().isColumnEnabled("clientIP")) // This is good to increase the speed when it is time consuming
 				this.clientIP=message.getClientIpAddress().toString();
-
-			if(logTable.getColumnModel().isColumnEnabled("uniqueIdentifier")) // This is good to increase the speed when it is time consuming
-				this.uniqueIdentifier = "P"+String.valueOf(message.getMessageReference());
 		}
 		this.requestLength = strFullRequest.length() - tempAnalyzedReq.getBodyOffset();
 		this.hasBodyParam = requestLength > 0;
@@ -137,7 +127,7 @@ public class LogEntry extends RowFilter.Entry
 		if(logTable.getColumnModel().isColumnEnabled("sentCookies") ||
 				logTable.getColumnModel().isColumnEnabled("hasCookieParam") ||
 				logTable.getColumnModel().isColumnEnabled("usesCookieJar") ||
-				logTable.getColumnModel().isColumnEnabled("referrerURL") ||
+				logTable.getColumnModel().isColumnEnabled("referrer") ||
 				logTable.getColumnModel().isColumnEnabled("requestContentType")){ // This is good to increase the speed when it is time consuming
 			for(String item:lstFullRequestHeader){
 				if(item.indexOf(":")>=0){
@@ -188,8 +178,8 @@ public class LogEntry extends RowFilter.Entry
 
 		// RegEx processing for requests - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
-		for(int i=0;i<5;i++){
-			String regexVarName = "regex"+String.valueOf(i+1)+"Req";
+		for(int i=1;i<5;i++){
+			String regexVarName = "regex"+(i+1)+"Req";
 			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
 				// so this rule is enabled!
 				// check to see if the RegEx is not empty
@@ -258,10 +248,10 @@ public class LogEntry extends RowFilter.Entry
 		LogTable logTable = BurpExtender.getInstance().getLogTable();
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 		this.status= tempAnalyzedResp.getStatusCode();
-		if(logTable.getColumnModel().isColumnEnabled("responseContentType_burp")) // This is good to increase the speed when it is time consuming
-			this.responseContentType_burp=tempAnalyzedResp.getStatedMimeType();
-		if(logTable.getColumnModel().isColumnEnabled("responseInferredContentType_burp")) // This is good to increase the speed when it is time consuming
-			this.responseInferredContentType_burp = tempAnalyzedResp.getInferredMimeType();
+		if(logTable.getColumnModel().isColumnEnabled("MimeType")) // This is good to increase the speed when it is time consuming
+			this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
+		if(logTable.getColumnModel().isColumnEnabled("InferredType")) // This is good to increase the speed when it is time consuming
+			this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
 
 		if(logTable.getColumnModel().isColumnEnabled("newCookies")) // This is good to increase the speed when it is time consuming
 			for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
@@ -282,8 +272,8 @@ public class LogEntry extends RowFilter.Entry
 
 		// RegEx processing for responses - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
-		for(int i=0;i<=5;i++){
-			String regexVarName = "regex"+String.valueOf(i+1)+"Resp";
+		for(int i=0;i<5;i++){
+			String regexVarName = "regex"+(i+1)+"Resp";
 			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
 				// so this rule is enabled!
 				// check to see if the RegEx is not empty
@@ -329,7 +319,7 @@ public class LogEntry extends RowFilter.Entry
 			this.requestResponse = null;
 		}
 
-		this.isCompleted = true;
+		this.complete = true;
 	}
 
 	private String formatDelay(long l) {
@@ -357,7 +347,7 @@ public class LogEntry extends RowFilter.Entry
 	public Object getValue(int i) {
 		switch (i) {
 			case 0://number
-				return uniqueIdentifier;
+				return 0;
 			case 1://tool
 				return BurpExtender.getInstance().getCallbacks().getToolName(tool);
 			case 2://host
@@ -376,8 +366,8 @@ public class LogEntry extends RowFilter.Entry
 				return status;
 			case 9: //responseLength
 				return responseLength;
-			case 10: //responseContentType_burp
-				return responseContentType_burp;
+			case 10: //responseMimeType
+				return responseMimeType;
 			case 11: //urlExtension
 				return urlExtension;
 			case 12: //comment
@@ -394,8 +384,8 @@ public class LogEntry extends RowFilter.Entry
 				return clientIP;
 			case 18: //responseContentType
 				return responseContentType;
-			case 19: //responseInferredContentType_burp
-				return responseInferredContentType_burp;
+			case 19: //responseInferredMimeType
+				return responseInferredMimeType;
 			case 20: //hasQueryStringParam
 				return this.url.getQuery() != null;
 			case 21: //hasBodyParam
@@ -420,37 +410,35 @@ public class LogEntry extends RowFilter.Entry
 				return requestLength;
 			case 31: //hasSetCookies
 				return hasSetCookies;
-			case 32: //isCompleted
-				return isCompleted;
-			case 33: //uniqueIdentifier
-				return uniqueIdentifier;
-			case 34: //regex1Req
+			case 32: //complete
+				return complete;
+			case 33: //regex1Req
 				return regexAllReq[0];
-			case 35: //regex2Req
+			case 34: //regex2Req
 				return regexAllReq[1];
-			case 36: //regex3Req
+			case 35: //regex3Req
 				return regexAllReq[2];
-			case 37: //regex4Req
+			case 36: //regex4Req
 				return regexAllReq[3];
-			case 38: //regex5Req
+			case 37: //regex5Req
 				return regexAllReq[4];
-			case 39: //regex1Resp
+			case 38: //regex1Resp
 				return regexAllResp[0];
-			case 40: //regex2Resp
+			case 39: //regex2Resp
 				return regexAllResp[1];
-			case 41: //regex3Resp
+			case 40: //regex3Resp
 				return regexAllResp[2];
-			case 42: //regex4Resp
+			case 41: //regex4Resp
 				return regexAllResp[3];
-			case 43: //regex5Resp
+			case 42: //regex5Resp
 				return regexAllResp[4];
-			case 44: //request
+			case 43: //request
 				return requestResponse != null ? new String(requestResponse.getRequest()) : "";
-			case 45: //response
+			case 44: //response
 				return requestResponse != null ? new String(requestResponse.getResponse()) : "";
-			case 46: //responseTime
+			case 45: //responseTime
 				return responseTime;
-			case 47: //requestResponseDelay
+			case 46: //requestResponseDelay
 				return requestResponseDelay;
 			default:
 				return null;
@@ -459,7 +447,7 @@ public class LogEntry extends RowFilter.Entry
 
 	@Override
 	public Object getIdentifier() {
-		return this.uniqueIdentifier;
+		return null;
 	}
 
 
@@ -542,8 +530,8 @@ public class LogEntry extends RowFilter.Entry
 					return this.host;
 				case HOST:
 					return this.protocol+"://"+this.host;
-				case RESPONSECONTENTTYPE_BURP:
-					return this.responseContentType_burp;
+				case MIMETYPE:
+					return this.responseMimeType;
 				case RESPONSELENGTH:
 					return this.responseLength;
 				case TARGETPORT:
@@ -558,7 +546,7 @@ public class LogEntry extends RowFilter.Entry
 					return this.requestContentType;
 				case URLEXTENSION:
 					return this.urlExtension;
-				case REFERRERURL:
+				case REFERRER:
 					return this.referrerURL;
 				case HASQUERYSTRINGPARAM:
 					return this.url.getQuery() != null;
@@ -570,8 +558,8 @@ public class LogEntry extends RowFilter.Entry
 					return this.requestLength;
 				case RESPONSECONTENTTYPE:
 					return this.responseContentType;
-				case RESPONSEINFERREDCONTENTTYPE_BURP:
-					return this.responseInferredContentType_burp;
+				case INFERREDTYPE:
+					return this.responseInferredMimeType;
 				case HASSETCOOKIES:
 					return this.hasSetCookies;
 				case PARAMS:
@@ -588,10 +576,8 @@ public class LogEntry extends RowFilter.Entry
 					return this.listenerInterface;
 				case CLIENTIP:
 					return this.clientIP;
-				case ISCOMPLETED:
-					return this.isCompleted;
-				case UNIQUEIDENTIFIER:
-					return this.uniqueIdentifier;
+				case COMPLETE:
+					return this.complete;
 				case SENTCOOKIES:
 					return this.sentCookies;
 				case USESCOOKIEJAR:
@@ -624,7 +610,6 @@ public class LogEntry extends RowFilter.Entry
 					return requestTime;
 				case RESPONSEDELAY:
 					return requestResponseDelay;
-
 				default:
 					return "";
 			}
@@ -662,7 +647,7 @@ public class LogEntry extends RowFilter.Entry
 		PROTOCOL("PROTOCOL"),
 		HOSTNAME("HOSTNAME"),
 		HOST("HOST"),
-		RESPONSECONTENTTYPE_BURP("RESPONSECONTENTTYPE_BURP"),
+		MIMETYPE("MIMETYPE"),
 		RESPONSELENGTH("RESPONSELENGTH"),
 		TARGETPORT("TARGETPORT"),
 		METHOD("METHOD"),
@@ -672,13 +657,13 @@ public class LogEntry extends RowFilter.Entry
 		COMMENT("COMMENT"),
 		REQUESTCONTENTTYPE("REQUESTCONTENTTYPE"),
 		URLEXTENSION("URLEXTENSION"),
-		REFERRERURL("REFERRERURL"),
+		REFERRER("REFERRER"),
 		HASQUERYSTRINGPARAM("HASQUERYSTRINGPARAM"),
 		HASBODYPARAM("HASBODYPARAM"),
 		HASCOOKIEPARAM("HASCOOKIEPARAM"),
 		REQUESTLENGTH("REQUESTLENGTH"),
 		RESPONSECONTENTTYPE("RESPONSECONTENTTYPE"),
-		RESPONSEINFERREDCONTENTTYPE_BURP("RESPONSEINFERREDCONTENTTYPE_BURP"),
+		INFERREDTYPE("INFERREDTYPE"),
 		HASSETCOOKIES("HASSETCOOKIES"),
 		PARAMS("PARAMS"),
 		TITLE("TITLE"),
@@ -687,8 +672,7 @@ public class LogEntry extends RowFilter.Entry
 		NEWCOOKIES("NEWCOOKIES"),
 		LISTENERINTERFACE("LISTENERINTERFACE"),
 		CLIENTIP("CLIENTIP"),
-		ISCOMPLETED("ISCOMPLETED"),
-		UNIQUEIDENTIFIER("UNIQUEIDENTIFIER"),
+		COMPLETE("COMPLETE"),
 		SENTCOOKIES("SENTCOOKIES"),
 		USESCOOKIEJAR("USESCOOKIEJAR"),
 		REGEX1REQ("REGEX1REQ"),
@@ -716,7 +700,7 @@ public class LogEntry extends RowFilter.Entry
 		}
 	}
 
-	public boolean testColorFilter(ColorFilter colorFilter, boolean retest){
+	public synchronized boolean testColorFilter(ColorFilter colorFilter, boolean retest){
 		if(!colorFilter.isEnabled() || colorFilter.getFilter() == null){
 			return this.getMatchingColorFilters().remove(colorFilter.getUid());
 		}
