@@ -16,24 +16,19 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.DefaultFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.List;
 
 public class LoggerOptionsPanel extends JPanel{
 
-    private final burp.IBurpExtenderCallbacks callbacks;
     private final PrintWriter stdout;
     private final PrintWriter stderr;
-    private File autoSaveCSVFile;
     private boolean canSaveCSV;
     private final LoggerPreferences loggerPreferences;
-    private final ExcelExporter exp = new ExcelExporter();
 
     private JToggleButton tglbtnIsEnabled = new JToggleButton("Logger++ is running");
     private JCheckBox chckbxIsRestrictedToScope = new JCheckBox("In scope items only");
@@ -58,20 +53,19 @@ public class LoggerOptionsPanel extends JPanel{
     private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the table settings.");
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
+    private final FileLogger fileLogger;
 
-    private final boolean isDebug;
 
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel(final IBurpExtenderCallbacks callbacks, final PrintWriter stdout, final PrintWriter stderr, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
-        this.callbacks = callbacks;
+    public LoggerOptionsPanel(final PrintWriter stdout, final PrintWriter stderr, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
         this.stdout = stdout;
         this.stderr = stderr;
         this.canSaveCSV = canSaveCSV;
         this.loggerPreferences = loggerPreferences;
         this.loggerPreferences.setAutoSave(false);
-        this.isDebug = isDebug;
+        this.fileLogger = new FileLogger();
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
@@ -101,16 +95,7 @@ public class LoggerOptionsPanel extends JPanel{
         btnSaveLogsButton.setFont(new Font("Tahoma", Font.PLAIN, 13));
         btnSaveLogsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                try {
-                    File csvFile = getSaveFile("logger++_table", false);
-                    if (csvFile != null) {
-                        exp.exportTable(csvFile, false, false, true);
-                    }
-
-                } catch (IOException ex) {
-                    stderr.println(ex.getMessage());
-                    ex.printStackTrace();
-                }
+                fileLogger.saveLogs(false);
             }
         });
         gbc.gridx = 3;
@@ -133,17 +118,7 @@ public class LoggerOptionsPanel extends JPanel{
         gbc.gridx = 3;
         btnSaveFullLogs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                try {
-                    File csvFile = getSaveFile("logger++_full", false);
-                    if (csvFile != null) {
-                        exp.exportTable(csvFile, true, false, true);
-                    }
-
-                } catch (IOException ex) {
-                    stderr.println(ex.getMessage());
-                    ex.printStackTrace();
-
-                }
+                fileLogger.saveLogs(true);
             }
 
 
@@ -172,12 +147,12 @@ public class LoggerOptionsPanel extends JPanel{
         gbc.gridy++;
         add(lblLogFrom, gbc);
         gbc.gridx = 3;
-        btnImport.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                importFromFile();
-            }
-        });
+//        btnImport.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent actionEvent) {
+//                importFromFile();
+//            }
+//        });
 //        add(btnImport, gbc);
         gbc.gridx = 2;
         add(chckbxAllTools, gbc);
@@ -239,6 +214,7 @@ public class LoggerOptionsPanel extends JPanel{
                 loggerPreferences.resetLoggerPreferences();
                 BurpExtender.getInstance().getLogTable().getColumnModel().resetToDefaultVariables();
                 BurpExtender.getInstance().getLogTable().getModel().fireTableStructureChanged();
+                fileLogger.setAutoSave(false);
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
@@ -293,241 +269,6 @@ public class LoggerOptionsPanel extends JPanel{
 
         setPreferencesValues();
         setComponentsActions();
-    }
-
-    public void autoLogItem(LogEntry entry) {
-        try {
-            exp.exportItem(entry, false, true);
-        } catch (IOException e) {
-            stderr.write("Could not write log item. Autologging has been disabled.");
-            MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
-            this.autoSaveCSVFile = null;
-            this.loggerPreferences.setAutoSave(false);
-        }
-    }
-
-
-    // source: http://book.javanb.com/swing-hacks/swinghacks-chp-3-sect-6.html
-    public class ExcelExporter {
-
-        public void addHeader(File file, boolean isFullLog) throws IOException {
-            FileWriter out = new FileWriter(file, true);
-            out.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog));
-            out.write("\n");
-            out.close();
-        }
-
-        public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
-
-            FileWriter out = new FileWriter(file, append);
-
-            boolean includeHeader = header;
-
-            for (LogEntry item : BurpExtender.getInstance().getLog()) {
-                if (includeHeader) {
-                    out.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog));
-                    out.write("\n");
-                    includeHeader = false;
-                }
-                out.write(item.toCSVString(isFullLog));
-
-                out.write("\n");
-            }
-
-            out.close();
-            MoreHelp.showMessage("Log saved to " + file.getAbsolutePath() + file.getName());
-        }
-
-        public void exportItem(LogEntry logEntry, boolean isFullLog, boolean append) throws IOException {
-            FileWriter autoSaveWriter = null;
-            try {
-                autoSaveWriter = new FileWriter(autoSaveCSVFile, append);
-                autoSaveWriter.write(logEntry.toCSVString(isFullLog));
-                autoSaveWriter.write("\n");
-            }catch (Exception e){
-                MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
-                loggerPreferences.setAutoSave(false);
-            }finally {
-                if(autoSaveWriter != null) {
-                    autoSaveWriter.close();
-                }
-            }
-        }
-
-    }
-
-
-    // source: https://community.oracle.com/thread/1357495?start=0&tstart=0
-    private File getSaveFile(String filename, boolean allowAppend) {
-        File csvFile = null;
-        JFileChooser chooser = null;
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel Format (CSV)", "csv");
-        chooser = new JFileChooser();
-        chooser.setDialogTitle("Saving Database");
-        chooser.setFileFilter(filter);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setSelectedFile(new File(filename + ".csv"));
-        chooser.setAcceptAllFileFilterUsed(false);
-
-        int val = chooser.showSaveDialog((Component) null);
-
-        if (val == JFileChooser.APPROVE_OPTION) {
-            csvFile = fixExtension(chooser.getSelectedFile(), "csv");
-            if (csvFile == null) {
-                JOptionPane.showMessageDialog(null, "File Name Specified Not Supported",
-                        "File Name Error", JOptionPane.ERROR_MESSAGE);
-                return getSaveFile(filename, allowAppend);
-            }
-
-            try {
-                if (csvFile.exists()) {
-                    if (allowAppend && validHeader(csvFile, false)) {
-                        csvFile = appendOrOverwrite(csvFile);
-                    } else {
-                        csvFile = checkOverwrite(csvFile);
-                    }
-                } else {
-                    csvFile.createNewFile();
-                }
-            } catch (IOException e) {
-                MoreHelp.showMessage("Could not create file. Do you have permissions for the folder?");
-                return null;
-            }
-            return csvFile;
-        }
-
-        return null;
-    }
-
-    //TODO Check if header in file matches that of the columns we will be exporting.
-    private boolean validHeader(File csvFile, boolean isFullLog) {
-        BufferedReader reader;
-        try {
-            reader = new BufferedReader(new FileReader(csvFile));
-        } catch (FileNotFoundException e) {
-            return true;
-        }
-        try {
-            String thisHeader = LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog);
-            String oldHeader = reader.readLine();
-            return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
-        } catch (IOException e) {
-            return true;
-        }
-    }
-
-    private File fixExtension(File file, String prefExt) {
-        String fileName = file.getName();
-        String dir = file.getParentFile().getAbsolutePath();
-
-        String ext = null;
-
-        try {
-            ext = fileName.substring(fileName.lastIndexOf("."), fileName.length());
-            stdout.println("Original File Extension: " + ext);
-        } catch (StringIndexOutOfBoundsException e) {
-            ext = null;
-        }
-
-        if (ext != null && !ext.equalsIgnoreCase("." + prefExt)) {
-            return file;
-        }
-
-        String csvName;
-
-        if (ext == null || ext.length() == 0) {
-            csvName = fileName + "." + prefExt;
-        } else {
-            csvName = fileName.substring(0, fileName.lastIndexOf(".") + 1) + prefExt;
-        }
-
-        stdout.println("Corrected File Name: " + csvName);
-
-        File csvCert = new File(dir, csvName);
-
-        return csvCert;
-    }
-
-    private File checkOverwrite(File file) throws IOException {
-        int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
-                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (val == JOptionPane.NO_OPTION) {
-            return getSaveFile(file.getName(), false);
-        } else if (val == JOptionPane.CANCEL_OPTION) {
-            return null;
-        }
-        file.delete();
-        file.createNewFile();
-        return file;
-    }
-
-    private File appendOrOverwrite(File file) throws IOException {
-        Object[] options = {"Append",
-                "Overwrite", "Cancel"};
-        int val = JOptionPane.showOptionDialog(null,
-                "Append to, or overwrite the existing file?", "File Exists",
-                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-        if (val == JOptionPane.YES_OPTION) {
-            return file;
-        } else if (val == JOptionPane.NO_OPTION) {
-            file.delete();
-            file.createNewFile();
-            return file;
-        } else {
-            return null;
-        }
-    }
-
-    private void importFromFile(){
-        File csvFile = null;
-        JFileChooser chooser = null;
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel Format (CSV)", "csv");
-        chooser = new JFileChooser();
-        chooser.setDialogTitle("Opening Database");
-        chooser.setFileFilter(filter);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.showOpenDialog(this);
-        csvFile = chooser.getSelectedFile();
-
-
-        if(csvFile != null && csvFile.exists()){
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(csvFile));
-                String line = reader.readLine();
-                ArrayList<String> foundColumns = columnsFromHeadString(line);
-                if(foundColumns != null){
-                    BurpExtender.getInstance().reset();
-                    while((line = reader.readLine()) != null) {
-                        //TODO Generate and logentry from csv
-                    }
-                }else{
-                    MoreHelp.showMessage("Could not import from file. Column titles not recognised.");
-                    return;
-                }
-            } catch (FileNotFoundException e) {
-                MoreHelp.showMessage("Could not import from file. The file does not exist.");
-                return;
-            } catch (IOException e) {
-                MoreHelp.showMessage("Could not import from file. The file could not be read.");
-                return;
-            }
-        }
-    }
-
-    private ArrayList<String> columnsFromHeadString(String headerString){
-        ArrayList<String> columns = new ArrayList<>();
-        String[] colNames = headerString.split(",");
-        for (String columnName : colNames) {
-            LogTableColumn col;
-            if((col = BurpExtender.getInstance().getLogTable().getColumnModel().getColumnByName(columnName)) != null){
-                columns.add(col.getName().toUpperCase());
-            }else{
-                return null;
-            }
-        }
-        return columns;
     }
 
 
@@ -615,35 +356,12 @@ public class LoggerOptionsPanel extends JPanel{
         btnAutoSaveLogs.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                setAutoSave(!loggerPreferences.getAutoSave());
+                fileLogger.setAutoSave(!loggerPreferences.getAutoSave());
             }
         });
     }
 
     public void setAutoSaveBtn(boolean enabled){
-        btnAutoSaveLogs.setSelected(enabled);
-    }
-
-    private void setAutoSave(boolean enabled) {
-        if (enabled) {
-            autoSaveCSVFile = getSaveFile("logger++_auto", true);
-            if (autoSaveCSVFile != null) {
-                loggerPreferences.setAutoSave(true);
-                if (autoSaveCSVFile.length() == 0) {
-                    try {
-                        exp.addHeader(autoSaveCSVFile, false);
-                    } catch (IOException ioException) {
-                        enabled = false;
-                        autoSaveCSVFile = null;
-                    }
-                }
-            } else {
-                enabled = false;
-            }
-        } else {
-            autoSaveCSVFile = null;
-        }
-        loggerPreferences.setAutoSave(enabled);
         btnAutoSaveLogs.setSelected(enabled);
     }
 
@@ -691,5 +409,9 @@ public class LoggerOptionsPanel extends JPanel{
                 e.printStackTrace();
             }
         }
+    }
+
+    public FileLogger getFileLogger() {
+        return fileLogger;
     }
 }

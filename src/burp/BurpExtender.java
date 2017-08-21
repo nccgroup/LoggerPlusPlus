@@ -65,6 +65,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private LoggerPreferences.View currentReqRespView;
 	ScheduledFuture cleanup;
 	int totalRequests = 0;
+	ArrayList<LogEntryListener> logEntryListeners;
 	//
 	// implement IBurpExtender
 	//
@@ -80,6 +81,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		this.callbacks = callbacks;
 		// obtain an extension helpers object
 		this.helpers = callbacks.getHelpers();
+		logEntryListeners = new ArrayList<>();
 
 		// obtain our output stream
 		stdout = new PrintWriter(callbacks.getStdout(), true);
@@ -105,9 +107,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		logTable = new LogTable(log, stdout, stderr, isDebug);
 
 		// Options Panel
-		optionsJPanel = new LoggerOptionsPanel(callbacks, stdout, stderr, canSaveCSV, loggerPreferences, isDebug);
+		optionsJPanel = new LoggerOptionsPanel(stdout, stderr, canSaveCSV, loggerPreferences, isDebug);
 		// About Panel
-		aboutJPanel = new AboutPanel(callbacks, stdout, stderr, loggerPreferences, isDebug); //Options
+		aboutJPanel = new AboutPanel(); //Options
 
 		//Add ui elements to ui.
 		SwingUtilities.invokeLater(new Runnable() 
@@ -507,9 +509,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 									}
 									int newRow = pendingRequest.logRow - loggerPreferences.getMaximumEntries() - totalRequests;
 									logTable.getModel().fireTableRowsUpdated(newRow, newRow);
+
+									for (LogEntryListener logEntryListener : logEntryListeners) {
+										logEntryListener.onResponseReceived(pendingRequest);
+									}
+
 								} else {
 									lateResponses++;
-									if(log.size() > 100 && ((float)lateResponses)/log.size() > 0.1){
+									if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
 										MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
 									}
 								}
@@ -546,19 +553,19 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							if(logEntry instanceof LogEntry.PendingRequestEntry){
 								((LogEntry.PendingRequestEntry) logEntry).logRow = totalRequests;
 							}
+							for (LogEntryListener logEntryListener : logEntryListeners) {
+								logEntryListener.onRequestReceived(logEntry);
+							}
 						}
 						if (isAtBottom)
 							logTableScrollBar.setValue(logTableScrollBar.getMaximum() + logTable.getRowHeight());
-						if (loggerPreferences.getAutoSave()) {
-							optionsJPanel.autoLogItem(logEntry);
-						}
 					}
 				}
 			}
 		}
 	}
 
-	public void popOut(){
+	void popOut(){
 		final JFrame popout = new JFrame();
 		popout.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		popout.setVisible(true);
@@ -735,5 +742,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public PrintWriter getStdout() {
 		return stdout;
+	}
+
+	public void addLogListener(LogEntryListener listener) {
+		logEntryListeners.add(listener);
+	}
+
+	public void removeLogListener(LogEntryListener listener) {
+		logEntryListeners.remove(listener);
 	}
 }

@@ -433,13 +433,13 @@ public class LogEntry extends RowFilter.Entry
 			case 42: //regex5Resp
 				return regexAllResp[4];
 			case 43: //request
-				return requestResponse != null ? new String(requestResponse.getRequest()) : "";
+				return requestResponse != null && requestResponse.getRequest() != null ? new String(requestResponse.getRequest()) : "";
 			case 44: //response
-				return requestResponse != null ? new String(requestResponse.getResponse()) : "";
+				return requestResponse != null && requestResponse.getResponse() != null ? new String(requestResponse.getResponse()) : "";
 			case 45: //responseTime
-				return responseTime;
+				return responseTime != null ? responseTime : "";
 			case 46: //requestResponseDelay
-				return requestResponseDelay;
+				return requestResponseDelay != null ? requestResponseDelay : "";
 			default:
 				return null;
 		}
