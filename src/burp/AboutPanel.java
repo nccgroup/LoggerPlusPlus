@@ -35,16 +35,15 @@ public class AboutPanel extends JPanel {
 	private final PrintWriter stdout;
 	private final PrintWriter stderr;
 	private final LoggerPreferences loggerPreferences;
-	private final boolean isDebug;
 	/**
 	 * Create the panel.
 	 */
-	public AboutPanel(IBurpExtenderCallbacks callbacks, PrintWriter stdout, PrintWriter stderr, final LoggerPreferences loggerPreferences, boolean isDebug) {
-		this.callbacks = callbacks;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.loggerPreferences = loggerPreferences;
-		this.isDebug  = isDebug;
+	public AboutPanel() {
+		BurpExtender burp = BurpExtender.getInstance();
+		this.callbacks = burp.getCallbacks();
+		this.stdout = burp.getStdout();
+		this.stderr = burp.getStderr();
+		this.loggerPreferences = burp.getLoggerPreferences();
 
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{0, 86, 80, 248, 0};

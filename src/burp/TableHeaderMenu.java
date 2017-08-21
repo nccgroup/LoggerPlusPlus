@@ -196,6 +196,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		//TODO constant csv format?
 		if(BurpExtender.getInstance().getLoggerPreferences().getAutoSave()){
 			BurpExtender.getInstance().getLoggerPreferences().setAutoSave(false);
+			BurpExtender.getInstance().getLoggerOptionsPanel().getFileLogger().setAutoSave(false);
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
 		logTable.saveTableChanges();
