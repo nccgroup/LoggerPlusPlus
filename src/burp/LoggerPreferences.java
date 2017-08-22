@@ -24,7 +24,7 @@ import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	private final double version = 3.0;
+	private final double version = 3.01;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";
@@ -283,6 +283,10 @@ public class LoggerPreferences {
 			setVersion(getVersion());
 		}
 
+		loadAllSettings();
+	}
+
+	private void loadAllSettings(){
 		isDebugMode = getBooleanSetting("isDebug", false);
 		updateOnStartup = getBooleanSetting("updateonstartup", true);
 		isEnabled = getBooleanSetting("enabled", true);
@@ -302,12 +306,13 @@ public class LoggerPreferences {
 		this.colorFilters = gson.fromJson(colorFilters, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
 		responseTimeout = getLongSetting("responsetimeout", 60000);
 		maximumEntries = getIntSetting("maximumentries", 5000);
-		view = View.valueOf(getStringSetting("layout", "HORIZONTAL"));
-		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "VERTICAL"));
+		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
+		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "HORIZONTAL"));
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
 		String val = BurpExtender.getInstance().getCallbacks().loadExtensionSetting(setting);
+		if(val == null) return fallback;
 		try {
 			return Boolean.valueOf(val);
 		}catch(NullPointerException nPException){
@@ -362,9 +367,34 @@ public class LoggerPreferences {
 		setEnabled4Extender(true);
 		setEnabled4TargetTab(true);
 		setLoggingFiltered(false);
-		setTableDetailsJSONString("");
 		BurpExtender.getInstance().setLayout(View.VERTICAL);
 		BurpExtender.getInstance().setRequestResponseLayout(View.HORIZONTAL);
+
+		setAutoSave(false);
+		resetTableSettings();
+	}
+
+	private void clearSettings(){
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("isDebug", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("updateonstartup", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("enabled", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("restricttoscope", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logglobal", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logproxy", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logtargettab", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logextender", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logsequencer", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logrepeater", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logscanner", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logintruder", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logspider", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("filterlog", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("tabledetailsjson", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("colorfilters", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("responsetimeout", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("maximumentries", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("layout", null);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("msgviewlayout", null);
 	}
 	
 	public void resetTableSettings(){

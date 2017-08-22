@@ -15,13 +15,11 @@ package burp;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URI;
-import java.util.ArrayList;
 
 public class LoggerOptionsPanel extends JPanel{
 
@@ -228,12 +226,9 @@ public class LoggerOptionsPanel extends JPanel{
         JButton btnClearTheLog = new JButton("Clear the logs");
         btnClearTheLog.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                //BurpExtender.logTableReset();
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
-
                 BurpExtender.getInstance().reset();
-
                 BurpExtender.getInstance().getLogTable().getModel().fireTableDataChanged();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
@@ -349,7 +344,7 @@ public class LoggerOptionsPanel extends JPanel{
 
         tglbtnIsEnabled.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent arg0) {
-                toggleButtonAction(tglbtnIsEnabled, tglbtnIsEnabled.isSelected());
+                toggleEnabledButton(tglbtnIsEnabled.isSelected());
             }
         });
 
@@ -365,10 +360,10 @@ public class LoggerOptionsPanel extends JPanel{
         btnAutoSaveLogs.setSelected(enabled);
     }
 
-    private void toggleButtonAction(JToggleButton targetToggleBtn, boolean isSelected) {
-        if (targetToggleBtn.equals(tglbtnIsEnabled)) {
-            targetToggleBtn.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
-            targetToggleBtn.setSelected(isSelected);
+    private void toggleEnabledButton(boolean isSelected) {
+        if (tglbtnIsEnabled.equals(this.tglbtnIsEnabled)) {
+            tglbtnIsEnabled.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
+            tglbtnIsEnabled.setSelected(isSelected);
             loggerPreferences.setEnabled(isSelected);
         }
     }
@@ -387,8 +382,7 @@ public class LoggerOptionsPanel extends JPanel{
         chckbxProxy.setSelected(loggerPreferences.isEnabled4Proxy());
         chckbxExtender.setSelected(loggerPreferences.isEnabled4Extender());
         chckbxTarget.setSelected(loggerPreferences.isEnabled4TargetTab());
-
-        toggleButtonAction(tglbtnIsEnabled, loggerPreferences.isEnabled());
+        toggleEnabledButton(loggerPreferences.isEnabled());
 
         if (!canSaveCSV) {
             btnSaveLogsButton.setEnabled(false);
