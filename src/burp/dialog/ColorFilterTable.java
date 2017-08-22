@@ -1,10 +1,14 @@
-package burp;
+package burp.dialog;
 
+import burp.ColorEditor;
+import burp.ColorRenderer;
+import burp.LogTable;
 import burp.filter.ColorFilter;
 import burp.filter.FilterListener;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,7 +36,7 @@ public class ColorFilterTable extends JTable {
         this.getColumnModel().getColumn(2).setCellEditor(new ColorEditor());
         this.getColumnModel().getColumn(3).setCellRenderer(new ColorRenderer(true));
         this.getColumnModel().getColumn(3).setCellEditor(new ColorEditor());
-        this.getColumnModel().getColumn(5).setCellRenderer(new LogTable.JTableButtonRenderer());
+        this.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
 
 
         this.setDragEnabled(true);
@@ -71,22 +75,6 @@ public class ColorFilterTable extends JTable {
         if(this.getSelectedRow() >= 0 && this.getSelectedRow() < this.getRowCount()){
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
-        }
-    }
-
-    static class FilterRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if(((ColorFilterTableModel) table.getModel()).getFilterAtRow(row) != null){
-                c.setBackground(new Color(76,255, 155));
-                c.setForeground(Color.BLACK);
-            }else{
-                c.setBackground(new Color(221, 70, 57));
-                c.setForeground(Color.WHITE);
-            }
-
-            return c;
         }
     }
 }

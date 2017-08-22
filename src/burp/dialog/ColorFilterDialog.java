@@ -1,5 +1,6 @@
-package burp;
+package burp.dialog;
 
+import burp.BurpExtender;
 import burp.filter.ColorFilter;
 import burp.filter.FilterListener;
 
@@ -9,7 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,15 +22,13 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
     private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
     private Map<UUID, ColorFilter> originalFilters;
-    private LoggerPreferences prefs;
     private final ColorFilterTable filterTable;
 
-    public ColorFilterDialog(LoggerPreferences prefs, ArrayList<FilterListener> listeners){
-        this.filters = prefs.getColorFilters();
+    public ColorFilterDialog(ArrayList<FilterListener> listeners){
+        this.filters = BurpExtender.getInstance().getLoggerPreferences().getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
-        this.prefs = prefs;
         this.addComponentListener(this);
         buildDialog();
         pack();
@@ -83,7 +81,7 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
                 ((ColorFilterTableModel) filterTable.getModel()).removeAll();
             }
         });
-        JPanel rightPanel = new JPanel();
+        JPanel rightPanel = new JPanel(new BorderLayout());
         JButton btnAddFilter = new JButton("Add Filter");
         btnAddFilter.addActionListener(new ActionListener() {
             @Override
@@ -99,8 +97,8 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
                 _this.setVisible(false);
             }
         });
-        rightPanel.add(btnAddFilter);
-        rightPanel.add(btnClose);
+        rightPanel.add(btnAddFilter, BorderLayout.WEST);
+        rightPanel.add(btnClose, BorderLayout.EAST);
         buttonPanel.add(btnDeleteAll, BorderLayout.WEST);
         buttonPanel.add(rightPanel, BorderLayout.EAST);
         content.add(buttonPanel, gbcFooter);
@@ -155,7 +153,7 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         }
         //Update set original filters for next open
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
-        prefs.setColorFilters(filters);
+        BurpExtender.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
 
     public ColorFilterTable getFilterTable() {

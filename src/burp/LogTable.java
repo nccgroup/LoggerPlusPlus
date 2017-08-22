@@ -154,7 +154,7 @@ public class LogTable extends JTable
                         String value = "\"" + String.valueOf(getModel().getValueAt(row, col)) + "\"";
                         try {
                             Filter filter = new Filter(columnName, "==", value);
-                            setFilter(filter, BurpExtender.getInstance().getFilterField());
+                            BurpExtender.getInstance().setFilter(filter);
                         } catch (Filter.FilterException e1) {return;}
                     }
                 });
@@ -170,7 +170,7 @@ public class LogTable extends JTable
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
                                 Filter filter = new CompoundFilter(getCurrentFilter(), "&&", rFilter);
-                                setFilter(filter, BurpExtender.getInstance().getFilterField());
+                                BurpExtender.getInstance().setFilter(filter);
                             } catch (Filter.FilterException e1) {
                                 return;
                             }
@@ -184,7 +184,7 @@ public class LogTable extends JTable
                             try {
                                 Filter rFilter = new Filter(columnName, "==", value);
                                 Filter filter = new CompoundFilter(getCurrentFilter(), "||", rFilter);
-                                setFilter(filter, BurpExtender.getInstance().getFilterField());
+                                BurpExtender.getInstance().setFilter(filter);
                             } catch (Filter.FilterException e1) {
                                 return;
                             }
@@ -193,7 +193,6 @@ public class LogTable extends JTable
                     addToCurrentFilter.add(andFilter);
                     addToCurrentFilter.add(orFilter);
                     popup.add(addToCurrentFilter);
-
                 }
 
                 JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set as Color Filter") {
@@ -224,33 +223,6 @@ public class LogTable extends JTable
 
     public void setFilter(Filter filter){
         ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
-    }
-
-    public void setFilter(JTextComponent filterField){
-        if(filterField.getText().length() == 0){
-            setFilter(null, filterField);
-        }else{
-            try{
-                Filter filter = FilterCompiler.parseString(filterField.getText());
-                setFilter(filter);
-                filterField.setText(filter.toString());
-                filterField.setBackground(Color.green);
-            }catch (Filter.FilterException fException){
-                setFilter((Filter) null);
-                filterField.setBackground(Color.RED);
-            }
-        }
-    }
-
-    public void setFilter(Filter filter, JTextComponent filterField){
-        if(filter == null){
-            setFilter((Filter) null);
-            filterField.setBackground(Color.white);
-        } else {
-            setFilter(filter);
-            filterField.setText(filter.toString());
-            filterField.setBackground(Color.green);
-        }
     }
 
     @Override
@@ -292,12 +264,6 @@ public class LogTable extends JTable
     static class LeftTableCellRenderer extends DefaultTableCellRenderer {
         protected  LeftTableCellRenderer() {
             setHorizontalAlignment(SwingConstants.LEFT);
-        }
-    }
-    static class JTableButtonRenderer implements TableCellRenderer {
-        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            JButton button = (JButton)value;
-            return button;
         }
     }
 
