@@ -1,4 +1,4 @@
-package burp;
+package burp.dialog;
 
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
@@ -68,6 +68,10 @@ public class ColorFilterTableModel extends AbstractTableModel {
             default:
                 return false;
         }
+    }
+
+    public boolean validFilterAtRow(int row) {
+        return getFilterAtRow(row) != null;
     }
 
     public Filter getFilterAtRow(int row){

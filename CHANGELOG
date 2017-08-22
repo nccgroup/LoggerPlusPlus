@@ -1,3 +1,7 @@
+v 3.02
+=========================================================================
+- Ability to save a library of filters.
+
 v 3.01
 =========================================================================
 - Fix issue where columns would not be reloaded after a restart.

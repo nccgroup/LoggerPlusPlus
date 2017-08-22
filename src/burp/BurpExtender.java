@@ -12,11 +12,16 @@
 
 package burp;
 
+import burp.dialog.ColorFilterDialog;
+import burp.dialog.ColorFilterTableModel;
+import burp.dialog.SavedFiltersDialog;
 import burp.filter.ColorFilter;
+import burp.filter.Filter;
+import burp.filter.FilterCompiler;
 import burp.filter.FilterListener;
 
 import javax.swing.*;
-import javax.swing.border.Border;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.PrintWriter;
@@ -64,9 +69,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JMenu loggerMenu;
 	private LoggerPreferences.View currentView;
 	private LoggerPreferences.View currentReqRespView;
-	ScheduledFuture cleanup;
-	int totalRequests = 0;
-	ArrayList<LogEntryListener> logEntryListeners;
+	private int totalRequests = 0;
+	private short lateResponses = 0;
+	private ArrayList<LogEntryListener> logEntryListeners;
 	private JFrame popJFrame;
 	private JMenuItem popoutbutton;
 	private boolean isPoppedOut;
@@ -289,8 +294,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			@Override
 			public void run() {
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-				int count = 0;
-				String refs = "";
 				Set<Integer> keys = new HashSet<>(pendingRequests.keySet());
 				synchronized (pendingRequests){
 					for (Integer reference : keys) {
@@ -298,8 +301,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							Date date = dateFormat.parse(pendingRequests.get(reference).requestTime);
 							if(new Date().getTime() - date.getTime() > BurpExtender.getInstance().getLoggerPreferences().getResponseTimeout()){
 								pendingRequests.remove(reference);
-								refs += reference + ", ";
-								count++;
 							}
 						} catch (ParseException e) {
 							pendingRequests.remove(reference);
@@ -309,7 +310,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			}
 		};
 
-		cleanup = executor.scheduleAtFixedRate(cleanupTask, 30000, 30000, TimeUnit.MILLISECONDS);
+		executor.scheduleAtFixedRate(cleanupTask, 30000, 30000, TimeUnit.MILLISECONDS);
 	}
 
 	public static BurpExtender getInstance() {
@@ -380,33 +381,33 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	private JPanel getFilterPanel(){
 		JPanel filterPanel = new JPanel(new GridBagLayout());
-		colorFilterDialog = new ColorFilterDialog(loggerPreferences, filterListeners);
+		colorFilterDialog = new ColorFilterDialog(filterListeners);
 
 		filterField = new JTextField();
 		filterField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
 		filterField.getActionMap().put("submit", new AbstractAction() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				logTable.setFilter(filterField);
+				setFilter(filterField.getText());
 			}
 		});
 		GridBagConstraints fieldConstraints = new GridBagConstraints();
 		fieldConstraints.fill = GridBagConstraints.BOTH;
 		fieldConstraints.gridx = 0;
-		fieldConstraints.weightx = fieldConstraints.weighty = 6.0;
+		fieldConstraints.weightx = fieldConstraints.weighty = 99.0;
 
-		final JButton filterButton = new JButton("Filter");
+		final JButton filterButton = new JButton("Saved Filters");
 		filterButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				logTable.setFilter(filterField);
+				new SavedFiltersDialog().setVisible(true);
 			}
 		});
 
 		GridBagConstraints filterBtnConstraints = new GridBagConstraints();
 		filterBtnConstraints.fill = GridBagConstraints.BOTH;
 		filterBtnConstraints.gridx = 1;
-		filterBtnConstraints.weightx = filterBtnConstraints.weighty = 1.0;
+		filterBtnConstraints.weightx = filterBtnConstraints.weighty = 2.0;
 
 		final JButton colorFilterButton = new JButton("Colorize");
 		colorFilterButton.addActionListener(new ActionListener() {
@@ -462,7 +463,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
 		logIt(IBurpExtenderCallbacks.TOOL_PROXY, messageIsRequest, null, message);
 	}
-	short lateResponses = 0;
+
 	private void logIt(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo,IInterceptedProxyMessage message){
 		// Is it enabled?
 		// We also have a separate module for the Proxy tool and we do it under processProxyMessage
@@ -620,6 +621,34 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		});
 
 		popJFrame.setVisible(true);
+	}
+
+	public void setFilter(String filterString){
+		if(filterField.getText().length() == 0){
+			setFilter((Filter) null);
+		}else{
+			try{
+				Filter filter = FilterCompiler.parseString(filterField.getText());
+				logTable.setFilter(filter);
+				filterField.setText(filter.toString());
+				filterField.setBackground(Color.green);
+			}catch (Filter.FilterException fException){
+				logTable.setFilter(null);
+				filterField.setBackground(Color.RED);
+			}
+		}
+	}
+
+	public void setFilter(Filter filter){
+		if(filter == null){
+			logTable.setFilter(null);
+			filterField.setText("");
+			filterField.setBackground(Color.white);
+		} else {
+			logTable.setFilter(filter);
+			filterField.setText(filter.toString());
+			filterField.setBackground(Color.green);
+		}
 	}
 
 	public void addColorFilter(ColorFilter colorFilter, boolean showDialog){

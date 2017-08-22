@@ -14,17 +14,21 @@ package burp;
 
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
+import burp.filter.SavedFilter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	private final double version = 3.01;
+	private final double version = 3.02;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";
@@ -51,6 +55,7 @@ public class LoggerPreferences {
 	private boolean logFiltered;
 	private String tableDetailsJSONString;
 	private boolean autoSave;
+	private ArrayList<SavedFilter> savedFilters;
 	private Map<UUID, ColorFilter> colorFilters;
 	private View view;
 	private View reqRespView;
@@ -220,6 +225,19 @@ public class LoggerPreferences {
 		this.colorFilters = colorFilters;
 	}
 
+	public synchronized ArrayList<SavedFilter> getSavedFilters() {
+		if(savedFilters == null){
+			setSavedFilters(new ArrayList<SavedFilter>());
+		}
+		return savedFilters;
+	}
+
+	public synchronized void setSavedFilters(ArrayList<SavedFilter> savedFilters) {
+		Type type = new TypeToken<List<SavedFilter>>() {}.getType();
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("savedfilters", gson.toJson(savedFilters, type));
+		this.savedFilters = savedFilters;
+	}
+
 	public void setResponseTimeout(long responseTimeout){
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("responsetimeout", String.valueOf(responseTimeout));
 		this.responseTimeout = responseTimeout;
@@ -270,16 +288,10 @@ public class LoggerPreferences {
 	public LoggerPreferences() {
 		double pastVersion = getDoubleSetting("version", 0.0);
 		if(pastVersion < getVersion()){
-			// an upgrade has been detected
-			// settings should be reset
-			MoreHelp.showMessage("A new version of Logger++ has been installed. LogTable settings will be reset in order to prevent any errors.");
-			resetTableSettings();
+			MoreHelp.showMessage("A new version of Logger++ has been installed. LogTable settings may be reset.");
 			setVersion(getVersion());
 		}else if(pastVersion > getVersion()){
-			// an upgrade has been detected
-			// settings should be reset
-			MoreHelp.showMessage("A newer version of Logger++ was installed previously. LogTable settings will be reset in order to prevent any errors.");
-			resetTableSettings();
+			MoreHelp.showMessage("A newer version of Logger++ was installed previously. LogTable settings may be reset.");
 			setVersion(getVersion());
 		}
 
@@ -304,6 +316,10 @@ public class LoggerPreferences {
 		tableDetailsJSONString = getStringSetting("tabledetailsjson", "");
 		String colorFilters = getStringSetting("colorfilters", "");
 		this.colorFilters = gson.fromJson(colorFilters, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
+		String savedFilters = getStringSetting("savedfilters", "");
+		this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
+		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
+		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
 		responseTimeout = getLongSetting("responsetimeout", 60000);
 		maximumEntries = getIntSetting("maximumentries", 5000);
 		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
@@ -390,7 +406,6 @@ public class LoggerPreferences {
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("logspider", null);
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("filterlog", null);
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("tabledetailsjson", null);
-		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("colorfilters", null);
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("responsetimeout", null);
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("maximumentries", null);
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("layout", null);
