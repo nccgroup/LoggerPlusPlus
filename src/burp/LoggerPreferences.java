@@ -299,6 +299,10 @@ public class LoggerPreferences {
 	}
 
 	private void loadAllSettings(){
+		String defaultColorFilter = "\"{2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
+				"\"filter\":{\"filter\":\"!COMPLETE\"},\"filterString\":\"!COMPLETE\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
+				"\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}\n";
+
 		isDebugMode = getBooleanSetting("isDebug", false);
 		updateOnStartup = getBooleanSetting("updateonstartup", true);
 		isEnabled = getBooleanSetting("enabled", true);
@@ -316,7 +320,7 @@ public class LoggerPreferences {
 		tableDetailsJSONString = getStringSetting("tabledetailsjson", "");
 		String colorFilters = getStringSetting("colorfilters", "");
 		this.colorFilters = gson.fromJson(colorFilters, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
-		String savedFilters = getStringSetting("savedfilters", "");
+		String savedFilters = getStringSetting("savedfilters", defaultColorFilter);
 		this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
