@@ -348,8 +348,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			column.setDescription(object.get("description").getAsString());
 			column.setIsRegEx(object.get("isRegEx").getAsBoolean());
 			LogTableColumn.RegExData regExData = new LogTableColumn.RegExData();
-			regExData.setRegExString(object.getAsJsonObject("regExData").get("regExString").getAsString());
-			regExData.setRegExCaseSensitive(object.getAsJsonObject("regExData").get("regExCaseSensitive").getAsBoolean());
+			regExData.setRegExString(object.get("regExString").getAsString());
+			regExData.setRegExCaseSensitive(object.get("regExCaseSensitive").getAsBoolean());
 			column.setRegExData(regExData);
 			return column;
 		}
