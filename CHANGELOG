@@ -1,3 +1,10 @@
+v 3.01
+=========================================================================
+- Fix issue where columns would not be reloaded after a restart.
+- Fix issue where Logger++ could be popped out multiple times.
+- Prevent autosave throwing an error on startup.
+- Fix issue with view option showing incorrect selection.
+
 v 3.0
 =========================================================================
 - Public beta release.

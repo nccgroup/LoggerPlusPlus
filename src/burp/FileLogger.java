@@ -182,7 +182,7 @@ public class FileLogger implements LogEntryListener{
             autoSaveFile = null;
             try{
                 autoSaveWriter.close();
-            } catch (IOException e) {}
+            } catch (Exception e) {}
             autoSaveWriter = null;
             BurpExtender.getInstance().removeLogListener(this);
         }

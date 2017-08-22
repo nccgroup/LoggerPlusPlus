@@ -16,6 +16,7 @@ import burp.filter.ColorFilter;
 import burp.filter.FilterListener;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.PrintWriter;
@@ -66,6 +67,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	ScheduledFuture cleanup;
 	int totalRequests = 0;
 	ArrayList<LogEntryListener> logEntryListeners;
+	private JFrame popJFrame;
+	private JMenuItem popoutbutton;
+	private boolean isPoppedOut;
 	//
 	// implement IBurpExtender
 	//
@@ -197,13 +201,14 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					});
 					loggerMenu.add(colorFilters);
 
-					final JMenuItem popout = new JMenuItem(new AbstractAction("Pop Out") {
+					popoutbutton = new JMenuItem(new AbstractAction("Pop Out") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							popOut();
+							if(isPoppedOut) popIn();
+							else popOut();
 						}
 					});
-					loggerMenu.add(popout);
+					loggerMenu.add(popoutbutton);
 
 					JMenu viewMenu = new JMenu("View");
 					ButtonGroup bGroup = new ButtonGroup();
@@ -213,7 +218,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.VERTICAL);
 						}
 					});
-//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
+					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
@@ -222,7 +227,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.HORIZONTAL);
 						}
 					});
-//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.HORIZONTAL);
+					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.HORIZONTAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
@@ -231,8 +236,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 							setLayout(LoggerPreferences.View.TABS);
 						}
 					});
-//					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.TABS);
+					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.TABS);
 					viewMenu.add(viewMenuItem);
+					bGroup.add(viewMenuItem);
 					loggerMenu.add(viewMenu);
 
 					viewMenu = new JMenu("Request/Response View");
@@ -245,6 +251,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.VERTICAL);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
@@ -253,6 +260,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.HORIZONTAL);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
@@ -261,6 +269,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.TABS);
 
 					loggerMenu.add(viewMenu);
 					menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
@@ -565,21 +574,33 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
+	JLabel poppedOutText = new JLabel("Logger++ is popped out.");
+	void popIn(){
+		mainUIWrapper.add(mainUI, BorderLayout.CENTER);
+		mainUIWrapper.remove(poppedOutText);
+		mainUIWrapper.revalidate();
+		popoutbutton.setText("Pop Out");
+		isPoppedOut = false;
+	}
+
 	void popOut(){
-		final JFrame popout = new JFrame();
-		popout.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		popout.setVisible(true);
-		popout.addWindowListener(new WindowListener() {
+		popJFrame = new JFrame();
+		popJFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		popJFrame.addWindowListener(new WindowListener() {
 			@Override
 			public void windowOpened(WindowEvent windowEvent) {
-				popout.add(mainUI);
-				popout.pack();
+				popJFrame.add(mainUI);
+				popoutbutton.setText("Pop In");
+				isPoppedOut = true;
+				poppedOutText.setHorizontalAlignment(SwingConstants.CENTER);
+				mainUIWrapper.add(poppedOutText, BorderLayout.CENTER);
+				mainUIWrapper.repaint();
+				popJFrame.pack();
 			}
 
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
-				mainUIWrapper.add(mainUI, BorderLayout.CENTER);
-				mainUIWrapper.revalidate();
+				popIn();
 			}
 
 			@Override
@@ -597,6 +618,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 			@Override
 			public void windowDeactivated(WindowEvent windowEvent) {}
 		});
+
+		popJFrame.setVisible(true);
 	}
 
 	public void addColorFilter(ColorFilter colorFilter, boolean showDialog){
