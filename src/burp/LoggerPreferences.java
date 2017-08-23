@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import javax.swing.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,8 @@ public class LoggerPreferences {
 	private final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
 	private final String changeLog = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
 	private final String updateURL = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
+	private int sortColumn;
+	private SortOrder sortOrder;
 
 	enum View {HORIZONTAL, VERTICAL, TABS;}
 	private boolean isDebugMode;
@@ -238,6 +241,25 @@ public class LoggerPreferences {
 		this.savedFilters = savedFilters;
 	}
 
+	public synchronized void setSortColumn(int columnIdentifier) {
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("sortcolumn", String.valueOf(columnIdentifier));
+		this.sortColumn = columnIdentifier;
+	}
+
+	public synchronized int getSortColumn(){
+		return this.sortColumn;
+	}
+
+	public synchronized void setSortOrder(SortOrder sortOrder){
+		String order = sortOrder == null ? null : String.valueOf(sortOrder);
+		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("sortorder", order);
+		this.sortOrder = sortOrder;
+	}
+
+	public synchronized SortOrder getSortOrder(){
+		return this.sortOrder;
+	}
+
 	public void setResponseTimeout(long responseTimeout){
 		BurpExtender.getInstance().getCallbacks().saveExtensionSetting("responsetimeout", String.valueOf(responseTimeout));
 		this.responseTimeout = responseTimeout;
@@ -324,6 +346,12 @@ public class LoggerPreferences {
 		this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
+		this.sortColumn = getIntSetting("sortcolumn", -1);
+		try {
+			this.sortOrder = SortOrder.valueOf(getStringSetting("sortorder", "ASCENDING"));
+		}catch (Exception e){
+			this.sortOrder = SortOrder.ASCENDING;
+		}
 		responseTimeout = getLongSetting("responsetimeout", 60000);
 		maximumEntries = getIntSetting("maximumentries", 5000);
 		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
