@@ -105,8 +105,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					+ "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
 		}   
 
+		//Load preferences before creating our objects;
 		loggerPreferences = new LoggerPreferences();
-		if(loggerPreferences.getColorFilters() == null) loggerPreferences.setColorFilters(new HashMap<UUID, ColorFilter>());
 		this.filterListeners.add(this);
 		this.isDebug = loggerPreferences.isDebugMode();
 

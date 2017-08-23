@@ -37,18 +37,6 @@ public class LogTable extends JTable
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
 
-        // another way to detect column dragging to save its settings for next time loading! fooh! seems tricky!
-        //			getLogTable().setTableHeader(new JTableHeader(getLogTable().getColumnModel()) {
-        //				@Override
-        //				public void setDraggedColumn(LogTableColumn column) {
-        //					boolean finished = draggedColumn != null && column == null;
-        //					super.setDraggedColumn(column);
-        //					if (finished) {
-        //						saveOrderTableChange(getLogTable(), getTableHeader());
-        //
-        //					}
-        //				}
-        //			});
         TableRowSorter rowSorter = new LogTableRowSorter();
         try {
             rowSorter.setModel(this.getModel());
@@ -58,6 +46,12 @@ public class LogTable extends JTable
             rowSorter.setModel(this.getModel());
         }
         setRowSorter(rowSorter);
+
+        Integer sortColumn = BurpExtender.getInstance().getLoggerPreferences().getSortColumn();
+        SortOrder sortOrder = BurpExtender.getInstance().getLoggerPreferences().getSortOrder();
+        if(sortColumn != -1 && sortOrder != null){
+            this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
+        }
 
         registerListeners();
     }
@@ -307,6 +301,15 @@ public class LogTable extends JTable
             this.tableModel = model;
             super.setModel(model);
             this.setModelWrapper(new TableRowSorterModelWrapper());
+            this.setMaxSortKeys(1);
+        }
+
+        @Override
+        public void setSortKeys(List list) {
+            super.setSortKeys(list);
+            SortKey sortKey = (SortKey) list.get(0);
+            BurpExtender.getInstance().getLoggerPreferences().setSortColumn(sortKey.getColumn());
+            BurpExtender.getInstance().getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
         }
 
         private class TableRowSorterModelWrapper extends ModelWrapper<LogTableModel, Integer> {
