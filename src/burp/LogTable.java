@@ -102,38 +102,26 @@ public class LogTable extends JTable
         {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if ( SwingUtilities.isRightMouseButton( e )) {
-                    Point p = e.getPoint();
-                    final int row = rowAtPoint(p);
-                    final int col = columnAtPoint(p);
-                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
-                        showContextMenu(e, row, col);
-                    }
-                }
+                onMouseEvent(e);
             }
 
             @Override
-            public void mouseReleased( MouseEvent e )
-            {
-                if ( SwingUtilities.isRightMouseButton( e ))
-                {
-                    Point p = e.getPoint();
-                    final int row = convertRowIndexToModel(rowAtPoint(p));
-                    final int col = convertColumnIndexToModel(columnAtPoint(p));
-                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
-                        showContextMenu(e, row, col);
-                    }
-                }
+            public void mouseReleased( MouseEvent e ){
+                onMouseEvent(e);
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if ( SwingUtilities.isRightMouseButton( e ))
-                {
+                onMouseEvent(e);
+            }
+
+            private void onMouseEvent(MouseEvent e){
+                if ( SwingUtilities.isRightMouseButton( e )){
                     Point p = e.getPoint();
                     final int row = convertRowIndexToModel(rowAtPoint(p));
                     final int col = convertColumnIndexToModel(columnAtPoint(p));
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                        getSelectionModel().setSelectionInterval(row, row);
                         showContextMenu(e, row, col);
                     }
                 }
