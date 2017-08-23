@@ -1,3 +1,7 @@
+v 3.04
+=========================================================================
+- Added more context menu options.
+
 v 3.03
 =========================================================================
 - Fix crash on launch if no filters are saved in the settings.

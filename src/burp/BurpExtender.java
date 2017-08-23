@@ -517,8 +517,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 									for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
 										pendingRequest.testColorFilter(colorFilter, true);
 									}
+									//Calculate adjusted row incase it's moved. Update 10 either side to account for deleted rows
 									int newRow = pendingRequest.logRow - loggerPreferences.getMaximumEntries() - totalRequests;
-									logTable.getModel().fireTableRowsUpdated(newRow, newRow);
+									logTable.getModel().fireTableRowsUpdated(newRow-10, newRow+10);
 
 									for (LogEntryListener logEntryListener : logEntryListeners) {
 										logEntryListener.onResponseReceived(pendingRequest);

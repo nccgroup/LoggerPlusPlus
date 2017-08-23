@@ -43,7 +43,7 @@ public class LogTableModel extends DefaultTableModel {
             return 0;
     }
 
-//    @Override
+    //    @Override
 //    public String getColumnName(int columnIndex)
 //    {
 //        if(this.columnModel.getColumn(columnIndex) != null) {
@@ -79,6 +79,11 @@ public class LogTableModel extends DefaultTableModel {
         }
     }
 
+    @Override
+    public void removeRow(int row) {
+        this.entries.remove(row);
+        this.fireTableRowsDeleted(row, row);
+    }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex)

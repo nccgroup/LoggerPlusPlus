@@ -87,8 +87,8 @@ public class LogEntry extends RowFilter.Entry
 		this.requestResponse = requestResponse;
 
 		this.url = url;
-		if(logTable.getColumnModel().isColumnEnabled("url")) // This is good to increase the speed when it is time consuming
-			this.relativeURL = url.getFile();
+		if(logTable.getColumnModel().isColumnEnabled("path")) // This is good to increase the speed when it is time consuming
+			this.relativeURL = url.getPath();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
@@ -270,6 +270,12 @@ public class LogEntry extends RowFilter.Entry
 			}
 		}
 
+		Pattern titlePattern = Pattern.compile("(?<=<title>)(.)+(?=</title>)");
+		Matcher titleMatcher = titlePattern.matcher(strFullResponse);
+		if(titleMatcher.find()){
+			this.title = titleMatcher.group(1);
+		}
+
 		// RegEx processing for responses - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
 		for(int i=0;i<5;i++){
@@ -355,9 +361,9 @@ public class LogEntry extends RowFilter.Entry
 			case 3://method
 				return method;
 			case 4: //url
-				return relativeURL;
+				return url;
 			case 5: //path
-				return (this.url != null ? (this.url.getPath() == null ? "" : this.url.getPath()) : "");
+				return this.relativeURL;
 			case 6: //query
 				return this.url != null ? (this.url.getQuery() == null ? "" : this.url.getQuery()) : "";
 			case 7: //params
@@ -517,9 +523,9 @@ public class LogEntry extends RowFilter.Entry
 				case TOOL:
 					return BurpExtender.getInstance().getCallbacks().getToolName(tool);
 				case URL:
-					return this.relativeURL;
+					return this.url;
 				case PATH:
-					return this.url.getPath();
+					return this.relativeURL;
 				case QUERY:
 					return this.url.getQuery();
 				case STATUS:
