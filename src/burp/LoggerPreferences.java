@@ -17,19 +17,17 @@ import burp.filter.Filter;
 import burp.filter.SavedFilter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import javax.swing.*;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	private final double version = 3.02;
+	private final double version = 3.03;
 	private final String appName = "Burp Suite Logger++";
 	private final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	private final String companyLink = "https://www.nccgroup.trust/";
@@ -321,10 +319,9 @@ public class LoggerPreferences {
 	}
 
 	private void loadAllSettings(){
-		String defaultColorFilter = "\"{2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
+		String defaultColorFilter = "{\"2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
 				"\"filter\":{\"filter\":\"!COMPLETE\"},\"filterString\":\"!COMPLETE\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
-				"\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}\n";
-
+				"\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
 		isDebugMode = getBooleanSetting("isDebug", false);
 		updateOnStartup = getBooleanSetting("updateonstartup", true);
 		isEnabled = getBooleanSetting("enabled", true);
@@ -340,10 +337,16 @@ public class LoggerPreferences {
 		isEnabled4Spider = getBooleanSetting("logspider", true);
 		logFiltered = getBooleanSetting("filterlog", false);
 		tableDetailsJSONString = getStringSetting("tabledetailsjson", "");
-		String colorFilters = getStringSetting("colorfilters", "");
-		this.colorFilters = gson.fromJson(colorFilters, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
-		String savedFilters = getStringSetting("savedfilters", defaultColorFilter);
-		this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
+		String colorFilters = getStringSetting("colorfilters", defaultColorFilter);
+		try {
+			this.colorFilters = gson.fromJson(colorFilters, new TypeToken<Map<UUID, ColorFilter>>() {}.getType());
+		}catch (JsonSyntaxException jSException){}
+		if(this.colorFilters == null) this.colorFilters = new HashMap<UUID, ColorFilter>();
+		String savedFilters = getStringSetting("savedfilters", "");
+		try{
+			this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
+		}catch (JsonSyntaxException jSException){}
+		if(this.savedFilters == null) this.savedFilters = new ArrayList<SavedFilter>();
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
 		BurpExtender.getInstance().getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
 		this.sortColumn = getIntSetting("sortcolumn", -1);

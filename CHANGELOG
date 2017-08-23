@@ -1,3 +1,8 @@
+v 3.03
+=========================================================================
+- Fix crash on launch if no filters are saved in the settings.
+- Sort order now persists over restarts.
+
 v 3.02
 =========================================================================
 - Ability to save a library of filters.
