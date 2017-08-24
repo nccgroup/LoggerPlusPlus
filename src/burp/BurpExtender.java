@@ -58,7 +58,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	private JTextField filterField;
 	private ColorFilterDialog colorFilterDialog;
 	private final ArrayList<FilterListener> filterListeners = new ArrayList<FilterListener>();
-	private JScrollBar logTableScrollBar;
+	private JScrollPane logTableScrollPane;
 	private JPanel logViewJPanelWrapper;
 	private JSplitPane logViewSplit;
 	private JTabbedPane logViewTabbed;
@@ -137,8 +137,34 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 				//LogTablePanel
 				logTablePanel = new JPanel(new GridBagLayout());
-				JScrollPane logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
-				logTableScrollBar = logTableScrollPane.getVerticalScrollBar();
+				logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
+
+				logTableScrollPane.addMouseWheelListener(new MouseWheelListener() {
+					@Override
+					public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
+						JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
+						BurpExtender.getInstance().getLoggerPreferences().setAutoScroll(
+								scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
+					}
+				});
+
+				logTableScrollPane.getVerticalScrollBar().addMouseListener(new MouseListener() {
+					@Override
+					public void mouseClicked(MouseEvent mouseEvent) {}
+					@Override
+					public void mousePressed(MouseEvent mouseEvent) {}
+					@Override
+					public void mouseReleased(MouseEvent mouseEvent) {
+						JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
+						BurpExtender.getInstance().getLoggerPreferences().setAutoScroll(
+								scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
+					}
+					@Override
+					public void mouseEntered(MouseEvent mouseEvent) {}
+					@Override
+					public void mouseExited(MouseEvent mouseEvent) {}
+				});
+
 				GridBagConstraints gbc = new GridBagConstraints();
 				gbc.weighty = 1;
 				gbc.gridy = 0;
@@ -175,13 +201,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 				mainUI.addTab("About", null, aboutJPanel, null);
 
 				mainUIWrapper = new JPanel(new BorderLayout()){
-					@Override
-					public void removeNotify(){
-						super.removeNotify();
-						if(loggerMenu != null){
-							loggerMenu.getParent().remove(loggerMenu);
-						}
-					}
+//					@Override
+//					public void removeNotify(){
+//						super.removeNotify();
+//						if(loggerMenu != null){
+//							loggerMenu.getParent().remove(loggerMenu);
+//						}
+//					}
 				};
 				mainUIWrapper.add(mainUI, BorderLayout.CENTER);
 
@@ -508,28 +534,33 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					}else{
 						if(toolFlag== IBurpExtenderCallbacks.TOOL_PROXY){
 							//Get from pending list
+							LogEntry.PendingRequestEntry pendingRequest;
 							synchronized (pendingRequests) {
-								LogEntry.PendingRequestEntry pendingRequest = pendingRequests.remove(message.getMessageReference());
-								if (pendingRequest != null) {
-									//Fill in gaps of request with response
-									pendingRequest.processResponse(messageInfo);
+								pendingRequest = pendingRequests.remove(message.getMessageReference());
+							}
+							if (pendingRequest != null) {
+								//Fill in gaps of request with response
+								pendingRequest.processResponse(messageInfo);
 
-									for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
-										pendingRequest.testColorFilter(colorFilter, true);
-									}
-									//Calculate adjusted row incase it's moved. Update 10 either side to account for deleted rows
+								for (ColorFilter colorFilter : loggerPreferences.getColorFilters().values()) {
+									pendingRequest.testColorFilter(colorFilter, true);
+								}
+								//Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
+								if(log.size() == loggerPreferences.getMaximumEntries()) {
 									int newRow = pendingRequest.logRow - loggerPreferences.getMaximumEntries() - totalRequests;
-									logTable.getModel().fireTableRowsUpdated(newRow-10, newRow+10);
+									logTable.getModel().fireTableRowsUpdated(newRow - 10, Math.min(loggerPreferences.getMaximumEntries(), newRow + 10));
+								}else{
+									logTable.getModel().fireTableRowsUpdated(pendingRequest.logRow, pendingRequest.logRow);
+								}
 
-									for (LogEntryListener logEntryListener : logEntryListeners) {
-										logEntryListener.onResponseReceived(pendingRequest);
-									}
+								for (LogEntryListener logEntryListener : logEntryListeners) {
+									logEntryListener.onResponseReceived(pendingRequest);
+								}
 
-								} else {
-									lateResponses++;
-									if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
-										MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
-									}
+							} else {
+								lateResponses++;
+								if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
+									MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
 								}
 							}
 							return;
@@ -546,30 +577,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					if(logEntry != null) {
 						//After handling request / response log generation.
 						//Add to table / modify existing entry.
-						int v = (int) (logTableScrollBar.getValue() + (logTableScrollBar.getHeight() * 1.25));
-						int m = logTableScrollBar.getMaximum();
-						boolean isAtBottom = v >= m;
 						synchronized (log) {
-							int row = log.size();
-							log.add(logEntry);
+							logTable.getModel().addRow(logEntry);
 							totalRequests++;
-							if(log.size() > loggerPreferences.getMaximumEntries()){
-								for (int i = 0; i <= log.size() - loggerPreferences.getMaximumEntries(); i++) {
-									log.remove(0);
-									logTable.getModel().fireTableRowsDeleted(0,0);
-								}
-							}else {
-								logTable.getModel().fireTableRowsInserted(row, row);
-							}
 							if(logEntry instanceof LogEntry.PendingRequestEntry){
-								((LogEntry.PendingRequestEntry) logEntry).logRow = totalRequests;
-							}
-							for (LogEntryListener logEntryListener : logEntryListeners) {
-								logEntryListener.onRequestReceived(logEntry);
+								((LogEntry.PendingRequestEntry) logEntry).logRow = totalRequests-1;
 							}
 						}
-						if (isAtBottom)
-							logTableScrollBar.setValue(logTableScrollBar.getMaximum() + logTable.getRowHeight());
 					}
 				}
 			}
@@ -803,5 +817,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public void removeLogListener(LogEntryListener listener) {
 		logEntryListeners.remove(listener);
+	}
+
+	public ArrayList<LogEntryListener> getLogEntryListeners() {
+		return logEntryListeners;
+	}
+
+	public JScrollPane getLogScrollPanel() {
+		return logTableScrollPane;
 	}
 }

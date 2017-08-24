@@ -1,9 +1,8 @@
 package burp;
 
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.io.PrintWriter;
 import java.util.List;
-import java.util.Vector;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
 public class LogTableModel extends DefaultTableModel {
@@ -105,9 +104,36 @@ public class LogTableModel extends DefaultTableModel {
     public List<LogEntry> getData() {
         return this.entries;
     }
+
+    public void addRow(LogEntry logEntry){
+        int rowNo = entries.size();
+        this.entries.add(logEntry);
+        this.fireTableRowsInserted(rowNo, rowNo);
+
+        if(BurpExtender.getInstance().getLoggerPreferences().getAutoScroll()) {
+            JScrollBar scrollBar = BurpExtender.getInstance().getLogScrollPanel().getVerticalScrollBar();
+            scrollBar.setValue(scrollBar.getMaximum());
+        }
+
+        int maxEntries = BurpExtender.getInstance().getLoggerPreferences().getMaximumEntries();
+        if(entries.size() > maxEntries){
+            for (int i = 0; i <= entries.size() - maxEntries; i++) {
+                entries.remove(0);
+                fireTableRowsDeleted(0,0);
+            }
+        }
+
+        synchronized (BurpExtender.getInstance().getLogEntryListeners()) {
+            for (LogEntryListener logEntryListener : BurpExtender.getInstance().getLogEntryListeners()) {
+                logEntryListener.onRequestReceived(logEntry);
+            }
+        }
+    }
+
     public LogEntry getRow(int row) {return this.entries.get(row);}
 
     public int getModelColumnCount() {
         return columnModel.getModelColumnCount();
     }
+
 }

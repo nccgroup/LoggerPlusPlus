@@ -38,6 +38,7 @@ public class LoggerPreferences {
 	private final String updateURL = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
 	private int sortColumn;
 	private SortOrder sortOrder;
+	private boolean autoScroll = true;
 
 	enum View {HORIZONTAL, VERTICAL, TABS;}
 	private boolean isDebugMode;
@@ -304,6 +305,15 @@ public class LoggerPreferences {
 	public boolean getAutoSave(){
 		return this.autoSave;
 	}
+
+	public void setAutoScroll(boolean autoScroll) {
+		this.autoScroll = autoScroll;
+	}
+
+	public boolean getAutoScroll() {
+		return autoScroll;
+	}
+
 
 	public LoggerPreferences() {
 		double pastVersion = getDoubleSetting("version", 0.0);

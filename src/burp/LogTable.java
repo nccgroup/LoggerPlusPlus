@@ -391,6 +391,18 @@ public class LogTable extends JTable
         }
 
         @Override
+        public int convertRowIndexToModel(int index) {
+            //On occasion, for reasons unknown the conversion will cause a null pointer.
+            //The exact same line with identical parameters will often work if run again
+            //Temporary fix is to let the table update the row again, such as on redraw.
+            try {
+                return super.convertRowIndexToModel(index);
+            }catch (NullPointerException e){
+                return this.getViewRowCount()-1;
+            }
+        }
+
+        @Override
         public void setSortKeys(List list) {
             super.setSortKeys(list);
             SortKey sortKey = (SortKey) list.get(0);
