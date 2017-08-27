@@ -27,7 +27,7 @@ public class FileLogger implements LogEntryListener{
             }
 
         } catch (IOException ex) {
-            BurpExtender.getInstance().getStderr().println(ex.getMessage());
+            BurpExtender.getInstance().getCallbacks().printError(ex.getMessage());
         }
     }
 
@@ -35,7 +35,7 @@ public class FileLogger implements LogEntryListener{
         try {
             exp.exportItem(entry, false);
         } catch (IOException e) {
-            BurpExtender.getInstance().getStderr().write("Could not write log item. Autologging has been disabled.");
+            BurpExtender.getInstance().getCallbacks().printError("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
             this.setAutoSave(false);
         }
@@ -225,7 +225,7 @@ public class FileLogger implements LogEntryListener{
                 out.write("\n");
             }
 
-            for (LogEntry item : BurpExtender.getInstance().getLog()) {
+            for (LogEntry item : BurpExtender.getInstance().getLogEntries()) {
                 out.write(item.toCSVString(isFullLog) + "\n");
             }
 

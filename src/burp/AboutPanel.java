@@ -32,8 +32,6 @@ import java.util.regex.Pattern;
 public class AboutPanel extends JPanel {
 
 	private final burp.IBurpExtenderCallbacks callbacks;
-	private final PrintWriter stdout;
-	private final PrintWriter stderr;
 	private final LoggerPreferences loggerPreferences;
 	/**
 	 * Create the panel.
@@ -41,8 +39,6 @@ public class AboutPanel extends JPanel {
 	public AboutPanel() {
 		BurpExtender burp = BurpExtender.getInstance();
 		this.callbacks = burp.getCallbacks();
-		this.stdout = burp.getStdout();
-		this.stderr = burp.getStderr();
 		this.loggerPreferences = burp.getLoggerPreferences();
 
 		GridBagLayout gridBagLayout = new GridBagLayout();
@@ -250,17 +246,17 @@ public class AboutPanel extends JPanel {
 
 			}
 		}catch(Exception e){
-			stderr.println(e.getMessage());
+			BurpExtender.getInstance().getCallbacks().printError(e.getMessage());
 		}
 
 		switch(updateStatus){
 		case -1:
 			updateMessage = "Check for update failed: Could not get a proper response from "+loggerPreferences.getChangeLog();
-			stderr.println(updateMessage);
+			BurpExtender.getInstance().getCallbacks().printError(updateMessage);
 			break;
 		case 0:
 			updateMessage = "This version is up to date.";
-			stdout.println(updateMessage);
+			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
 			break;
 		case 1:
 			updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
@@ -285,11 +281,11 @@ public class AboutPanel extends JPanel {
 					}
 				}
 			}
-			stdout.println(updateMessage);
+			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
 			break;
 		case 2:
 			updateMessage = "This version is more up to date than the GitHub version! Are you a time traveler? or just a keen ninja? ;)";
-			stdout.println(updateMessage);
+			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
 			break;
 		}
 		if(!showMessages) return;

@@ -102,8 +102,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}catch(Exception e){
 			// if there was an error in saved table configuration JSON object we have to use the default JSON object
-			BurpExtender.getInstance().getStderr()
-					.println("Error in parsing the table structure JSON object. The default configuration will be used.");
+			BurpExtender.getInstance().getCallbacks().printError("Error in parsing the table structure JSON object. The default configuration will be used.");
 			logTableColumnsJSON = defaultLogTableColumnsJson;
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}
@@ -126,11 +125,6 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 					|| column.getType().equals("short")
 					|| column.getType().equals("double"))
 				column.setCellRenderer(new LogTable.LeftTableCellRenderer());
-		}
-
-
-		if(BurpExtender.getInstance().isDebug()){
-			BurpExtender.getInstance().getStdout().println("columnMap.size(): " + columnMap.size());
 		}
 	}
 
@@ -160,8 +154,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	public boolean isColumnEnabled(String colName){
 		Integer modelColumnIndex = nameToModelIndexMap.get(colName.toUpperCase());
 		if(modelColumnIndex == null){
-			BurpExtender.getInstance().getStderr()
-					.println("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
+			BurpExtender.getInstance().getCallbacks().printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
 			return false;
 		}else {
 			return columnMap.get(modelColumnIndex).isEnabled();

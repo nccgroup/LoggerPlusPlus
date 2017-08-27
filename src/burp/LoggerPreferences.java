@@ -19,11 +19,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import burp.VariableViewPanel.View;
 
 import javax.swing.*;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.prefs.Preferences;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
@@ -40,7 +40,6 @@ public class LoggerPreferences {
 	private SortOrder sortOrder;
 	private boolean autoScroll = true;
 
-	enum View {HORIZONTAL, VERTICAL, TABS;}
 	private boolean isDebugMode;
 
 	private boolean isEnabled;
@@ -428,8 +427,8 @@ public class LoggerPreferences {
 		setEnabled4Extender(true);
 		setEnabled4TargetTab(true);
 		setLoggingFiltered(false);
-		BurpExtender.getInstance().setLayout(View.VERTICAL);
-		BurpExtender.getInstance().setRequestResponseLayout(View.HORIZONTAL);
+		BurpExtender.getInstance().getMainPanel().setView(View.VERTICAL);
+		BurpExtender.getInstance().getReqRespPanel().setView(View.HORIZONTAL);
 
 		setAutoSave(false);
 		resetTableSettings();

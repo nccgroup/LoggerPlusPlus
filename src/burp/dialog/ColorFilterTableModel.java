@@ -164,7 +164,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
     public void removeAll() {
         this.filters.clear();
         for(FilterListener listener : filterListeners){
-            listener.onRemoveAll();
+            listener.onFilterRemoveAll();
         }
         this.fireTableDataChanged();
     }

@@ -55,7 +55,7 @@ public class TableHeaderMenu extends JPopupMenu{
 						            columnObj.getRegExData().setRegExString(newValue);
 									saveAndReloadTableSettings(); //TODO do we need it?
 						        } catch (PatternSyntaxException exception) {
-						            BurpExtender.getInstance().getStderr().println("provided regular expression was wrong. It cannot be saved.");
+						            BurpExtender.getInstance().getCallbacks().printError("provided regular expression was wrong. It cannot be saved.");
 						            MoreHelp.showWarningMessage("The provided regular expression string was NOT in correct format. It cannot be saved.");
 						        }
 							}

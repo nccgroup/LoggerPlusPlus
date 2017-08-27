@@ -106,8 +106,6 @@ public class LogEntry extends RowFilter.Entry
 			if(tempPathDotLocation>=0)
 				this.urlExtension = tempPath.substring(tempPathDotLocation+1);
 		}catch(Exception e){
-			if(BurpExtender.getInstance().isDebug())
-				BurpExtender.getInstance().getStderr().println(e.getMessage());
 			this.urlExtension = "";
 		}
 
@@ -215,7 +213,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllReq[i] = allMatches.toString();
 
 					}catch(Exception e){
-						BurpExtender.getInstance().getStderr().println("Error in regular expression: " + regexString);
+						BurpExtender.getInstance().getCallbacks().printError("Error in regular expression: " + regexString);
 					}
 
 				}
@@ -315,7 +313,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllResp[i] = allMatches.toString();
 
 					}catch(Exception e){
-						BurpExtender.getInstance().getStderr().println("Error in regular expression: " + regexString);
+						BurpExtender.getInstance().getCallbacks().printError("Error in regular expression: " + regexString);
 					}
 
 				}

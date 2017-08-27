@@ -5,7 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
-public class LogTableModel extends DefaultTableModel {
+public class LogTableModel extends DefaultTableModel implements IMessageEditorController {
 
     private LogTableColumnModel columnModel;
     private IHttpRequestResponse currentlyDisplayedItem;
@@ -25,8 +25,6 @@ public class LogTableModel extends DefaultTableModel {
         // To delete the Request/Response logTable the log section is empty (after deleting the logs when an item is already selected)
         if(currentlyDisplayedItem!=null && entries.size() <= 0){
             currentlyDisplayedItem = null;
-            BurpExtender.getInstance().getRequestViewer().setMessage(new byte[0], true);
-            BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
         }
         //DefaultTableModel calls this before we can set the entries list.
         if(entries==null) return 0;
@@ -136,4 +134,33 @@ public class LogTableModel extends DefaultTableModel {
         return columnModel.getModelColumnCount();
     }
 
+
+    //
+    // implement IMessageEditorController
+    // this allows our request/response viewers to obtain details about the messages being displayed
+    //
+
+    @Override
+    public byte[] getRequest()
+    {
+        if(getCurrentlyDisplayedItem()==null)
+            return "".getBytes();
+        return getCurrentlyDisplayedItem().getRequest();
+    }
+
+    @Override
+    public byte[] getResponse()
+    {
+        if(getCurrentlyDisplayedItem()==null)
+            return "".getBytes();
+        return getCurrentlyDisplayedItem().getResponse();
+    }
+
+    @Override
+    public IHttpService getHttpService()
+    {
+        if(getCurrentlyDisplayedItem()==null)
+            return null;
+        return getCurrentlyDisplayedItem().getHttpService();
+    }
 }

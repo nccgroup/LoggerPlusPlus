@@ -6,10 +6,7 @@ import burp.filter.FilterListener;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +15,7 @@ import java.util.UUID;
 /**
  * Created by corey on 19/07/17.
  */
-public class ColorFilterDialog extends JFrame implements ComponentListener {
+public class ColorFilterDialog extends JFrame implements WindowListener {
     private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
     private Map<UUID, ColorFilter> originalFilters;
@@ -29,7 +26,7 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
-        this.addComponentListener(this);
+        this.addWindowListener(this);
         buildDialog();
         pack();
     }
@@ -105,23 +102,16 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
 
     }
 
-    @Override
-    public void componentResized(ComponentEvent componentEvent) {
 
+
+    public ColorFilterTable getFilterTable() {
+        return filterTable;
     }
 
     @Override
-    public void componentMoved(ComponentEvent componentEvent) {
-
-    }
-
+    public void windowOpened(WindowEvent windowEvent) {}
     @Override
-    public void componentShown(ComponentEvent componentEvent) {
-
-    }
-
-    @Override
-    public void componentHidden(ComponentEvent event) {
+    public void windowClosing(WindowEvent windowEvent) {
         ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
         newFilters.removeAll(originalFilters.keySet());
 
@@ -142,21 +132,25 @@ public class ColorFilterDialog extends JFrame implements ComponentListener {
         }
         for (FilterListener listener : filterListeners) {
             for (UUID uid : newFilters) {
-                listener.onAdd(filters.get(uid));
+                listener.onFilterAdd(filters.get(uid));
             }
             for (UUID uid : modifiedFilters) {
-                listener.onChange(filters.get(uid));
+                listener.onFilterChange(filters.get(uid));
             }
             for (UUID uid : removedFilters){
-                listener.onRemove(originalFilters.get(uid));
+                listener.onFilterRemove(originalFilters.get(uid));
             }
         }
-        //Update set original filters for next open
-        this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         BurpExtender.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
-
-    public ColorFilterTable getFilterTable() {
-        return filterTable;
-    }
+    @Override
+    public void windowClosed(WindowEvent windowEvent) {}
+    @Override
+    public void windowIconified(WindowEvent windowEvent) {}
+    @Override
+    public void windowDeiconified(WindowEvent windowEvent) {}
+    @Override
+    public void windowActivated(WindowEvent windowEvent) {}
+    @Override
+    public void windowDeactivated(WindowEvent windowEvent) {}
 }

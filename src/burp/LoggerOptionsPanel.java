@@ -21,10 +21,8 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URI;
 
-public class LoggerOptionsPanel extends JPanel{
+public class LoggerOptionsPanel extends JScrollPane{
 
-    private final PrintWriter stdout;
-    private final PrintWriter stderr;
     private boolean canSaveCSV;
     private final LoggerPreferences loggerPreferences;
 
@@ -52,16 +50,17 @@ public class LoggerOptionsPanel extends JPanel{
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
     private final FileLogger fileLogger;
+    private final JPanel contentWrapper;
 
 
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel(final PrintWriter stdout, final PrintWriter stderr, boolean canSaveCSV, final LoggerPreferences loggerPreferences, boolean isDebug) {
-        this.stdout = stdout;
-        this.stderr = stderr;
+    public LoggerOptionsPanel(boolean canSaveCSV) {
+        contentWrapper = new JPanel();
+        this.setViewportView(contentWrapper);
         this.canSaveCSV = canSaveCSV;
-        this.loggerPreferences = loggerPreferences;
+        this.loggerPreferences = BurpExtender.getInstance().getLoggerPreferences();
         this.loggerPreferences.setAutoSave(false);
         this.fileLogger = new FileLogger();
 
@@ -70,7 +69,7 @@ public class LoggerOptionsPanel extends JPanel{
         gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-        setLayout(gridBagLayout);
+        contentWrapper.setLayout(gridBagLayout);
 
         JLabel lblLoggerStatus = new JLabel("Status:");
         lblLoggerStatus.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -79,14 +78,14 @@ public class LoggerOptionsPanel extends JPanel{
         gbc.insets = new Insets(0, 0, 5, 5);
         gbc.gridx = 1;
         gbc.gridy = 1;
-        add(lblLoggerStatus, gbc);
+        contentWrapper.add(lblLoggerStatus, gbc);
 
 
         tglbtnIsEnabled.setFont(new Font("Tahoma", Font.PLAIN, 13));
         gbc.anchor = GridBagConstraints.SOUTH;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 2;
-        add(tglbtnIsEnabled, gbc);
+        contentWrapper.add(tglbtnIsEnabled, gbc);
 
 
         btnSaveLogsButton.setToolTipText("This does not save requests and responses");
@@ -97,20 +96,20 @@ public class LoggerOptionsPanel extends JPanel{
             }
         });
         gbc.gridx = 3;
-        add(btnSaveLogsButton, gbc);
+        contentWrapper.add(btnSaveLogsButton, gbc);
 
         JLabel lblScopes = new JLabel("Scope:");
         lblScopes.setFont(new Font("Tahoma", Font.BOLD, 14));
         gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 1;
         gbc.gridy = 2;
-        add(lblScopes, gbc);
+        contentWrapper.add(lblScopes, gbc);
 
         gbc.gridx = 2;
-        add(chckbxIsRestrictedToScope, gbc);
+        contentWrapper.add(chckbxIsRestrictedToScope, gbc);
 
         //Disabled until implemented
-//		add(chckbxIsLoggingFiltered, gbc);
+//		contentWrapper.add(chckbxIsLoggingFiltered, gbc);
 
         gbc.gridy = 2;
         gbc.gridx = 3;
@@ -123,27 +122,27 @@ public class LoggerOptionsPanel extends JPanel{
         });
         btnSaveFullLogs.setToolTipText("This can be slow and  messy when response is more than 32760 characters - not recommended!");
         btnSaveFullLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
-        add(btnSaveFullLogs, gbc);
+        contentWrapper.add(btnSaveFullLogs, gbc);
 
         JLabel updateLabel = new JLabel("Update:");
         updateLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
         gbc.gridx = 1;
         gbc.gridy++;
-        add(updateLabel, gbc);
+        contentWrapper.add(updateLabel, gbc);
         gbc.gridx = 2;
-        add(chckbxUpdateOnStartup, gbc);
+        contentWrapper.add(chckbxUpdateOnStartup, gbc);
 
         gbc.gridx = 3;
         btnAutoSaveLogs.setToolTipText("Automatically save logs as CSV");
         btnAutoSaveLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
-        add(btnAutoSaveLogs, gbc);
+        contentWrapper.add(btnAutoSaveLogs, gbc);
 
 
         JLabel lblLogFrom = new JLabel("Log From:");
         lblLogFrom.setFont(new Font("Tahoma", Font.BOLD, 14));
         gbc.gridx = 1;
         gbc.gridy++;
-        add(lblLogFrom, gbc);
+        contentWrapper.add(lblLogFrom, gbc);
         gbc.gridx = 3;
 //        btnImport.addActionListener(new ActionListener() {
 //            @Override
@@ -151,31 +150,31 @@ public class LoggerOptionsPanel extends JPanel{
 //                importFromFile();
 //            }
 //        });
-//        add(btnImport, gbc);
+//        contentWrapper.add(btnImport, gbc);
         gbc.gridx = 2;
-        add(chckbxAllTools, gbc);
+        contentWrapper.add(chckbxAllTools, gbc);
         gbc.gridy++;
-        add(chckbxSpider, gbc);
+        contentWrapper.add(chckbxSpider, gbc);
         gbc.gridy++;
-        add(chckbxIntruder, gbc);
+        contentWrapper.add(chckbxIntruder, gbc);
         gbc.gridy++;
-        add(chckbxScanner, gbc);
+        contentWrapper.add(chckbxScanner, gbc);
         gbc.gridy++;
-        add(chckbxRepeater, gbc);
+        contentWrapper.add(chckbxRepeater, gbc);
         gbc.gridy++;
-        add(chckbxSequencer, gbc);
+        contentWrapper.add(chckbxSequencer, gbc);
         gbc.gridy++;
-        add(chckbxProxy, gbc);
+        contentWrapper.add(chckbxProxy, gbc);
         gbc.gridy++;
-        add(chckbxTarget, gbc);
+        contentWrapper.add(chckbxTarget, gbc);
         gbc.gridy++;
-        add(chckbxExtender, gbc);
+        contentWrapper.add(chckbxExtender, gbc);
 
         gbc.gridx = 1;
         gbc.gridy++;
         JLabel lblResponseSettings = new JLabel("Response Timeout (s):");
         lblResponseSettings.setFont(new Font("Tahoma", Font.BOLD, 14));
-        add(lblResponseSettings, gbc);
+        contentWrapper.add(lblResponseSettings, gbc);
         gbc.gridx++;
         final JSpinner spnResponseTimeout = new JSpinner();
         spnResponseTimeout.setModel(new SpinnerNumberModel(BurpExtender.getInstance().getLoggerPreferences().getResponseTimeout()/1000, 10, 600, 1));
@@ -185,13 +184,13 @@ public class LoggerOptionsPanel extends JPanel{
                 BurpExtender.getInstance().getLoggerPreferences().setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
             }
         });
-        add(spnResponseTimeout, gbc);
+        contentWrapper.add(spnResponseTimeout, gbc);
 
         gbc.gridx = 1;
         gbc.gridy++;
         JLabel lblMaxEntries = new JLabel("Maximum Log Entries:");
         lblMaxEntries.setFont(new Font("Tahoma", Font.BOLD, 14));
-        add(lblMaxEntries, gbc);
+        contentWrapper.add(lblMaxEntries, gbc);
         gbc.gridx++;
         final JSpinner spnMaxEntries = new JSpinner();
         spnMaxEntries.setModel(new SpinnerNumberModel(BurpExtender.getInstance().getLoggerPreferences().getMaximumEntries(), 10, 20000, 10));
@@ -201,7 +200,7 @@ public class LoggerOptionsPanel extends JPanel{
                 BurpExtender.getInstance().getLoggerPreferences().setMaximumEntries((Integer) spnMaxEntries.getValue());
             }
         });
-        add(spnMaxEntries, gbc);
+        contentWrapper.add(spnMaxEntries, gbc);
 
 
         JButton btnResetSettings = new JButton("Reset all settings");
@@ -221,7 +220,7 @@ public class LoggerOptionsPanel extends JPanel{
         btnResetSettings.setFont(new Font("Tahoma", Font.PLAIN, 13));
         gbc.anchor = GridBagConstraints.NORTH;
         gbc.gridy++;
-        add(btnResetSettings, gbc);
+        contentWrapper.add(btnResetSettings, gbc);
 
         JButton btnClearTheLog = new JButton("Clear the logs");
         btnClearTheLog.addActionListener(new ActionListener() {
@@ -236,31 +235,31 @@ public class LoggerOptionsPanel extends JPanel{
         });
         btnClearTheLog.setFont(new Font("Tahoma", Font.PLAIN, 13));
         gbc.gridx = 3;
-        add(btnClearTheLog, gbc);
+        contentWrapper.add(btnClearTheLog, gbc);
 
         gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 1;
         gbc.gridy++;
         lblColumnSettings.setFont(new Font("Tahoma", Font.BOLD, 14));
-        add(lblColumnSettings, gbc);
+        contentWrapper.add(lblColumnSettings, gbc);
 
         gbc.gridx = 2;
-        add(lblNewLabel_1, gbc);
+        contentWrapper.add(lblNewLabel_1, gbc);
 
         gbc.gridwidth = 3;
         gbc.gridx = 1;
         gbc.gridy++;
-        add(lblNewLabel, gbc);
+        contentWrapper.add(lblNewLabel, gbc);
 
         gbc.gridx = 1;
         gbc.gridy++;
-        add(lblNoteLogging, gbc);
+        contentWrapper.add(lblNoteLogging, gbc);
         gbc.gridy++;
-        add(lblNoteLoggingCont, gbc);
+        contentWrapper.add(lblNoteLoggingCont, gbc);
 
         gbc.gridx = 1;
         gbc.gridy++;
-        add(lblNoteUpdating, gbc);
+        contentWrapper.add(lblNoteUpdating, gbc);
 
         setPreferencesValues();
         setComponentsActions();
