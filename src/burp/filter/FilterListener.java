@@ -5,8 +5,8 @@ package burp.filter;
  */
 public interface FilterListener {
 
-    void onChange(ColorFilter filter);
-    void onAdd(ColorFilter filter);
-    void onRemove(ColorFilter filter);
-    void onRemoveAll();
+    void onFilterChange(ColorFilter filter);
+    void onFilterAdd(ColorFilter filter);
+    void onFilterRemove(ColorFilter filter);
+    void onFilterRemoveAll();
 }

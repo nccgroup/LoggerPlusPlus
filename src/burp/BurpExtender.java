@@ -14,14 +14,13 @@ package burp;
 
 import burp.dialog.ColorFilterDialog;
 import burp.dialog.ColorFilterTableModel;
-import burp.dialog.SavedFiltersDialog;
 import burp.filter.ColorFilter;
 import burp.filter.Filter;
 import burp.filter.FilterCompiler;
 import burp.filter.FilterListener;
+import burp.VariableViewPanel.View;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.PrintWriter;
@@ -32,49 +31,33 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 
-public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessageEditorController, IProxyListener, FilterListener
+public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyListener
 {
 	private static BurpExtender instance;
 	private IBurpExtenderCallbacks callbacks;
 	private IExtensionHelpers helpers;
-	private PrintWriter stdout;
-	private PrintWriter stderr;
-	private IMessageEditor requestViewer;
-	private IMessageEditor responseViewer;
-	private final List<LogEntry> log = new ArrayList<LogEntry>();
-	private final HashMap<Integer, LogEntry.PendingRequestEntry> pendingRequests = new HashMap<Integer, LogEntry.PendingRequestEntry>();
-	private JPanel mainUIWrapper;
-	private JTabbedPane mainUI;
+	private PopOutPanel uiPopOutPanel;
+	private ArrayList<LogEntry> logEntries;
+	private HashMap<Integer, LogEntry.PendingRequestEntry> pendingRequests;
+	private JTabbedPane tabbedWrapper;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
 	private AboutPanel aboutJPanel;
 	private LoggerOptionsPanel optionsJPanel;
-	private boolean isDebug; // To enabled debugging, it needs to be true in registry
-	private LogTable logTable;
-	private JTextField filterField;
-	private ColorFilterDialog colorFilterDialog;
-	private final ArrayList<FilterListener> filterListeners = new ArrayList<FilterListener>();
-	private JScrollPane logTableScrollPane;
-	private JPanel logViewJPanelWrapper;
-	private JSplitPane logViewSplit;
-	private JTabbedPane logViewTabbed;
-	private JPanel logTablePanel;
-	private JPanel reqRespPanel;
-	private JTabbedPane reqRespTabbedPane;
-	private JSplitPane reqRespSplitPane;
+	private ArrayList<FilterListener> filterListeners;
+	private VariableViewPanel reqRespPanel;
+	private VariableViewPanel mainPanel;
 	private JMenu loggerMenu;
-	private LoggerPreferences.View currentView;
-	private LoggerPreferences.View currentReqRespView;
 	private int totalRequests = 0;
 	private short lateResponses = 0;
 	private ArrayList<LogEntryListener> logEntryListeners;
-	private JFrame popJFrame;
 	private JMenuItem popoutbutton;
-	private boolean isPoppedOut;
+	private LogViewPanel logViewPanel;
+	private IMessageEditor requestViewer;
+	private IMessageEditor responseViewer;
 	//
 	// implement IBurpExtender
 	//
@@ -82,152 +65,98 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
 	{
-		instance = this;
-		// set our extension name
+		//Burp Specific
 		callbacks.setExtensionName("Logger++");
-
-		// keep a reference to our callbacks object
 		this.callbacks = callbacks;
-		// obtain an extension helpers object
 		this.helpers = callbacks.getHelpers();
+
+		//Logger++ Setup
+		instance = this;
+		logEntries = new ArrayList<LogEntry>();
 		logEntryListeners = new ArrayList<>();
-
-		// obtain our output stream
-		stdout = new PrintWriter(callbacks.getStdout(), true);
-		stderr = new PrintWriter(callbacks.getStderr(), true);
-
-		try { 
-			Class.forName("org.apache.commons.lang3.StringEscapeUtils");
-			canSaveCSV = true;
-		} catch(ClassNotFoundException e) {
-			stderr.println("Warning: Error in loading Appache Commons Lang library.\r\nThe results cannot be saved in CSV format.\r\n"
-					+ "Please reload this extension after adding this library to the Java Environment section of burp suite.\r\n"
-					+ "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
-		}   
-
-		//Load preferences before creating our objects;
+		filterListeners = new ArrayList<FilterListener>();
+		pendingRequests = new HashMap<Integer, LogEntry.PendingRequestEntry>();
 		loggerPreferences = new LoggerPreferences();
-		this.filterListeners.add(this);
-		this.isDebug = loggerPreferences.isDebugMode();
-
-		// create our UI
-		requestViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-		responseViewer = callbacks.createMessageEditor(BurpExtender.this, false);
-		logTable = new LogTable(log, stdout, stderr, isDebug);
-
-		// Options Panel
-		optionsJPanel = new LoggerOptionsPanel(stdout, stderr, canSaveCSV, loggerPreferences, isDebug);
-		// About Panel
-		aboutJPanel = new AboutPanel(); //Options
+		aboutJPanel = new AboutPanel();
 
 		//Add ui elements to ui.
-		SwingUtilities.invokeLater(new Runnable() 
+		SwingUtilities.invokeLater(new Runnable()
 		{
 			@Override
 			public void run()
 			{
-				mainUI = new JTabbedPane();
-				//Let the user resize the splitter at will:
-				//mainUI.setMinimumSize(new Dimension(0, 0));
 
-				// Log View Panel
-				logViewJPanelWrapper = new JPanel(new BorderLayout());
-				logViewSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-				logViewTabbed = new JTabbedPane();
+				try {
+					Class.forName("org.apache.commons.lang3.StringEscapeUtils");
+					canSaveCSV = true;
+				} catch(ClassNotFoundException e) {
+					callbacks.printError("Warning: Error in loading Appache Commons Lang library.\r\nThe results cannot be saved in CSV format.\r\n"
+							+ "Please reload this extension after adding this library to the Java Environment section of burp suite.\r\n"
+							+ "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
+				}
 
-				//LogTablePanel
-				logTablePanel = new JPanel(new GridBagLayout());
-				logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
-
-				logTableScrollPane.addMouseWheelListener(new MouseWheelListener() {
+				//UI
+				logViewPanel = new LogViewPanel(logEntries);
+				requestViewer = callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
+				responseViewer = callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
+				reqRespPanel = new VariableViewPanel(requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", loggerPreferences.getReqRespView()){
 					@Override
-					public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
-						JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-						BurpExtender.getInstance().getLoggerPreferences().setAutoScroll(
-								scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
+					public void setView(View view) {
+						loggerPreferences.setReqRespView(view);
+						super.setView(view);
 					}
-				});
-
-				logTableScrollPane.getVerticalScrollBar().addMouseListener(new MouseListener() {
-					@Override
-					public void mouseClicked(MouseEvent mouseEvent) {}
-					@Override
-					public void mousePressed(MouseEvent mouseEvent) {}
-					@Override
-					public void mouseReleased(MouseEvent mouseEvent) {
-						JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-						BurpExtender.getInstance().getLoggerPreferences().setAutoScroll(
-								scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
-					}
-					@Override
-					public void mouseEntered(MouseEvent mouseEvent) {}
-					@Override
-					public void mouseExited(MouseEvent mouseEvent) {}
-				});
-
-				GridBagConstraints gbc = new GridBagConstraints();
-				gbc.weighty = 1;
-				gbc.gridy = 0;
-				gbc.fill = GridBagConstraints.BOTH;
-				gbc.weightx = 1;
-				logTablePanel.add(getFilterPanel(), gbc);
-				gbc.weighty = 999;
-				gbc.gridy = 1;
-				logTablePanel.add(logTableScrollPane, gbc);
-				//LogTablePanel
-
-				reqRespPanel = new JPanel(new BorderLayout());
-				reqRespTabbedPane = new JTabbedPane();
-				reqRespSplitPane = new JSplitPane();
-
-				LoggerPreferences.View reqRespView = LoggerPreferences.View.HORIZONTAL;
-				setRequestResponseLayout(reqRespView);
-
-
-				//Split
-				logViewSplit.setBottomComponent(reqRespPanel);
-				logViewSplit.setResizeWeight(0.5);
-
-				logViewTabbed.addTab("Log LogTable", logTablePanel);
-				logViewTabbed.addTab("Request/Response", reqRespPanel);
-
-				setLayout(loggerPreferences.getView());
-				setRequestResponseLayout(loggerPreferences.getReqRespView());
-
-				// customize our UI components
-				//callbacks.customizeUiComponent(mainUI); // disabled to be able to drag and drop columns
-				mainUI.addTab("View Logs", null, logViewJPanelWrapper, null);
-				mainUI.addTab("Options", null, optionsJPanel, null);
-				mainUI.addTab("About", null, aboutJPanel, null);
-
-				mainUIWrapper = new JPanel(new BorderLayout()){
-//					@Override
-//					public void removeNotify(){
-//						super.removeNotify();
-//						if(loggerMenu != null){
-//							loggerMenu.getParent().remove(loggerMenu);
-//						}
-//					}
 				};
-				mainUIWrapper.add(mainUI, BorderLayout.CENTER);
+				mainPanel = new VariableViewPanel(logViewPanel, "Log Table", reqRespPanel, "Request/Response", loggerPreferences.getView()){
+					@Override
+					public void setView(View view) {
+						loggerPreferences.setView(view);
+						super.setView(view);
+					}
+				};
+				optionsJPanel = new LoggerOptionsPanel(canSaveCSV);
+				tabbedWrapper = new JTabbedPane();
+				tabbedWrapper.addTab("View Logs", null, mainPanel, null);
+				tabbedWrapper.addTab("Options", null, optionsJPanel, null);
+				tabbedWrapper.addTab("About", null, aboutJPanel, null);
+				uiPopOutPanel = new PopOutPanel(tabbedWrapper, "Logger++"){
+					@Override
+					public void popOut() {
+						super.popOut();
+						popoutbutton.setText("Pop In");
+					}
+
+					@Override
+					public void popIn() {
+						super.popIn();
+						popoutbutton.setText("Pop Out");
+					}
+
+					@Override
+					public void removeNotify(){
+						if(loggerMenu != null){
+							loggerMenu.getParent().remove(loggerMenu);
+						}
+						super.removeNotify();
+					}
+				};
 
 				// add the custom tab to Burp's UI
 				callbacks.addSuiteTab(BurpExtender.this);
-
 				// register ourselves as an HTTP listener
 				callbacks.registerHttpListener(BurpExtender.this);
-
 				// register ourselves as an HTTP proxy listener as well!
 				callbacks.registerProxyListener(BurpExtender.this);
 
-				JFrame rootFrame = (JFrame) SwingUtilities.getWindowAncestor(mainUI);
+
+				//Add menu item to Burp's frame menu.
+				JFrame rootFrame = (JFrame) SwingUtilities.getWindowAncestor(tabbedWrapper);
 				try{
 					JMenuBar menuBar = rootFrame.getJMenuBar();
 					loggerMenu = new JMenu(getTabCaption());
 					JMenuItem colorFilters = new JMenuItem(new AbstractAction("Color Filters") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							colorFilterDialog.setVisible(true);
+							new ColorFilterDialog(filterListeners).setVisible(true);
 						}
 					});
 					loggerMenu.add(colorFilters);
@@ -235,8 +164,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					popoutbutton = new JMenuItem(new AbstractAction("Pop Out") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							if(isPoppedOut) popIn();
-							else popOut();
+							uiPopOutPanel.toggle();
 						}
 					});
 					loggerMenu.add(popoutbutton);
@@ -246,28 +174,28 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setLayout(LoggerPreferences.View.VERTICAL);
+							mainPanel.setView(View.VERTICAL);
 						}
 					});
-					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.VERTICAL);
+					viewMenuItem.setSelected(loggerPreferences.getView() == View.VERTICAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setLayout(LoggerPreferences.View.HORIZONTAL);
+							mainPanel.setView(View.VERTICAL);
 						}
 					});
-					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.HORIZONTAL);
+					viewMenuItem.setSelected(loggerPreferences.getView() == View.HORIZONTAL);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setLayout(LoggerPreferences.View.TABS);
+							mainPanel.setView(View.TABS);
 						}
 					});
-					viewMenuItem.setSelected(loggerPreferences.getView() == LoggerPreferences.View.TABS);
+					viewMenuItem.setSelected(loggerPreferences.getView() == View.TABS);
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
 					loggerMenu.add(viewMenu);
@@ -277,30 +205,30 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setRequestResponseLayout(LoggerPreferences.View.VERTICAL);
+							reqRespPanel.setView(View.VERTICAL);
 						}
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
-					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.VERTICAL);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == View.VERTICAL);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setRequestResponseLayout(LoggerPreferences.View.HORIZONTAL);
+							reqRespPanel.setView(View.HORIZONTAL);
 						}
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
-					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.HORIZONTAL);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == View.HORIZONTAL);
 					viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
 						@Override
 						public void actionPerformed(ActionEvent actionEvent) {
-							setRequestResponseLayout(LoggerPreferences.View.TABS);
+							reqRespPanel.setView(View.TABS);
 						}
 					});
 					viewMenu.add(viewMenuItem);
 					bGroup.add(viewMenuItem);
-					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == LoggerPreferences.View.TABS);
+					viewMenuItem.setSelected(loggerPreferences.getReqRespView() == View.TABS);
 
 					loggerMenu.add(viewMenu);
 					menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
@@ -343,117 +271,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return instance;
 	}
 
-	public void setLayout(LoggerPreferences.View view){
-		if(view == null) view = LoggerPreferences.View.HORIZONTAL;
-
-		if((currentView == LoggerPreferences.View.TABS || currentView == null) && view != LoggerPreferences.View.TABS){
-			logViewJPanelWrapper.removeAll();
-			//SplitResetup
-			logViewSplit.setTopComponent(logTablePanel);
-			logViewSplit.setBottomComponent(reqRespPanel);
-			logViewSplit.setDividerLocation(0.5);
-			logViewJPanelWrapper.add(logViewSplit);
-		}else if((currentView != LoggerPreferences.View.TABS) && view == LoggerPreferences.View.TABS){
-			logViewJPanelWrapper.removeAll();
-			//TabbedResetup
-			logViewTabbed.removeAll();
-			logViewTabbed.addTab("Logs", logTablePanel);
-			logViewTabbed.addTab("Request / Response", reqRespPanel);
-			logViewJPanelWrapper.add(logViewTabbed);
-		}
-
-		switch (view) {
-			case VERTICAL:
-				logViewSplit.setOrientation(JSplitPane.VERTICAL_SPLIT);
-				break;
-			case HORIZONTAL:
-				logViewSplit.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-				break;
-		}
-
-		loggerPreferences.setView(view);
-		currentView = view;
-	}
-
-	public void setRequestResponseLayout(LoggerPreferences.View view){
-		if(view == null) view = LoggerPreferences.View.VERTICAL;
-
-		if(view == LoggerPreferences.View.HORIZONTAL || view == LoggerPreferences.View.VERTICAL) {
-			reqRespPanel.remove(reqRespTabbedPane);
-			reqRespSplitPane.setResizeWeight(0.5);
-			reqRespSplitPane.setLeftComponent(requestViewer.getComponent());
-			reqRespSplitPane.setRightComponent(responseViewer.getComponent());
-			reqRespPanel.add(reqRespSplitPane, BorderLayout.CENTER);
-			switch (view) {
-				case VERTICAL:
-					reqRespSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-					break;
-				case HORIZONTAL:
-					reqRespSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-					break;
-			}
-			reqRespSplitPane.setDividerLocation(0.5);
-		}else {
-			reqRespPanel.remove(reqRespSplitPane);
-			reqRespTabbedPane.removeAll();
-			reqRespTabbedPane.addTab("Request", requestViewer.getComponent());
-			reqRespTabbedPane.addTab("Response", responseViewer.getComponent());
-			reqRespPanel.add(reqRespTabbedPane, BorderLayout.CENTER);
-		}
-
-		loggerPreferences.setReqRespView(view);
-		currentReqRespView = view;
-	}
-
-	private JPanel getFilterPanel(){
-		JPanel filterPanel = new JPanel(new GridBagLayout());
-		colorFilterDialog = new ColorFilterDialog(filterListeners);
-
-		filterField = new JTextField();
-		filterField.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
-		filterField.getActionMap().put("submit", new AbstractAction() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				setFilter(filterField.getText());
-			}
-		});
-		GridBagConstraints fieldConstraints = new GridBagConstraints();
-		fieldConstraints.fill = GridBagConstraints.BOTH;
-		fieldConstraints.gridx = 0;
-		fieldConstraints.weightx = fieldConstraints.weighty = 99.0;
-
-		final JButton filterButton = new JButton("Saved Filters");
-		filterButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				new SavedFiltersDialog().setVisible(true);
-			}
-		});
-
-		GridBagConstraints filterBtnConstraints = new GridBagConstraints();
-		filterBtnConstraints.fill = GridBagConstraints.BOTH;
-		filterBtnConstraints.gridx = 1;
-		filterBtnConstraints.weightx = filterBtnConstraints.weighty = 2.0;
-
-		final JButton colorFilterButton = new JButton("Colorize");
-		colorFilterButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				colorFilterDialog.setVisible(true);
-			}
-		});
-
-		GridBagConstraints colorFilterBtnConstraints = new GridBagConstraints();
-		colorFilterBtnConstraints.fill = GridBagConstraints.BOTH;
-		colorFilterBtnConstraints.gridx = 2;
-		colorFilterBtnConstraints.weightx = colorFilterBtnConstraints.weighty = 1.0;
-
-		filterPanel.add(filterField, fieldConstraints);
-		filterPanel.add(filterButton, filterBtnConstraints);
-		filterPanel.add(colorFilterButton, colorFilterBtnConstraints);
-
-		return filterPanel;
-	}
 
 	//
 	// implement ITab
@@ -468,7 +285,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 	@Override
 	public Component getUiComponent()
 	{
-		return mainUIWrapper;
+		return uiPopOutPanel;
 	}
 
 	//
@@ -546,11 +363,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 									pendingRequest.testColorFilter(colorFilter, true);
 								}
 								//Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
-								if(log.size() == loggerPreferences.getMaximumEntries()) {
+								if(logEntries.size() == loggerPreferences.getMaximumEntries()) {
 									int newRow = pendingRequest.logRow - loggerPreferences.getMaximumEntries() - totalRequests;
-									logTable.getModel().fireTableRowsUpdated(newRow - 10, Math.min(loggerPreferences.getMaximumEntries(), newRow + 10));
+									logViewPanel.getLogTable().getModel().fireTableRowsUpdated(newRow - 10, Math.min(loggerPreferences.getMaximumEntries(), newRow + 10));
 								}else{
-									logTable.getModel().fireTableRowsUpdated(pendingRequest.logRow, pendingRequest.logRow);
+									logViewPanel.getLogTable().getModel().fireTableRowsUpdated(pendingRequest.logRow, pendingRequest.logRow);
 								}
 
 								for (LogEntryListener logEntryListener : logEntryListeners) {
@@ -575,10 +392,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 					}
 
 					if(logEntry != null) {
-						//After handling request / response log generation.
+						//After handling request / response logEntries generation.
 						//Add to table / modify existing entry.
-						synchronized (log) {
-							logTable.getModel().addRow(logEntry);
+						synchronized (logEntries) {
+							logViewPanel.getLogTable().getModel().addRow(logEntry);
 							totalRequests++;
 							if(logEntry instanceof LogEntry.PendingRequestEntry){
 								((LogEntry.PendingRequestEntry) logEntry).logRow = totalRequests-1;
@@ -590,65 +407,18 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		}
 	}
 
-	JLabel poppedOutText = new JLabel("Logger++ is popped out.");
-	void popIn(){
-		mainUIWrapper.add(mainUI, BorderLayout.CENTER);
-		mainUIWrapper.remove(poppedOutText);
-		mainUIWrapper.revalidate();
-		popoutbutton.setText("Pop Out");
-		isPoppedOut = false;
-	}
-
-	void popOut(){
-		popJFrame = new JFrame();
-		popJFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		popJFrame.addWindowListener(new WindowListener() {
-			@Override
-			public void windowOpened(WindowEvent windowEvent) {
-				popJFrame.add(mainUI);
-				popoutbutton.setText("Pop In");
-				isPoppedOut = true;
-				poppedOutText.setHorizontalAlignment(SwingConstants.CENTER);
-				mainUIWrapper.add(poppedOutText, BorderLayout.CENTER);
-				mainUIWrapper.repaint();
-				popJFrame.pack();
-			}
-
-			@Override
-			public void windowClosing(WindowEvent windowEvent) {
-				popIn();
-			}
-
-			@Override
-			public void windowClosed(WindowEvent windowEvent) {}
-
-			@Override
-			public void windowIconified(WindowEvent windowEvent) {}
-
-			@Override
-			public void windowDeiconified(WindowEvent windowEvent) {}
-
-			@Override
-			public void windowActivated(WindowEvent windowEvent) {}
-
-			@Override
-			public void windowDeactivated(WindowEvent windowEvent) {}
-		});
-
-		popJFrame.setVisible(true);
-	}
-
 	public void setFilter(String filterString){
+		JTextField filterField = logViewPanel.getFilterPanel().getFilterField();
 		if(filterField.getText().length() == 0){
 			setFilter((Filter) null);
 		}else{
 			try{
 				Filter filter = FilterCompiler.parseString(filterField.getText());
-				logTable.setFilter(filter);
+				logViewPanel.getLogTable().setFilter(filter);
 				filterField.setText(filter.toString());
 				filterField.setBackground(Color.green);
 			}catch (Filter.FilterException fException){
-				logTable.setFilter(null);
+				logViewPanel.getLogTable().setFilter(null);
 				filterField.setBackground(Color.RED);
 			}
 		}
@@ -656,127 +426,34 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 
 	public void setFilter(Filter filter){
 		if(filter == null){
-			logTable.setFilter(null);
-			filterField.setText("");
-			filterField.setBackground(Color.white);
+			logViewPanel.getLogTable().setFilter(null);
+			logViewPanel.getFilterPanel().getFilterField().setText("");
+			logViewPanel.getFilterPanel().getFilterField().setBackground(Color.white);
 		} else {
-			logTable.setFilter(filter);
-			filterField.setText(filter.toString());
-			filterField.setBackground(Color.green);
+			logViewPanel.getLogTable().setFilter(filter);
+			logViewPanel.getFilterPanel().getFilterField().setText(filter.toString());
+			logViewPanel.getFilterPanel().getFilterField().setBackground(Color.green);
 		}
 	}
-
-	public void addColorFilter(ColorFilter colorFilter, boolean showDialog){
-		((ColorFilterTableModel) colorFilterDialog.getFilterTable().getModel()).addFilter(colorFilter);
-		if(showDialog) colorFilterDialog.setVisible(true);
-	}
-
-
-	//
-	// implement IMessageEditorController
-	// this allows our request/response viewers to obtain details about the messages being displayed
-	//
-
-	@Override
-	public byte[] getRequest()
-	{
-		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
-			return "".getBytes();
-		return logTable.getModel().getCurrentlyDisplayedItem().getRequest();
-	}
-
-	@Override
-	public byte[] getResponse()
-	{
-		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
-			return "".getBytes();
-		return logTable.getModel().getCurrentlyDisplayedItem().getResponse();
-	}
-
-	@Override
-	public IHttpService getHttpService()
-	{
-		if(logTable.getModel().getCurrentlyDisplayedItem()==null)
-			return null;
-		return logTable.getModel().getCurrentlyDisplayedItem().getHttpService();
-	}
-
 
 	public static void main(String [] args){
 		System.out.println("You have built the Logger++. You shall play with the jar file now!");
 		burp.StartBurp.main(args);
 	}
 
-	//FilterListeners
-	@Override
-	public void onChange(final ColorFilter filter) {
-		Thread onChangeThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				for (int i=0; i<log.size(); i++) {
-					boolean colorResult = log.get(i).testColorFilter(filter, filter.shouldRetest());
-					if(colorResult || filter.isModified()){
-						logTable.getModel().fireTableRowsUpdated(i, i);
-					}
-				}
-			}
-		});
-		onChangeThread.start();
-	}
-
-	@Override
-	public void onAdd(final ColorFilter filter) {
-		if(!filter.isEnabled() || filter.getFilter() == null) return;
-		Thread onAddThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				for (int i=0; i<log.size(); i++) {
-					boolean colorResult = log.get(i).testColorFilter(filter, false);
-					if(colorResult) logTable.getModel().fireTableRowsUpdated(i, i);
-				}
-			}
-		});
-		onAddThread.start();
-	}
-
-	@Override
-	public void onRemove(final ColorFilter filter) {
-		if(!filter.isEnabled() || filter.getFilter() == null) return;
-		Thread onRemoveThread = new Thread(new Runnable(){
-			@Override
-			public void run() {
-				for (int i=0; i<log.size(); i++) {
-					boolean wasPresent = log.get(i).matchingColorFilters.remove(filter.getUid());
-					if(wasPresent) logTable.getModel().fireTableRowsUpdated(i, i);
-				}
-			}
-		});
-		onRemoveThread.start();
-	}
-
-	@Override
-	public void onRemoveAll() {}
-
 	public void reset(){
-		this.log.clear();
+		this.logEntries.clear();
 		this.pendingRequests.clear();
 		this.totalRequests = 0;
-		this.logTable.getModel().fireTableDataChanged();
+		this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
 	}
-
-	public JTextField getFilterField() {
-		return filterField;
-	}
-
-	public IMessageEditor getRequestViewer() { return requestViewer; }
-	public IMessageEditor getResponseViewer() { return responseViewer; }
 
 	public LoggerPreferences getLoggerPreferences() {
 		return loggerPreferences;
 	}
 
 	public LogTable getLogTable() {
-		return logTable;
+		return logViewPanel.getLogTable();
 	}
 
 	public HashMap<Integer, LogEntry.PendingRequestEntry> getPendingRequests() {
@@ -787,14 +464,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return helpers;
 	}
 
-	public boolean isDebug() {
-		return isDebug;
-	}
-
-	public PrintWriter getStderr() {
-		return stderr;
-	}
-
 	public IBurpExtenderCallbacks getCallbacks() {
 		return callbacks;
 	}
@@ -803,12 +472,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return optionsJPanel;
 	}
 
-	public List<LogEntry> getLog() {
-		return log;
-	}
-
-	public PrintWriter getStdout() {
-		return stdout;
+	public List<LogEntry> getLogEntries() {
+		return logEntries;
 	}
 
 	public void addLogListener(LogEntryListener listener) {
@@ -823,7 +488,31 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IMessag
 		return logEntryListeners;
 	}
 
+	public VariableViewPanel getMainPanel() {
+		return mainPanel;
+	}
+
+	public VariableViewPanel getReqRespPanel() {
+		return reqRespPanel;
+	}
+
 	public JScrollPane getLogScrollPanel() {
-		return logTableScrollPane;
+		return logViewPanel.getScrollPane();
+	}
+
+	public ArrayList<FilterListener> getFilterListeners() {
+		return filterListeners;
+	}
+
+	public void addFilterListener(FilterListener listener) {
+		filterListeners.add(listener);
+	}
+
+	public IMessageEditor getRequestViewer() {
+		return requestViewer;
+	}
+
+	public IMessageEditor getResponseViewer() {
+		return responseViewer;
 	}
 }

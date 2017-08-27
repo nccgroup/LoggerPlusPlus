@@ -14,16 +14,11 @@ public class TableHeader extends JTableHeader {
 
 	private final LogTableColumnModel tableColumnModel;
 	private final LogTable logTable;
-	private final boolean isDebug;
-	private final PrintWriter stdout, stderr;
 	
-	TableHeader(TableColumnModel tcm, final LogTable logTable, PrintWriter stdout, PrintWriter stderr, boolean isDebug) {
+	TableHeader(TableColumnModel tcm, final LogTable logTable) {
 		super(tcm);
 		this.tableColumnModel = (LogTableColumnModel) tcm;
 		this.logTable = logTable;
-		this.isDebug=isDebug;
-		this.stdout = stdout;
-		this.stderr=stderr;
 
 		this.addMouseListener(new MouseAdapter(){
 			@Override
