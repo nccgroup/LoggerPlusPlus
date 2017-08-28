@@ -27,7 +27,7 @@ public class ColorFilterTable extends JTable {
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         this.setAutoCreateRowSorter(false);
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        this.setRowHeight(20);
+        this.setRowHeight(25);
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
         ((JComponent) this.getDefaultRenderer(JButton.class)).setOpaque(true);
 

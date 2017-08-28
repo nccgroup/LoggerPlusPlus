@@ -23,6 +23,13 @@ public class ColorFilter implements Comparable<ColorFilter>{
         this.enabled = true;
     }
 
+    public ColorFilter(String title, String filterString) throws Filter.FilterException {
+        this();
+        this.name = title;
+        this.setFilterString(filterString);
+        this.setFilter(FilterCompiler.parseString(filterString));
+    }
+
     public UUID getUid() {
         return uid;
     }

@@ -17,32 +17,32 @@ public interface IParameter
     /**
      * Used to indicate a parameter within the URL query string.
      */
-    static final byte PARAM_URL = 0;
+    byte PARAM_URL = 0;
     /**
      * Used to indicate a parameter within the message body.
      */
-    static final byte PARAM_BODY = 1;
+    byte PARAM_BODY = 1;
     /**
      * Used to indicate an HTTP cookie.
      */
-    static final byte PARAM_COOKIE = 2;
+    byte PARAM_COOKIE = 2;
     /**
      * Used to indicate an item of data within an XML structure.
      */
-    static final byte PARAM_XML = 3;
+    byte PARAM_XML = 3;
     /**
      * Used to indicate the value of a tag attribute within an XML structure.
      */
-    static final byte PARAM_XML_ATTR = 4;
+    byte PARAM_XML_ATTR = 4;
     /**
      * Used to indicate the value of a parameter attribute within a multi-part
      * message body (such as the name of an uploaded file).
      */
-    static final byte PARAM_MULTIPART_ATTR = 5;
+    byte PARAM_MULTIPART_ATTR = 5;
     /**
      * Used to indicate an item of data within a JSON structure.
      */
-    static final byte PARAM_JSON = 6;
+    byte PARAM_JSON = 6;
 
     /**
      * This method is used to retrieve the parameter type.

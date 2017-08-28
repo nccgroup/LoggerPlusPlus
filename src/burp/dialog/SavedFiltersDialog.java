@@ -15,10 +15,13 @@ import java.util.ArrayList;
  * Created by corey on 22/08/17.
  */
 public class SavedFiltersDialog extends JFrame{
+    private static SavedFiltersDialog instance;
     ArrayList<SavedFilter> savedFilters;
     SavedFiltersTable filterTable;
 
     public SavedFiltersDialog(){
+        if(instance != null) instance.dispose();
+        instance = this;
         this.savedFilters = BurpExtender.getInstance().getLoggerPreferences().getSavedFilters();
         this.filterTable = new SavedFiltersTable(savedFilters);
         buildDialog();

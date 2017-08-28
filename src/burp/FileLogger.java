@@ -53,7 +53,7 @@ public class FileLogger implements LogEntryListener{
         chooser.setSelectedFile(new File(filename + ".csv"));
         chooser.setAcceptAllFileFilterUsed(false);
 
-        int val = chooser.showSaveDialog((Component) null);
+        int val = chooser.showSaveDialog(null);
 
         if (val == JFileChooser.APPROVE_OPTION) {
             csvFile = fixExtension(chooser.getSelectedFile(), "csv");
@@ -83,7 +83,7 @@ public class FileLogger implements LogEntryListener{
         return null;
     }
 
-    //TODO Check if header in file matches that of the columns we will be exporting.
+    //Check if header in file matches that of the columns we will be exporting.
     private boolean validHeader(File csvFile, boolean isFullLog) {
         BufferedReader reader;
         try {
@@ -213,7 +213,6 @@ public class FileLogger implements LogEntryListener{
     public class ExcelExporter {
 
         public void addHeader(FileWriter writer, boolean isFullLog) throws IOException {
-            //TODO better getCSVHeader impl
             writer.write(LogEntry.getCSVHeader(BurpExtender.getInstance().getLogTable(), isFullLog) + "\n");
         }
 

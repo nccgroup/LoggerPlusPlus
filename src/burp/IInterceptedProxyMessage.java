@@ -23,38 +23,38 @@ public interface IInterceptedProxyMessage
      * This action causes Burp Proxy to follow the current interception rules to
      * determine the appropriate action to take for the message.
      */
-    static final int ACTION_FOLLOW_RULES = 0;
+    int ACTION_FOLLOW_RULES = 0;
     /**
      * This action causes Burp Proxy to present the message to the user for
      * manual review or modification.
      */
-    static final int ACTION_DO_INTERCEPT = 1;
+    int ACTION_DO_INTERCEPT = 1;
     /**
      * This action causes Burp Proxy to forward the message to the remote server
      * or client, without presenting it to the user.
      */
-    static final int ACTION_DONT_INTERCEPT = 2;
+    int ACTION_DONT_INTERCEPT = 2;
     /**
      * This action causes Burp Proxy to drop the message.
      */
-    static final int ACTION_DROP = 3;
+    int ACTION_DROP = 3;
     /**
      * This action causes Burp Proxy to follow the current interception rules to
      * determine the appropriate action to take for the message, and then make a
      * second call to processProxyMessage.
      */
-    static final int ACTION_FOLLOW_RULES_AND_REHOOK = 0x10;
+    int ACTION_FOLLOW_RULES_AND_REHOOK = 0x10;
     /**
      * This action causes Burp Proxy to present the message to the user for
      * manual review or modification, and then make a second call to
      * processProxyMessage.
      */
-    static final int ACTION_DO_INTERCEPT_AND_REHOOK = 0x11;
+    int ACTION_DO_INTERCEPT_AND_REHOOK = 0x11;
     /**
      * This action causes Burp Proxy to skip user interception, and then make a
      * second call to processProxyMessage.
      */
-    static final int ACTION_DONT_INTERCEPT_AND_REHOOK = 0x12;
+    int ACTION_DONT_INTERCEPT_AND_REHOOK = 0x12;
 
     /**
      * This method retrieves a unique reference number for this

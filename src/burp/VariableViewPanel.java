@@ -8,7 +8,7 @@ import java.awt.*;
  * Created by corey on 24/08/17.
  */
 public class VariableViewPanel extends JPanel {
-    public enum View {HORIZONTAL, VERTICAL, TABS;}
+    public enum View {HORIZONTAL, VERTICAL, TABS}
     private final Component a;
     private final String aTitle;
     private final Component b;
