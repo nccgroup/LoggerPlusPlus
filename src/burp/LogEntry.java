@@ -629,7 +629,7 @@ public class LogEntry extends RowFilter.Entry
 		NO("No"),
 		PARTIALLY("Partially");
 		private String value;
-		private cookieJarStatus(String value) {
+		cookieJarStatus(String value) {
 			this.value = value;
 		}
 		public String getValue() {
@@ -692,7 +692,7 @@ public class LogEntry extends RowFilter.Entry
 		REQUEST("REQUEST"),
 		RESPONSE("RESPONSE");
 		private String value;
-		private columnNamesType(String value) {
+		columnNamesType(String value) {
 			this.value = value;
 		}
 		public String getValue() {

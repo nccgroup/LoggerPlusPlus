@@ -116,8 +116,10 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 				optionsJPanel = new LoggerOptionsPanel(canSaveCSV);
 				tabbedWrapper = new JTabbedPane();
 				tabbedWrapper.addTab("View Logs", null, mainPanel, null);
+				tabbedWrapper.addTab("Filter Library", null, new FilterLibrary(), null);
 				tabbedWrapper.addTab("Options", null, optionsJPanel, null);
 				tabbedWrapper.addTab("About", null, aboutJPanel, null);
+				tabbedWrapper.addTab("Help", null, new HelpPanel(), null);
 				uiPopOutPanel = new PopOutPanel(tabbedWrapper, "Logger++"){
 					@Override
 					public void popOut() {
@@ -409,11 +411,11 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 
 	public void setFilter(String filterString){
 		JTextField filterField = logViewPanel.getFilterPanel().getFilterField();
-		if(filterField.getText().length() == 0){
+		if(filterString.length() == 0){
 			setFilter((Filter) null);
 		}else{
 			try{
-				Filter filter = FilterCompiler.parseString(filterField.getText());
+				Filter filter = FilterCompiler.parseString(filterString);
 				logViewPanel.getLogTable().setFilter(filter);
 				filterField.setText(filter.toString());
 				filterField.setBackground(Color.green);
@@ -514,5 +516,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 
 	public IMessageEditor getResponseViewer() {
 		return responseViewer;
+	}
+
+	public JTabbedPane getTabbedPane() {
+		return this.tabbedWrapper;
 	}
 }

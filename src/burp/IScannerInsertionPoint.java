@@ -23,79 +23,79 @@ public interface IScannerInsertionPoint
      * Used to indicate where the payload is inserted into the value of a URL
      * parameter.
      */
-    static final byte INS_PARAM_URL = 0x00;
+    byte INS_PARAM_URL = 0x00;
     /**
      * Used to indicate where the payload is inserted into the value of a body
      * parameter.
      */
-    static final byte INS_PARAM_BODY = 0x01;
+    byte INS_PARAM_BODY = 0x01;
     /**
      * Used to indicate where the payload is inserted into the value of an HTTP
      * cookie.
      */
-    static final byte INS_PARAM_COOKIE = 0x02;
+    byte INS_PARAM_COOKIE = 0x02;
     /**
      * Used to indicate where the payload is inserted into the value of an item
      * of data within an XML data structure.
      */
-    static final byte INS_PARAM_XML = 0x03;
+    byte INS_PARAM_XML = 0x03;
     /**
      * Used to indicate where the payload is inserted into the value of a tag
      * attribute within an XML structure.
      */
-    static final byte INS_PARAM_XML_ATTR = 0x04;
+    byte INS_PARAM_XML_ATTR = 0x04;
     /**
      * Used to indicate where the payload is inserted into the value of a
      * parameter attribute within a multi-part message body (such as the name of
      * an uploaded file).
      */
-    static final byte INS_PARAM_MULTIPART_ATTR = 0x05;
+    byte INS_PARAM_MULTIPART_ATTR = 0x05;
     /**
      * Used to indicate where the payload is inserted into the value of an item
      * of data within a JSON structure.
      */
-    static final byte INS_PARAM_JSON = 0x06;
+    byte INS_PARAM_JSON = 0x06;
     /**
      * Used to indicate where the payload is inserted into the value of an AMF
      * parameter.
      */
-    static final byte INS_PARAM_AMF = 0x07;
+    byte INS_PARAM_AMF = 0x07;
     /**
      * Used to indicate where the payload is inserted into the value of an HTTP
      * request header.
      */
-    static final byte INS_HEADER = 0x20;
+    byte INS_HEADER = 0x20;
     /**
      * Used to indicate where the payload is inserted into a REST parameter
      * within the URL file path.
      */
-    static final byte INS_URL_REST = 0x21;
+    byte INS_URL_REST = 0x21;
     /**
      * Used to indicate where the payload is inserted into the name of an added
      * URL parameter.
      */
-    static final byte INS_PARAM_NAME_URL = 0x22;
+    byte INS_PARAM_NAME_URL = 0x22;
     /**
      * Used to indicate where the payload is inserted into the name of an added
      * body parameter.
      */
-    static final byte INS_PARAM_NAME_BODY = 0x23;
+    byte INS_PARAM_NAME_BODY = 0x23;
     /**
      * Used to indicate where the payload is inserted at a location manually
      * configured by the user.
      */
-    static final byte INS_USER_PROVIDED = 0x40;
+    byte INS_USER_PROVIDED = 0x40;
     /**
      * Used to indicate where the insertion point is provided by an
      * extension-registered
      * <code>IScannerInsertionPointProvider</code>.
      */
-    static final byte INS_EXTENSION_PROVIDED = 0x41;
+    byte INS_EXTENSION_PROVIDED = 0x41;
     /**
      * Used to indicate where the payload is inserted at an unknown location
      * within the request.
      */
-    static final byte INS_UNKNOWN = 0x7f;
+    byte INS_UNKNOWN = 0x7f;
 
     /**
      * This method returns the name of the insertion point.

@@ -110,9 +110,7 @@ public class LogViewPanel extends JPanel {
             colorFilterButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-//                colorFilterDialog.setVisible(true);
-//                new ColorFilterDialog().setVisible(true);
-                    //TODO Add Colorfilter button back
+                new ColorFilterDialog(BurpExtender.getInstance().getFilterListeners()).setVisible(true);
                 }
             });
 

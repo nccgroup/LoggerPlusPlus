@@ -31,47 +31,47 @@ public interface IBurpExtenderCallbacks
     /**
      * Flag used to identify Burp Suite as a whole.
      */
-    static final int TOOL_SUITE = 0x00000001;
+    int TOOL_SUITE = 0x00000001;
     /**
      * Flag used to identify the Burp Target tool.
      */
-    static final int TOOL_TARGET = 0x00000002;
+    int TOOL_TARGET = 0x00000002;
     /**
      * Flag used to identify the Burp Proxy tool.
      */
-    static final int TOOL_PROXY = 0x00000004;
+    int TOOL_PROXY = 0x00000004;
     /**
      * Flag used to identify the Burp Spider tool.
      */
-    static final int TOOL_SPIDER = 0x00000008;
+    int TOOL_SPIDER = 0x00000008;
     /**
      * Flag used to identify the Burp Scanner tool.
      */
-    static final int TOOL_SCANNER = 0x00000010;
+    int TOOL_SCANNER = 0x00000010;
     /**
      * Flag used to identify the Burp Intruder tool.
      */
-    static final int TOOL_INTRUDER = 0x00000020;
+    int TOOL_INTRUDER = 0x00000020;
     /**
      * Flag used to identify the Burp Repeater tool.
      */
-    static final int TOOL_REPEATER = 0x00000040;
+    int TOOL_REPEATER = 0x00000040;
     /**
      * Flag used to identify the Burp Sequencer tool.
      */
-    static final int TOOL_SEQUENCER = 0x00000080;
+    int TOOL_SEQUENCER = 0x00000080;
     /**
      * Flag used to identify the Burp Decoder tool.
      */
-    static final int TOOL_DECODER = 0x00000100;
+    int TOOL_DECODER = 0x00000100;
     /**
      * Flag used to identify the Burp Comparer tool.
      */
-    static final int TOOL_COMPARER = 0x00000200;
+    int TOOL_COMPARER = 0x00000200;
     /**
      * Flag used to identify the Burp Extender tool.
      */
-    static final int TOOL_EXTENDER = 0x00000400;
+    int TOOL_EXTENDER = 0x00000400;
 
     /**
      * This method is used to set the display name for the current extension,

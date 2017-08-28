@@ -2,6 +2,7 @@ package burp.dialog;
 
 import burp.BurpExtender;
 import burp.filter.ColorFilter;
+import burp.filter.Filter;
 import burp.filter.FilterListener;
 
 import javax.swing.*;
@@ -16,12 +17,15 @@ import java.util.UUID;
  * Created by corey on 19/07/17.
  */
 public class ColorFilterDialog extends JFrame implements WindowListener {
+    private static ColorFilterDialog instance;
     private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
     private Map<UUID, ColorFilter> originalFilters;
     private final ColorFilterTable filterTable;
 
     public ColorFilterDialog(ArrayList<FilterListener> listeners){
+        if(instance != null) instance.dispose();
+        instance = this;
         this.filters = BurpExtender.getInstance().getLoggerPreferences().getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
@@ -153,4 +157,8 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
     public void windowActivated(WindowEvent windowEvent) {}
     @Override
     public void windowDeactivated(WindowEvent windowEvent) {}
+
+    public void addColorFilter(String title, String filterString) throws Filter.FilterException {
+        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filterString));
+    }
 }

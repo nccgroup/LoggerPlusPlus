@@ -222,7 +222,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	public int getColumnViewLocation(int modelColumnIndex) {
-		return viewToModelMap.indexOf((Integer) modelColumnIndex);
+		return viewToModelMap.indexOf(modelColumnIndex);
 	}
 
 //	public String getTableIDsStringByOrder() {
