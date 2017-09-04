@@ -78,19 +78,22 @@ public class LogViewPanel extends JPanel {
         FilterPanel(){
             this.setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
-
             this.filterField = new JTextField();
             this.filterField.getInputMap(JComponent.WHEN_FOCUSED)
                     .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
             this.filterField.getActionMap().put("submit", new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    BurpExtender.getInstance().setFilter(filterField.getText());
+                    BurpExtender.getInstance().setFilter(filterField.getText(), true);
                 }
             });
 
             gbc.fill = GridBagConstraints.BOTH;
             gbc.gridx = 0;
+            gbc.weightx = gbc.weighty = 0;
+            this.add(new JLabel(" Filter: "), gbc);
+
+            gbc.gridx = 1;
             gbc.weightx = gbc.weighty = 99.0;
             this.add(filterField, gbc);
 
@@ -102,7 +105,7 @@ public class LogViewPanel extends JPanel {
                 }
             });
 
-            gbc.gridx = 1;
+            gbc.gridx = 2;
             gbc.weightx = gbc.weighty = 2.0;
             this.add(filterButton, gbc);
 
@@ -114,7 +117,7 @@ public class LogViewPanel extends JPanel {
                 }
             });
 
-            gbc.gridx = 2;
+            gbc.gridx = 3;
             gbc.weightx = gbc.weighty = 1.0;
             this.add(colorFilterButton, gbc);
         }
