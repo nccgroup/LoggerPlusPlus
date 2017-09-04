@@ -11,6 +11,8 @@ import burp.filter.FilterListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.UIResource;
 import javax.swing.table.*;
 import java.awt.*;
@@ -48,6 +50,19 @@ public class LogTable extends JTable implements FilterListener
         if(sortColumn != -1 && sortOrder != null){
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
+
+        DefaultListSelectionModel model = new DefaultListSelectionModel(){
+            @Override
+            public void clearSelection() {
+                super.clearSelection();
+                try{
+                    BurpExtender.getInstance().getRequestViewer().setMessage(new byte[0], true);
+                    BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                }catch (NullPointerException nPException){}
+            }
+        };
+
+        this.setSelectionModel(model);
 
         registerListeners();
     }

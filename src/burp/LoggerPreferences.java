@@ -27,15 +27,15 @@ import java.util.*;
 
 public class LoggerPreferences {
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	private final double version = 3.04;
-	private final String appName = "Burp Suite Logger++";
-	private final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
-	private final String companyLink = "https://www.nccgroup.trust/";
-	private final String authorLink = "https://soroush.secproject.com/";
-	private final String projectLink = "https://github.com/NCCGroup/BurpSuiteLoggerPlusPlus";
-	private final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
-	private final String changeLog = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
-	private final String updateURL = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
+	static final double version = 3.05;
+	static final String appName = "Burp Suite Logger++";
+	static final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
+	static final String companyLink = "https://www.nccgroup.trust/";
+	static final String authorLink = "https://soroush.secproject.com/";
+	static final String projectLink = "https://github.com/NCCGroup/BurpSuiteLoggerPlusPlus";
+	static final String projectIssueLink = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
+	static final String changeLog = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
+	static final String updateURL = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
 	private int sortColumn;
 	private SortOrder sortOrder;
 	private boolean autoScroll = true;

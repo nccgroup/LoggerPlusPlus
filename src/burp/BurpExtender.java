@@ -45,7 +45,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 	private JTabbedPane tabbedWrapper;
 	private boolean canSaveCSV = false;
 	private LoggerPreferences loggerPreferences;
-	private AboutPanel aboutJPanel;
 	private LoggerOptionsPanel optionsJPanel;
 	private ArrayList<FilterListener> filterListeners;
 	private VariableViewPanel reqRespPanel;
@@ -58,6 +57,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 	private LogViewPanel logViewPanel;
 	private IMessageEditor requestViewer;
 	private IMessageEditor responseViewer;
+
+	private GrepPanel grepPanel;
 	//
 	// implement IBurpExtender
 	//
@@ -77,7 +78,6 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 		filterListeners = new ArrayList<FilterListener>();
 		pendingRequests = new HashMap<Integer, LogEntry.PendingRequestEntry>();
 		loggerPreferences = new LoggerPreferences();
-		aboutJPanel = new AboutPanel();
 
 		//Add ui elements to ui.
 		SwingUtilities.invokeLater(new Runnable()
@@ -110,15 +110,21 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 					@Override
 					public void setView(View view) {
 						loggerPreferences.setView(view);
+						try {
+							grepPanel.setActivePattern("(a|b)(b|c)(a|b)");
+						}catch (NullPointerException e){}
 						super.setView(view);
 					}
 				};
+
+				grepPanel = new GrepPanel();
 				optionsJPanel = new LoggerOptionsPanel(canSaveCSV);
 				tabbedWrapper = new JTabbedPane();
 				tabbedWrapper.addTab("View Logs", null, mainPanel, null);
 				tabbedWrapper.addTab("Filter Library", null, new FilterLibrary(), null);
+				tabbedWrapper.addTab("Grep Values", null, grepPanel, null);
 				tabbedWrapper.addTab("Options", null, optionsJPanel, null);
-				tabbedWrapper.addTab("About", null, aboutJPanel, null);
+				tabbedWrapper.addTab("About", null, new AboutPanel(), null);
 				tabbedWrapper.addTab("Help", null, new HelpPanel(), null);
 				uiPopOutPanel = new PopOutPanel(tabbedWrapper, "Logger++"){
 					@Override
@@ -241,7 +247,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 		});
 
 		if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
-			aboutJPanel.checkForUpdate(false);
+			MoreHelp.checkForUpdate(false);
 		}
 
 		//Create incomplete request cleanup thread so map doesn't get too big.

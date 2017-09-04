@@ -42,7 +42,7 @@ public class VariableViewPanel extends JPanel {
                 }else{
                     ((JSplitPane) wrapper).setOrientation(JSplitPane.VERTICAL_SPLIT);
                 }
-                ((JSplitPane) wrapper).setDividerLocation(0.5);
+                ((JSplitPane) wrapper).setResizeWeight(0.5);
                 break;
             }
             case TABS: {

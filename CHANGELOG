@@ -1,3 +1,10 @@
+v 3.05
+=========================================================================
+- Added a filter library to share useful filters.
+- Added Grep tab to easily search for patterns.
+- Large code refactor.
+- Added help tab.
+
 v 3.04
 =========================================================================
 - Added more context menu options.

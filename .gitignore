@@ -2,8 +2,8 @@
 .settings/
 .externalToolBuilders/
 bin/
+Util/
 BurpLogger++.iml
-FILTERS
 TODO
 .classpath
 .project
