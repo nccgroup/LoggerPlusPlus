@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 //TODO Better column to value mapping.
 public class LogEntry extends RowFilter.Entry
 {
+	final UUID uuid;
 	IHttpRequestResponse requestResponse;
 	final int tool;
 	String host="";
@@ -75,6 +76,7 @@ public class LogEntry extends RowFilter.Entry
 
 	LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message)
 	{
+		this.uuid = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 
@@ -505,9 +507,9 @@ public class LogEntry extends RowFilter.Entry
 
 		if(isFullLog){
 			result.append(",");		    
-			result.append(StringEscapeUtils.escapeCsv(String.valueOf(requestResponse.getRequest())));
+			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
 			result.append(",");
-			result.append(StringEscapeUtils.escapeCsv(String.valueOf(requestResponse.getResponse())));
+			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));
 		}
 		return result.toString();
 	}
@@ -723,6 +725,11 @@ public class LogEntry extends RowFilter.Entry
 		}else{
 			return false;
 		}
+	}
+
+	@Override
+	public String toString() {
+		return this.url.toString();
 	}
 
 	public static class PendingRequestEntry extends LogEntry {

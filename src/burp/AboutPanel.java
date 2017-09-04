@@ -171,7 +171,7 @@ public class AboutPanel extends JPanel {
 					@Override
 					public void run()
 					{
-						checkForUpdate(true);
+						MoreHelp.checkForUpdate(true);
 					}
 				}).start();
 			}
@@ -210,87 +210,5 @@ public class AboutPanel extends JPanel {
 			e.printStackTrace();
 		}
 	}
-
-	public void checkForUpdate(boolean showMessages) {
-		IExtensionHelpers helper = callbacks.getHelpers();
-		Double currenVersion = loggerPreferences.getVersion();
-		Double latestVersion = 0.0;
-		int updateStatus = -1;
-		String updateMessage = "";
-		try{
-			URL changeLogURL = new URL(loggerPreferences.getChangeLog());
-			byte[] request = helper.buildHttpRequest(changeLogURL);
-			byte[] response = callbacks.makeHttpRequest(changeLogURL.getHost(), 443, true, request);
-
-			if(response != null){
-				// splitting the message to retrieve the header and the body
-				String strFullMessage = new String(response,"UTF-8");
-				if(strFullMessage.contains("\r\n\r\n")){
-					String strBody = strFullMessage.split("\r\n\r\n",2)[1];
-					Pattern MY_PATTERN = Pattern.compile("(?im)^[\\s]*v[\\s]*(\\d+(\\.*\\d*){0,1})$");
-
-					Matcher m = MY_PATTERN.matcher(strBody);
-
-					if (m.find()) {
-						latestVersion = Double.parseDouble(m.group(1));
-
-						if (latestVersion > currenVersion){
-							updateStatus = 1; // update is available
-						}else if (latestVersion.equals(currenVersion)){
-							updateStatus = 0; // no update is available
-						}else{
-							updateStatus = 2; // Future version!
-						}
-					}
-				}
-
-			}
-		}catch(Exception e){
-			BurpExtender.getInstance().getCallbacks().printError(e.getMessage());
-		}
-
-		switch(updateStatus){
-		case -1:
-			updateMessage = "Check for update failed: Could not get a proper response from "+loggerPreferences.getChangeLog();
-			BurpExtender.getInstance().getCallbacks().printError(updateMessage);
-			break;
-		case 0:
-			updateMessage = "This version is up to date.";
-			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
-			break;
-		case 1:
-			updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
-			if(callbacks.isExtensionBapp()){
-				updateMessage += "\nAs you are using BApp Store, you have to remove it first and download the Jar file from the GitHub repository. ";
-			}else{
-				if(callbacks.getExtensionFilename() != null){
-					int res = MoreHelp.askConfirmMessage("Update Available", "An update is available. Would you like to update now?", new String[]{"Yes", "No"});
-					if(res == JOptionPane.OK_OPTION){
-						try {
-							URL updateUrl = new URL(loggerPreferences.getUpdateURL());
-							InputStream input = updateUrl.openStream();
-							Path outputPath = Paths.get(callbacks.getExtensionFilename());
-							Files.copy(input, outputPath, StandardCopyOption.REPLACE_EXISTING);
-						} catch (Exception e) {
-							MoreHelp.showMessage("Could not update the plugin. Please visit the extension page to update manually.");
-							return;
-						}
-						MoreHelp.showMessage("Update complete. Re-enable the plugin in the extensions tab to continue.");
-						callbacks.unloadExtension();
-						return;
-					}
-				}
-			}
-			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
-			break;
-		case 2:
-			updateMessage = "This version is more up to date than the GitHub version! Are you a time traveler? or just a keen ninja? ;)";
-			BurpExtender.getInstance().getCallbacks().printOutput(updateMessage);
-			break;
-		}
-		if(!showMessages) return;
-		MoreHelp.showMessage(updateMessage);
-	}
-
 
 }

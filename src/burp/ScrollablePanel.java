@@ -12,13 +12,13 @@ public class ScrollablePanel extends JPanel
     {
         NONE,
         FIT,
-        STRETCH;
+        STRETCH
     }
 
     public enum IncrementType
     {
         PERCENT,
-        PIXELS;
+        PIXELS
     }
 
     private ScrollableSizeHint scrollableHeight = ScrollableSizeHint.NONE;

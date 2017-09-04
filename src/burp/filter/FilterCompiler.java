@@ -77,7 +77,7 @@ public class FilterCompiler {
                 String right = string.substring(compoundMatcher.group(1).length() + compoundMatcher.group(2).length()).trim();
                 return new CompoundFilter(left, compoundMatcher.group(2), right);
             } else {
-                Pattern operation = Pattern.compile("(.*?)((?:=?(?:=|<|>|!)=?))(.*?)");
+                Pattern operation = Pattern.compile("(.*?)((?:=?(?:[=<>!])=?))(.*?)");
                 Matcher operationMatcher = operation.matcher(regexStripped);
                 if(operationMatcher.matches()){
                     if(operationMatcher.group(2).equals("!")){
