@@ -110,9 +110,9 @@ public class Filter extends RowFilter<Object, Object> {
 
     public boolean matches(Object lValue, Object rValue) {
         if (lValue instanceof Pattern) {
-            return ((Pattern) lValue).matcher(rValue.toString()).matches() ^ this.inverted ^ this.operation==LogicalOperation.NE;
+            return ((Pattern) lValue).matcher(rValue.toString()).find() ^ this.inverted ^ this.operation==LogicalOperation.NE;
         } else if (rValue instanceof Pattern) {
-            return ((Pattern) rValue).matcher(lValue.toString()).matches() ^ this.inverted ^ this.operation==LogicalOperation.NE;
+            return ((Pattern) rValue).matcher(lValue.toString()).find() ^ this.inverted ^ this.operation==LogicalOperation.NE;
         }
 
         try {

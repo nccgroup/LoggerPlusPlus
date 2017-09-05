@@ -415,7 +415,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 		}
 	}
 
-	public void setFilter(String filterString){
+	public void setFilter(String filterString, boolean formatFilter){
 		JTextField filterField = logViewPanel.getFilterPanel().getFilterField();
 		if(filterString.length() == 0){
 			setFilter((Filter) null);
@@ -423,8 +423,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 			try{
 				Filter filter = FilterCompiler.parseString(filterString);
 				logViewPanel.getLogTable().setFilter(filter);
-				filterField.setText(filter.toString());
 				filterField.setBackground(Color.green);
+				if(formatFilter)
+					filterField.setText(filter.toString());
 			}catch (Filter.FilterException fException){
 				logViewPanel.getLogTable().setFilter(null);
 				filterField.setBackground(Color.RED);

@@ -317,11 +317,13 @@ public class LoggerPreferences {
 	public LoggerPreferences() {
 		double pastVersion = getDoubleSetting("version", 0.0);
 		if(pastVersion < getVersion()){
-			MoreHelp.showMessage("A new version of Logger++ has been installed. LogTable settings may be reset.");
+			MoreHelp.showMessage("A new version of Logger++ has been installed. LogTable settings have be reset.");
 			setVersion(getVersion());
+			resetTableSettings();
 		}else if(pastVersion > getVersion()){
-			MoreHelp.showMessage("A newer version of Logger++ was installed previously. LogTable settings may be reset.");
+			MoreHelp.showMessage("A newer version of Logger++ was installed previously. LogTable settings have been reset.");
 			setVersion(getVersion());
+			resetTableSettings();
 		}
 
 		loadAllSettings();
