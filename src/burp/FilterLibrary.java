@@ -53,10 +53,15 @@ public class FilterLibrary extends JSplitPane {
                     lblSelectedDescription.setText(filter.description);
                 }
             }
+
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return getPreferredSize().width < getParent().getWidth();
+            }
         };
         libraryTable.setRowHeight(25);
         libraryTable.setFillsViewportHeight(true);
-        libraryTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+        libraryTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         libraryTable.setAutoCreateRowSorter(false);
         ((JComponent) libraryTable.getDefaultRenderer(JButton.class)).setOpaque(true);
         libraryTable.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
@@ -188,7 +193,7 @@ public class FilterLibrary extends JSplitPane {
         public void onClick(int row, int col) {
             if(library == null || row < 0 || row >= library.size() || library.get(row) == null) return;
             if(col == 3){
-                BurpExtender.getInstance().setFilter(library.get(row).filter);
+                BurpExtender.getInstance().setFilter(library.get(row).filter, true);
                 BurpExtender.getInstance().getTabbedPane().setSelectedIndex(0);
                 return;
             }

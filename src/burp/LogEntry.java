@@ -13,7 +13,9 @@
 package burp;
 
 import burp.filter.ColorFilter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.net.URL;
@@ -69,8 +71,12 @@ public class LogEntry extends RowFilter.Entry
 	String[] regexAllResp = {"","","","",""};
 
 	ArrayList<UUID> matchingColorFilters;
+	int requestBodyOffset;
+	int responseBodyOffset;
 	final String requestTime;
 	String requestResponseDelay;
+	String responseHeaders;
+	final String requestHeaders;
 
 	// Defining necessary parameters from the caller
 
@@ -83,6 +89,7 @@ public class LogEntry extends RowFilter.Entry
 
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
+		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
 		LogTable logTable = BurpExtender.getInstance().getLogTable();
 
 		this.tool = tool;
@@ -118,7 +125,8 @@ public class LogEntry extends RowFilter.Entry
 			if(logTable.getColumnModel().isColumnEnabled("clientIP")) // This is good to increase the speed when it is time consuming
 				this.clientIP=message.getClientIpAddress().toString();
 		}
-		this.requestLength = strFullRequest.length() - tempAnalyzedReq.getBodyOffset();
+		requestBodyOffset = tempAnalyzedReq.getBodyOffset();
+		this.requestLength = requestResponse.getRequest().length - requestBodyOffset;
 		this.hasBodyParam = requestLength > 0;
 		this.params = this.url.getQuery() != null || this.hasBodyParam;
 		this.hasCookieParam = false;
@@ -243,10 +251,12 @@ public class LogEntry extends RowFilter.Entry
 
 		IResponseInfo tempAnalyzedResp = BurpExtender.getInstance().getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
-		this.responseLength= strFullResponse.length() - tempAnalyzedResp.getBodyOffset();
+		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
+		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
 
 		LogTable logTable = BurpExtender.getInstance().getLogTable();
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
+		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
 		this.status= tempAnalyzedResp.getStatusCode();
 		if(logTable.getColumnModel().isColumnEnabled("MimeType")) // This is good to increase the speed when it is time consuming
 			this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
@@ -439,13 +449,17 @@ public class LogEntry extends RowFilter.Entry
 			case 42: //regex5Resp
 				return regexAllResp[4];
 			case 43: //request
-				return requestResponse != null && requestResponse.getRequest() != null ? new String(requestResponse.getRequest()) : "";
+				return requestResponse != null && requestResponse.getRequest() != null ? new String(ArrayUtils.subarray(requestResponse.getRequest(), requestBodyOffset, requestResponse.getRequest().length)) : "";
 			case 44: //response
-				return requestResponse != null && requestResponse.getResponse() != null ? new String(requestResponse.getResponse()) : "";
+				return requestResponse != null && requestResponse.getResponse() != null ? new String(ArrayUtils.subarray(requestResponse.getResponse(), responseBodyOffset, requestResponse.getResponse().length)) : "";
 			case 45: //responseTime
 				return responseTime != null ? responseTime : "";
 			case 46: //requestResponseDelay
 				return requestResponseDelay != null ? requestResponseDelay : "";
+			case 47: //requestHeaders
+				return requestHeaders != null ? requestHeaders : "";
+			case 48: //requestHeaders
+				return responseHeaders != null ? responseHeaders : "";
 			default:
 				return null;
 		}
@@ -609,13 +623,17 @@ public class LogEntry extends RowFilter.Entry
 				case REGEX5RESP:
 					return this.regexAllResp[4];
 				case REQUEST: //request
-					return new String(requestResponse.getRequest());
+					return new String(requestResponse.getRequest()).substring(requestResponse.getRequest().length - requestLength);
 				case RESPONSE: //response
-					return new String(requestResponse.getResponse());
+					return new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
 				case REQUESTTIME: //requestTime
 					return requestTime;
 				case RESPONSEDELAY:
 					return requestResponseDelay;
+				case REQUESTHEADERS:
+					return requestHeaders != null ? requestHeaders : "";
+				case RESPONSEHEADERS:
+					return responseHeaders != null ? responseHeaders : "";
 				default:
 					return "";
 			}
@@ -692,7 +710,9 @@ public class LogEntry extends RowFilter.Entry
 		REGEX4RESP("REGEX4RESP"),
 		REGEX5RESP("REGEX5RESP"),
 		REQUEST("REQUEST"),
-		RESPONSE("RESPONSE");
+		RESPONSE("RESPONSE"),
+		REQUESTHEADERS("REQUESTHEADERS"),
+		RESPONSEHEADERS("RESPONSEHEADERS");
 		private String value;
 		columnNamesType(String value) {
 			this.value = value;

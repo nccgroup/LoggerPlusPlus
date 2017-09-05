@@ -67,6 +67,11 @@ public class LogTable extends JTable implements FilterListener
         registerListeners();
     }
 
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        return getPreferredSize().width < getParent().getWidth();
+    }
+
     //Sneak in row coloring just before rendering the cell.
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
