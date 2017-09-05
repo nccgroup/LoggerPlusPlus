@@ -60,6 +60,21 @@ public class LogTable extends JTable implements FilterListener
                     BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
                 }catch (NullPointerException nPException){}
             }
+
+            @Override
+            public void addSelectionInterval(int start, int end) {
+                super.addSelectionInterval(start, end);
+                LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(start));
+                if(logEntry.requestResponse != null) {
+                    if(logEntry.requestResponse.getRequest() != null)
+                        BurpExtender.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                    if (logEntry.requestResponse.getResponse() != null)
+                        BurpExtender.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                    else
+                        BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                    getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
+                }
+            }
         };
 
         this.setSelectionModel(model);
