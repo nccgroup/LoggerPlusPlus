@@ -73,18 +73,26 @@ public class LogViewPanel extends JPanel {
     }
 
     class FilterPanel extends JPanel {
-        private JTextField filterField;
+        final private JHistoryField filterField;
 
         FilterPanel(){
             this.setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
-            this.filterField = new JTextField();
-            this.filterField.getInputMap(JComponent.WHEN_FOCUSED)
-                    .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
-            this.filterField.getActionMap().put("submit", new AbstractAction() {
+            this.filterField = new JHistoryField(15, "filterHistory");
+            this.filterField.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyReleased(KeyEvent e) {
+                    if(e.getKeyChar() == KeyEvent.VK_ENTER){
+                        BurpExtender.getInstance().setFilter((String) filterField.getSelectedItem());
+                    }else {
+                        super.keyReleased(e);
+                    }
+                }
+            });
+            this.filterField.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    BurpExtender.getInstance().setFilter(filterField.getText(), true);
+                    BurpExtender.getInstance().setFilter((String) filterField.getSelectedItem());
                 }
             });
 
@@ -122,7 +130,7 @@ public class LogViewPanel extends JPanel {
             this.add(colorFilterButton, gbc);
         }
 
-        public JTextField getFilterField() {
+        public JHistoryField getFilterField() {
             return filterField;
         }
     }

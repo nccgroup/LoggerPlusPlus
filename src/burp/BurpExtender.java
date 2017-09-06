@@ -401,7 +401,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 
 					if(logEntry != null) {
 						//After handling request / response logEntries generation.
-						//Add to table / modify existing entry.
+						//Add to grepTable / modify existing entry.
 						synchronized (logEntries) {
 							logViewPanel.getLogTable().getModel().addRow(logEntry);
 							totalRequests++;
@@ -415,34 +415,42 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener, IProxyL
 		}
 	}
 
-	public void setFilter(String filterString, boolean formatFilter){
-		JTextField filterField = logViewPanel.getFilterPanel().getFilterField();
-		if(filterString.length() == 0){
+	public void setFilter(String filterString){
+		if (filterString.length() == 0) {
 			setFilter((Filter) null);
-		}else{
-			try{
+		} else {
+			try {
 				Filter filter = FilterCompiler.parseString(filterString);
-				logViewPanel.getLogTable().setFilter(filter);
-				filterField.setBackground(Color.green);
-				if(formatFilter)
-					filterField.setText(filter.toString());
-			}catch (Filter.FilterException fException){
+				setFilter(filter);
+			} catch (Filter.FilterException fException) {
 				logViewPanel.getLogTable().setFilter(null);
-				filterField.setBackground(Color.RED);
+				formatFilter(filterString, Color.RED);
 			}
 		}
 	}
 
+	public void formatFilter(String string, Color color){
+		if(string != logViewPanel.getFilterPanel().getFilterField().getSelectedItem()) {
+			logViewPanel.getFilterPanel().getFilterField().setSelectedItem(string);
+		}
+		logViewPanel.getFilterPanel().getFilterField().setColor(color);
+	}
+
 	public void setFilter(Filter filter){
-		if(filter == null){
+		JHistoryField filterComboField = logViewPanel.getFilterPanel().getFilterField();
+		Color color;
+		String filterString;
+		if (filter == null) {
 			logViewPanel.getLogTable().setFilter(null);
-			logViewPanel.getFilterPanel().getFilterField().setText("");
-			logViewPanel.getFilterPanel().getFilterField().setBackground(Color.white);
+			filterString = "";
+			color = Color.WHITE;
 		} else {
 			logViewPanel.getLogTable().setFilter(filter);
-			logViewPanel.getFilterPanel().getFilterField().setText(filter.toString());
-			logViewPanel.getFilterPanel().getFilterField().setBackground(Color.green);
+			filterString = filter.toString();
+			((JHistoryField.HistoryComboModel) filterComboField.getModel()).addToHistory(filterString);
+			color = Color.GREEN;
 		}
+		formatFilter(filterString, color);
 	}
 
 	public static void main(String [] args){

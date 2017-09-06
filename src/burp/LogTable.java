@@ -40,7 +40,7 @@ public class LogTable extends JTable implements FilterListener
             rowSorter.setModel(this.getModel());
         }catch (NullPointerException nPException){
             getColumnModel().resetToDefaultVariables();
-            BurpExtender.getInstance().getCallbacks().printError("Failed to create table from stored preferences. Table structure has been reset.");
+            BurpExtender.getInstance().getCallbacks().printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
             rowSorter.setModel(this.getModel());
         }
         setRowSorter(rowSorter);
@@ -52,15 +52,6 @@ public class LogTable extends JTable implements FilterListener
         }
 
         DefaultListSelectionModel model = new DefaultListSelectionModel(){
-            @Override
-            public void clearSelection() {
-                super.clearSelection();
-                try{
-                    BurpExtender.getInstance().getRequestViewer().setMessage(new byte[0], true);
-                    BurpExtender.getInstance().getResponseViewer().setMessage(new byte[0], false);
-                }catch (NullPointerException nPException){}
-            }
-
             @Override
             public void addSelectionInterval(int start, int end) {
                 super.addSelectionInterval(start, end);
@@ -191,7 +182,7 @@ public class LogTable extends JTable implements FilterListener
         }
     }
 
-    // to save the new table changes
+    // to save the new grepTable changes
     public void saveTableChanges(){
         // save it to the relevant variables and preferences
         this.getColumnModel().saveColumnJSON();
@@ -309,7 +300,7 @@ public class LogTable extends JTable implements FilterListener
         public int convertRowIndexToModel(int index) {
             //On occasion, for reasons unknown the conversion will cause a null pointer.
             //The exact same line with identical parameters will often work if run again
-            //Temporary fix is to let the table update the row again, such as on redraw.
+            //Temporary fix is to let the grepTable update the row again, such as on redraw.
             try {
                 return super.convertRowIndexToModel(index);
             }catch (NullPointerException e){
