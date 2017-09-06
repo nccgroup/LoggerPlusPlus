@@ -491,7 +491,7 @@ public interface IBurpExtenderCallbacks
 
     /**
      * This method is used to customize UI components in line with Burp's UI
-     * style, including font size, colors, table line spacing, etc. The action
+     * style, including font size, colors, grepTable line spacing, etc. The action
      * is performed recursively on any child components of the passed-in
      * component.
      *

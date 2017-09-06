@@ -103,8 +103,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 		try{
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}catch(Exception e){
-			// if there was an error in saved table configuration JSON object we have to use the default JSON object
-			BurpExtender.getInstance().getCallbacks().printError("Error in parsing the table structure JSON object. The default configuration will be used.");
+			// if there was an error in saved grepTable configuration JSON object we have to use the default JSON object
+			BurpExtender.getInstance().getCallbacks().printError("Error in parsing the grepTable structure JSON object. The default configuration will be used.");
 			logTableColumnsJSON = defaultLogTableColumnsJson;
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}

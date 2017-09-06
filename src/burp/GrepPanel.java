@@ -8,7 +8,6 @@ import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
@@ -25,96 +24,71 @@ import java.util.regex.PatternSyntaxException;
  */
 
 public class GrepPanel extends JPanel{
-    ArrayList<LogEntryMatches> matchingEntries;
-    Map<String, Integer> unique;
     Pattern activePattern;
-
-
-    GrepTableModel tableModel;
-    JXTreeTable table;
+    final JHistoryField field;
+    GrepTableModel grepModel;
+    JXTreeTable grepTable;
     JTable uniqueValueTable;
-    UniqueValueTableModel uniqueTableModel;
+    UniqueValueTableModel uniqueValueModel;
     JButton btnSetPattern;
-    boolean searching;
-    JCheckBox onlyInScope;
+    boolean isSearching;
+    JCheckBox searchInScopeOnly;
     Thread searchThread;
 
     GrepPanel(){
-        this.setLayout(new BorderLayout());
+        this.setLayout(new GridBagLayout());
         JPanel regexPanel = new JPanel(new BorderLayout());
         regexPanel.add(new JLabel("  Regex: "), BorderLayout.WEST);
-        final JTextField field = new JTextField();
+        field = new JHistoryField(15, "grepHistory");
         regexPanel.add(field, BorderLayout.CENTER);
         btnSetPattern = new JButton("Search");
         btnSetPattern.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                if(!searching)
-                    setActivePattern(field.getText());
-                else if(!searchThread.isInterrupted()){
-                    btnSetPattern.setText("Stopping. Click to force stop.");
-                    searchThread.interrupt();
-                }else{
-                    searchThread.stop();
-                    btnSetPattern.setText("Search");
-                    searching = false;
-                    tableModel.reload();
-                    uniqueTableModel.reload();
-                    table.revalidate();
-                    table.repaint();
-                    uniqueValueTable.revalidate();
-                    uniqueValueTable.repaint();
-                }
+                toggleSearch();
             }
         });
-        field.getInputMap(JComponent.WHEN_FOCUSED)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submit");
-        field.getActionMap().put("submit", new AbstractAction() {
+        field.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if(e.getKeyChar() == KeyEvent.VK_ENTER){
+                    toggleSearch();
+                }
+                super.keyReleased(e);
+            }
+        });
+        field.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                if(!searching)
-                    setActivePattern(field.getText());
-                else if(!searchThread.isInterrupted()){
-                    btnSetPattern.setText("Stopping. Click to force stop.");
-                    searchThread.interrupt();
-                }else{
-                    searchThread.stop();
-                    btnSetPattern.setText("Search");
-                    searching = false;
-                    tableModel.reload();
-                    uniqueTableModel.reload();
-                    table.revalidate();
-                    table.repaint();
-                    uniqueValueTable.revalidate();
-                    uniqueValueTable.repaint();
-                }
+                toggleSearch();
             }
         });
-        this.onlyInScope = new JCheckBox("In Scope Only");
+        this.searchInScopeOnly = new JCheckBox("In Scope Only");
         JPanel buttonsPanel = new JPanel(new BorderLayout());
-        buttonsPanel.add(this.onlyInScope, BorderLayout.WEST);
+        buttonsPanel.add(this.searchInScopeOnly, BorderLayout.WEST);
         buttonsPanel.add(btnSetPattern, BorderLayout.EAST);
         regexPanel.add(buttonsPanel, BorderLayout.EAST);
-        this.add(regexPanel, BorderLayout.NORTH);
-
-        matchingEntries = new ArrayList<>();
-        unique = new HashMap<>();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.weightx = gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = gbc.gridy = 0;
+        this.add(regexPanel, gbc);
 
         //Result Table
-        tableModel = new GrepTableModel(new String[]{"Entry", "Matches"}, this.matchingEntries);
-        table = new JXTreeTable(tableModel){
+        grepModel = new GrepTableModel(new String[]{"Entry", "Matches"});
+        grepTable = new JXTreeTable(grepModel){
             @Override
             public boolean getScrollableTracksViewportWidth() {
                 return getPreferredSize().width < getParent().getWidth();
             }
         };
-        table.addMouseListener(new MouseAdapter() {
+        grepTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 if(SwingUtilities.isRightMouseButton(e)) {
                     JPopupMenu menu = new JPopupMenu();
-                    int row = table.rowAtPoint(e.getPoint());
-                    TreePath path = table.getPathForRow(row);
+                    int row = grepTable.rowAtPoint(e.getPoint());
+                    TreePath path = grepTable.getPathForRow(row);
                     Object obj = path.getLastPathComponent();
                     if (obj instanceof LogEntryMatches) {
                         obj = ((LogEntryMatches) obj).entry;
@@ -133,36 +107,52 @@ public class GrepPanel extends JPanel{
                     });
                     menu.add(viewInLogs);
                     viewInLogs.setEnabled(index != -1);
-                    menu.show(table, e.getX(), e.getY());
+                    menu.show(grepTable, e.getX(), e.getY());
                 }
                 super.mouseReleased(e);
             }
         });
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        DefaultXTreeCellRenderer renderer = ((DefaultXTreeCellRenderer) ((JXTree.DelegatingRenderer) table.getTreeCellRenderer()).getDelegateRenderer());
+        grepTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        DefaultXTreeCellRenderer renderer = ((DefaultXTreeCellRenderer) ((JXTree.DelegatingRenderer) grepTable.getTreeCellRenderer()).getDelegateRenderer());
         renderer.setBackground(null);
         renderer.setOpaque(true);
 
         //Unique Values
-        uniqueTableModel = new UniqueValueTableModel(this.unique);
-        uniqueValueTable = new JTable(uniqueTableModel);
+        uniqueValueModel = new UniqueValueTableModel();
+        uniqueValueTable = new JTable(uniqueValueModel);
+        uniqueValueModel.setTable(uniqueValueTable);
         uniqueValueTable.setAutoCreateRowSorter(true);
 
         JTabbedPane tabbed = new JTabbedPane();
-        tabbed.addTab("Results", new JScrollPane(table));
+        tabbed.addTab("Results", new JScrollPane(grepTable));
         tabbed.addTab("Unique Values", new JScrollPane(uniqueValueTable));
 
-        this.add(tabbed, BorderLayout.CENTER);
+        gbc.gridy = 1;
+        gbc.weightx = gbc.weighty = 999;
+        this.add(tabbed, gbc);
+    }
+
+    private void toggleSearch(){
+        if(!isSearching) {
+            setActivePattern((String) field.getSelectedItem());
+            ((JHistoryField.HistoryComboModel) field.getModel()).addToHistory((String) field.getSelectedItem());
+        }else if(!searchThread.isInterrupted()){
+            btnSetPattern.setText("Stopping. Click to force stop.");
+            searchThread.interrupt();
+        }else{
+            searchThread.stop();
+            endSearch();
+        }
     }
 
 
     public synchronized void setActivePattern(String string){
         if(string.equalsIgnoreCase("")){
-            tableModel.clearResults();
-            uniqueTableModel.clearResults();
+            grepModel.clearResults();
+            uniqueValueModel.clearItems();
         }else {
             btnSetPattern.setText("Cancel");
-            searching = true;
+            isSearching = true;
             try {
                 activePattern = Pattern.compile(string, Pattern.CASE_INSENSITIVE);
             } catch (PatternSyntaxException e) {
@@ -178,19 +168,19 @@ public class GrepPanel extends JPanel{
             for (int i = 1; i <= patternGroups; i++) {
                 columns[i + 2] = "Group " + i + " Value";
             }
-            tableModel.setColumns(columns);
+            grepModel.setColumns(columns);
 
-            unique.clear();
-            matchingEntries.clear();
+            uniqueValueModel.clearItems();
+            grepModel.clearResults();
             searchThread = new Thread() {
                 @Override
                 public void run() {
                     synchronized (BurpExtender.getInstance().getLogEntries()) {
                         for (LogEntry entry : BurpExtender.getInstance().getLogEntries()) {
-                            if (onlyInScope.isSelected() && !BurpExtender.getInstance().getCallbacks().isInScope(entry.url)) continue;
+                            if (searchInScopeOnly.isSelected() && !BurpExtender.getInstance().getCallbacks().isInScope(entry.url)) continue;
                             if(isInterrupted()) break;
                             LogEntryMatches matches = new LogEntryMatches(entry, activePattern);
-                            if (matches.results.size() > 0) matchingEntries.add(matches);
+                            if (matches.results.size() > 0) grepModel.addEntry(matches);
                         }
                     }
                     endSearch();
@@ -202,11 +192,10 @@ public class GrepPanel extends JPanel{
 
     public void endSearch(){
         btnSetPattern.setText("Search");
-        searching = false;
-        tableModel.reload();
-        uniqueTableModel.reload();
-        table.revalidate();
-        table.repaint();
+        isSearching = false;
+        grepModel.reload();
+        grepTable.revalidate();
+        grepTable.repaint();
         uniqueValueTable.revalidate();
         uniqueValueTable.repaint();
     }
@@ -232,10 +221,10 @@ public class GrepPanel extends JPanel{
                     while(reqMatcher.find()){
                         String[] groups = new String[reqMatcher.groupCount()+1];
                         Match match = new Match();
-                        if(unique.containsKey(reqMatcher.group(0))){
-                            unique.put(reqMatcher.group(0), unique.get(reqMatcher.group(0))+1);
+                        if(uniqueValueModel.containsItem(reqMatcher.group(0))){
+                            uniqueValueModel.incrementItem(reqMatcher.group(0));
                         }else{
-                            unique.put(reqMatcher.group(0), 1);
+                            uniqueValueModel.addItem(reqMatcher.group(0));
                         }
                         for (int i = 0; i < groups.length; i++) {
                             groups[i] = reqMatcher.group(i);
@@ -250,10 +239,10 @@ public class GrepPanel extends JPanel{
                     while(respMatcher.find()){
                         String[] groups = new String[respMatcher.groupCount()+1];
                         Match match = new Match();
-                        if(unique.containsKey(respMatcher.group(0))){
-                            unique.put(respMatcher.group(0), unique.get(respMatcher.group(0))+1);
+                        if(uniqueValueModel.containsItem(respMatcher.group(0))){
+                            uniqueValueModel.incrementItem(respMatcher.group(0));
                         }else{
-                            unique.put(respMatcher.group(0), 1);
+                            uniqueValueModel.addItem(respMatcher.group(0));
                         }
                         for (int i = 0; i < groups.length; i++) {
                             groups[i] = respMatcher.group(i);
@@ -271,10 +260,17 @@ public class GrepPanel extends JPanel{
         String[] columns = {"Entry", "Matches"};
         ArrayList<LogEntryMatches> matchingEntries;
 
-        GrepTableModel(String[] columns, ArrayList<LogEntryMatches> matchingEntries){
+        GrepTableModel(String[] columns){
             super(new Object());
             this.columns = columns;
-            this.matchingEntries = matchingEntries;
+            this.matchingEntries = new ArrayList<>();
+        }
+
+        public void addEntry(LogEntryMatches matches){
+            synchronized (matchingEntries) {
+                this.matchingEntries.add(matches);
+            }
+
         }
 
         public void setColumns(String[] columns){
@@ -352,20 +348,68 @@ public class GrepPanel extends JPanel{
     class UniqueValueTableModel extends DefaultTableModel {
         String[] COLUMN_NAMES = {"Value", "Count"};
         Map<String, Integer> uniqueValues;
+        ArrayList<String> keys;
+        JTable table;
 
-        UniqueValueTableModel(Map<String, Integer> uniqueValues){
-            this.uniqueValues = uniqueValues;
+        UniqueValueTableModel(){
+            this.uniqueValues = new HashMap<>();
+            this.keys = new ArrayList<>();
+        }
+        public void setTable(JTable table){
+            this.table = table;
+        }
 
+        public void addItem(String s){
+            addItem(s, 1);
+        }
+        public void addItem(String s, int count){
+            synchronized (this) {
+                keys.add(s);
+                Collections.sort(keys);
+                this.uniqueValues.put(s, count);
+                int row = keys.indexOf(s);
+                this.fireTableStructureChanged();
+//                this.fireTableRowsInserted(row - 1, row - 1);
+            }
+        }
+
+        public void incrementItem(String name) {
+            synchronized (this) {
+                this.uniqueValues.put(name, this.uniqueValues.get(name) + 1);
+                int row = keys.indexOf(name);
+                this.fireTableStructureChanged();
+//                this.fireTableCellUpdated(row - 1, 1);
+            }
+        }
+
+        public void removeItem(String s){
+            synchronized (this) {
+                this.uniqueValues.remove(s);
+                int row = keys.indexOf(s);
+                this.keys.remove(s);
+                this.fireTableStructureChanged();
+//                this.fireTableRowsDeleted(row - 1, row - 1);
+            }
+        }
+
+        public boolean containsItem(String group) {
+            return uniqueValues.containsKey(group);
+        }
+
+        public void clearItems() {
+            synchronized (this) {
+                int count = keys.size();
+                uniqueValues.clear();
+                keys.clear();
+                this.fireTableStructureChanged();
+                table.invalidate();
+            }
         }
 
         @Override
         public int getRowCount() {
             if(uniqueValues == null) return 0;
             return uniqueValues.size();
-        }
-
-        public void reload(){
-            fireTableDataChanged();
         }
 
         @Override
@@ -392,9 +436,7 @@ public class GrepPanel extends JPanel{
         @Override
         public Object getValueAt(int row, int column) {
             //TODO move sort logic
-            if(row >= this.uniqueValues.size()) return "";
-            ArrayList<String> keys = new ArrayList<>(this.uniqueValues.keySet());
-            Collections.sort(keys);
+            if(row >= keys.size()) return "";
             if(column == 0) return keys.get(row);
             else return this.uniqueValues.get(keys.get(row));
         }
@@ -412,10 +454,6 @@ public class GrepPanel extends JPanel{
         @Override
         public void removeTableModelListener(TableModelListener tableModelListener) {
             return;
-        }
-
-        public void clearResults() {
-            uniqueValues.clear();
         }
     }
 

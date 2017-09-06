@@ -193,7 +193,7 @@ public class FilterLibrary extends JSplitPane {
         public void onClick(int row, int col) {
             if(library == null || row < 0 || row >= library.size() || library.get(row) == null) return;
             if(col == 3){
-                BurpExtender.getInstance().setFilter(library.get(row).filter, true);
+                BurpExtender.getInstance().setFilter(library.get(row).filter);
                 BurpExtender.getInstance().getTabbedPane().setSelectedIndex(0);
                 return;
             }

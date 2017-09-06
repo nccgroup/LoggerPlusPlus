@@ -3,6 +3,7 @@
 .externalToolBuilders/
 bin/
 Util/
+libs/burpsuite_pro.jar
 BurpLogger++.iml
 TODO
 .classpath
