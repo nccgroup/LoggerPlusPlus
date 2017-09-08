@@ -28,6 +28,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         logEntries = new ArrayList<>();
         logEntryListeners = new ArrayList<>();
         pendingRequests = new HashMap<>();
+        BurpExtender.getCallbacks().getProxyHistory();
 
         //Create incomplete request cleanup thread so map doesn't get too big.
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -53,87 +54,87 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     @Override
-    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-        if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, messageInfo, null);
+    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse requestResponse) {
+//        if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, requestResponse, null);
+        if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY){
+            if(requestResponse == null || !prefs.isEnabled()) return;
+            IRequestInfo analyzedReq = BurpExtender.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+            URL uUrl = analyzedReq.getUrl();
+            if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || BurpExtender.getCallbacks().isInScope(uUrl))){
+                //We will not need to change messageInfo so save to temp file
+                LogEntry logEntry = new LogEntry(toolFlag, false, BurpExtender.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
+                //Check entry against colorfilters.
+                for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+                    logEntry.testColorFilter(colorFilter, false);
+                }
+                addNewRequest(logEntry);
+            }
+        }
     }
 
     @Override
-    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
-        logIt(IBurpExtenderCallbacks.TOOL_PROXY, messageIsRequest, null, message);
+    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage proxyMessage) {
+//        logIt(IBurpExtenderCallbacks.TOOL_PROXY, messageIsRequest, null, proxyMessage);
+        if(proxyMessage == null || !prefs.isEnabled()) return;
+        IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
+        IRequestInfo analyzedReq = BurpExtender.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+        URL uUrl = analyzedReq.getUrl();
+        int toolFlag = BurpExtender.getCallbacks().TOOL_PROXY;
+        if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || BurpExtender.getCallbacks().isInScope(uUrl))){
+            if(messageIsRequest){
+                //New Proxy Request
+                //We need to change messageInfo when we get a response so do not save to buffers
+                LogEntry logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, requestResponse, uUrl, analyzedReq, proxyMessage);
+                for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+                    logEntry.testColorFilter(colorFilter, false);
+                }
+                synchronized (pendingRequests) {
+                    pendingRequests.put(proxyMessage.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
+                }
+                addNewRequest(logEntry);
+            }else{
+                //Existing Proxy Request, update existing
+                LogEntry.PendingRequestEntry pendingRequest;
+                synchronized (pendingRequests) {
+                    pendingRequest = pendingRequests.remove(proxyMessage.getMessageReference());
+                }
+                if (pendingRequest != null) {
+                    updatePendingRequest(pendingRequest, requestResponse);
+                } else {
+                    lateResponses++;
+                    if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
+                        MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+                    }
+                }
+            }
+        }
     }
 
-    private void logIt(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo,IInterceptedProxyMessage message){
-        // Is it enabled?
-        if(prefs.isEnabled()){
-            // When it comes from the proxy listener "messageInfo" is null and "message" is available.
-            if(messageInfo==null && message!=null){
-                messageInfo = message.getMessageInfo();
+    private void logProxyRequest(IInterceptedProxyMessage proxyMessage, boolean messageIsRequest){
+
+    }
+
+    private void logOtherRequest(int toolFlag, IHttpRequestResponse requestResponse){
+
+    }
+
+    private void addNewRequest(LogEntry logEntry){
+        //After handling request / response logEntries generation.
+        //Add to grepTable / modify existing entry.
+        synchronized (logEntries) {
+            while(logEntries.size() >= getMaximumEntries()){
+                final LogEntry removed = logEntries.remove(0);
+                for (LogEntryListener listener : logEntryListeners) {
+                    listener.onRequestRemoved(removed);
+                }
             }
-
-            IRequestInfo analyzedReq = BurpExtender.getCallbacks().getHelpers().analyzeRequest(messageInfo);
-            URL uUrl = analyzedReq.getUrl();
-
-            // Check for the scope if it is restricted to scope
-            if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || BurpExtender.getCallbacks().isInScope(uUrl))){
-                LogEntry logEntry = null;
-                if (messageIsRequest){
-                    // Burp does not provide any way to trace a request to its response - only in proxy there is a unique reference
-                    if(toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) {
-                        //We need to change messageInfo when we get a response so do not save to buffers
-                        logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, messageInfo, uUrl, analyzedReq, message);
-                        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
-                            logEntry.testColorFilter(colorFilter, false);
-                        }
-                        synchronized (pendingRequests) {
-                            pendingRequests.put(message.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
-                        }
-                    }
-                }else{
-                    if(toolFlag== IBurpExtenderCallbacks.TOOL_PROXY){
-                        //Get from pending list
-                        LogEntry.PendingRequestEntry pendingRequest;
-                        synchronized (pendingRequests) {
-                            pendingRequest = pendingRequests.remove(message.getMessageReference());
-                        }
-                        if (pendingRequest != null) {
-                            updatePendingRequest(pendingRequest, messageInfo);
-                        } else {
-                            lateResponses++;
-                            if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
-                                MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
-                            }
-                        }
-                        return;
-                    }else {
-                        //We will not need to change messageInfo so save to temp file
-                        logEntry = new LogEntry(toolFlag, messageIsRequest, BurpExtender.getCallbacks().saveBuffersToTempFiles(messageInfo), uUrl, analyzedReq, message);
-                        //Check entry against colorfilters.
-                        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
-                            logEntry.testColorFilter(colorFilter, false);
-                        }
-                    }
-                }
-
-                if(logEntry != null) {
-                    //After handling request / response logEntries generation.
-                    //Add to grepTable / modify existing entry.
-                    synchronized (logEntries) {
-                        while(logEntries.size() >= getMaximumEntries()){
-                            final LogEntry removed = logEntries.remove(0);
-                            for (LogEntryListener listener : logEntryListeners) {
-                                listener.onRequestRemoved(removed);
-                            }
-                        }
-                        logEntries.add(logEntry);
-                        for (LogEntryListener listener : logEntryListeners) {
-                            listener.onRequestAdded(logEntry);
-                        }
-                        totalRequests++;
-                        if(logEntry instanceof LogEntry.PendingRequestEntry){
-                            ((LogEntry.PendingRequestEntry) logEntry).setLogRow(totalRequests-1);
-                        }
-                    }
-                }
+            logEntries.add(logEntry);
+            for (LogEntryListener listener : logEntryListeners) {
+                listener.onRequestAdded(logEntry);
+            }
+            totalRequests++;
+            if(logEntry instanceof LogEntry.PendingRequestEntry){
+                ((LogEntry.PendingRequestEntry) logEntry).setLogRow(totalRequests-1);
             }
         }
     }
