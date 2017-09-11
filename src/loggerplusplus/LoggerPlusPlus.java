@@ -1,6 +1,9 @@
 package loggerplusplus;
 
-import burp.*;
+import burp.IBurpExtender;
+import burp.IBurpExtenderCallbacks;
+import burp.IMessageEditor;
+import burp.ITab;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterCompiler;
 import loggerplusplus.filter.FilterListener;
@@ -8,12 +11,14 @@ import loggerplusplus.userinterface.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Created by corey on 07/09/17.
  */
-public class LoggerPlusPlus implements ITab {
+public class LoggerPlusPlus implements ITab, IBurpExtender {
+    public static IBurpExtenderCallbacks callbacks;
+    public static LoggerPlusPlus instance;
     private ArrayList<FilterListener> filterListeners;
     private LoggerPreferences loggerPreferences;
     private LogManager logManager;
@@ -30,7 +35,13 @@ public class LoggerPlusPlus implements ITab {
     private LoggerOptionsPanel optionsJPanel;
     private LoggerMenu loggerMenu;
 
-    public LoggerPlusPlus(IBurpExtenderCallbacks callbacks){
+    @Override
+    public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
+    {
+        //Burp Specific
+        LoggerPlusPlus.callbacks = callbacks;
+        LoggerPlusPlus.instance = this;
+
         callbacks.setExtensionName("Logger++");
 
         filterListeners = new ArrayList<>();
@@ -40,9 +51,6 @@ public class LoggerPlusPlus implements ITab {
         if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
             MoreHelp.checkForUpdate(false);
         }
-
-        BurpExtender.getCallbacks().registerHttpListener(logManager);
-        BurpExtender.getCallbacks().registerProxyListener(logManager);
 
         buildUI();
     }
@@ -57,16 +65,15 @@ public class LoggerPlusPlus implements ITab {
                     Class.forName("org.apache.commons.lang3.StringEscapeUtils");
                     loggerPreferences.setCanSaveCSV(true);
                 } catch(ClassNotFoundException e) {
-                    BurpExtender.getCallbacks().printError("Warning: Error in loading Appache Commons Lang library.\r\nThe results cannot be saved in CSV format.\r\n"
+                    LoggerPlusPlus.getCallbacks().printError("Warning: Error in loading Appache Commons Lang library.\r\nThe results cannot be saved in CSV format.\r\n"
                             + "Please reload this extension after adding this library to the Java Environment section of burp suite.\r\n"
                             + "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
                 }
 
-
                 //UI
                 logWrapperPanel = new LogViewPanel(logManager);
-                requestViewer = BurpExtender.getCallbacks().createMessageEditor(logWrapperPanel.getLogTable().getModel(), false);
-                responseViewer = BurpExtender.getCallbacks().createMessageEditor(logWrapperPanel.getLogTable().getModel(), false);
+                requestViewer = LoggerPlusPlus.getCallbacks().createMessageEditor(logWrapperPanel.getLogTable().getModel(), false);
+                responseViewer = LoggerPlusPlus.getCallbacks().createMessageEditor(logWrapperPanel.getLogTable().getModel(), false);
                 reqRespPanel = new VariableViewPanel(requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", loggerPreferences.getReqRespView()){
                     @Override
                     public void setView(View view) {
@@ -113,7 +120,8 @@ public class LoggerPlusPlus implements ITab {
                 tabbedWrapper.addTab("About", null, new AboutPanel(), null);
                 tabbedWrapper.addTab("Help", null, new HelpPanel(), null);
 
-                BurpExtender.getCallbacks().addSuiteTab(LoggerPlusPlus.this);
+
+                LoggerPlusPlus.getCallbacks().addSuiteTab(LoggerPlusPlus.this);
 
                 //Add menu item to Burp's frame menu.
                 JFrame rootFrame = (JFrame) SwingUtilities.getWindowAncestor(uiPopOutPanel);
@@ -124,10 +132,20 @@ public class LoggerPlusPlus implements ITab {
                 }catch (NullPointerException nPException){
                     loggerMenu = null;
                 }
+
+                LoggerPlusPlus.getCallbacks().registerHttpListener(logManager);
+                LoggerPlusPlus.getCallbacks().registerProxyListener(logManager);
             }
         });
     }
 
+    public static IBurpExtenderCallbacks getCallbacks() {
+        return callbacks;
+    }
+
+    public static LoggerPlusPlus getInstance() {
+        return instance;
+    }
 
     @Override
     public String getTabCaption()

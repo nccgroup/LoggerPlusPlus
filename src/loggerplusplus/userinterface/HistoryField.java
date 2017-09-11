@@ -1,8 +1,8 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import loggerplusplus.LoggerPlusPlus;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
@@ -48,7 +48,7 @@ public class HistoryField extends JComboBox {
     HistoryField(final int maxHistory, String burpSaveLocation){
         this(maxHistory);
         this.burpSaveLocation = burpSaveLocation;
-        String oldSearches = BurpExtender.getCallbacks().loadExtensionSetting(burpSaveLocation);
+        String oldSearches = LoggerPlusPlus.getCallbacks().loadExtensionSetting(burpSaveLocation);
         if(oldSearches != null){
             ArrayList<String> pastHistory = new Gson().fromJson(oldSearches, new TypeToken<List<String>>(){}.getType());
             if(pastHistory != null)
@@ -68,7 +68,7 @@ public class HistoryField extends JComboBox {
             if(history.contains(val)) history.remove(val);
             history.add((String) val);
             if(burpSaveLocation != null){
-                BurpExtender.getCallbacks().saveExtensionSetting(burpSaveLocation, new Gson().toJson(history, new TypeToken<List<String>>(){}.getType()));
+                LoggerPlusPlus.getCallbacks().saveExtensionSetting(burpSaveLocation, new Gson().toJson(history, new TypeToken<List<String>>(){}.getType()));
             }
             this.fireContentsChanged(val, history.size()-1, history.size()-1);
         }

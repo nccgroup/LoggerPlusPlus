@@ -1,7 +1,5 @@
 package loggerplusplus;
 
-import burp.BurpExtender;
-
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.*;
@@ -16,7 +14,7 @@ public class FileLogger implements LogEntryListener{
     private final ExcelExporter exp;
 
     public FileLogger(){
-        loggerPreferences = BurpExtender.getLoggerInstance().getLoggerPreferences();
+        loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
         exp = new ExcelExporter();
     }
 
@@ -28,7 +26,7 @@ public class FileLogger implements LogEntryListener{
             }
 
         } catch (IOException ex) {
-            BurpExtender.getCallbacks().printError(ex.getMessage());
+            LoggerPlusPlus.getCallbacks().printError(ex.getMessage());
         }
     }
 
@@ -36,7 +34,7 @@ public class FileLogger implements LogEntryListener{
         try {
             exp.exportItem(entry, false);
         } catch (IOException e) {
-            BurpExtender.getCallbacks().printError("Could not write log item. Autologging has been disabled.");
+            LoggerPlusPlus.getCallbacks().printError("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
             this.setAutoSave(false);
         }
@@ -93,7 +91,7 @@ public class FileLogger implements LogEntryListener{
             return true;
         }
         try {
-            String thisHeader = LogEntry.getCSVHeader(BurpExtender.getLoggerInstance().getLogTable(), isFullLog);
+            String thisHeader = LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog);
             String oldHeader = reader.readLine();
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {
@@ -170,7 +168,7 @@ public class FileLogger implements LogEntryListener{
                     if (autoSaveFile.length() == 0)
                         exp.addHeader(autoSaveWriter, false);
 
-                    BurpExtender.getLoggerInstance().getLogManager().addLogListener(this);
+                    LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
 
                 } catch (IOException e) {
                     autoSaveFile = null;
@@ -185,10 +183,10 @@ public class FileLogger implements LogEntryListener{
                 autoSaveWriter.close();
             } catch (Exception e) {}
             autoSaveWriter = null;
-            BurpExtender.getLoggerInstance().getLogManager().removeLogListener(this);
+            LoggerPlusPlus.getInstance().getLogManager().removeLogListener(this);
         }
         loggerPreferences.setAutoSave(enabled);
-        BurpExtender.getLoggerInstance().getLoggerOptionsPanel().setAutoSaveBtn(enabled);
+        LoggerPlusPlus.getInstance().getLoggerOptionsPanel().setAutoSaveBtn(enabled);
     }
 
     @Override
@@ -210,7 +208,7 @@ public class FileLogger implements LogEntryListener{
     }
 
     @Override
-    public void onRequestRemoved(LogEntry logEntry) {
+    public void onRequestRemoved(int index, LogEntry logEntry) {
 
     }
 
@@ -219,18 +217,18 @@ public class FileLogger implements LogEntryListener{
     public class ExcelExporter {
 
         public void addHeader(FileWriter writer, boolean isFullLog) throws IOException {
-            writer.write(LogEntry.getCSVHeader(BurpExtender.getLoggerInstance().getLogTable(), isFullLog) + "\n");
+            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog) + "\n");
         }
 
         public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
             FileWriter out = new FileWriter(file, append);
 
             if (header) {
-                out.write(LogEntry.getCSVHeader(BurpExtender.getLoggerInstance().getLogTable(), isFullLog));
+                out.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog));
                 out.write("\n");
             }
 
-            for (LogEntry item : BurpExtender.getLoggerInstance().getLogManager().getLogEntries()) {
+            for (LogEntry item : LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
                 out.write(item.toCSVString(isFullLog) + "\n");
             }
 

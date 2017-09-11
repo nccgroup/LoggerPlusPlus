@@ -12,7 +12,7 @@
 
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
 import loggerplusplus.MoreHelp;
 
@@ -33,8 +33,8 @@ public class AboutPanel extends JPanel {
 	 * Create the panel.
 	 */
 	public AboutPanel() {
-		this.callbacks = BurpExtender.getCallbacks();
-		this.loggerPreferences = BurpExtender.getLoggerInstance().getLoggerPreferences();
+		this.callbacks = LoggerPlusPlus.getCallbacks();
+		this.loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
 
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{0, 86, 80, 248, 0};

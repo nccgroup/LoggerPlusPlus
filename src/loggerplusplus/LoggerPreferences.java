@@ -12,14 +12,13 @@
 
 package loggerplusplus;
 
-import burp.BurpExtender;
-import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
-import loggerplusplus.filter.SavedFilter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import loggerplusplus.filter.ColorFilter;
+import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.SavedFilter;
 import loggerplusplus.userinterface.VariableViewPanel.View;
 
 import javax.swing.*;
@@ -74,7 +73,7 @@ public class LoggerPreferences {
 	}
 
 	public void setTableDetailsJSONString(String tableDetailsJSONString) {
-		BurpExtender.getCallbacks().saveExtensionSetting("tabledetailsjson", tableDetailsJSONString);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("tabledetailsjson", tableDetailsJSONString);
 		this.tableDetailsJSONString = tableDetailsJSONString;
 	}
 
@@ -83,7 +82,7 @@ public class LoggerPreferences {
 	}
 
 	private synchronized void setVersion(double version) {
-		BurpExtender.getCallbacks().saveExtensionSetting("version", String.valueOf(version));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("version", String.valueOf(version));
 	}
 
 	public synchronized String getProjectLink() {
@@ -100,7 +99,7 @@ public class LoggerPreferences {
 
 
 	public synchronized void setDebugMode(boolean isDebugMode) {
-		BurpExtender.getCallbacks().saveExtensionSetting("isDebug", String.valueOf(isDebugMode));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("isDebug", String.valueOf(isDebugMode));
 		this.isDebugMode = isDebugMode;
 	}
 
@@ -109,7 +108,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized void setUpdateOnStartup(Boolean b){
-		BurpExtender.getCallbacks().saveExtensionSetting("updateonstartup", String.valueOf(b));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("updateonstartup", String.valueOf(b));
 		this.updateOnStartup = b;
 	}
 
@@ -118,7 +117,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled(boolean isEnabled) {
-		BurpExtender.getCallbacks().saveExtensionSetting("enabled", String.valueOf(isEnabled));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("enabled", String.valueOf(isEnabled));
 		this.isEnabled = isEnabled;
 	}
 
@@ -128,7 +127,7 @@ public class LoggerPreferences {
 
 
 	public synchronized  void setRestrictedToScope(boolean isRestrictedToScope) {
-		BurpExtender.getCallbacks().saveExtensionSetting("restricttoscope", String.valueOf(isRestrictedToScope));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("restricttoscope", String.valueOf(isRestrictedToScope));
 		this.isRestrictedToScope = isRestrictedToScope;
 	}
 
@@ -137,7 +136,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4All(boolean isEnabled4All) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logglobal", String.valueOf(isEnabled4All));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logglobal", String.valueOf(isEnabled4All));
 		this.isEnabled4All = isEnabled4All;
 	}
 
@@ -146,7 +145,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Proxy(boolean isEnabled4Proxy) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logproxy", String.valueOf(isEnabled4Proxy));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logproxy", String.valueOf(isEnabled4Proxy));
 		this.isEnabled4Proxy = isEnabled4Proxy;
 	}
 
@@ -155,7 +154,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Spider(boolean isEnabled4Spider) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logspider", String.valueOf(isEnabled4Spider));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logspider", String.valueOf(isEnabled4Spider));
 		this.isEnabled4Spider = isEnabled4Spider;
 	}
 
@@ -164,7 +163,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Intruder(boolean isEnabled4Intruder) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logintruder", String.valueOf(isEnabled4Intruder));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logintruder", String.valueOf(isEnabled4Intruder));
 		this.isEnabled4Intruder = isEnabled4Intruder;
 	}
 
@@ -173,7 +172,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Scanner(boolean isEnabled4Scanner) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logscanner", String.valueOf(isEnabled4Scanner));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logscanner", String.valueOf(isEnabled4Scanner));
 		this.isEnabled4Scanner = isEnabled4Scanner;
 	}
 
@@ -182,7 +181,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Repeater(boolean isEnabled4Repeater) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logrepeater", String.valueOf(isEnabled4Repeater));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logrepeater", String.valueOf(isEnabled4Repeater));
 		this.isEnabled4Repeater = isEnabled4Repeater;
 	}
 
@@ -191,7 +190,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Sequencer(boolean isEnabled4Sequencer) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logsequencer", String.valueOf(isEnabled4Sequencer));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logsequencer", String.valueOf(isEnabled4Sequencer));
 		this.isEnabled4Sequencer = isEnabled4Sequencer;
 	}
 
@@ -200,7 +199,7 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4Extender(boolean isEnabled4Extender) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logextender", String.valueOf(isEnabled4Extender));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logextender", String.valueOf(isEnabled4Extender));
 		this.isEnabled4Extender = isEnabled4Extender;
 	}
 
@@ -209,12 +208,12 @@ public class LoggerPreferences {
 	}
 
 	public synchronized  void setEnabled4TargetTab(boolean isEnabled4TargetTab) {
-		BurpExtender.getCallbacks().saveExtensionSetting("logtargettab", String.valueOf(isEnabled4TargetTab));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logtargettab", String.valueOf(isEnabled4TargetTab));
 		this.isEnabled4TargetTab = isEnabled4TargetTab;
 	}
 
 	public synchronized void setLoggingFiltered(boolean logFiltered){
-		BurpExtender.getCallbacks().saveExtensionSetting("filterlog", String.valueOf(logFiltered));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("filterlog", String.valueOf(logFiltered));
 		this.logFiltered = logFiltered;
 	}
 
@@ -225,7 +224,7 @@ public class LoggerPreferences {
 	public Map<UUID, ColorFilter> getColorFilters() { return colorFilters; }
 
 	public synchronized void setColorFilters(Map<UUID, ColorFilter> colorFilters) {
-		BurpExtender.getCallbacks().saveExtensionSetting("colorfilters", gson.toJson(colorFilters));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("colorfilters", gson.toJson(colorFilters));
 		this.colorFilters = colorFilters;
 	}
 
@@ -238,12 +237,12 @@ public class LoggerPreferences {
 
 	public synchronized void setSavedFilters(ArrayList<SavedFilter> savedFilters) {
 		Type type = new TypeToken<List<SavedFilter>>() {}.getType();
-		BurpExtender.getCallbacks().saveExtensionSetting("savedfilters", gson.toJson(savedFilters, type));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("savedfilters", gson.toJson(savedFilters, type));
 		this.savedFilters = savedFilters;
 	}
 
 	public synchronized void setSortColumn(int columnIdentifier) {
-		BurpExtender.getCallbacks().saveExtensionSetting("sortcolumn", String.valueOf(columnIdentifier));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("sortcolumn", String.valueOf(columnIdentifier));
 		this.sortColumn = columnIdentifier;
 	}
 
@@ -253,7 +252,7 @@ public class LoggerPreferences {
 
 	public synchronized void setSortOrder(SortOrder sortOrder){
 		String order = sortOrder == null ? null : String.valueOf(sortOrder);
-		BurpExtender.getCallbacks().saveExtensionSetting("sortorder", order);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("sortorder", order);
 		this.sortOrder = sortOrder;
 	}
 
@@ -262,7 +261,7 @@ public class LoggerPreferences {
 	}
 
 	public void setResponseTimeout(long responseTimeout){
-		BurpExtender.getCallbacks().saveExtensionSetting("responsetimeout", String.valueOf(responseTimeout));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("responsetimeout", String.valueOf(responseTimeout));
 		this.responseTimeout = responseTimeout;
 	}
 
@@ -271,7 +270,7 @@ public class LoggerPreferences {
 	}
 
 	public void setMaximumEntries(int maximumEntries) {
-		BurpExtender.getCallbacks().saveExtensionSetting("maximumentries", String.valueOf(maximumEntries));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("maximumentries", String.valueOf(maximumEntries));
 		this.maximumEntries = maximumEntries;
 	}
 
@@ -284,12 +283,12 @@ public class LoggerPreferences {
 	}
 
 	public void setView(View view){
-		BurpExtender.getCallbacks().saveExtensionSetting("layout", String.valueOf(view));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("layout", String.valueOf(view));
 		this.view = view;
 	}
 
 	public void setReqRespView(View reqRespView) {
-		BurpExtender.getCallbacks().saveExtensionSetting("msgviewlayout", String.valueOf(reqRespView));
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("msgviewlayout", String.valueOf(reqRespView));
 		this.reqRespView = reqRespView;
 	}
 
@@ -362,8 +361,8 @@ public class LoggerPreferences {
 			this.savedFilters = gson.fromJson(savedFilters, new TypeToken<List<SavedFilter>>(){}.getType());
 		}catch (JsonSyntaxException jSException){}
 		if(this.savedFilters == null) this.savedFilters = new ArrayList<SavedFilter>();
-		BurpExtender.getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
-		BurpExtender.getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
+		LoggerPlusPlus.getCallbacks().printOutput("Loaded " + this.savedFilters.size() + " filters.");
+		LoggerPlusPlus.getCallbacks().printOutput("Loaded " + this.colorFilters.size() + " color filters.");
 		this.sortColumn = getIntSetting("sortcolumn", -1);
 		try {
 			this.sortOrder = SortOrder.valueOf(getStringSetting("sortorder", "ASCENDING"));
@@ -377,7 +376,7 @@ public class LoggerPreferences {
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
-		String val = BurpExtender.getCallbacks().loadExtensionSetting(setting);
+		String val = LoggerPlusPlus.getCallbacks().loadExtensionSetting(setting);
 		if(val == null) return fallback;
 		try {
 			return Boolean.valueOf(val);
@@ -387,7 +386,7 @@ public class LoggerPreferences {
 	}
 
 	private Double getDoubleSetting(String setting, Double fallback){
-		String val = BurpExtender.getCallbacks().loadExtensionSetting(setting);
+		String val = LoggerPlusPlus.getCallbacks().loadExtensionSetting(setting);
 		try {
 			return Double.valueOf(val);
 		}catch(NullPointerException nPException){
@@ -396,7 +395,7 @@ public class LoggerPreferences {
 	}
 
 	private Long getLongSetting(String setting, long fallback){
-		String val = BurpExtender.getCallbacks().loadExtensionSetting(setting);
+		String val = LoggerPlusPlus.getCallbacks().loadExtensionSetting(setting);
 		try {
 			return Long.valueOf(val);
 		}catch(NullPointerException | NumberFormatException nPException){
@@ -405,7 +404,7 @@ public class LoggerPreferences {
 	}
 
 	private int getIntSetting(String setting, int fallback){
-		String val = BurpExtender.getCallbacks().loadExtensionSetting(setting);
+		String val = LoggerPlusPlus.getCallbacks().loadExtensionSetting(setting);
 		try {
 			return Integer.valueOf(val);
 		}catch(NullPointerException | NumberFormatException nPException){
@@ -414,7 +413,7 @@ public class LoggerPreferences {
 	}
 
 	private String getStringSetting(String setting, String fallback){
-		String val = BurpExtender.getCallbacks().loadExtensionSetting(setting);
+		String val = LoggerPlusPlus.getCallbacks().loadExtensionSetting(setting);
 		return val != null ? val : fallback;
 	}
 
@@ -441,25 +440,25 @@ public class LoggerPreferences {
 	}
 
 	private void clearSettings(){
-		BurpExtender.getCallbacks().saveExtensionSetting("isDebug", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("updateonstartup", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("enabled", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("restricttoscope", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logglobal", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logproxy", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logtargettab", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logextender", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logsequencer", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logrepeater", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logscanner", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logintruder", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("logspider", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("filterlog", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("tabledetailsjson", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("responsetimeout", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("maximumentries", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("layout", null);
-		BurpExtender.getCallbacks().saveExtensionSetting("msgviewlayout", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("isDebug", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("updateonstartup", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("enabled", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("restricttoscope", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logglobal", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logproxy", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logtargettab", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logextender", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logsequencer", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logrepeater", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logscanner", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logintruder", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logspider", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("filterlog", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("tabledetailsjson", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("responsetimeout", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("maximumentries", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("layout", null);
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("msgviewlayout", null);
 	}
 	
 	public void resetTableSettings(){

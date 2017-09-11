@@ -1,7 +1,7 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
 import loggerplusplus.LogEntry;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.CompoundFilter;
 import loggerplusplus.filter.Filter;
@@ -18,7 +18,7 @@ public class LogEntryMenu extends JPopupMenu {
         final LogEntry entry = logTable.getModel().getRow(row);
         final String columnName = logTable.getColumnModel().getColumn(logTable.convertColumnIndexToView(col)).getName();
         final String columnValue = logTable.getModel().getValueAt(row, col).toString();
-        final boolean isPro = BurpExtender.getCallbacks().getBurpVersion()[0].equals("Burp Suite Professional");
+        final boolean isPro = LoggerPlusPlus.getCallbacks().getBurpVersion()[0].equals("Burp Suite Professional");
         String title = entry.getValueByKey(LogEntry.columnNamesType.URL).toString();
         if(title.length() > 50) title = title.substring(0, 47) + "...";
         this.add(new JMenuItem(new AbstractAction(title) {
@@ -35,7 +35,7 @@ public class LogEntryMenu extends JPopupMenu {
                 String value = "\"" + columnValue + "\"";
                 try {
                     Filter filter = new Filter(columnName, "==", value);
-                    BurpExtender.getLoggerInstance().setFilter(filter);
+                    LoggerPlusPlus.getInstance().setFilter(filter);
                 } catch (Filter.FilterException e1) {return;}
             }
         });
@@ -50,7 +50,7 @@ public class LogEntryMenu extends JPopupMenu {
                     try {
                         Filter rFilter = new Filter(columnName, "==", value);
                         Filter filter = new CompoundFilter(logTable.getCurrentFilter(), "&&", rFilter);
-                        BurpExtender.getLoggerInstance().setFilter(filter);
+                        LoggerPlusPlus.getInstance().setFilter(filter);
                     } catch (Filter.FilterException e1) {
                         return;
                     }
@@ -63,7 +63,7 @@ public class LogEntryMenu extends JPopupMenu {
                     try {
                         Filter rFilter = new Filter(columnName, "==", value);
                         Filter filter = new CompoundFilter(logTable.getCurrentFilter(), "||", rFilter);
-                        BurpExtender.getLoggerInstance().setFilter(filter);
+                        LoggerPlusPlus.getInstance().setFilter(filter);
                     } catch (Filter.FilterException e1) {
                         return;
                     }
@@ -80,7 +80,7 @@ public class LogEntryMenu extends JPopupMenu {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new Filter(columnName, "==", columnValue));
-                    BurpExtender.getLoggerInstance().getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
+                    LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
                 } catch (Filter.FilterException e1) {
                     return;
                 }
@@ -89,14 +89,14 @@ public class LogEntryMenu extends JPopupMenu {
         this.add(colorFilterItem);
 
         this.add(new JPopupMenu.Separator());
-        final boolean inScope = BurpExtender.getCallbacks().isInScope(entry.url);
+        final boolean inScope = LoggerPlusPlus.getCallbacks().isInScope(entry.url);
         JMenuItem scope = new JMenuItem(new AbstractAction((inScope ? "Remove from scope" : "Add to scope")) {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 if(inScope)
-                    BurpExtender.getCallbacks().excludeFromScope(entry.url);
+                    LoggerPlusPlus.getCallbacks().excludeFromScope(entry.url);
                 else
-                    BurpExtender.getCallbacks().includeInScope(entry.url);
+                    LoggerPlusPlus.getCallbacks().includeInScope(entry.url);
             }
         });
         this.add(scope);
@@ -106,7 +106,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem spider = new JMenuItem(new AbstractAction("Spider from here") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().sendToSpider(entry.url);
+                LoggerPlusPlus.getCallbacks().sendToSpider(entry.url);
             }
         });
         this.add(spider);
@@ -114,7 +114,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Do an active scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().doActiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.getCallbacks().doActiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
             }
         });
         this.add(activeScan);
@@ -123,7 +123,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Do a passive scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().doPassiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
+                LoggerPlusPlus.getCallbacks().doPassiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
             }
         });
         passiveScan.setEnabled(entry.complete && isPro);
@@ -134,7 +134,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem sendToRepeater = new JMenuItem(new AbstractAction("Send to Repeater") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().sendToRepeater(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
+                LoggerPlusPlus.getCallbacks().sendToRepeater(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
             }
         });
         this.add(sendToRepeater);
@@ -142,7 +142,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem sendToIntruder = new JMenuItem(new AbstractAction("Send to Intruder") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().sendToIntruder(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.getCallbacks().sendToIntruder(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
             }
         });
         this.add(sendToIntruder);
@@ -151,14 +151,14 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem comparerRequest = new JMenuItem(new AbstractAction("Request") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().sendToComparer(entry.requestResponse.getRequest());
+                LoggerPlusPlus.getCallbacks().sendToComparer(entry.requestResponse.getRequest());
             }
         });
         sendToComparer.add(comparerRequest);
         JMenuItem comparerResponse = new JMenuItem(new AbstractAction("Response") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getCallbacks().sendToComparer(entry.requestResponse.getRequest());
+                LoggerPlusPlus.getCallbacks().sendToComparer(entry.requestResponse.getRequest());
             }
         });
         sendToComparer.add(comparerResponse);

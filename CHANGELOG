@@ -4,6 +4,7 @@ v 3.05
 - Added Grep tab to easily search for patterns.
 - Large code refactor.
 - Added help tab.
+- Fixed bug with old entries being deleted if log order reversed.
 
 v 3.04
 =========================================================================

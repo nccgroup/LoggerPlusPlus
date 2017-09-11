@@ -1,6 +1,6 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
@@ -15,12 +15,12 @@ public class LoggerMenu extends javax.swing.JMenu {
     private JMenuItem popoutItem;
 
     public LoggerMenu(){
-        super(BurpExtender.getLoggerInstance().getTabCaption());
-        LoggerPreferences loggerPreferences = BurpExtender.getLoggerInstance().getLoggerPreferences();
+        super(LoggerPlusPlus.getInstance().getTabCaption());
+        LoggerPreferences loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
         JMenuItem colorFilters = new JMenuItem(new AbstractAction("Color Filters") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                new ColorFilterDialog(BurpExtender.getLoggerInstance().getFilterListeners()).setVisible(true);
+                new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners()).setVisible(true);
             }
         });
         this.add(colorFilters);
@@ -28,7 +28,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         popoutItem = new JMenuItem(new AbstractAction("Pop Out") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getPopoutPanel().toggle();
+                LoggerPlusPlus.getInstance().getPopoutPanel().toggle();
             }
         });
         this.add(popoutItem);
@@ -38,7 +38,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getLogSplitPanel().setView(VariableViewPanel.View.VERTICAL);
+                LoggerPlusPlus.getInstance().getLogSplitPanel().setView(VariableViewPanel.View.VERTICAL);
             }
         });
         viewMenuItem.setSelected(loggerPreferences.getView() == VariableViewPanel.View.VERTICAL);
@@ -47,7 +47,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getLogSplitPanel().setView(VariableViewPanel.View.VERTICAL);
+                LoggerPlusPlus.getInstance().getLogSplitPanel().setView(VariableViewPanel.View.VERTICAL);
             }
         });
         viewMenuItem.setSelected(loggerPreferences.getView() == VariableViewPanel.View.HORIZONTAL);
@@ -56,7 +56,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getLogSplitPanel().setView(VariableViewPanel.View.TABS);
+                LoggerPlusPlus.getInstance().getLogSplitPanel().setView(VariableViewPanel.View.TABS);
             }
         });
         viewMenuItem.setSelected(loggerPreferences.getView() == VariableViewPanel.View.TABS);
@@ -69,7 +69,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getReqRespPanel().setView(VariableViewPanel.View.VERTICAL);
+                LoggerPlusPlus.getInstance().getReqRespPanel().setView(VariableViewPanel.View.VERTICAL);
             }
         });
         viewMenu.add(viewMenuItem);
@@ -78,7 +78,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getReqRespPanel().setView(VariableViewPanel.View.HORIZONTAL);
+                LoggerPlusPlus.getInstance().getReqRespPanel().setView(VariableViewPanel.View.HORIZONTAL);
             }
         });
         viewMenu.add(viewMenuItem);
@@ -87,7 +87,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                BurpExtender.getLoggerInstance().getReqRespPanel().setView(VariableViewPanel.View.TABS);
+                LoggerPlusPlus.getInstance().getReqRespPanel().setView(VariableViewPanel.View.TABS);
             }
         });
         viewMenu.add(viewMenuItem);

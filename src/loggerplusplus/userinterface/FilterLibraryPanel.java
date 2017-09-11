@@ -1,12 +1,12 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
-import loggerplusplus.MoreHelp;
-import loggerplusplus.userinterface.renderer.ButtonRenderer;
-import loggerplusplus.userinterface.dialog.ColorFilterDialog;
-import loggerplusplus.filter.Filter;
-import com.google.gson.*;
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import loggerplusplus.LoggerPlusPlus;
+import loggerplusplus.MoreHelp;
+import loggerplusplus.filter.Filter;
+import loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import loggerplusplus.userinterface.renderer.ButtonRenderer;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -191,12 +191,12 @@ public class FilterLibraryPanel extends JSplitPane {
         public void onClick(int row, int col) {
             if(library == null || row < 0 || row >= library.size() || library.get(row) == null) return;
             if(col == 3){
-                BurpExtender.getLoggerInstance().setFilter(library.get(row).filter);
-                BurpExtender.getLoggerInstance().getTabbedPane().setSelectedIndex(0);
+                LoggerPlusPlus.getInstance().setFilter(library.get(row).filter);
+                LoggerPlusPlus.getInstance().getTabbedPane().setSelectedIndex(0);
                 return;
             }
             if(col == 4){
-                ColorFilterDialog dialog =new ColorFilterDialog(BurpExtender.getLoggerInstance().getFilterListeners());
+                ColorFilterDialog dialog =new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners());
                 SharedFilter sharedFilter = library.get(row);
                 try {
                     dialog.addColorFilter(sharedFilter.title, sharedFilter.filter);

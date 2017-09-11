@@ -1,6 +1,5 @@
 package loggerplusplus;
 
-import burp.BurpExtender;
 import burp.IExtensionHelpers;
 
 import javax.swing.*;
@@ -112,7 +111,7 @@ public class MoreHelp {
 	}
 
 	public static void checkForUpdate(boolean showMessages) {
-		IExtensionHelpers helper = BurpExtender.getCallbacks().getHelpers();
+		IExtensionHelpers helper = LoggerPlusPlus.getCallbacks().getHelpers();
 		Double currenVersion = LoggerPreferences.version;
 		Double latestVersion = 0.0;
 		int updateStatus = -1;
@@ -120,7 +119,7 @@ public class MoreHelp {
 		try{
 			URL changeLogURL = new URL(LoggerPreferences.changeLog);
 			byte[] request = helper.buildHttpRequest(changeLogURL);
-			byte[] response = BurpExtender.getCallbacks().makeHttpRequest(changeLogURL.getHost(), 443, true, request);
+			byte[] response = LoggerPlusPlus.getCallbacks().makeHttpRequest(changeLogURL.getHost(), 443, true, request);
 
 			if(response != null){
 				// splitting the message to retrieve the header and the body
@@ -146,46 +145,46 @@ public class MoreHelp {
 
 			}
 		}catch(Exception e){
-			BurpExtender.getCallbacks().printError(e.getMessage());
+			LoggerPlusPlus.getCallbacks().printError(e.getMessage());
 		}
 
 		switch(updateStatus){
 			case -1:
 				updateMessage = "Check for update failed: Could not get a proper response from "+LoggerPreferences.changeLog;
-				BurpExtender.getCallbacks().printError(updateMessage);
+				LoggerPlusPlus.getCallbacks().printError(updateMessage);
 				break;
 			case 0:
 				updateMessage = "This version is up to date.";
-				BurpExtender.getCallbacks().printOutput(updateMessage);
+				LoggerPlusPlus.getCallbacks().printOutput(updateMessage);
 				break;
 			case 1:
 				updateMessage = "Version "+latestVersion.toString()+" is available via GitHub. Visit the extension homepage.";
-				if(BurpExtender.getCallbacks().isExtensionBapp()){
+				if(LoggerPlusPlus.getCallbacks().isExtensionBapp()){
 					updateMessage += "\nAs you are using BApp Store, you have to remove it first and download the Jar file from the GitHub repository. ";
 				}else{
-					if(BurpExtender.getCallbacks().getExtensionFilename() != null){
+					if(LoggerPlusPlus.getCallbacks().getExtensionFilename() != null){
 						int res = MoreHelp.askConfirmMessage("Update Available", "An update is available. Would you like to update now?", new String[]{"Yes", "No"});
 						if(res == JOptionPane.OK_OPTION){
 							try {
 								URL updateUrl = new URL(LoggerPreferences.updateURL);
 								InputStream input = updateUrl.openStream();
-								Path outputPath = Paths.get(BurpExtender.getCallbacks().getExtensionFilename());
+								Path outputPath = Paths.get(LoggerPlusPlus.getCallbacks().getExtensionFilename());
 								Files.copy(input, outputPath, StandardCopyOption.REPLACE_EXISTING);
 							} catch (Exception e) {
 								MoreHelp.showMessage("Could not update the plugin. Please visit the extension page to update manually.");
 								return;
 							}
 							MoreHelp.showMessage("Update complete. Re-enable the plugin in the extensions tab to continue.");
-							BurpExtender.getCallbacks().unloadExtension();
+							LoggerPlusPlus.getCallbacks().unloadExtension();
 							return;
 						}
 					}
 				}
-				BurpExtender.getCallbacks().printOutput(updateMessage);
+				LoggerPlusPlus.getCallbacks().printOutput(updateMessage);
 				break;
 			case 2:
 				updateMessage = "This version is more up to date than the GitHub version! Are you a time traveler? or just a keen ninja? ;)";
-				BurpExtender.getCallbacks().printOutput(updateMessage);
+				LoggerPlusPlus.getCallbacks().printOutput(updateMessage);
 				break;
 		}
 		if(!showMessages) return;

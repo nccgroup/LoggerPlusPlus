@@ -1,15 +1,13 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
-import loggerplusplus.LogEntry;
 import loggerplusplus.LogManager;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 import loggerplusplus.userinterface.dialog.SavedFiltersDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 
 /**
  * Created by corey on 24/08/17.
@@ -23,13 +21,14 @@ public class LogViewPanel extends JPanel {
     public LogViewPanel(LogManager logManager){
         this.setLayout(new GridBagLayout());
 
-        logTable = new LogTable(logManager);
+        LogTableModel tableModel = new LogTableModel(logManager);
+        logTable = new LogTable(tableModel);
         logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
         logTableScrollPane.addMouseWheelListener(new MouseWheelListener() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                BurpExtender.getLoggerInstance().getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setAutoScroll(
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
         });
@@ -41,7 +40,7 @@ public class LogViewPanel extends JPanel {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                BurpExtender.getLoggerInstance().getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setAutoScroll(
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
             @Override
@@ -86,7 +85,7 @@ public class LogViewPanel extends JPanel {
                 @Override
                 public void keyReleased(KeyEvent e) {
                     if(e.getKeyChar() == KeyEvent.VK_ENTER){
-                        BurpExtender.getLoggerInstance().setFilter((String) filterField.getSelectedItem());
+                        LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
                     }else {
                         super.keyReleased(e);
                     }
@@ -95,7 +94,7 @@ public class LogViewPanel extends JPanel {
             this.filterField.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    BurpExtender.getLoggerInstance().setFilter((String) filterField.getSelectedItem());
+                    LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
                 }
             });
 
@@ -124,7 +123,7 @@ public class LogViewPanel extends JPanel {
             colorFilterButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                new ColorFilterDialog(BurpExtender.getLoggerInstance().getFilterListeners()).setVisible(true);
+                new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners()).setVisible(true);
                 }
             });
 

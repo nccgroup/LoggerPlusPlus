@@ -12,32 +12,13 @@
 
 package burp;
 
-import loggerplusplus.*;
+import loggerplusplus.LoggerPlusPlus;
 
 
-public class BurpExtender implements IBurpExtender
+public class BurpExtender extends LoggerPlusPlus
 {
-	private static LoggerPlusPlus loggerInstance;
-	private static IBurpExtenderCallbacks callbacks;
-
-	@Override
-	public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
-	{
-		//Burp Specific
-		BurpExtender.callbacks = callbacks;
-		loggerInstance = new LoggerPlusPlus(callbacks);
-	}
-
 	public static void main(String [] args){
 		System.out.println("You have built the Logger++. You shall play with the jar file now!");
 		burp.StartBurp.main(args);
-	}
-
-	public static LoggerPlusPlus getLoggerInstance() {
-		return loggerInstance;
-	}
-
-	public static IBurpExtenderCallbacks getCallbacks() {
-		return callbacks;
 	}
 }

@@ -1,8 +1,9 @@
 package loggerplusplus.filter;
-import burp.BurpExtender;
-import loggerplusplus.LogEntry;
-import loggerplusplus.userinterface.LogTable;
+
 import com.google.gson.*;
+import loggerplusplus.LogEntry;
+import loggerplusplus.LoggerPlusPlus;
+import loggerplusplus.userinterface.LogTable;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -124,7 +125,7 @@ public class Filter extends RowFilter<Object, Object> {
 
     @Override
     public boolean include(Entry<?, ?> entry) {
-        LogTable logTable = BurpExtender.getLoggerInstance().getLogTable();
+        LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
         Object lValue = this.left, rValue = this.right;
         try {
             int columnNo = logTable.getColumnModel().getColumnIndexByName(this.left.toString());

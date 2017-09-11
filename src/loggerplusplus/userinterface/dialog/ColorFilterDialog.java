@@ -1,13 +1,16 @@
 package loggerplusplus.userinterface.dialog;
 
-import burp.BurpExtender;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +29,7 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
     public ColorFilterDialog(ArrayList<FilterListener> listeners){
         if(instance != null) instance.dispose();
         instance = this;
-        this.filters = BurpExtender.getLoggerInstance().getLoggerPreferences().getColorFilters();
+        this.filters = LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
@@ -106,12 +109,6 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
 
     }
 
-
-
-    public ColorFilterTable getFilterTable() {
-        return filterTable;
-    }
-
     @Override
     public void windowOpened(WindowEvent windowEvent) {}
     @Override
@@ -145,7 +142,7 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
                 listener.onFilterRemove(originalFilters.get(uid));
             }
         }
-        BurpExtender.getLoggerInstance().getLoggerPreferences().setColorFilters(filters);
+        LoggerPlusPlus.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
     @Override
     public void windowClosed(WindowEvent windowEvent) {}

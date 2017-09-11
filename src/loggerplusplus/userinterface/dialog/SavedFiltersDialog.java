@@ -1,11 +1,14 @@
 package loggerplusplus.userinterface.dialog;
 
-import burp.BurpExtender;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.SavedFilter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
 
 /**
@@ -19,7 +22,7 @@ public class SavedFiltersDialog extends JFrame{
     public SavedFiltersDialog(){
         if(instance != null) instance.dispose();
         instance = this;
-        this.savedFilters = BurpExtender.getLoggerInstance().getLoggerPreferences().getSavedFilters();
+        this.savedFilters = LoggerPlusPlus.getInstance().getLoggerPreferences().getSavedFilters();
         this.filterTable = new SavedFiltersTable(savedFilters);
         buildDialog();
         pack();
@@ -31,7 +34,7 @@ public class SavedFiltersDialog extends JFrame{
             public void windowClosing(WindowEvent windowEvent) {}
             @Override
             public void windowClosed(WindowEvent windowEvent) {
-                BurpExtender.getLoggerInstance().getLoggerPreferences().setSavedFilters(savedFilters);
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setSavedFilters(savedFilters);
             }
             @Override
             public void windowIconified(WindowEvent windowEvent) {}

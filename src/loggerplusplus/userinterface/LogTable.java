@@ -4,32 +4,34 @@ package loggerplusplus.userinterface;
 // extend JTable to handle cell selection and column move/resize
 //
 
-import burp.BurpExtender;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LogEntryListener;
 import loggerplusplus.LogManager;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.UIResource;
-import javax.swing.table.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.table.TableStringConverter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-public class LogTable extends JTable implements FilterListener
+public class LogTable extends JTable implements FilterListener, LogEntryListener
 {
 
-    public LogTable(LogManager logManager)
+    public LogTable(LogTableModel tableModel)
     {
-        super(new LogTableModel(logManager), new LogTableColumnModel());
+        super(tableModel, new LogTableColumnModel());
         this.getModel().setColumnModel(this.getColumnModel());
         this.setTableHeader(new TableHeader (getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
@@ -38,18 +40,19 @@ public class LogTable extends JTable implements FilterListener
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
 
+
         TableRowSorter rowSorter = new LogTableRowSorter();
         try {
             rowSorter.setModel(this.getModel());
         }catch (NullPointerException nPException){
             getColumnModel().resetToDefaultVariables();
-            BurpExtender.getCallbacks().printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
+            LoggerPlusPlus.getCallbacks().printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
             rowSorter.setModel(this.getModel());
         }
         setRowSorter(rowSorter);
 
-        Integer sortColumn = BurpExtender.getLoggerInstance().getLoggerPreferences().getSortColumn();
-        SortOrder sortOrder = BurpExtender.getLoggerInstance().getLoggerPreferences().getSortOrder();
+        Integer sortColumn = LoggerPlusPlus.getInstance().getLoggerPreferences().getSortColumn();
+        SortOrder sortOrder = LoggerPlusPlus.getInstance().getLoggerPreferences().getSortOrder();
         if(sortColumn != -1 && sortOrder != null){
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
@@ -61,18 +64,18 @@ public class LogTable extends JTable implements FilterListener
                 LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(start));
                 if(logEntry.requestResponse != null) {
                     if(logEntry.requestResponse.getRequest() != null)
-                        BurpExtender.getLoggerInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                        LoggerPlusPlus.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
                     if (logEntry.requestResponse.getResponse() != null)
-                        BurpExtender.getLoggerInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
                     else
-                        BurpExtender.getLoggerInstance().getResponseViewer().setMessage(new byte[0], false);
+                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(new byte[0], false);
                     getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
                 }
             }
         };
 
         this.setSelectionModel(model);
-
+        LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
         registerListeners();
     }
 
@@ -94,7 +97,7 @@ public class LogTable extends JTable implements FilterListener
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
-                Map<UUID, ColorFilter> colorFilters = BurpExtender.getLoggerInstance().getLoggerPreferences().getColorFilters();
+                Map<UUID, ColorFilter> colorFilters = LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters();
                 for (UUID uid : entry.getMatchingColorFilters()) {
                     if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
                         colorFilter = colorFilters.get(uid);
@@ -112,8 +115,6 @@ public class LogTable extends JTable implements FilterListener
                 c.setBackground(this.getBackground());
             }
         }
-
-
         return c;
     }
 
@@ -154,7 +155,7 @@ public class LogTable extends JTable implements FilterListener
             }
         });
 
-        BurpExtender.getLoggerInstance().addFilterListener(this);
+        LoggerPlusPlus.getInstance().addFilterListener(this);
     }
 
 
@@ -174,11 +175,11 @@ public class LogTable extends JTable implements FilterListener
             LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
             if(logEntry.requestResponse != null) {
                     if(logEntry.requestResponse.getRequest() != null)
-                        BurpExtender.getLoggerInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                        LoggerPlusPlus.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
                     if (logEntry.requestResponse.getResponse() != null)
-                        BurpExtender.getLoggerInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
                     else
-                        BurpExtender.getLoggerInstance().getResponseViewer().setMessage(new byte[0], false);
+                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(new byte[0], false);
                 this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
             }
             super.changeSelection(row, col, toggle, extend);
@@ -250,6 +251,36 @@ public class LogTable extends JTable implements FilterListener
     @Override
     public void onFilterRemoveAll() {}
 
+    @Override
+    public void onRequestAdded(LogEntry logEntry) {
+        int rowNo = LoggerPlusPlus.getInstance().getLogManager().getLogEntries().size()-1;
+        getModel().fireTableRowsInserted(rowNo, rowNo);
+
+        if(LoggerPlusPlus.getInstance().getLoggerPreferences().getAutoScroll()) {
+            JScrollBar scrollBar = LoggerPlusPlus.getInstance().getLogScrollPanel().getVerticalScrollBar();
+            scrollBar.setValue(scrollBar.getMaximum());
+        }
+    }
+
+    @Override
+    public void onResponseUpdated(LogEntry.PendingRequestEntry existingEntry) {
+        //Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
+        int row = existingEntry.getLogRow();
+        if(row == -1) return;
+        LogManager logManager = LoggerPlusPlus.getInstance().getLogManager();
+        if(logManager.getLogEntries().size() == logManager.getMaximumEntries()) {
+            int newRow = existingEntry.getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
+            getModel().fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
+        }else{
+            getModel().fireTableRowsUpdated(row, row);
+        }
+    }
+
+    @Override
+    public void onRequestRemoved(int index, LogEntry logEntry) {
+        getModel().fireTableRowsDeleted(index, index);
+    }
+
     //Custom sorter to fix issues with columnModel having different model column and view column counts.
     class LogTableRowSorter extends TableRowSorter {
         public TableModel tableModel;
@@ -278,8 +309,8 @@ public class LogTable extends JTable implements FilterListener
         public void setSortKeys(List list) {
             super.setSortKeys(list);
             SortKey sortKey = (SortKey) list.get(0);
-            BurpExtender.getLoggerInstance().getLoggerPreferences().setSortColumn(sortKey.getColumn());
-            BurpExtender.getLoggerInstance().getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
+            LoggerPlusPlus.getInstance().getLoggerPreferences().setSortColumn(sortKey.getColumn());
+            LoggerPlusPlus.getInstance().getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
         }
 
         private class TableRowSorterModelWrapper extends ModelWrapper<LogTableModel, Integer> {

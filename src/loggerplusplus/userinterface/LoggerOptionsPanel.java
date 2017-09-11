@@ -12,7 +12,6 @@
 
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
 import loggerplusplus.FileLogger;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
@@ -61,7 +60,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     public LoggerOptionsPanel() {
         contentWrapper = new JPanel();
         this.setViewportView(contentWrapper);
-        this.loggerPreferences = BurpExtender.getLoggerInstance().getLoggerPreferences();
+        this.loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
         this.loggerPreferences.setAutoSave(false);
         this.fileLogger = new FileLogger();
 
@@ -178,11 +177,11 @@ public class LoggerOptionsPanel extends JScrollPane{
         contentWrapper.add(lblResponseSettings, gbc);
         gbc.gridx++;
         final JSpinner spnResponseTimeout = new JSpinner();
-        spnResponseTimeout.setModel(new SpinnerNumberModel(BurpExtender.getLoggerInstance().getLoggerPreferences().getResponseTimeout()/1000, 10, 600, 1));
+        spnResponseTimeout.setModel(new SpinnerNumberModel(LoggerPlusPlus.getInstance().getLoggerPreferences().getResponseTimeout()/1000, 10, 600, 1));
         spnResponseTimeout.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                BurpExtender.getLoggerInstance().getLoggerPreferences().setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
             }
         });
         contentWrapper.add(spnResponseTimeout, gbc);
@@ -194,11 +193,12 @@ public class LoggerOptionsPanel extends JScrollPane{
         contentWrapper.add(lblMaxEntries, gbc);
         gbc.gridx++;
         final JSpinner spnMaxEntries = new JSpinner();
-        spnMaxEntries.setModel(new SpinnerNumberModel(BurpExtender.getLoggerInstance().getLoggerPreferences().getMaximumEntries(), 10, 20000, 10));
+        int maxEntriesMax = 1000000;
+        spnMaxEntries.setModel(new SpinnerNumberModel(Math.min(LoggerPlusPlus.getInstance().getLoggerPreferences().getMaximumEntries(), maxEntriesMax), 10, maxEntriesMax, 10));
         spnMaxEntries.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                BurpExtender.getLoggerInstance().getLoggerPreferences().setMaximumEntries((Integer) spnMaxEntries.getValue());
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setMaximumEntries((Integer) spnMaxEntries.getValue());
             }
         });
         contentWrapper.add(spnMaxEntries, gbc);
@@ -210,8 +210,8 @@ public class LoggerOptionsPanel extends JScrollPane{
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
                 loggerPreferences.resetLoggerPreferences();
-                BurpExtender.getLoggerInstance().getLogTable().getColumnModel().resetToDefaultVariables();
-                BurpExtender.getLoggerInstance().getLogTable().getModel().fireTableStructureChanged();
+                LoggerPlusPlus.getInstance().getLogTable().getColumnModel().resetToDefaultVariables();
+                LoggerPlusPlus.getInstance().getLogTable().getModel().fireTableStructureChanged();
                 fileLogger.setAutoSave(false);
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
@@ -228,8 +228,8 @@ public class LoggerOptionsPanel extends JScrollPane{
             public void actionPerformed(ActionEvent e) {
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
-                BurpExtender.getLoggerInstance().reset();
-                BurpExtender.getLoggerInstance().getLogTable().getModel().fireTableDataChanged();
+                LoggerPlusPlus.getInstance().reset();
+                LoggerPlusPlus.getInstance().getLogTable().getModel().fireTableDataChanged();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
