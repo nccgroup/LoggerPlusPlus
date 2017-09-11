@@ -1,11 +1,13 @@
 package loggerplusplus.userinterface.dialog;
 
-import burp.BurpExtender;
-import loggerplusplus.filter.*;
+import loggerplusplus.LoggerPlusPlus;
+import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.FilterCompiler;
+import loggerplusplus.filter.SavedFilter;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Created by corey on 22/08/17.
@@ -94,7 +96,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
     public void onClick(int row, int column) {
         if(row != -1 && row < filters.size() && column == 2) {
             Filter filter = this.filters.get(row).getFilter();
-            BurpExtender.getLoggerInstance().setFilter(filter);
+            LoggerPlusPlus.getInstance().setFilter(filter);
         }
     }
 

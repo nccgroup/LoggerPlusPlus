@@ -1,12 +1,13 @@
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
 import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.EventList;
+import ca.odell.glazedlists.SortedList;
 import ca.odell.glazedlists.UniqueList;
-import ca.odell.glazedlists.swing.EventTableModel;
+import ca.odell.glazedlists.swing.AdvancedTableModel;
 import ca.odell.glazedlists.swing.GlazedListsSwing;
 import loggerplusplus.LogEntry;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
 import org.jdesktop.swingx.JXTree;
 import org.jdesktop.swingx.JXTreeTable;
@@ -95,13 +96,14 @@ public class GrepPanel extends JPanel{
                     } else if (obj instanceof LogEntryMatches.Match) {
                         obj = ((LogEntryMatches) path.getPathComponent(path.getPathCount() - 2)).entry;
                     }
-                    final int index = BurpExtender.getLoggerInstance().getLogTable().getModel().getData().indexOf(obj);
+                    final int index = LoggerPlusPlus.getInstance().getLogTable().getModel().getData().indexOf(obj);
                     JMenuItem viewInLogs = new JMenuItem(new AbstractAction("View in Logs") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
                             if (index != -1) {
-                                BurpExtender.getLoggerInstance().getLogTable().changeSelection(index, 1, false, false);
-                                BurpExtender.getLoggerInstance().getTabbedPane().setSelectedIndex(0);
+                                LogTable table = LoggerPlusPlus.getInstance().getLogTable();
+                                table.changeSelection(table.convertRowIndexToView(index), 1, false, false);
+                                LoggerPlusPlus.getInstance().getTabbedPane().setSelectedIndex(0);
                             }
                         }
                     });
@@ -118,9 +120,9 @@ public class GrepPanel extends JPanel{
         renderer.setOpaque(true);
 
         //Unique Values
-        EventList eventList = GlazedListsSwing.swingThreadProxyList(new UniqueList(new BasicEventList()));
-        EventTableModel tableModel = new EventTableModel(eventList, new UniqueValueTable.UniqueValueTableFormat());
-        uniqueValueTable = new UniqueValueTable(eventList, tableModel);
+        SortedList eventList = new SortedList(new UniqueList(new BasicEventList()));
+        AdvancedTableModel tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(eventList), new UniqueValueTable.UniqueValueTableFormat());
+        uniqueValueTable = new UniqueValueTable(tableModel, eventList);
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.addTab("Results", new JScrollPane(grepTable));
@@ -135,8 +137,10 @@ public class GrepPanel extends JPanel{
 
     private void toggleSearch(){
         if(!isSearching) {
-            setActivePattern((String) field.getSelectedItem());
-            ((HistoryField.HistoryComboModel) field.getModel()).addToHistory((String) field.getSelectedItem());
+            if(field.getSelectedItem() != null) {
+                setActivePattern((String) field.getSelectedItem());
+                ((HistoryField.HistoryComboModel) field.getModel()).addToHistory((String) field.getSelectedItem());
+            }
         }else if(!searchThread.isInterrupted()){
             btnSetPattern.setText("Stopping. Click to force stop.");
             searchThread.interrupt();
@@ -148,7 +152,7 @@ public class GrepPanel extends JPanel{
 
 
     public synchronized void setActivePattern(String string){
-        if(string.equalsIgnoreCase("")){
+        if(string == null || string.equalsIgnoreCase("")){
             grepModel.clearResults();
             uniqueValueTable.clearList();
         }else {
@@ -171,17 +175,18 @@ public class GrepPanel extends JPanel{
             }
             grepModel.setColumns(columns);
 
-            uniqueValueTable.clearList();
-            grepModel.clearResults();
             searchThread = new Thread() {
                 @Override
                 public void run() {
-                    synchronized (BurpExtender.getLoggerInstance().getLogManager().getLogEntries()) {
-                        for (final LogEntry entry : BurpExtender.getLoggerInstance().getLogManager().getLogEntries()) {
+                    uniqueValueTable.clearList();
+                    grepModel.clearResults();
+                    GrepPanel.this.searchExecutor = Executors.newCachedThreadPool();
+                    synchronized (LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
+                        for (final LogEntry entry : LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
                             searchExecutor.submit(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (!searchInScopeOnly.isSelected() || BurpExtender.getCallbacks().isInScope(entry.url)) {
+                                    if (!searchInScopeOnly.isSelected() || LoggerPlusPlus.getCallbacks().isInScope(entry.url)) {
                                         LogEntryMatches matches = new LogEntryMatches(entry, activePattern);
                                         if (matches.results.size() > 0) grepModel.addEntry(matches);
                                     }
@@ -189,6 +194,7 @@ public class GrepPanel extends JPanel{
                             });
                         }
                     }
+                    searchExecutor.shutdown();
 
                     try {
                         searchExecutor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
@@ -221,7 +227,11 @@ public class GrepPanel extends JPanel{
         public LogEntryMatches(LogEntry entry, Pattern pattern) {
             this.entry = entry;
             this.results = new ArrayList<>();
-            getEntryMatches(pattern);
+            try {
+                getEntryMatches(pattern);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
 
         void getEntryMatches(Pattern pattern){
@@ -260,17 +270,20 @@ public class GrepPanel extends JPanel{
 
     class GrepTableModel extends AbstractTreeTableModel {
         String[] columns = {"Entry", "Matches"};
-        ArrayList<LogEntryMatches> matchingEntries;
+        EventList matchingEntries;
 
         GrepTableModel(String[] columns){
             super(new Object());
             this.columns = columns;
-            this.matchingEntries = new ArrayList<>();
+            this.matchingEntries = new BasicEventList<LogEntryMatches>();
         }
 
         public void addEntry(LogEntryMatches matches){
-            synchronized (matchingEntries) {
+            this.matchingEntries.getReadWriteLock().writeLock().lock();
+            try{
                 this.matchingEntries.add(matches);
+            }finally {
+                this.matchingEntries.getReadWriteLock().writeLock().unlock();
             }
 
         }
@@ -280,7 +293,9 @@ public class GrepPanel extends JPanel{
         }
 
         public void reload(){
-            modelSupport.fireNewRoot();
+            synchronized (matchingEntries) {
+                modelSupport.fireNewRoot();
+            }
         }
 
         @Override
@@ -342,7 +357,15 @@ public class GrepPanel extends JPanel{
         }
 
         public void clearResults() {
-            matchingEntries.clear();
+            matchingEntries.getReadWriteLock().writeLock().lock();
+            try {
+                if (matchingEntries.size() != 0) {
+                    matchingEntries.clear();
+                }
+            }catch(IndexOutOfBoundsException iobException){
+            }finally {
+                matchingEntries.getReadWriteLock().writeLock().unlock();
+            }
             modelSupport.fireNewRoot();
         }
     }

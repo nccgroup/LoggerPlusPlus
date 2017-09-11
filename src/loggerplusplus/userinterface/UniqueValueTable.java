@@ -3,54 +3,50 @@ package loggerplusplus.userinterface;
 import ca.odell.glazedlists.EventList;
 import ca.odell.glazedlists.SortedList;
 import ca.odell.glazedlists.gui.AdvancedTableFormat;
-import ca.odell.glazedlists.swing.DefaultEventTableModel;
-import ca.odell.glazedlists.swing.EventTableModel;
+import ca.odell.glazedlists.swing.AdvancedTableModel;
+import ca.odell.glazedlists.swing.GlazedListsSwing;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
 
 import javax.swing.*;
 import java.util.Comparator;
 
 public class UniqueValueTable extends JTable {
-    DefaultEventTableModel tableModel;
-    EventList eventList;
+    EventList swingEventList;
 
-    UniqueValueTable(EventList list, EventTableModel model){
-        super(model);
-        this.eventList = list;
-        this.tableModel = model;
-        TableComparatorChooser tableSorter = new TableComparatorChooser(this, new SortedList(list), true);
+    UniqueValueTable(AdvancedTableModel tableModel, SortedList list){
+        super(tableModel);
+        this.swingEventList = GlazedListsSwing.swingThreadProxyList(list);
+        TableComparatorChooser tableSorter = TableComparatorChooser.install(this,
+                list, TableComparatorChooser.SINGLE_COLUMN);
     }
 
     void clearList(){
-        eventList.getReadWriteLock().writeLock().lock();
+        swingEventList.getReadWriteLock().writeLock().lock();
         try {
-            eventList.clear();
+            if (swingEventList.size() != 0) {
+                swingEventList.clear();
+            }
+        }catch (IndexOutOfBoundsException iobException){
         }finally {
-            eventList.getReadWriteLock().writeLock().unlock();
+            swingEventList.getReadWriteLock().writeLock().unlock();
         }
     }
 
     public void addItem(String group) {
         UniqueValueCount val = new UniqueValueCount(group, 1);
-        eventList.getReadWriteLock().readLock().lock();
-        int index;
-        try {
-            index = eventList.indexOf(val);
-        }finally {
-            eventList.getReadWriteLock().readLock().unlock();
-        }
 
-        eventList.getReadWriteLock().writeLock().lock();
+        swingEventList.getReadWriteLock().writeLock().lock();
         try{
+            int index = swingEventList.indexOf(val);
             if (index == -1) {
-                eventList.add(new UniqueValueCount(group, 1));
+                swingEventList.add(new UniqueValueCount(group, 1));
             } else {
-                val = ((UniqueValueCount) eventList.get(index));
+                val = ((UniqueValueCount) swingEventList.get(index));
                 val.count++;
-                eventList.add(val);
+                swingEventList.add(val);
             }
         }finally {
-            eventList.getReadWriteLock().writeLock().unlock();
+            swingEventList.getReadWriteLock().writeLock().unlock();
         }
     }
 
@@ -99,6 +95,14 @@ public class UniqueValueTable extends JTable {
                 }
             };
             throw new IllegalStateException();
+        }
+    }
+
+    public static class UniqueValueComparator implements Comparator {
+
+        @Override
+        public int compare(Object o, Object t1) {
+            return 0;
         }
     }
 

@@ -1,27 +1,23 @@
 package loggerplusplus.userinterface;
 
-import burp.*;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IMessageEditorController;
 import loggerplusplus.LogEntry;
-import loggerplusplus.LogEntryListener;
 import loggerplusplus.LogManager;
 
-import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.util.ArrayList;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
-public class LogTableModel extends DefaultTableModel implements IMessageEditorController, LogEntryListener {
+public class LogTableModel extends DefaultTableModel implements IMessageEditorController {
 
     private LogTableColumnModel columnModel;
     private IHttpRequestResponse currentlyDisplayedItem;
     private LogManager logManager;
-    private List<LogEntry> entries;
 
     public LogTableModel(LogManager logManager){
         this.logManager = logManager;
-        this.logManager.addLogListener(this);
-        this.entries = logManager.getLogEntries();
     }
 
     public void setColumnModel(LogTableColumnModel columnModel){
@@ -32,12 +28,12 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
     public int getRowCount()
     {
         // To delete the Request/Response logTable the log section is empty (after deleting the logs when an item is already selected)
-        if(currentlyDisplayedItem!=null && entries.size() <= 0){
+        if(currentlyDisplayedItem!=null && logManager.getLogEntries().size() <= 0){
             currentlyDisplayedItem = null;
         }
         //DefaultTableModel calls this before we can set the entries list.
-        if(entries==null) return 0;
-        return entries.size();
+        if(logManager == null || logManager.getLogEntries()==null) return 0;
+        return logManager.getLogEntries().size();
     }
 
     @Override
@@ -56,7 +52,7 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
 
     @Override
     public void setValueAt(Object value, int rowIndex, int colIndex) {
-        LogEntry logEntry = entries.get(rowIndex);
+        LogEntry logEntry = logManager.getLogEntries().get(rowIndex);
         logEntry.comment = (String) value;
         fireTableCellUpdated(rowIndex, colIndex);
     }
@@ -77,15 +73,18 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
 
     @Override
     public void removeRow(int row) {
-        this.fireTableRowsDeleted(row, row);
+        synchronized (logManager.getLogEntries()) {
+            logManager.getLogEntries().remove(row);
+            this.fireTableRowsDeleted(row, row);
+        }
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
-        if(rowIndex >= entries.size()) return null;
+        if(rowIndex >= logManager.getLogEntries().size()) return null;
         if(columnIndex == 0) return rowIndex+1;
-        return entries.get(rowIndex).getValue(columnIndex);
+        return logManager.getLogEntries().get(rowIndex).getValue(columnIndex);
     }
 
 
@@ -98,10 +97,10 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
     }
 
     public List<LogEntry> getData() {
-        return this.entries;
+        return this.logManager.getLogEntries();
     }
 
-    public LogEntry getRow(int row) {return this.entries.get(row);}
+    public LogEntry getRow(int row) {return this.logManager.getLogEntries().get(row);}
 
     public int getModelColumnCount() {
         return columnModel.getModelColumnCount();
@@ -135,33 +134,5 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
         if(getCurrentlyDisplayedItem()==null)
             return null;
         return getCurrentlyDisplayedItem().getHttpService();
-    }
-
-
-    @Override
-    public void onRequestAdded(LogEntry logEntry) {
-        int rowNo = entries.size()-1;
-        this.fireTableRowsInserted(rowNo, rowNo);
-
-        if(BurpExtender.getLoggerInstance().getLoggerPreferences().getAutoScroll()) {
-            JScrollBar scrollBar = BurpExtender.getLoggerInstance().getLogScrollPanel().getVerticalScrollBar();
-            scrollBar.setValue(scrollBar.getMaximum());
-        }
-    }
-
-    @Override
-    public void onResponseUpdated(LogEntry.PendingRequestEntry existingEntry) {
-        //Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
-        if(entries.size() == logManager.getMaximumEntries()) {
-            int newRow = existingEntry.getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
-            fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
-        }else{
-            fireTableRowsUpdated(existingEntry.getLogRow(), existingEntry.getLogRow());
-        }
-    }
-
-    @Override
-    public void onRequestRemoved(LogEntry logEntry) {
-        removeRow(entries.indexOf(logEntry));
     }
 }

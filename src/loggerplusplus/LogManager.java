@@ -7,6 +7,7 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     private ArrayList<LogEntry> logEntries;
     private HashMap<Integer, LogEntry.PendingRequestEntry> pendingRequests;
     private ArrayList<LogEntryListener> logEntryListeners;
+    private ExecutorService executorService;
     //Stats
     private int totalRequests = 0;
     private short lateResponses = 0;
@@ -28,7 +30,9 @@ public class LogManager implements IHttpListener, IProxyListener {
         logEntries = new ArrayList<>();
         logEntryListeners = new ArrayList<>();
         pendingRequests = new HashMap<>();
-        BurpExtender.getCallbacks().getProxyHistory();
+        LoggerPlusPlus.getCallbacks().getProxyHistory();
+
+        executorService = Executors.newSingleThreadExecutor();
 
         //Create incomplete request cleanup thread so map doesn't get too big.
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -41,7 +45,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                     for (Integer reference : keys) {
                         try {
                             Date date = dateFormat.parse(pendingRequests.get(reference).requestTime);
-                            if(new Date().getTime() - date.getTime() > BurpExtender.getLoggerInstance().getLoggerPreferences().getResponseTimeout()){
+                            if(new Date().getTime() - date.getTime() > LoggerPlusPlus.getInstance().getLoggerPreferences().getResponseTimeout()){
                                 pendingRequests.remove(reference);
                             }
                         } catch (ParseException e) {
@@ -54,68 +58,68 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     @Override
-    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse requestResponse) {
-//        if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY) logIt(toolFlag, messageIsRequest, requestResponse, null);
-        if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY){
-            if(requestResponse == null || !prefs.isEnabled()) return;
-            IRequestInfo analyzedReq = BurpExtender.getCallbacks().getHelpers().analyzeRequest(requestResponse);
-            URL uUrl = analyzedReq.getUrl();
-            if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || BurpExtender.getCallbacks().isInScope(uUrl))){
-                //We will not need to change messageInfo so save to temp file
-                LogEntry logEntry = new LogEntry(toolFlag, false, BurpExtender.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
-                //Check entry against colorfilters.
-                for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
-                    logEntry.testColorFilter(colorFilter, false);
-                }
-                addNewRequest(logEntry);
-            }
-        }
-    }
-
-    @Override
-    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage proxyMessage) {
-//        logIt(IBurpExtenderCallbacks.TOOL_PROXY, messageIsRequest, null, proxyMessage);
-        if(proxyMessage == null || !prefs.isEnabled()) return;
-        IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
-        IRequestInfo analyzedReq = BurpExtender.getCallbacks().getHelpers().analyzeRequest(requestResponse);
-        URL uUrl = analyzedReq.getUrl();
-        int toolFlag = BurpExtender.getCallbacks().TOOL_PROXY;
-        if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || BurpExtender.getCallbacks().isInScope(uUrl))){
-            if(messageIsRequest){
-                //New Proxy Request
-                //We need to change messageInfo when we get a response so do not save to buffers
-                LogEntry logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, requestResponse, uUrl, analyzedReq, proxyMessage);
-                for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
-                    logEntry.testColorFilter(colorFilter, false);
-                }
-                synchronized (pendingRequests) {
-                    pendingRequests.put(proxyMessage.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
-                }
-                addNewRequest(logEntry);
-            }else{
-                //Existing Proxy Request, update existing
-                LogEntry.PendingRequestEntry pendingRequest;
-                synchronized (pendingRequests) {
-                    pendingRequest = pendingRequests.remove(proxyMessage.getMessageReference());
-                }
-                if (pendingRequest != null) {
-                    updatePendingRequest(pendingRequest, requestResponse);
-                } else {
-                    lateResponses++;
-                    if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
-                        MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+    public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY){
+                    if(requestResponse == null || !prefs.isEnabled()) return;
+                    IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+                    URL uUrl = analyzedReq.getUrl();
+                    if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.getCallbacks().isInScope(uUrl))){
+                        //We will not need to change messageInfo so save to temp file
+                        LogEntry logEntry = new LogEntry(toolFlag, false, LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
+                        //Check entry against colorfilters.
+                        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+                            logEntry.testColorFilter(colorFilter, false);
+                        }
+                        addNewRequest(logEntry);
                     }
                 }
             }
-        }
+        });
     }
 
-    private void logProxyRequest(IInterceptedProxyMessage proxyMessage, boolean messageIsRequest){
-
-    }
-
-    private void logOtherRequest(int toolFlag, IHttpRequestResponse requestResponse){
-
+    @Override
+    public void processProxyMessage(final boolean messageIsRequest, final IInterceptedProxyMessage proxyMessage) {
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                if(proxyMessage == null || !prefs.isEnabled()) return;
+                IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
+                IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+                URL uUrl = analyzedReq.getUrl();
+                int toolFlag = LoggerPlusPlus.getCallbacks().TOOL_PROXY;
+                if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.getCallbacks().isInScope(uUrl))){
+                    if(messageIsRequest){
+                        //New Proxy Request
+                        //We need to change messageInfo when we get a response so do not save to buffers
+                        LogEntry logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, requestResponse, uUrl, analyzedReq, proxyMessage);
+                        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+                            logEntry.testColorFilter(colorFilter, false);
+                        }
+                        synchronized (pendingRequests) {
+                            pendingRequests.put(proxyMessage.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
+                        }
+                        addNewRequest(logEntry);
+                    }else{
+                        //Existing Proxy Request, update existing
+                        LogEntry.PendingRequestEntry pendingRequest;
+                        synchronized (pendingRequests) {
+                            pendingRequest = pendingRequests.remove(proxyMessage.getMessageReference());
+                        }
+                        if (pendingRequest != null) {
+                            updatePendingRequest(pendingRequest, requestResponse);
+                        } else {
+                            lateResponses++;
+                            if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
+                                MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private void addNewRequest(LogEntry logEntry){
@@ -125,7 +129,7 @@ public class LogManager implements IHttpListener, IProxyListener {
             while(logEntries.size() >= getMaximumEntries()){
                 final LogEntry removed = logEntries.remove(0);
                 for (LogEntryListener listener : logEntryListeners) {
-                    listener.onRequestRemoved(removed);
+                    listener.onRequestRemoved(0, removed);
                 }
             }
             logEntries.add(logEntry);

@@ -12,9 +12,9 @@
 
 package loggerplusplus.userinterface;
 
-import burp.BurpExtender;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.renderer.LeftTableCellRenderer;
 
 import javax.swing.event.TableColumnModelEvent;
@@ -23,7 +23,6 @@ import javax.swing.table.TableColumn;
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.List;
 
 
 // To keep the header descriptor JSON objects and to converts them to list objects
@@ -91,7 +90,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	private void populateHeaders(){
-		String logTableColumnsJSON = BurpExtender.getLoggerInstance().getLoggerPreferences().getTableDetailsJSONString();
+		String logTableColumnsJSON = LoggerPlusPlus.getInstance().getLoggerPreferences().getTableDetailsJSONString();
 		if(logTableColumnsJSON.isEmpty()) {
 			// we have to start fresh! nothing was saved so the default string will be used.
 			saveColumnJSON(defaultLogTableColumnsJson);
@@ -106,7 +105,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}catch(Exception e){
 			// if there was an error in saved grepTable configuration JSON object we have to use the default JSON object
-			BurpExtender.getCallbacks().printError("Error in parsing the grepTable structure JSON object. The default configuration will be used.");
+			LoggerPlusPlus.getCallbacks().printError("Error in parsing the grepTable structure JSON object. The default configuration will be used.");
 			logTableColumnsJSON = defaultLogTableColumnsJson;
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}
@@ -144,7 +143,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	public void saveColumnJSON(String logTableColumnsJSON) {
-		BurpExtender.getLoggerInstance().getLoggerPreferences().setTableDetailsJSONString(logTableColumnsJSON);
+		LoggerPlusPlus.getInstance().getLoggerPreferences().setTableDetailsJSONString(logTableColumnsJSON);
 	}
 
 	public LogTableColumn getColumnByName(String colName){
@@ -158,7 +157,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	public boolean isColumnEnabled(String colName){
 		Integer modelColumnIndex = nameToModelIndexMap.get(colName.toUpperCase());
 		if(modelColumnIndex == null){
-			BurpExtender.getCallbacks().printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
+			LoggerPlusPlus.getCallbacks().printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
 			return false;
 		}else {
 			return columnMap.get(modelColumnIndex).isEnabled();

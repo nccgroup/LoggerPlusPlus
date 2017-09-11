@@ -14,8 +14,8 @@ package loggerplusplus;
 
 import burp.*;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.userinterface.LogTableColumn;
 import loggerplusplus.userinterface.LogTable;
+import loggerplusplus.userinterface.LogTableColumn;
 import loggerplusplus.userinterface.LogTableColumnModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -94,7 +94,7 @@ public class LogEntry extends RowFilter.Entry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
-		LogTable logTable = BurpExtender.getLoggerInstance().getLogTable();
+		LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
@@ -154,7 +154,7 @@ public class LogEntry extends RowFilter.Entry
 							// to ensure it is enabled as it is process consuming
 							if(logTable.getColumnModel().isColumnEnabled("usesCookieJar")){
 								// Check to see if it uses cookie Jars!
-								List<ICookie> cookieJars = BurpExtender.getCallbacks().getCookieJarContents();
+								List<ICookie> cookieJars = LoggerPlusPlus.getCallbacks().getCookieJarContents();
 								boolean oneNotMatched = false;
 								boolean anyParamMatched = false;
 
@@ -227,7 +227,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllReq[i] = allMatches.toString();
 
 					}catch(Exception e){
-						BurpExtender.getCallbacks().printError("Error in regular expression: " + regexString);
+						LoggerPlusPlus.getCallbacks().printError("Error in regular expression: " + regexString);
 					}
 
 				}
@@ -251,14 +251,14 @@ public class LogEntry extends RowFilter.Entry
 		this.responseTime = sdf.format(responseDate);
 
 		//Finalise request,response by saving to temp file and clearing from memory.
-		this.requestResponse = BurpExtender.getCallbacks().saveBuffersToTempFiles(requestResponse);
+		this.requestResponse = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
 
-		IResponseInfo tempAnalyzedResp = BurpExtender.getCallbacks().getHelpers().analyzeResponse(requestResponse.getResponse());
+		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.getCallbacks().getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
 		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
 		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
 
-		LogTable logTable = BurpExtender.getLoggerInstance().getLogTable();
+		LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
 		this.status= tempAnalyzedResp.getStatusCode();
@@ -329,7 +329,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllResp[i] = allMatches.toString();
 
 					}catch(Exception e){
-						BurpExtender.getCallbacks().printError("Error in regular expression: " + regexString);
+						LoggerPlusPlus.getCallbacks().printError("Error in regular expression: " + regexString);
 					}
 
 				}
@@ -369,7 +369,7 @@ public class LogEntry extends RowFilter.Entry
 			case 0://number
 				return 0;
 			case 1://tool
-				return BurpExtender.getCallbacks().getToolName(tool);
+				return LoggerPlusPlus.getCallbacks().getToolName(tool);
 			case 2://host
 				return this.protocol + "://" + this.host;
 			case 3://method
@@ -510,7 +510,7 @@ public class LogEntry extends RowFilter.Entry
 		//					result.append(",");
 		//			}
 
-		LogTableColumnModel columnModel = BurpExtender.getLoggerInstance().getLogTable().getColumnModel();
+		LogTableColumnModel columnModel = LoggerPlusPlus.getInstance().getLogTable().getColumnModel();
 		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
 		Collections.sort(columns);
 		short count = 0;
@@ -539,7 +539,7 @@ public class LogEntry extends RowFilter.Entry
 			switch(columnName)
 			{
 				case TOOL:
-					return BurpExtender.getCallbacks().getToolName(tool);
+					return LoggerPlusPlus.getCallbacks().getToolName(tool);
 				case URL:
 					return this.url;
 				case PATH:
