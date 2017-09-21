@@ -36,12 +36,12 @@ import java.util.regex.Pattern;
 //TODO Better column to value mapping.
 public class LogEntry extends RowFilter.Entry
 {
-	public final UUID uuid;
+	public UUID uuid;
 	public IHttpRequestResponse requestResponse;
-	public final int tool;
+	public int tool;
 	public String host="";
 	public String method="";
-	public final URL url;
+	public URL url;
 	public String relativeURL="";
 	public boolean params=false;
 	public Short status=-1;
@@ -77,20 +77,23 @@ public class LogEntry extends RowFilter.Entry
 	public ArrayList<UUID> matchingColorFilters;
 	public int requestBodyOffset;
 	public int responseBodyOffset;
-	public final String requestTime;
+	public String requestTime;
 	public String requestResponseDelay;
 	public String responseHeaders;
-	public final String requestHeaders;
+	public String requestHeaders;
 
 	// Defining necessary parameters from the caller
 
-	public LogEntry(int tool, boolean messageIsRequest, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message)
+	public LogEntry()
 	{
 		this.uuid = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
+		this.comment = "";
+		this.requestTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+	}
+
+	public void processRequest(int tool, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
-
-
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
@@ -110,7 +113,7 @@ public class LogEntry extends RowFilter.Entry
 			this.targetPort = tempRequestResponseHttpService.getPort();
 
 		if(logTable.getColumnModel().isColumnEnabled("method")) // This is good to increase the speed when it is time consuming
- 			this.method = tempAnalyzedReq.getMethod();
+			this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
 			String tempPath = url.getPath().replaceAll("\\\\", "/");
@@ -233,26 +236,16 @@ public class LogEntry extends RowFilter.Entry
 				}
 			}
 		}
-
-		this.comment = "";
-		this.requestTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
-		if(!messageIsRequest){
-			processResponse(requestResponse);
-		}
-	}
-
-	public void processRequest(){
-
 	}
 
 	public void processResponse(IHttpRequestResponse requestResponse) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date responseDate = new Date();
+		this.responseTime = sdf.format(responseDate);
 		try {
 			Date requestDate = sdf.parse(this.requestTime);
 			this.requestResponseDelay = formatDelay(responseDate.getTime() - requestDate.getTime());
 		} catch (ParseException e) {}
-		this.responseTime = sdf.format(responseDate);
 
 		//Finalise request,response by saving to temp file and clearing from memory.
 		this.requestResponse = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
@@ -762,8 +755,8 @@ public class LogEntry extends RowFilter.Entry
 
 	public static class PendingRequestEntry extends LogEntry {
 		private int logRow;
-		public PendingRequestEntry(int tool, boolean messageIsRequest, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message) {
-			super(tool, messageIsRequest, requestResponse, url, tempAnalyzedReq, message);
+		public PendingRequestEntry() {
+			super();
 		}
 
 		public int getLogRow() {

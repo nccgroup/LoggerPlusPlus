@@ -22,6 +22,8 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.net.URI;
 
 public class LoggerOptionsPanel extends JScrollPane{
@@ -186,6 +188,9 @@ public class LoggerOptionsPanel extends JScrollPane{
         });
         contentWrapper.add(spnResponseTimeout, gbc);
 
+        gbc.gridx++;
+        contentWrapper.add(new JLabel("Min: 10 Max: 600"), gbc);
+
         gbc.gridx = 1;
         gbc.gridy++;
         JLabel lblMaxEntries = new JLabel("Maximum Log Entries:");
@@ -201,7 +206,17 @@ public class LoggerOptionsPanel extends JScrollPane{
                 LoggerPlusPlus.getInstance().getLoggerPreferences().setMaximumEntries((Integer) spnMaxEntries.getValue());
             }
         });
+        spnMaxEntries.getEditor().getComponent(0).addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                super.focusLost(e);
+            }
+        });
+
         contentWrapper.add(spnMaxEntries, gbc);
+
+        gbc.gridx++;
+        contentWrapper.add(new JLabel("Min: 10 Max: 1,000,000"), gbc);
 
 
         JButton btnResetSettings = new JButton("Reset all settings");
@@ -220,6 +235,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         });
         btnResetSettings.setFont(new Font("Tahoma", Font.PLAIN, 13));
         gbc.anchor = GridBagConstraints.NORTH;
+        gbc.gridx = 2;
         gbc.gridy++;
         contentWrapper.add(btnResetSettings, gbc);
 
@@ -249,7 +265,7 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         gbc.gridwidth = 3;
         gbc.gridx = 1;
-        gbc.gridy++;
+        gbc.gridy++;gbc.gridy++;
         contentWrapper.add(lblNewLabel, gbc);
 
         gbc.gridx = 1;

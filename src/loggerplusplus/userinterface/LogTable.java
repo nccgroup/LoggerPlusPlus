@@ -159,7 +159,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
 
-    Filter getCurrentFilter(){
+    public Filter getCurrentFilter(){
         return (Filter) ((TableRowSorter) this.getRowSorter()).getRowFilter();
     }
 
