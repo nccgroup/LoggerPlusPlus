@@ -59,16 +59,19 @@ public class LogManager implements IHttpListener, IProxyListener {
 
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
+        //REQUEST AND RESPONSE SINGLE MESSAGE
         executorService.submit(new Runnable() {
             @Override
             public void run() {
                 if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY){
                     if(requestResponse == null || !prefs.isEnabled()) return;
+                    LogEntry logEntry = new LogEntry();
                     IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
                     URL uUrl = analyzedReq.getUrl();
                     if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.getCallbacks().isInScope(uUrl))){
                         //We will not need to change messageInfo so save to temp file
-                        LogEntry logEntry = new LogEntry(toolFlag, false, LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
+                        logEntry.processRequest(toolFlag, LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
+                        logEntry.processResponse(LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse));
                         //Check entry against colorfilters.
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);
@@ -82,10 +85,19 @@ public class LogManager implements IHttpListener, IProxyListener {
 
     @Override
     public void processProxyMessage(final boolean messageIsRequest, final IInterceptedProxyMessage proxyMessage) {
+        //REQUEST AND RESPONSE SEPARATE
         executorService.submit(new Runnable() {
             @Override
             public void run() {
                 if(proxyMessage == null || !prefs.isEnabled()) return;
+                LogEntry.PendingRequestEntry logEntry;
+                if(messageIsRequest){
+                    logEntry = new LogEntry.PendingRequestEntry();
+                }else{
+                    synchronized (pendingRequests) {
+                        logEntry = pendingRequests.remove(proxyMessage.getMessageReference());
+                    }
+                }
                 IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
                 IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
@@ -94,22 +106,18 @@ public class LogManager implements IHttpListener, IProxyListener {
                     if(messageIsRequest){
                         //New Proxy Request
                         //We need to change messageInfo when we get a response so do not save to buffers
-                        LogEntry logEntry = new LogEntry.PendingRequestEntry(toolFlag, messageIsRequest, requestResponse, uUrl, analyzedReq, proxyMessage);
+                        logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, proxyMessage);
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);
                         }
                         synchronized (pendingRequests) {
-                            pendingRequests.put(proxyMessage.getMessageReference(), (LogEntry.PendingRequestEntry) logEntry);
+                            pendingRequests.put(proxyMessage.getMessageReference(), logEntry);
                         }
                         addNewRequest(logEntry);
                     }else{
                         //Existing Proxy Request, update existing
-                        LogEntry.PendingRequestEntry pendingRequest;
-                        synchronized (pendingRequests) {
-                            pendingRequest = pendingRequests.remove(proxyMessage.getMessageReference());
-                        }
-                        if (pendingRequest != null) {
-                            updatePendingRequest(pendingRequest, requestResponse);
+                        if (logEntry != null) {
+                            updatePendingRequest(logEntry, requestResponse);
                         } else {
                             lateResponses++;
                             if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){

@@ -12,6 +12,7 @@ import ca.odell.glazedlists.swing.TableComparatorChooser;
 
 import javax.swing.*;
 import java.util.Comparator;
+import java.util.List;
 
 public class UniqueValueTable extends JTable {
     SortedList sortedList;
@@ -26,17 +27,24 @@ public class UniqueValueTable extends JTable {
     public void reset(){
         //Cannot simply clear list due to table updates required in doing so.
         //Instead mark for disposal and send to GC.
-        if(this.tableSorter != null) this.tableSorter.dispose();
+        if(this.sortedList != null){
+            this.sortedList.dispose();
+        }
+        this.sortedList = new SortedList(new ThreadSafeList(new UniqueList(new BasicEventList())));
         if(this.swingEventList != null){
             this.swingEventList.dispose();
         }
-        if(this.sortedList != null) this.sortedList.dispose();
-        if(this.tableModel != null) this.tableModel.dispose();
-
-        this.sortedList = new SortedList(new ThreadSafeList(new UniqueList(new BasicEventList())));
+        this.swingEventList = GlazedListsSwing.swingThreadProxyList(sortedList);
+        if(this.tableModel != null){
+            this.tableModel.dispose();
+        }
         tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(sortedList), new UniqueValueTable.UniqueValueTableFormat());
         this.setModel(tableModel);
-        this.swingEventList = GlazedListsSwing.swingThreadProxyList(sortedList);
+        List sortingColumns = null;
+        if(this.tableSorter != null){
+            sortingColumns = tableSorter.getSortingColumns();
+            this.tableSorter.dispose();
+        }
         this.tableSorter = TableComparatorChooser.install(this,sortedList, TableComparatorChooser.SINGLE_COLUMN);
     }
 

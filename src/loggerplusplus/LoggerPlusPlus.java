@@ -1,9 +1,6 @@
 package loggerplusplus;
 
-import burp.IBurpExtender;
-import burp.IBurpExtenderCallbacks;
-import burp.IMessageEditor;
-import burp.ITab;
+import burp.*;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterCompiler;
 import loggerplusplus.filter.FilterListener;
@@ -19,6 +16,7 @@ import java.util.ArrayList;
 public class LoggerPlusPlus implements ITab, IBurpExtender {
     public static IBurpExtenderCallbacks callbacks;
     public static LoggerPlusPlus instance;
+    private static IContextMenuFactory contextMenuFactory;
     private ArrayList<FilterListener> filterListeners;
     private LoggerPreferences loggerPreferences;
     private LogManager logManager;
@@ -41,6 +39,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
         //Burp Specific
         LoggerPlusPlus.callbacks = callbacks;
         LoggerPlusPlus.instance = this;
+        LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
 
         callbacks.setExtensionName("Logger++");
 
@@ -135,6 +134,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
                 LoggerPlusPlus.getCallbacks().registerHttpListener(logManager);
                 LoggerPlusPlus.getCallbacks().registerProxyListener(logManager);
+                LoggerPlusPlus.getCallbacks().registerContextMenuFactory(contextMenuFactory);
             }
         });
     }
@@ -161,7 +161,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
 
     public void setFilter(String filterString){
-        if (filterString.length() == 0) {
+        if (filterString == null || filterString.length() == 0) {
             setFilter((Filter) null);
         } else {
             try {
@@ -257,5 +257,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
     public LogManager getLogManager() {
         return logManager;
+    }
+
+    public static IContextMenuFactory getContextMenuFactory() {
+        return contextMenuFactory;
     }
 }

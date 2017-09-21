@@ -41,10 +41,17 @@ public class GrepPanel extends JPanel{
 
     public GrepPanel(){
         this.setLayout(new GridBagLayout());
-        JPanel regexPanel = new JPanel(new BorderLayout());
-        regexPanel.add(new JLabel("  Regex: "), BorderLayout.WEST);
+        JPanel regexPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = gbc.gridy = 0;
+        gbc.ipadx = 10;
+        gbc.weightx = 1;
+        regexPanel.add(new JLabel(" Regex:"), gbc);
         field = new HistoryField(15, "grepHistory");
-        regexPanel.add(field, BorderLayout.CENTER);
+        gbc.gridx++;
+        gbc.weightx = 999;
+        regexPanel.add(field, gbc);
         btnSetPattern = new JButton("Search");
         btnSetPattern.addActionListener(new ActionListener() {
             @Override
@@ -62,11 +69,14 @@ public class GrepPanel extends JPanel{
             }
         });
         this.searchInScopeOnly = new JCheckBox("In Scope Only");
-        JPanel buttonsPanel = new JPanel(new BorderLayout());
-        buttonsPanel.add(this.searchInScopeOnly, BorderLayout.WEST);
-        buttonsPanel.add(btnSetPattern, BorderLayout.EAST);
-        regexPanel.add(buttonsPanel, BorderLayout.EAST);
-        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx++;
+        gbc.weightx = 1;
+        regexPanel.add(this.searchInScopeOnly, gbc);
+        gbc.gridx++;
+        gbc.weightx = 1;
+        regexPanel.add(btnSetPattern, gbc);
+
+        gbc = new GridBagConstraints();
         gbc.weightx = gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = gbc.gridy = 0;

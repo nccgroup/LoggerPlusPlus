@@ -1,3 +1,9 @@
+v 3.06
+=========================================================================
+- Better optimization for large sets of grepping results.
+- New context menus for message editors / message viewers.
+- History for filters, grep searches.
+
 v 3.05
 =========================================================================
 - Added a filter library to share useful filters.
