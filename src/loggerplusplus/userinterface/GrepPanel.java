@@ -2,10 +2,6 @@ package loggerplusplus.userinterface;
 
 import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.EventList;
-import ca.odell.glazedlists.SortedList;
-import ca.odell.glazedlists.UniqueList;
-import ca.odell.glazedlists.swing.AdvancedTableModel;
-import ca.odell.glazedlists.swing.GlazedListsSwing;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
@@ -21,6 +17,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,9 +117,9 @@ public class GrepPanel extends JPanel{
         renderer.setOpaque(true);
 
         //Unique Values
-        SortedList eventList = new SortedList(new UniqueList(new BasicEventList()));
-        AdvancedTableModel tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(eventList), new UniqueValueTable.UniqueValueTableFormat());
-        uniqueValueTable = new UniqueValueTable(tableModel, eventList);
+//        SortedList eventList = new SortedList(new UniqueList(new BasicEventList()));
+//        AdvancedTableModel tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(eventList), new UniqueValueTable.UniqueValueTableFormat());
+        uniqueValueTable = new UniqueValueTable();
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.addTab("Results", new JScrollPane(grepTable));
@@ -137,16 +134,17 @@ public class GrepPanel extends JPanel{
 
     private void toggleSearch(){
         if(!isSearching) {
+            //Start search
             if(field.getSelectedItem() != null) {
                 setActivePattern((String) field.getSelectedItem());
                 ((HistoryField.HistoryComboModel) field.getModel()).addToHistory((String) field.getSelectedItem());
             }
-        }else if(!searchThread.isInterrupted()){
+        }else if(!((ThreadPoolExecutor) searchExecutor).isTerminating()){
+            //Attempt shutdown
+            searchExecutor.shutdownNow();
             btnSetPattern.setText("Stopping. Click to force stop.");
-            searchThread.interrupt();
         }else{
-            searchThread.stop();
-            endSearch();
+            searchThread.interrupt();
         }
     }
 
@@ -154,7 +152,7 @@ public class GrepPanel extends JPanel{
     public synchronized void setActivePattern(String string){
         if(string == null || string.equalsIgnoreCase("")){
             grepModel.clearResults();
-            uniqueValueTable.clearList();
+            uniqueValueTable.reset();
         }else {
             btnSetPattern.setText("Cancel");
             isSearching = true;
@@ -178,21 +176,23 @@ public class GrepPanel extends JPanel{
             searchThread = new Thread() {
                 @Override
                 public void run() {
-                    uniqueValueTable.clearList();
+                    uniqueValueTable.reset();
                     grepModel.clearResults();
                     GrepPanel.this.searchExecutor = Executors.newCachedThreadPool();
+                    ArrayList<LogEntry> logEntryList;
                     synchronized (LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
-                        for (final LogEntry entry : LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
-                            searchExecutor.submit(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (!searchInScopeOnly.isSelected() || LoggerPlusPlus.getCallbacks().isInScope(entry.url)) {
-                                        LogEntryMatches matches = new LogEntryMatches(entry, activePattern);
-                                        if (matches.results.size() > 0) grepModel.addEntry(matches);
-                                    }
+                        logEntryList = new ArrayList<>(LoggerPlusPlus.getInstance().getLogManager().getLogEntries());
+                    }
+                    for (final LogEntry entry : logEntryList) {
+                        searchExecutor.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (!searchInScopeOnly.isSelected() || LoggerPlusPlus.getCallbacks().isInScope(entry.url)) {
+                                    LogEntryMatches matches = new LogEntryMatches(entry, activePattern);
+                                    if (matches.results.size() > 0) grepModel.addEntry(matches);
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
                     searchExecutor.shutdown();
 
