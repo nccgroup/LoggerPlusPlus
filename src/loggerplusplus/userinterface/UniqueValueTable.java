@@ -1,8 +1,11 @@
 package loggerplusplus.userinterface;
 
+import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.EventList;
 import ca.odell.glazedlists.SortedList;
+import ca.odell.glazedlists.UniqueList;
 import ca.odell.glazedlists.gui.AdvancedTableFormat;
+import ca.odell.glazedlists.impl.ThreadSafeList;
 import ca.odell.glazedlists.swing.AdvancedTableModel;
 import ca.odell.glazedlists.swing.GlazedListsSwing;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
@@ -11,42 +14,41 @@ import javax.swing.*;
 import java.util.Comparator;
 
 public class UniqueValueTable extends JTable {
+    SortedList sortedList;
     EventList swingEventList;
+    AdvancedTableModel tableModel;
+    TableComparatorChooser tableSorter;
 
-    UniqueValueTable(AdvancedTableModel tableModel, SortedList list){
-        super(tableModel);
-        this.swingEventList = GlazedListsSwing.swingThreadProxyList(list);
-        TableComparatorChooser tableSorter = TableComparatorChooser.install(this,
-                list, TableComparatorChooser.SINGLE_COLUMN);
+    UniqueValueTable(){
+        reset();
     }
 
-    void clearList(){
-        swingEventList.getReadWriteLock().writeLock().lock();
-        try {
-            if (swingEventList.size() != 0) {
-                swingEventList.clear();
-            }
-        }catch (IndexOutOfBoundsException iobException){
-        }finally {
-            swingEventList.getReadWriteLock().writeLock().unlock();
+    public void reset(){
+        //Cannot simply clear list due to table updates required in doing so.
+        //Instead mark for disposal and send to GC.
+        if(this.tableSorter != null) this.tableSorter.dispose();
+        if(this.swingEventList != null){
+            this.swingEventList.dispose();
         }
+        if(this.sortedList != null) this.sortedList.dispose();
+        if(this.tableModel != null) this.tableModel.dispose();
+
+        this.sortedList = new SortedList(new ThreadSafeList(new UniqueList(new BasicEventList())));
+        tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(sortedList), new UniqueValueTable.UniqueValueTableFormat());
+        this.setModel(tableModel);
+        this.swingEventList = GlazedListsSwing.swingThreadProxyList(sortedList);
+        this.tableSorter = TableComparatorChooser.install(this,sortedList, TableComparatorChooser.SINGLE_COLUMN);
     }
 
     public void addItem(String group) {
         UniqueValueCount val = new UniqueValueCount(group, 1);
-
-        swingEventList.getReadWriteLock().writeLock().lock();
-        try{
-            int index = swingEventList.indexOf(val);
-            if (index == -1) {
-                swingEventList.add(new UniqueValueCount(group, 1));
-            } else {
-                val = ((UniqueValueCount) swingEventList.get(index));
-                val.count++;
-                swingEventList.add(val);
-            }
-        }finally {
-            swingEventList.getReadWriteLock().writeLock().unlock();
+        int index = swingEventList.indexOf(val);
+        if (index == -1) {
+            swingEventList.add(new UniqueValueCount(group, 1));
+        } else {
+            val = ((UniqueValueCount) swingEventList.get(index));
+            val.count++;
+            swingEventList.add(val);
         }
     }
 

@@ -241,6 +241,10 @@ public class LogEntry extends RowFilter.Entry
 		}
 	}
 
+	public void processRequest(){
+
+	}
+
 	public void processResponse(IHttpRequestResponse requestResponse) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date responseDate = new Date();

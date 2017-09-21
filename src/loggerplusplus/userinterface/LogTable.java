@@ -62,8 +62,8 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             public void addSelectionInterval(int start, int end) {
                 super.addSelectionInterval(start, end);
                 LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(start));
-                if(logEntry.requestResponse != null) {
-                    if(logEntry.requestResponse.getRequest() != null)
+                if (logEntry.requestResponse != null && !getModel().getCurrentlyDisplayedItem().equals(logEntry.requestResponse)) {
+                    if (logEntry.requestResponse.getRequest() != null)
                         LoggerPlusPlus.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
                     if (logEntry.requestResponse.getResponse() != null)
                         LoggerPlusPlus.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
