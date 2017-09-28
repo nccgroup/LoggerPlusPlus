@@ -40,16 +40,16 @@ public class LoggerOptionsPanel extends JScrollPane{
     private JCheckBox chckbxRepeater = new JCheckBox("Repeater");
     private JCheckBox chckbxSequencer = new JCheckBox("Sequencer");
     private JCheckBox chckbxProxy = new JCheckBox("Proxy");
-    private JButton btnSaveLogsButton = new JButton("Save log grepTable as CSV");
+    private JButton btnSaveLogsButton = new JButton("Save log table as CSV");
     private JButton btnSaveFullLogs = new JButton("Save full logs as CSV (slow)");
     private JToggleButton btnAutoSaveLogs = new JToggleButton("Autosave as CSV");
     private JButton btnImport = new JButton("Import from CSV");
     private final JCheckBox chckbxExtender = new JCheckBox("Extender");
     private final JCheckBox chckbxTarget = new JCheckBox("Target");
     private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
-    private final JLabel lblNoteLogging = new JLabel("Note 2: Automatic logging does not save requests and responses. Only grepTable contents. ");
+    private final JLabel lblNoteLogging = new JLabel("Note 2: Automatic logging does not save requests and responses. Only table contents. ");
     private final JLabel lblNoteLoggingCont = new JLabel("Full request/response logging available in 'Project Options > Misc > Logging'");
-    private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the grepTable settings.");
+    private final JLabel lblNoteUpdating = new JLabel("Note 3: Updating the extension will reset the log table settings.");
     private final JLabel lblColumnSettings = new JLabel("Column Settings:");
     private final JLabel lblNewLabel_1 = new JLabel("Right click on the columns' headers");
     private final FileLogger fileLogger;
@@ -67,7 +67,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         this.fileLogger = new FileLogger();
 
         GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[]{53, 94, 320, 250, 0, 0};
+        gridBagLayout.columnWidths = new int[]{10, 94, 320, 250, 0, 0};
         gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
@@ -218,6 +218,26 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridx++;
         contentWrapper.add(new JLabel("Min: 10 Max: 1,000,000"), gbc);
 
+        gbc.gridx = 1;
+        gbc.gridy++;
+        JLabel lblSearchThreads = new JLabel("Search Threads:");
+        lblSearchThreads.setFont(new Font("Tahoma", Font.BOLD, 14));
+        contentWrapper.add(lblSearchThreads, gbc);
+        gbc.gridx++;
+        int maxSearchThreads = 50;
+        final SpinnerNumberModel spnSearchThreadModel = new SpinnerNumberModel(
+                Math.min(LoggerPlusPlus.getInstance().getLoggerPreferences().getSearchThreads(), maxSearchThreads), 1, maxSearchThreads, 1);
+        final JSpinner spnSearchThreads = new JSpinner(spnSearchThreadModel);
+        spnSearchThreads.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                LoggerPlusPlus.getInstance().getLoggerPreferences().setSearchThreads((Integer) spnSearchThreads.getValue());
+            }
+        });
+        contentWrapper.add(spnSearchThreads, gbc);
+
+        gbc.gridx++;
+        contentWrapper.add(new JLabel("Min: 1 Max: 50"), gbc);
 
         JButton btnResetSettings = new JButton("Reset all settings");
         btnResetSettings.addActionListener(new ActionListener() {

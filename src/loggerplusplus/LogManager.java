@@ -70,8 +70,9 @@ public class LogManager implements IHttpListener, IProxyListener {
                     URL uUrl = analyzedReq.getUrl();
                     if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.getCallbacks().isInScope(uUrl))){
                         //We will not need to change messageInfo so save to temp file
-                        logEntry.processRequest(toolFlag, LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse), uUrl, analyzedReq, null);
-                        logEntry.processResponse(LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse));
+                        IHttpRequestResponse savedReqResp = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
+                        logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
+                        logEntry.processResponse(savedReqResp);
                         //Check entry against colorfilters.
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);

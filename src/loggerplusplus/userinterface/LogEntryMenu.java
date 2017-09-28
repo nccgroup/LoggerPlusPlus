@@ -5,6 +5,7 @@ import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.CompoundFilter;
 import loggerplusplus.filter.Filter;
+import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -81,6 +82,8 @@ public class LogEntryMenu extends JPopupMenu {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new Filter(columnName, "==", columnValue));
                     LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
+                    ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners());
+                    colorFilterDialog.setVisible(true);
                 } catch (Filter.FilterException e1) {
                     return;
                 }

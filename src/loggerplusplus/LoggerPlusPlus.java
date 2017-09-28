@@ -106,7 +106,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
                     @Override
                     public void removeNotify(){
-                        if(loggerMenu != null){
+                        if(loggerMenu != null && loggerMenu.getParent() != null){
                             loggerMenu.getParent().remove(loggerMenu);
                         }
                         super.removeNotify();

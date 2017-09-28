@@ -1,133 +1,101 @@
 package loggerplusplus.userinterface;
 
-import ca.odell.glazedlists.BasicEventList;
-import ca.odell.glazedlists.EventList;
-import ca.odell.glazedlists.SortedList;
-import ca.odell.glazedlists.UniqueList;
-import ca.odell.glazedlists.gui.AdvancedTableFormat;
-import ca.odell.glazedlists.impl.ThreadSafeList;
-import ca.odell.glazedlists.swing.AdvancedTableModel;
-import ca.odell.glazedlists.swing.GlazedListsSwing;
-import ca.odell.glazedlists.swing.TableComparatorChooser;
 
 import javax.swing.*;
-import java.util.Comparator;
-import java.util.List;
+import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class UniqueValueTable extends JTable {
-    SortedList sortedList;
-    EventList swingEventList;
-    AdvancedTableModel tableModel;
-    TableComparatorChooser tableSorter;
+    ArrayList<UniqueValueCount> uniqueValues;
 
     UniqueValueTable(){
-        reset();
+        super();
+        this.setModel(new UniqueValueTableModel());
+        this.setAutoCreateRowSorter(true);
+        this.setColumnSelectionAllowed(true);
+        uniqueValues = new ArrayList<>();
     }
 
     public void reset(){
-        //Cannot simply clear list due to table updates required in doing so.
-        //Instead mark for disposal and send to GC.
-        if(this.sortedList != null){
-            this.sortedList.dispose();
+        synchronized (this.uniqueValues) {
+            this.uniqueValues.clear();
         }
-        this.sortedList = new SortedList(new ThreadSafeList(new UniqueList(new BasicEventList())));
-        if(this.swingEventList != null){
-            this.swingEventList.dispose();
-        }
-        this.swingEventList = GlazedListsSwing.swingThreadProxyList(sortedList);
-        if(this.tableModel != null){
-            this.tableModel.dispose();
-        }
-        tableModel = GlazedListsSwing.eventTableModel(GlazedListsSwing.swingThreadProxyList(sortedList), new UniqueValueTable.UniqueValueTableFormat());
-        this.setModel(tableModel);
-        List sortingColumns = null;
-        if(this.tableSorter != null){
-            sortingColumns = tableSorter.getSortingColumns();
-            this.tableSorter.dispose();
-        }
-        this.tableSorter = TableComparatorChooser.install(this,sortedList, TableComparatorChooser.SINGLE_COLUMN);
+        ((UniqueValueTableModel) this.getModel()).fireTableStructureChanged();
     }
 
-    public void addItem(String group) {
-        UniqueValueCount val = new UniqueValueCount(group, 1);
-        int index = swingEventList.indexOf(val);
-        if (index == -1) {
-            swingEventList.add(new UniqueValueCount(group, 1));
-        } else {
-            val = ((UniqueValueCount) swingEventList.get(index));
-            val.count++;
-            swingEventList.add(val);
+    public void addMatches(ArrayList<GrepPanel.LogEntryMatches.Match> results) {
+        Iterator i = results.iterator();
+        while(i.hasNext() && !Thread.currentThread().isInterrupted()){
+            GrepPanel.LogEntryMatches.Match match = (GrepPanel.LogEntryMatches.Match) i.next();
+
+            UniqueValueCount uniqueItem = new UniqueValueCount(match.groups, 1);
+            int loc;
+            synchronized (uniqueValues) {
+                if ((loc = uniqueValues.indexOf(uniqueItem)) != -1) {
+                    uniqueItem = uniqueValues.get(loc);
+                    uniqueItem.count++;
+                    uniqueValues.set(loc, uniqueItem);
+                } else {
+                    uniqueValues.add(uniqueItem);
+                }
+            }
         }
     }
 
+    class UniqueValueTableModel extends AbstractTableModel {
+        String[] columns = {"Value", "Count"};
 
-    public static class UniqueValueTableFormat implements AdvancedTableFormat {
+        public void setColumns(String[] columns) {
+            this.columns = columns;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            if(column >= columns.length) return "";
+            return columns[column];
+        }
+
+        @Override
+        public int getRowCount() {
+            if(uniqueValues == null) return 0;
+            else return uniqueValues.size();
+        }
 
         @Override
         public int getColumnCount() {
-            return 2;
+            return columns.length;
         }
 
         @Override
-        public String getColumnName(int i) {
-            if(i == 0) return "Value";
-            else if(i == 1) return "Count";
-            else throw new IllegalStateException();
+        public Class<?> getColumnClass(int columnIndex) {
+            if(columnIndex == columns.length-1) return Integer.class;
+            return String.class;
         }
 
         @Override
-        public Object getColumnValue(Object o, int i) {
-            UniqueValueCount value = (UniqueValueCount) o;
-            if(i == 0) return value.value;
-            else if(i == 1) return value.count;
-            else throw new IllegalStateException();
-        }
-
-        @Override
-        public Class getColumnClass(int i) {
-            if(i == 0) return String.class;
-            if(i == 1) return Integer.class;
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public Comparator getColumnComparator(int i) {
-            if(i == 0) return new Comparator() {
-                @Override
-                public int compare(Object o, Object t1) {
-                    return ((String) o).compareTo((String) t1);
-                }
-            };
-            if(i == 1) return new Comparator() {
-                @Override
-                public int compare(Object o, Object t1) {
-                    return ((Integer) o).compareTo((Integer) t1);
-                }
-            };
-            throw new IllegalStateException();
-        }
-    }
-
-    public static class UniqueValueComparator implements Comparator {
-
-        @Override
-        public int compare(Object o, Object t1) {
-            return 0;
+        public Object getValueAt(int row, int col) {
+            if(row >= uniqueValues.size()) return "ERROR";
+            if(col == 0) return uniqueValues.get(row).groups[0];
+            if(col == columns.length-1) return uniqueValues.get(row).count;
+            return uniqueValues.get(row).groups[col];
         }
     }
 
     class UniqueValueCount implements Comparable{
-        String value;
+        String groups[];
         int count;
-        UniqueValueCount(String value, int count){
-            this.value = value;
+
+        UniqueValueCount(String groups[], int count){
+            this.groups = groups;
             this.count = count;
         }
 
         @Override
         public int compareTo(Object o) {
             if(o instanceof UniqueValueCount) {
-                return value.compareTo(((UniqueValueCount) o).value);
+
+                return groups[0].compareTo(((UniqueValueCount) o).groups[0]);
             }
             else return 0;
         }
@@ -135,7 +103,7 @@ public class UniqueValueTable extends JTable {
         @Override
         public boolean equals(Object obj) {
             if(obj instanceof UniqueValueCount) {
-                return value.equals(((UniqueValueCount) obj).value);
+                return groups[0].equals(((UniqueValueCount) obj).groups[0]);
             }else{
                 return this.equals(obj);
             }

@@ -1,3 +1,9 @@
+v 3.061
+=========================================================================
+- Fix updating of color filters on dialog close.
+- Fix adding color filters through context menu.
+- Add filter fields information to help tab.
+
 v 3.06
 =========================================================================
 - Better optimization for large sets of grepping results.
