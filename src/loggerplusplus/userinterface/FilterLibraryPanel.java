@@ -196,7 +196,7 @@ public class FilterLibraryPanel extends JSplitPane {
                 return;
             }
             if(col == 4){
-                ColorFilterDialog dialog =new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners());
+                ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners());
                 SharedFilter sharedFilter = library.get(row);
                 try {
                     dialog.addColorFilter(sharedFilter.title, sharedFilter.filter);

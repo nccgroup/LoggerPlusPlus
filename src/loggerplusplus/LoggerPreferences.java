@@ -28,7 +28,7 @@ import java.util.*;
 public class LoggerPreferences {
 	private final LoggerPlusPlus loggerPlusPlus;
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	static final double version = 3.06;
+	static final double version = 3.061;
 	static final String appName = "Burp Suite Logger++";
 	static final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	static final String companyLink = "https://www.nccgroup.trust/";
@@ -65,6 +65,7 @@ public class LoggerPreferences {
 	private long responseTimeout;
 	private int maximumEntries;
 	private boolean canSaveCSV;
+	private int searchThreads;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -296,6 +297,14 @@ public class LoggerPreferences {
 		return reqRespView;
 	}
 
+	public int getSearchThreads() {
+		return searchThreads;
+	}
+
+	public void setSearchThreads(int searchThreads) {
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("searchthreads", String.valueOf(searchThreads));
+		this.searchThreads = searchThreads;
+	}
 
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
@@ -373,6 +382,7 @@ public class LoggerPreferences {
 		maximumEntries = getIntSetting("maximumentries", 5000);
 		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
 		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "HORIZONTAL"));
+		this.searchThreads = getIntSetting("searchthreads", 5);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){

@@ -1,6 +1,7 @@
 package loggerplusplus.userinterface;
-import java.awt.*;
+
 import javax.swing.*;
+import java.awt.*;
 
 /**
  *  http://www.camick.com/java/source/ScrollablePanel.java

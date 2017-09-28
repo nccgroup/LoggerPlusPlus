@@ -1,10 +1,10 @@
 package loggerplusplus.userinterface.dialog;
 
+import loggerplusplus.filter.ColorFilter;
+import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.ColorEditor;
 import loggerplusplus.userinterface.renderer.ButtonRenderer;
 import loggerplusplus.userinterface.renderer.ColorRenderer;
-import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.renderer.FilterRenderer;
 
 import javax.swing.*;

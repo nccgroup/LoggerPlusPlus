@@ -94,11 +94,10 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
             }
         });
         JButton btnClose = new JButton("Close");
-        final JFrame _this = this;
         btnClose.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                _this.setVisible(false);
+                ColorFilterDialog.this.dispatchEvent(new WindowEvent(ColorFilterDialog.this, WindowEvent.WINDOW_CLOSING));
             }
         });
         rightPanel.add(btnAddFilter, BorderLayout.WEST);
@@ -113,6 +112,7 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
     public void windowOpened(WindowEvent windowEvent) {}
     @Override
     public void windowClosing(WindowEvent windowEvent) {
+        System.out.println("Closing");
         ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
         newFilters.removeAll(originalFilters.keySet());
 
@@ -145,7 +145,9 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
         LoggerPlusPlus.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
     @Override
-    public void windowClosed(WindowEvent windowEvent) {}
+    public void windowClosed(WindowEvent windowEvent) {
+        System.out.println("Closed");
+    }
     @Override
     public void windowIconified(WindowEvent windowEvent) {}
     @Override
