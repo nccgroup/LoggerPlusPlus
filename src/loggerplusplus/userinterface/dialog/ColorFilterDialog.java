@@ -112,7 +112,6 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
     public void windowOpened(WindowEvent windowEvent) {}
     @Override
     public void windowClosing(WindowEvent windowEvent) {
-        System.out.println("Closing");
         ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
         newFilters.removeAll(originalFilters.keySet());
 
@@ -145,9 +144,7 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
         LoggerPlusPlus.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
     @Override
-    public void windowClosed(WindowEvent windowEvent) {
-        System.out.println("Closed");
-    }
+    public void windowClosed(WindowEvent windowEvent) {}
     @Override
     public void windowIconified(WindowEvent windowEvent) {}
     @Override
