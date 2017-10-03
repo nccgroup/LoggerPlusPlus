@@ -1,8 +1,7 @@
-.idea/
-.settings/
-.externalToolBuilders/
+.*/
 bin/
 Util/
+gradle/
 libs/burpsuite_pro.jar
 BurpLogger++.iml
 TODO
