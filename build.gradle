@@ -1,0 +1,19 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
+    compile 'org.swinglabs:swingx:1.6.1'
+    compile 'com.google.code.gson:gson:2.3.1'
+    compile 'org.apache.commons:commons-lang3:3.1'
+    testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

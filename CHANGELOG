@@ -1,3 +1,9 @@
+v 3.062
+=========================================================================
+- Fix Horizontal view option.
+- Better Log View layout for Left/Right split arrangement.
+- Project restructure / gradle build.
+
 v 3.061
 =========================================================================
 - Fix updating of color filters on dialog close.
