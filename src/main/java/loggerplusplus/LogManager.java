@@ -154,6 +154,10 @@ public class LogManager implements IHttpListener, IProxyListener {
 
     private void updatePendingRequest(LogEntry.PendingRequestEntry pendingRequest, IHttpRequestResponse messageInfo) {
         //Fill in gaps of request with response
+        if(messageInfo == null) {
+            LoggerPlusPlus.getCallbacks().printError("Warning: Response received with null messageInfo.");
+            return;
+        }
         pendingRequest.processResponse(messageInfo);
 
         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {

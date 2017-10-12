@@ -1,3 +1,8 @@
+v 3.063
+=========================================================================
+- Updated apache commons, fixes save as csv error.
+- Updated google gson.
+
 v 3.062
 =========================================================================
 - Fix Horizontal view option.

@@ -248,7 +248,11 @@ public class LogEntry extends RowFilter.Entry
 		} catch (ParseException e) {}
 
 		//Finalise request,response by saving to temp file and clearing from memory.
-		this.requestResponse = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
+		if (requestResponse instanceof IHttpRequestResponsePersisted){
+			this.requestResponse = requestResponse;
+		}else {
+			this.requestResponse = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
+		}
 
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.getCallbacks().getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
@@ -521,10 +525,12 @@ public class LogEntry extends RowFilter.Entry
 		}
 
 		if(isFullLog){
-			result.append(",");		    
-			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
 			result.append(",");
-			result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));
+			if(requestResponse != null && requestResponse.getRequest() != null)
+				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
+			result.append(",");
+			if(requestResponse != null && requestResponse.getResponse() != null)
+				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));
 		}
 		return result.toString();
 	}
