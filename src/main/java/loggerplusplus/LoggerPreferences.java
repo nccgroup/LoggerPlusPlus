@@ -28,7 +28,7 @@ import java.util.*;
 public class LoggerPreferences {
 	private final LoggerPlusPlus loggerPlusPlus;
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	static final double version = 3.063;
+	static final double version = 3.064;
 	static final String appName = "Burp Suite Logger++";
 	static final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	static final String companyLink = "https://www.nccgroup.trust/";
@@ -54,7 +54,6 @@ public class LoggerPreferences {
 	private boolean isEnabled4Sequencer;
 	private boolean isEnabled4Extender;
 	private boolean isEnabled4TargetTab;
-	private boolean logFiltered;
 	private String tableDetailsJSONString;
 	private boolean autoSave;
 	private ArrayList<SavedFilter> savedFilters;
@@ -214,15 +213,6 @@ public class LoggerPreferences {
 		this.isEnabled4TargetTab = isEnabled4TargetTab;
 	}
 
-	public synchronized void setLoggingFiltered(boolean logFiltered){
-		LoggerPlusPlus.getCallbacks().saveExtensionSetting("filterlog", String.valueOf(logFiltered));
-		this.logFiltered = logFiltered;
-	}
-
-	public synchronized boolean isLoggingFiltered(){
-		return this.logFiltered;
-	}
-
 	public Map<UUID, ColorFilter> getColorFilters() { return colorFilters; }
 
 	public synchronized void setColorFilters(Map<UUID, ColorFilter> colorFilters) {
@@ -368,7 +358,6 @@ public class LoggerPreferences {
 		isEnabled4Scanner = getBooleanSetting("logscanner", true);
 		isEnabled4Intruder = getBooleanSetting("logintruder", true);
 		isEnabled4Spider = getBooleanSetting("logspider", true);
-		logFiltered = getBooleanSetting("filterlog", false);
 		tableDetailsJSONString = getStringSetting("tabledetailsjson", "");
 		String colorFilters = getStringSetting("colorfilters", defaultColorFilter);
 		try {
@@ -452,7 +441,6 @@ public class LoggerPreferences {
 		setEnabled4Sequencer(true);
 		setEnabled4Extender(true);
 		setEnabled4TargetTab(true);
-		setLoggingFiltered(false);
 		loggerPlusPlus.getLogSplitPanel().setView(View.VERTICAL);
 		loggerPlusPlus.getReqRespPanel().setView(View.HORIZONTAL);
 

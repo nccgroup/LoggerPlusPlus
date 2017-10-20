@@ -148,9 +148,15 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                 LoggerPlusPlus.getCallbacks().registerContextMenuFactory(contextMenuFactory);
 
                 if(loggerPreferences.autoImportProxyHistory()){
-                    for(IHttpRequestResponse requestResponse : LoggerPlusPlus.getCallbacks().getProxyHistory()) {
-                        LoggerPlusPlus.getInstance().getLogManager().importExisting(requestResponse);
-                    }
+                    Thread importThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            for(IHttpRequestResponse requestResponse : LoggerPlusPlus.getCallbacks().getProxyHistory()) {
+                                LoggerPlusPlus.getInstance().getLogManager().importExisting(requestResponse);
+                            }
+                        }
+                    });
+                    importThread.start();
                 }
             }
         });
