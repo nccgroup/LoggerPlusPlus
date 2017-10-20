@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 //TODO Better column to value mapping.
 public class LogEntry extends RowFilter.Entry
 {
+	public boolean isImported;
 	public UUID uuid;
 	public IHttpRequestResponse requestResponse;
 	public int tool;
@@ -90,6 +91,16 @@ public class LogEntry extends RowFilter.Entry
 		this.matchingColorFilters = new ArrayList<UUID>();
 		this.comment = "";
 		this.requestTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+	}
+
+	public LogEntry(boolean isImported){
+		this();
+		this.isImported = isImported;
+		if(isImported) {
+			this.requestTime = "NA";
+			this.responseTime = "NA";
+			this.requestResponseDelay = "NA";
+		}
 	}
 
 	public void processRequest(int tool, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
@@ -239,13 +250,16 @@ public class LogEntry extends RowFilter.Entry
 	}
 
 	public void processResponse(IHttpRequestResponse requestResponse) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		Date responseDate = new Date();
-		this.responseTime = sdf.format(responseDate);
-		try {
-			Date requestDate = sdf.parse(this.requestTime);
-			this.requestResponseDelay = formatDelay(responseDate.getTime() - requestDate.getTime());
-		} catch (ParseException e) {}
+		if(!isImported) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date responseDate = new Date();
+			this.responseTime = sdf.format(responseDate);
+			try {
+				Date requestDate = sdf.parse(this.requestTime);
+				this.requestResponseDelay = formatDelay(responseDate.getTime() - requestDate.getTime());
+			} catch (ParseException e) {
+			}
+		}
 
 		//Finalise request,response by saving to temp file and clearing from memory.
 		if (requestResponse instanceof IHttpRequestResponsePersisted){

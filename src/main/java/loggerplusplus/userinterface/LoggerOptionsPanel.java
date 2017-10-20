@@ -12,6 +12,7 @@
 
 package loggerplusplus.userinterface;
 
+import burp.IHttpRequestResponse;
 import loggerplusplus.FileLogger;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
@@ -33,6 +34,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     private JCheckBox chckbxIsRestrictedToScope = new JCheckBox("In scope items only");
     private JCheckBox chckbxIsLoggingFiltered = new JCheckBox("Store logs only if matches filter");
     private JCheckBox chckbxUpdateOnStartup = new JCheckBox("Check for updates on startup.");
+    private JCheckBox chckbxAutoImport = new JCheckBox("Auto import proxy history.");
     private JCheckBox chckbxAllTools = new JCheckBox("All Tools");
     private JCheckBox chckbxSpider = new JCheckBox("Spider");
     private JCheckBox chckbxIntruder = new JCheckBox("Intruder");
@@ -43,7 +45,6 @@ public class LoggerOptionsPanel extends JScrollPane{
     private JButton btnSaveLogsButton = new JButton("Save log table as CSV");
     private JButton btnSaveFullLogs = new JButton("Save full logs as CSV (slow)");
     private JToggleButton btnAutoSaveLogs = new JToggleButton("Autosave as CSV");
-    private JButton btnImport = new JButton("Import from CSV");
     private final JCheckBox chckbxExtender = new JCheckBox("Extender");
     private final JCheckBox chckbxTarget = new JCheckBox("Target");
     private final JLabel lblNewLabel = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
@@ -68,18 +69,21 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths = new int[]{10, 94, 320, 250, 0, 0};
-        gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+//        gridBagLayout.rowHeights = new int[]{0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gridBagLayout.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+//        gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         contentWrapper.setLayout(gridBagLayout);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
 
         JLabel lblLoggerStatus = new JLabel("Status:");
         lblLoggerStatus.setFont(new Font("Tahoma", Font.BOLD, 14));
-        GridBagConstraints gbc = new GridBagConstraints();
+
         gbc.anchor = GridBagConstraints.SOUTHWEST;
         gbc.insets = new Insets(0, 0, 5, 5);
         gbc.gridx = 1;
-        gbc.gridy = 1;
+        gbc.gridy++;
         contentWrapper.add(lblLoggerStatus, gbc);
 
 
@@ -110,17 +114,12 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridx = 2;
         contentWrapper.add(chckbxIsRestrictedToScope, gbc);
 
-        //Disabled until implemented
-//		contentWrapper.add(chckbxIsLoggingFiltered, gbc);
-
         gbc.gridy = 2;
         gbc.gridx = 3;
         btnSaveFullLogs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 fileLogger.saveLogs(true);
             }
-
-
         });
         btnSaveFullLogs.setToolTipText("This can be slow and  messy when response is more than 32760 characters - not recommended!");
         btnSaveFullLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
@@ -139,6 +138,19 @@ public class LoggerOptionsPanel extends JScrollPane{
         btnAutoSaveLogs.setFont(new Font("Tahoma", Font.PLAIN, 13));
         contentWrapper.add(btnAutoSaveLogs, gbc);
 
+        gbc.gridy++;
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy++;
+        JLabel importLabel = new JLabel("Auto Import:");
+        importLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+        contentWrapper.add(importLabel, gbc);
+        gbc.gridx = 2;
+        contentWrapper.add(chckbxAutoImport, gbc);
+
+        gbc.gridy++;
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
 
         JLabel lblLogFrom = new JLabel("Log From:");
         lblLogFrom.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -171,6 +183,9 @@ public class LoggerOptionsPanel extends JScrollPane{
         contentWrapper.add(chckbxTarget, gbc);
         gbc.gridy++;
         contentWrapper.add(chckbxExtender, gbc);
+
+        gbc.gridy++;
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
 
         gbc.gridx = 1;
         gbc.gridy++;
@@ -239,6 +254,9 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridx++;
         contentWrapper.add(new JLabel("Min: 1 Max: 50"), gbc);
 
+        gbc.gridy++;
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
+
         JButton btnResetSettings = new JButton("Reset all settings");
         btnResetSettings.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
@@ -274,6 +292,29 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridx = 3;
         contentWrapper.add(btnClearTheLog, gbc);
 
+        gbc.gridx = 1;
+        gbc.gridy++;
+        JLabel lblManualImport = new JLabel("Manual Import:");
+        lblManualImport.setFont(new Font("Tahoma", Font.BOLD, 14));
+        contentWrapper.add(lblManualImport, gbc);
+        gbc.gridx = 2;
+        gbc.gridwidth = 2;
+        JButton btnManualImport = new JButton("Import Burp Proxy History. Note: THIS WILL CLEAR EXISTING LOGS!");
+        btnManualImport.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                //TODO Confirmation dialog
+                LoggerPlusPlus.getInstance().getLogManager().reset();
+                for(IHttpRequestResponse requestResponse : LoggerPlusPlus.getCallbacks().getProxyHistory()) {
+                    LoggerPlusPlus.getInstance().getLogManager().importExisting(requestResponse);
+                }
+            }
+        });
+        contentWrapper.add(btnManualImport, gbc);
+
+        gbc.gridy++;
+        contentWrapper.add(Box.createVerticalStrut(7), gbc);
+
         gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 1;
         gbc.gridy++;
@@ -298,6 +339,13 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridy++;
         contentWrapper.add(lblNoteUpdating, gbc);
 
+        //Add bottom filler
+        gbc.gridy++;
+        gbc.gridwidth = 4;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        contentWrapper.add(new JPanel(), gbc);
+
         setPreferencesValues();
         setComponentsActions();
     }
@@ -321,6 +369,13 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 loggerPreferences.setUpdateOnStartup(chckbxUpdateOnStartup.isSelected());
+            }
+        });
+
+        chckbxAutoImport.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                loggerPreferences.setAutoImportProxyHistory(chckbxAutoImport.isSelected());
             }
         });
 
