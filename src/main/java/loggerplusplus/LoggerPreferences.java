@@ -66,6 +66,7 @@ public class LoggerPreferences {
 	private int maximumEntries;
 	private boolean canSaveCSV;
 	private int searchThreads;
+	private boolean autoImportProxyHistory;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -306,6 +307,15 @@ public class LoggerPreferences {
 		this.searchThreads = searchThreads;
 	}
 
+	public boolean autoImportProxyHistory() {
+		return autoImportProxyHistory;
+	}
+
+	public void setAutoImportProxyHistory(boolean autoImport){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("autoimportproxyhistory", String.valueOf(autoImport));
+		this.autoImportProxyHistory = autoImport;
+	}
+
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
 		this.autoSave = autoSave;
@@ -383,6 +393,7 @@ public class LoggerPreferences {
 		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
 		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "HORIZONTAL"));
 		this.searchThreads = getIntSetting("searchthreads", 5);
+		this.autoImportProxyHistory = getBooleanSetting("autoimportproxyhistory", true);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
