@@ -79,7 +79,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                         //We will not need to change messageInfo so save to temp file
                         IHttpRequestResponse savedReqResp = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
                         logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
-                        logEntry.processResponse(savedReqResp);
+                        if(requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
                         //Check entry against colorfilters.
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);
