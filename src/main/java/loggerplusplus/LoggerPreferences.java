@@ -382,7 +382,7 @@ public class LoggerPreferences {
 		view = View.valueOf(getStringSetting("layout", "VERTICAL"));
 		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "HORIZONTAL"));
 		this.searchThreads = getIntSetting("searchthreads", 5);
-		this.autoImportProxyHistory = getBooleanSetting("autoimportproxyhistory", true);
+		this.autoImportProxyHistory = getBooleanSetting("autoimportproxyhistory", false);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
