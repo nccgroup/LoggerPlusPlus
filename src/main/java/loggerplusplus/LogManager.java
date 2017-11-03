@@ -128,8 +128,10 @@ public class LogManager implements IHttpListener, IProxyListener {
                             updatePendingRequest(logEntry, requestResponse);
                         } else {
                             lateResponses++;
-                            if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.1){
+                            if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.17){
                                 MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+                                //Reset late responses to prevent message being displayed again so soon.
+                                lateResponses = 0;
                             }
                         }
                     }
