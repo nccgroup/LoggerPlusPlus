@@ -1,3 +1,7 @@
+v 3.065
+=========================================================================
+- Fix issue resulting in activescan requests being displayed twice.
+
 v 3.064
 =========================================================================
 - Added import from proxy-history option.
