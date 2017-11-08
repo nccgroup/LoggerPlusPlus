@@ -61,7 +61,10 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
         //REQUEST AND RESPONSE SINGLE MESSAGE
         final LogEntry logEntry = new LogEntry();
-        processHttpMessage(logEntry, toolFlag, requestResponse);
+        //Only process scanner messages which contain the request and response.
+        if(toolFlag != IBurpExtenderCallbacks.TOOL_SCANNER || !messageIsRequest) {
+            processHttpMessage(logEntry, toolFlag, requestResponse);
+        }
     }
 
     //Wrapper to allow a custom LogEntry to be passed as a parameter
