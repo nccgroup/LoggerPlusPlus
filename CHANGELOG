@@ -1,6 +1,7 @@
 v 3.065
 =========================================================================
-- Fix issue resulting in activescan requests being displayed twice.
+- Fix issue resulting in other tool requests being displayed twice.
+- Fix broken save buttons.
 
 v 3.064
 =========================================================================

@@ -352,6 +352,19 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
+        btnSaveFullLogs.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                fileLogger.saveLogs(true);
+            }
+        });
+
+        btnSaveLogs.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                fileLogger.saveLogs(false);
+            }
+        });
+
+
         btnManualImport.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -430,11 +443,9 @@ public class LoggerOptionsPanel extends JScrollPane{
     }
 
     private void toggleEnabledButton(boolean isSelected) {
-        if (tglbtnIsEnabled.equals(this.tglbtnIsEnabled)) {
-            tglbtnIsEnabled.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
-            tglbtnIsEnabled.setSelected(isSelected);
-            loggerPreferences.setEnabled(isSelected);
-        }
+        tglbtnIsEnabled.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
+        tglbtnIsEnabled.setSelected(isSelected);
+        loggerPreferences.setEnabled(isSelected);
     }
 
 
