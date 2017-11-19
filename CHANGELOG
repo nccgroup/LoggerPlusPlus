@@ -2,6 +2,7 @@ v 3.065
 =========================================================================
 - Fix issue resulting in other tool requests being displayed twice.
 - Fix broken save buttons.
+- Fix options ui graphical bug with Metal theme.
 
 v 3.064
 =========================================================================

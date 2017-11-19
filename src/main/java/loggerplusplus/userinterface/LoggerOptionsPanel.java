@@ -103,6 +103,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.gridheight = 9;
+        gbc.weighty = 1.0;
         innerContainer.add(logFromPanel, gbc);
 
         JPanel importPanel = new JPanel(new GridLayout(0, 1));
@@ -118,6 +119,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridy = 2;
         gbc.weightx = 0.3;
         gbc.gridheight = 3;
+        gbc.weighty = 1.0;
         innerContainer.add(importPanel, gbc);
 
         JPanel exportPanel = new JPanel(new GridLayout(0, 1));
@@ -131,6 +133,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridy = 5;
         gbc.gridheight = 4;
         gbc.weightx = 0.3;
+        gbc.weighty = 1.0;
         innerContainer.add(exportPanel, gbc);
 
 
@@ -197,6 +200,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridheight = 5;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
+
         innerContainer.add(otherPanel, gbc);
 
 
