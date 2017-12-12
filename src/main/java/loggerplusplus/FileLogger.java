@@ -12,6 +12,7 @@ public class FileLogger implements LogEntryListener{
     private File autoSaveFile;
     private final LoggerPreferences loggerPreferences;
     private final ExcelExporter exp;
+    private boolean autoLogIncludeBodies = false;
 
     public FileLogger(){
         loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
@@ -30,9 +31,9 @@ public class FileLogger implements LogEntryListener{
         }
     }
 
-    public void autoLogItem(LogEntry entry) {
+    public void autoLogItem(LogEntry entry, boolean fullLog) {
         try {
-            exp.exportItem(entry, false);
+            exp.exportItem(entry, fullLog);
         } catch (IOException e) {
             LoggerPlusPlus.getCallbacks().printError("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
@@ -170,6 +171,9 @@ public class FileLogger implements LogEntryListener{
 
                     LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
 
+                    int result = JOptionPane.showConfirmDialog(null, "Include request and response message bodies in the logs?","Automatic Logging", JOptionPane.YES_OPTION);
+                    autoLogIncludeBodies = result == JOptionPane.YES_OPTION;
+
                 } catch (IOException e) {
                     autoSaveFile = null;
                     enabled = false;
@@ -200,7 +204,7 @@ public class FileLogger implements LogEntryListener{
             @Override
             public void run() {
                 synchronized (autoSaveWriter){
-                    autoLogItem(existingEntry);
+                    autoLogItem(existingEntry, autoLogIncludeBodies);
                 }
             }
         };
