@@ -1,3 +1,7 @@
+v 3.066
+=========================================================================
+- Fix issue causing CSV export to use incorrect columns.
+
 v 3.065
 =========================================================================
 - Fix issue resulting in other tool requests being displayed twice.
