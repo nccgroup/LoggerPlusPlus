@@ -493,16 +493,18 @@ public class LogEntry extends RowFilter.Entry
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
 		StringBuilder result = new StringBuilder();
 
-		short count = 0;
+		boolean firstDone = false;
 		ArrayList<LogTableColumn> columns = table.getColumnModel().getAllColumns();
 		Collections.sort(columns);
 		for (LogTableColumn logTableColumn : columns) {
 			if(logTableColumn.isVisible() && logTableColumn.isEnabled()) {
-				result.append(logTableColumn.getName());
-				if(count < columns.size()-1)
+				if(firstDone) {
 					result.append(",");
+				}else{
+					firstDone = true;
+				}
+				result.append(logTableColumn.getName());
 			}
-			count++;
 		}			
 
 		if(isFullLog){
@@ -528,14 +530,16 @@ public class LogEntry extends RowFilter.Entry
 		LogTableColumnModel columnModel = LoggerPlusPlus.getInstance().getLogTable().getColumnModel();
 		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
 		Collections.sort(columns);
-		short count = 0;
+		boolean firstDone = false;
 		for (LogTableColumn logTableColumn : columns) {
 			if(logTableColumn.isVisible() && logTableColumn.isEnabled()){
-				result.append(StringEscapeUtils.escapeCsv(getValue(logTableColumn.getIdentifier()).toString()));
-				if (count < columnModel.getColumnCount() - 1)
+				if(firstDone){
 					result.append(",");
+				}else{
+					firstDone = true;
+				}
+				result.append(StringEscapeUtils.escapeCsv(getValue(logTableColumn.getIdentifier()).toString()));
 			}
-			count++;
 		}
 
 		if(isFullLog){
