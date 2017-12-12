@@ -233,7 +233,7 @@ public class FileLogger implements LogEntryListener{
             }
 
             out.close();
-            MoreHelp.showMessage("Log saved to " + file.getAbsolutePath() + file.getName());
+            MoreHelp.showMessage("Log saved to " + file.getAbsolutePath());
         }
 
         public void exportItem(LogEntry logEntry, boolean isFullLog) throws IOException {
