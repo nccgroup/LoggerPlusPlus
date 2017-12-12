@@ -5,6 +5,6 @@ package loggerplusplus;
  */
 public interface LogEntryListener {
     void onRequestAdded(LogEntry logEntry);
-    void onResponseUpdated(LogEntry.PendingRequestEntry existingEntry);
+    void onResponseUpdated(LogEntry existingEntry);
     void onRequestRemoved(int index, final LogEntry logEntry);
 }

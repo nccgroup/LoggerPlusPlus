@@ -489,8 +489,11 @@ public class LogEntry extends RowFilter.Entry
 		return null;
 	}
 
-
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
+		return getCSVHeader(table, isFullLog, isFullLog);
+	}
+
+	public static String getCSVHeader(LogTable table, boolean includeRequest, boolean includeResponse) {
 		StringBuilder result = new StringBuilder();
 
 		boolean firstDone = false;
@@ -507,9 +510,11 @@ public class LogEntry extends RowFilter.Entry
 			}
 		}			
 
-		if(isFullLog){
-			result.append(",");		    
+		if(includeRequest) {
+			result.append(",");
 			result.append("Request");
+		}
+		if(includeResponse) {
 			result.append(",");
 			result.append("Response");
 		}
@@ -518,6 +523,10 @@ public class LogEntry extends RowFilter.Entry
 
 	// We need StringEscapeUtils library from http://commons.apache.org/proper/commons-lang/download_lang.cgi
 	public String toCSVString(boolean isFullLog) {		
+		return toCSVString(isFullLog, isFullLog);
+	}
+
+	public String toCSVString(boolean includeRequests, boolean includeResponses) {
 		StringBuilder result = new StringBuilder();
 		//			for (int i=1; i<loggerTableDetails.length; i++) {
 		//
@@ -542,10 +551,12 @@ public class LogEntry extends RowFilter.Entry
 			}
 		}
 
-		if(isFullLog){
+		if(includeRequests) {
 			result.append(",");
-			if(requestResponse != null && requestResponse.getRequest() != null)
+			if (requestResponse != null && requestResponse.getRequest() != null)
 				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
+		}
+		if(includeResponses) {
 			result.append(",");
 			if(requestResponse != null && requestResponse.getResponse() != null)
 				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));

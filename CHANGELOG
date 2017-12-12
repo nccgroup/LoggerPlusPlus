@@ -2,6 +2,7 @@ v 3.066
 =========================================================================
 - Fix issue causing CSV export to use incorrect columns.
 - Add option to log request/response bodies in automatic logging.
+- Fix automatic logging not logging other tools requests.
 
 v 3.065
 =========================================================================
