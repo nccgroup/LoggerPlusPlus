@@ -41,7 +41,7 @@ public class ElasticSearchLogger implements LogEntryListener{
 
         logManager.addLogListener(this);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(this::indexPendingEntries,10, 10, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(this::indexPendingEntries,2, 2, TimeUnit.MINUTES);
     }
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
@@ -145,8 +145,8 @@ public class ElasticSearchLogger implements LogEntryListener{
                                 .field("sentcookies", logEntry.sentCookies)
                                 .field("referrer", logEntry.referrerURL)
                                 .field("requestcontenttype", logEntry.requestContentType)
-                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
+//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
+//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
                             .endObject()
                     );
             return requestBuilder.request();
