@@ -20,6 +20,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
     private ArrayList<FilterListener> filterListeners;
     private LoggerPreferences loggerPreferences;
     private LogManager logManager;
+    private ElasticSearchLogger elasticSearchLogger;
 
     //UX
     private PopOutPanel uiPopOutPanel;
@@ -46,6 +47,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
         filterListeners = new ArrayList<>();
         loggerPreferences = new LoggerPreferences(LoggerPlusPlus.this);
         logManager = new LogManager(loggerPreferences);
+        elasticSearchLogger = new ElasticSearchLogger(logManager, loggerPreferences);
 
         if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
             MoreHelp.checkForUpdate(false);
@@ -284,5 +286,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
     public static IContextMenuFactory getContextMenuFactory() {
         return contextMenuFactory;
+    }
+
+    public void setEsEnabled(boolean esEnabled) throws Exception {
+        this.elasticSearchLogger.setEnabled(esEnabled);
     }
 }
