@@ -55,6 +55,8 @@ public class LoggerOptionsPanel extends JScrollPane{
     private final JSpinner esPortSpinner = new JSpinner(new SpinnerNumberModel(9100, 0, 65535, 1));
     private final JTextField esAddressField = new JTextField();
     private final JTextField esClusterField = new JTextField();
+    private final JTextField esIndexField = new JTextField();
+
 
     private final JLabel lblColumnSettings = new JLabel("Note 0: Right click on columns' headers to change settings.");
     private final JLabel lblPerformanceNote = new JLabel("Note 1: Extensive logging  may affect Burp Suite performance.");
@@ -152,6 +154,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.weightx = 1;
         JLabel esAddress = new JLabel("Address:");
         JLabel esClusterName = new JLabel("Cluster Name:");
+        JLabel esIndexName = new JLabel("Index:");
 
         gbc.gridwidth = 3;
         gbc.gridx = 0;
@@ -172,6 +175,8 @@ public class LoggerOptionsPanel extends JScrollPane{
         elasticPanel.add(esAddress, gbc);
         gbc.gridy = 3;
         elasticPanel.add(esClusterName, gbc);
+        gbc.gridy = 4;
+        elasticPanel.add(esIndexName, gbc);
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 1;
@@ -184,12 +189,14 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridwidth = 2;
         gbc.weightx = 1;
         elasticPanel.add(esClusterField, gbc);
+        gbc.gridy = 4;
+        elasticPanel.add(esIndexField, gbc);
 
 
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 9;
+        gbc.gridy = 10;
         gbc.gridheight = 4;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
@@ -254,7 +261,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 13;
+        gbc.gridy = 14;
         gbc.gridheight = 5;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
@@ -272,7 +279,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 19;
+        gbc.gridy = 20;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
         innerContainer.add(buttonPanel, gbc);
@@ -288,7 +295,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 20;
+        gbc.gridy = 21;
         gbc.gridheight = 1;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
@@ -542,6 +549,14 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
+        this.esIndexField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent focusEvent) {
+                super.focusLost(focusEvent);
+                loggerPreferences.setEsIndex(esIndexField.getText());
+            }
+        });
+
         this.esEnabled.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -609,6 +624,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         this.esAddressField.setText(loggerPreferences.getEsAddress());
         this.esPortSpinner.setValue(loggerPreferences.getEsPort());
         this.esClusterField.setText(loggerPreferences.getEsClusterName());
+        this.esIndexField.setText(loggerPreferences.getEsIndex());
 
         if (!loggerPreferences.canSaveCSV()) {
             btnSaveLogs.setEnabled(false);

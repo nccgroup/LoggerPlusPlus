@@ -30,16 +30,18 @@ public class ElasticSearchLogger implements LogEntryListener{
     private short port;
     private String clusterName;
     private boolean isEnabled;
+    private String indexName;
     private LoggerPreferences prefs;
 
 
     public ElasticSearchLogger(LogManager logManager, LoggerPreferences prefs){
         this.prefs = prefs;
         this.isEnabled = false;
+        this.indexName = "logger";
 
         logManager.addLogListener(this);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(this::indexPendingEntries,120000, 120000, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::indexPendingEntries,10, 10, TimeUnit.SECONDS);
     }
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
@@ -47,6 +49,7 @@ public class ElasticSearchLogger implements LogEntryListener{
             this.address = InetAddress.getByName(prefs.getEsAddress());
             this.port = prefs.getEsPort();
             this.clusterName = prefs.getEsClusterName();
+            this.indexName = prefs.getEsIndex();
             Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
             client = new PreBuiltTransportClient(settings)
                 .addTransportAddress(new TransportAddress(this.address, this.port));
@@ -117,9 +120,9 @@ public class ElasticSearchLogger implements LogEntryListener{
 //                            .endObject()
 //                        .endObject()
 //                    .endObject().endObject();
-        boolean exists = adminClient.prepareExists("logger").get().isExists();
+        boolean exists = adminClient.prepareExists(this.indexName).get().isExists();
         if(!exists) {
-            CreateIndexRequestBuilder response = adminClient.prepareCreate("logger");
+            CreateIndexRequestBuilder response = adminClient.prepareCreate(this.indexName);
             response.get();
         }
 //            .addMapping("requestresponse", builder).get();
@@ -127,7 +130,7 @@ public class ElasticSearchLogger implements LogEntryListener{
 
     public IndexRequest buildIndexRequest(LogEntry logEntry){
         try{
-            IndexRequestBuilder requestBuilder = client.prepareIndex("logger", "requestresponse")
+            IndexRequestBuilder requestBuilder = client.prepareIndex(this.indexName, "requestresponse")
                     .setSource(
                             jsonBuilder().startObject()
                                 .field("protocol", logEntry.protocol)
@@ -142,8 +145,8 @@ public class ElasticSearchLogger implements LogEntryListener{
                                 .field("sentcookies", logEntry.sentCookies)
                                 .field("referrer", logEntry.referrerURL)
                                 .field("requestcontenttype", logEntry.requestContentType)
-//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
+                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
+                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
                             .endObject()
                     );
             return requestBuilder.request();
