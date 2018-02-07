@@ -28,7 +28,7 @@ import java.util.*;
 public class LoggerPreferences {
 	private final LoggerPlusPlus loggerPlusPlus;
 	private Gson gson = new GsonBuilder().registerTypeAdapter(Filter.class, new Filter.FilterSerializer()).create();
-	static final double version = 3.066;
+	static final double version = 3.07;
 	static final String appName = "Burp Suite Logger++";
 	static final String author = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
 	static final String companyLink = "https://www.nccgroup.trust/";
@@ -66,6 +66,9 @@ public class LoggerPreferences {
 	private boolean canSaveCSV;
 	private int searchThreads;
 	private boolean autoImportProxyHistory;
+	private String esAddress;
+	private short esPort;
+	private String esClusterName;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -306,6 +309,33 @@ public class LoggerPreferences {
 		this.autoImportProxyHistory = autoImport;
 	}
 
+	public String getEsAddress() {
+		return esAddress;
+	}
+
+	public void setEsAddress(String esAddress){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("esAddress", esAddress);
+		this.esAddress = esAddress;
+	}
+
+	public short getEsPort(){
+		return esPort;
+	}
+
+	public void setEsPort(short port){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("esPort", String.valueOf(port));
+		this.esPort = port;
+	}
+
+	public String getEsClusterName(){
+		return esClusterName;
+	}
+
+	public void setEsClusterName(String esClusterName){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("esClusterName", esClusterName);
+		this.esClusterName = esClusterName;
+	}
+
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
 		this.autoSave = autoSave;
@@ -383,6 +413,10 @@ public class LoggerPreferences {
 		reqRespView = View.valueOf(getStringSetting("msgviewlayout", "HORIZONTAL"));
 		this.searchThreads = getIntSetting("searchthreads", 5);
 		this.autoImportProxyHistory = getBooleanSetting("autoimportproxyhistory", false);
+
+		this.esAddress = getStringSetting("esAddress", "127.0.0.1");
+		this.esPort = (short) getIntSetting("esPort", 9300);
+		this.esClusterName = getStringSetting("esClusterName", "elasticsearch");
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){

@@ -9,6 +9,7 @@ dependencies {
     compile 'org.swinglabs:swingx:1.6.1'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.apache.commons:commons-text:1.1'
+    compile 'org.elasticsearch.client:transport:6.0.0'
     testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 

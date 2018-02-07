@@ -190,7 +190,7 @@ public class FileLogger implements LogEntryListener{
     }
 
     @Override
-    public void onRequestAdded(final LogEntry logEntry) {
+    public void onRequestAdded(final LogEntry logEntry, boolean hasResponse) {
 
     }
 

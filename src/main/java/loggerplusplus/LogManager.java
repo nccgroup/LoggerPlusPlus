@@ -86,7 +86,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);
                         }
-                        addNewRequest(logEntry);
+                        addNewRequest(logEntry, true); //Complete Request and Response Added
                     }
                 }
             }
@@ -123,7 +123,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                         synchronized (pendingRequests) {
                             pendingRequests.put(proxyMessage.getMessageReference(), logEntry);
                         }
-                        addNewRequest(logEntry);
+                        addNewRequest(logEntry, false); //Request added without response
                     }else{
                         //Existing Proxy Request, update existing
                         if (logEntry != null) {
@@ -142,7 +142,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         });
     }
 
-    private void addNewRequest(LogEntry logEntry){
+    private void addNewRequest(LogEntry logEntry, boolean hasResponse){
         //After handling request / response logEntries generation.
         //Add to grepTable / modify existing entry.
         synchronized (logEntries) {
@@ -154,7 +154,7 @@ public class LogManager implements IHttpListener, IProxyListener {
             }
             logEntries.add(logEntry);
             for (LogEntryListener listener : logEntryListeners) {
-                listener.onRequestAdded(logEntry);
+                listener.onRequestAdded(logEntry, hasResponse);
             }
             totalRequests++;
             if(logEntry instanceof LogEntry.PendingRequestEntry){

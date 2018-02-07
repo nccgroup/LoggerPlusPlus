@@ -1,3 +1,7 @@
+v 3.07
+=========================================================================
+- Added elasticsearch connectivity. Uploads every 2 minutes.
+
 v 3.066
 =========================================================================
 - Fix issue causing CSV export to use incorrect columns.

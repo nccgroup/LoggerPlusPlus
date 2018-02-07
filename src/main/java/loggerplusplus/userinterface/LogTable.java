@@ -252,7 +252,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     public void onFilterRemoveAll() {}
 
     @Override
-    public void onRequestAdded(LogEntry logEntry) {
+    public void onRequestAdded(LogEntry logEntry, boolean hasResponse) {
         int rowNo = LoggerPlusPlus.getInstance().getLogManager().getLogEntries().size()-1;
         getModel().fireTableRowsInserted(rowNo, rowNo);
 
