@@ -12,6 +12,8 @@ public class FileLogger implements LogEntryListener{
     private File autoSaveFile;
     private final LoggerPreferences loggerPreferences;
     private final ExcelExporter exp;
+    private boolean autoLogIncludeRequests = false;
+    private boolean autoLogIncludeResponses = false;
 
     public FileLogger(){
         loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
@@ -30,9 +32,9 @@ public class FileLogger implements LogEntryListener{
         }
     }
 
-    public void autoLogItem(LogEntry entry) {
+    public void autoLogItem(LogEntry entry, boolean includeRequests, boolean includeResponses) {
         try {
-            exp.exportItem(entry, false);
+            exp.exportItem(entry, includeRequests, includeResponses);
         } catch (IOException e) {
             LoggerPlusPlus.getCallbacks().printError("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
@@ -165,8 +167,13 @@ public class FileLogger implements LogEntryListener{
                 loggerPreferences.setAutoSave(true);
                 try {
                     autoSaveWriter = new FileWriter(autoSaveFile, true);
+                    int result = JOptionPane.showConfirmDialog(null, "Include REQUEST bodies in the logs?","Automatic Logging", JOptionPane.YES_OPTION);
+                    autoLogIncludeRequests = result == JOptionPane.YES_OPTION;
+
+                    result = JOptionPane.showConfirmDialog(null, "Include RESPONSE bodies in the logs?","Automatic Logging", JOptionPane.YES_OPTION);
+                    autoLogIncludeResponses = result == JOptionPane.YES_OPTION;
                     if (autoSaveFile.length() == 0)
-                        exp.addHeader(autoSaveWriter, false);
+                        exp.addHeader(autoSaveWriter, autoLogIncludeRequests, autoLogIncludeResponses);
 
                     LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
 
@@ -195,12 +202,12 @@ public class FileLogger implements LogEntryListener{
     }
 
     @Override
-    public void onResponseUpdated(final LogEntry.PendingRequestEntry existingEntry) {
+    public void onResponseUpdated(final LogEntry existingEntry) {
         Thread saveThread = new Thread(){
             @Override
             public void run() {
                 synchronized (autoSaveWriter){
-                    autoLogItem(existingEntry);
+                    autoLogItem(existingEntry, autoLogIncludeRequests, autoLogIncludeResponses);
                 }
             }
         };
@@ -220,6 +227,10 @@ public class FileLogger implements LogEntryListener{
             writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog) + "\n");
         }
 
+        public void addHeader(FileWriter writer, boolean includeRequest, boolean includeResponse) throws IOException {
+            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), includeRequest, includeResponse) + "\n");
+        }
+
         public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
             FileWriter out = new FileWriter(file, append);
 
@@ -236,10 +247,10 @@ public class FileLogger implements LogEntryListener{
             MoreHelp.showMessage("Log saved to " + file.getAbsolutePath());
         }
 
-        public void exportItem(LogEntry logEntry, boolean isFullLog) throws IOException {
+        public void exportItem(LogEntry logEntry, boolean includeRequests, boolean includeResponses) throws IOException {
             if(autoSaveWriter != null) {
                 try {
-                    autoSaveWriter.write(logEntry.toCSVString(isFullLog));
+                    autoSaveWriter.write(logEntry.toCSVString(includeRequests, includeResponses));
                     autoSaveWriter.write("\n");
                     autoSaveWriter.flush();
                 } catch (Exception e) {
