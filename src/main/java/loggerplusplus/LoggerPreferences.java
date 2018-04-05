@@ -70,6 +70,7 @@ public class LoggerPreferences {
 	private short esPort;
 	private String esClusterName;
 	private String esIndex;
+	private int esDelay;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -346,6 +347,15 @@ public class LoggerPreferences {
 		this.esIndex = index;
 	}
 
+	public int getEsDelay(){
+		return esDelay;
+	}
+
+	public void setEsDelay(int delay){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("esDelay", String.valueOf(delay));
+		this.esDelay = delay;
+	}
+
 
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
@@ -429,6 +439,7 @@ public class LoggerPreferences {
 		this.esPort = (short) getIntSetting("esPort", 9300);
 		this.esClusterName = getStringSetting("esClusterName", "elasticsearch");
 		this.esIndex = getStringSetting("esIndex", "logger");
+		this.esDelay = getIntSetting("esDelay", 120);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){

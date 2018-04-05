@@ -123,6 +123,20 @@ public class LogViewPanel extends JPanel {
             gbc.gridx = 3;
             gbc.weightx = 0;
             this.add(colorFilterButton, gbc);
+
+            final JButton clearLogsButton = new JButton("Clear Logs");
+            clearLogsButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    LoggerPlusPlus.getInstance().getLogManager().reset();
+                    LogTable logTable = getLogTable();
+                    logTable.getModel().fireTableDataChanged();
+                }
+            });
+
+            gbc.gridx = 4;
+            gbc.weightx = 0;
+            this.add(clearLogsButton, gbc);
         }
 
         public HistoryField getFilterField() {
