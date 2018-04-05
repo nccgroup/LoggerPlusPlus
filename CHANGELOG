@@ -1,6 +1,7 @@
 v 3.07
 =========================================================================
 - Added elasticsearch connectivity. Uploads every 2 minutes.
+- Added clear logs button to main view.
 
 v 3.066
 =========================================================================
