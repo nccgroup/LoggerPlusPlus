@@ -18,6 +18,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -33,6 +34,9 @@ public class ElasticSearchLogger implements LogEntryListener{
     private String indexName;
     private LoggerPreferences prefs;
 
+    private final ScheduledExecutorService executorService;
+    private ScheduledFuture indexTask;
+
 
     public ElasticSearchLogger(LogManager logManager, LoggerPreferences prefs){
         this.prefs = prefs;
@@ -40,8 +44,7 @@ public class ElasticSearchLogger implements LogEntryListener{
         this.indexName = "logger";
 
         logManager.addLogListener(this);
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(this::indexPendingEntries,2, 2, TimeUnit.MINUTES);
+        executorService = Executors.newScheduledThreadPool(1);
     }
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
@@ -56,7 +59,11 @@ public class ElasticSearchLogger implements LogEntryListener{
             adminClient = client.admin().indices();
             createIndices();
             pendingEntries = new ArrayList<>();
+            indexTask = executorService.scheduleAtFixedRate(this::indexPendingEntries,prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
         }else{
+            if(this.indexTask != null){
+                indexTask.cancel(true);
+            }
             this.pendingEntries = null;
             this.client = null;
             this.adminClient = null;
@@ -164,7 +171,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     }
 
     private void indexPendingEntries(){
-        if(!this.isEnabled) return;
+        if(!this.isEnabled || this.pendingEntries.size() == 0) return;
 
         BulkRequestBuilder bulkBuilder = client.prepareBulk();
         ArrayList<LogEntry> entriesInBulk;
