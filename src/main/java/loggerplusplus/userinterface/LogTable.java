@@ -263,13 +263,16 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
     @Override
-    public void onResponseUpdated(LogEntry.PendingRequestEntry existingEntry) {
+    public void onResponseUpdated(LogEntry existingEntry) {
         //Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
-        int row = existingEntry.getLogRow();
+        if(!(existingEntry instanceof LogEntry.PendingRequestEntry)){
+            return;
+        }
+        int row = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow();
         if(row == -1) return;
         LogManager logManager = LoggerPlusPlus.getInstance().getLogManager();
         if(logManager.getLogEntries().size() == logManager.getMaximumEntries()) {
-            int newRow = existingEntry.getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
+            int newRow = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
             getModel().fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
         }else{
             getModel().fireTableRowsUpdated(row, row);

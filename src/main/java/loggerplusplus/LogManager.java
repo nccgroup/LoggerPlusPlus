@@ -86,7 +86,11 @@ public class LogManager implements IHttpListener, IProxyListener {
                         for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
                             logEntry.testColorFilter(colorFilter, false);
                         }
+
                         addNewRequest(logEntry, true); //Complete Request and Response Added
+                        for (LogEntryListener logEntryListener : logEntryListeners) {
+                            logEntryListener.onResponseUpdated(logEntry);
+                        }
                     }
                 }
             }
