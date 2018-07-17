@@ -526,15 +526,23 @@ public class LogEntry extends RowFilter.Entry
 		return toCSVString(isFullLog, isFullLog);
 	}
 
+	private String sanitize(String string){
+		if(string == null) return null;
+		if(string.length() == 0) return "";
+		char first = string.toCharArray()[0];
+		switch (first){
+			case '=':
+			case '-':
+			case '+':
+			case '@': {
+				return "'" + string;
+			}
+		}
+		return string;
+	}
+
 	public String toCSVString(boolean includeRequests, boolean includeResponses) {
 		StringBuilder result = new StringBuilder();
-		//			for (int i=1; i<loggerTableDetails.length; i++) {
-		//
-		//				result.append(StringEscapeUtils.escapeCsv(String.valueOf(getValueByName((String) loggerTableDetails[i][0]))));
-		//
-		//				if(i<tableHelper.getLogTableModel().getColumnCount()-1)
-		//					result.append(",");
-		//			}
 
 		LogTableColumnModel columnModel = LoggerPlusPlus.getInstance().getLogTable().getColumnModel();
 		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
@@ -547,19 +555,20 @@ public class LogEntry extends RowFilter.Entry
 				}else{
 					firstDone = true;
 				}
-				result.append(StringEscapeUtils.escapeCsv(getValue(logTableColumn.getIdentifier()).toString()));
+				result.append(StringEscapeUtils.escapeCsv(sanitize(
+						getValue(logTableColumn.getIdentifier()).toString())));
 			}
 		}
 
 		if(includeRequests) {
 			result.append(",");
 			if (requestResponse != null && requestResponse.getRequest() != null)
-				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getRequest())));
+				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getRequest()))));
 		}
 		if(includeResponses) {
 			result.append(",");
 			if(requestResponse != null && requestResponse.getResponse() != null)
-				result.append(StringEscapeUtils.escapeCsv(new String(requestResponse.getResponse())));
+				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getResponse()))));
 		}
 		return result.toString();
 	}
