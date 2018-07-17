@@ -375,6 +375,9 @@ public class LoggerPreferences {
 		return autoScroll;
 	}
 
+	public Gson getGson() {
+		return gson;
+	}
 
 	public LoggerPreferences(LoggerPlusPlus loggerPlusPlus) {
 		this.loggerPlusPlus = loggerPlusPlus;

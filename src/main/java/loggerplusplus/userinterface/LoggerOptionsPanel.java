@@ -13,10 +13,14 @@
 package loggerplusplus.userinterface;
 
 import burp.IHttpRequestResponse;
+import com.google.gson.reflect.TypeToken;
 import loggerplusplus.FileLogger;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
 import loggerplusplus.MoreHelp;
+import loggerplusplus.filter.ColorFilter;
+import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.SavedFilter;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -29,6 +33,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class LoggerOptionsPanel extends JScrollPane{
     private final LoggerPreferences loggerPreferences;
@@ -73,6 +81,11 @@ public class LoggerOptionsPanel extends JScrollPane{
     private final JSpinner spnSearchThreads;
     private final JButton btnResetSettings;
     private final JButton btnClearLogs;
+
+    private final JButton btnImportFilters;
+    private final JButton btnExportFilters;
+    private final JButton btnImportColorFilters;
+    private final JButton btnExportColorFilters;
 
 
     /**
@@ -284,6 +297,44 @@ public class LoggerOptionsPanel extends JScrollPane{
         innerContainer.add(otherPanel, gbc);
 
 
+        JPanel filterSharingPanel = new JPanel(new GridBagLayout());
+        filterSharingPanel.setBorder(BorderFactory.createTitledBorder("Saved Filter Sharing"));
+        gbc = new GridBagConstraints();
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = gbc.gridy = 1;
+        btnImportFilters = new JButton("Import Saved Filters");
+        filterSharingPanel.add(btnImportFilters, gbc);
+        gbc.gridy++;
+        btnExportFilters = new JButton("Export Saved Filters");
+        filterSharingPanel.add(btnExportFilters, gbc);
+
+        JPanel colorFilterSharingPanel = new JPanel(new GridBagLayout());
+        colorFilterSharingPanel.setBorder(BorderFactory.createTitledBorder("Color Filter Sharing"));
+        gbc = new GridBagConstraints();
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = gbc.gridy = 1;
+        btnImportColorFilters = new JButton("Import Color Filters");
+        colorFilterSharingPanel.add(btnImportColorFilters, gbc);
+        gbc.gridy++;
+        btnExportColorFilters = new JButton("Export Color Filters");
+        colorFilterSharingPanel.add(btnExportColorFilters, gbc);
+
+
+        gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 1;
+        gbc.gridy = 20;
+        gbc.weightx = 5.0;
+        gbc.gridwidth = 1;
+        innerContainer.add(colorFilterSharingPanel, gbc);
+        gbc.weightx = 5.0;
+        gbc.gridx++;
+        innerContainer.add(filterSharingPanel, gbc);
+
+
+
         JPanel buttonPanel = new JPanel(new GridLayout(0,1));
         buttonPanel.setBorder(BorderFactory.createTitledBorder("Reset"));
         btnResetSettings = new JButton("Reset all settings");
@@ -294,7 +345,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 20;
+        gbc.gridy = 21;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
         innerContainer.add(buttonPanel, gbc);
@@ -310,7 +361,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 1;
-        gbc.gridy = 21;
+        gbc.gridy = 22;
         gbc.gridheight = 1;
         gbc.weightx = 1.0;
         gbc.gridwidth = 2;
@@ -318,7 +369,6 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         //Add bottom filler
 
-//        innerContainer.setMaximumSize(new Dimension(960, 9999));
         gbc = new GridBagConstraints();
         gbc.gridx = 1;
         gbc.gridy = 1;
@@ -489,11 +539,21 @@ public class LoggerOptionsPanel extends JScrollPane{
         });
 
         spnResponseTimeout.setModel(new SpinnerNumberModel(loggerPreferences.getResponseTimeout()/1000, 10, 600, 1));
-        spnResponseTimeout.addChangeListener(changeEvent -> loggerPreferences.setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000));
+        spnResponseTimeout.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                loggerPreferences.setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
+            }
+        });
 
         int maxEntriesMax = 1000000;
         spnMaxEntries.setModel(new SpinnerNumberModel(Math.min(loggerPreferences.getMaximumEntries(), maxEntriesMax), 10, maxEntriesMax, 10));
-        spnMaxEntries.addChangeListener(changeEvent -> loggerPreferences.setMaximumEntries((Integer) spnMaxEntries.getValue()));
+        spnMaxEntries.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                loggerPreferences.setMaximumEntries((Integer) spnMaxEntries.getValue());
+            }
+        });
         spnMaxEntries.getEditor().getComponent(0).addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -504,7 +564,12 @@ public class LoggerOptionsPanel extends JScrollPane{
         int maxSearchThreads = 50;
         spnSearchThreads.setModel(new SpinnerNumberModel(
                 Math.min(LoggerPlusPlus.getInstance().getLoggerPreferences().getSearchThreads(), maxSearchThreads), 1, maxSearchThreads, 1));
-        spnSearchThreads.addChangeListener(changeEvent -> loggerPreferences.setSearchThreads((Integer) spnSearchThreads.getValue()));
+        spnSearchThreads.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                loggerPreferences.setSearchThreads((Integer) spnSearchThreads.getValue());
+            }
+        });
 
 
         this.esAddressField.getDocument().addDocumentListener(new DocumentListener() {
@@ -524,10 +589,13 @@ public class LoggerOptionsPanel extends JScrollPane{
                 loggerPreferences.setEsAddress(esAddressField.getText());
             }
         });
-        this.esPortSpinner.getModel().addChangeListener(changeEvent -> {
-            toggleEsEnabledButton(false);
-            Integer spinnerval = (Integer) esPortSpinner.getValue();
-            loggerPreferences.setEsPort(spinnerval.shortValue());
+        this.esPortSpinner.getModel().addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                toggleEsEnabledButton(false);
+                Integer spinnerval = (Integer) esPortSpinner.getValue();
+                loggerPreferences.setEsPort(spinnerval.shortValue());
+            }
         });
         this.esClusterField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -555,13 +623,71 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
-        this.esUploadDelay.addChangeListener(changeEvent -> {
-            loggerPreferences.setEsDelay((Integer) esUploadDelay.getValue());
-            toggleEsEnabledButton(false);
+        this.esUploadDelay.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                loggerPreferences.setEsDelay((Integer) esUploadDelay.getValue());
+                toggleEsEnabledButton(false);
+            }
         });
 
-        this.esEnabled.addActionListener(actionEvent -> toggleEsEnabledButton(esEnabled.isSelected()));
+        this.esEnabled.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                toggleEsEnabledButton(esEnabled.isSelected());
+            }
+        });
+
+        this.btnImportFilters.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                String json = MoreHelp.showLargeInputDialog("Import Saved Filters", null);
+                ArrayList<SavedFilter> importedFilters =
+                        loggerPreferences.getGson().fromJson(json, new TypeToken<ArrayList<SavedFilter>>(){}.getType());
+                ArrayList<SavedFilter> savedFiltersClone = new ArrayList<>(loggerPreferences.getSavedFilters());
+                for (SavedFilter importedFilter : importedFilters) {
+                    if(!savedFiltersClone.contains(importedFilter)) savedFiltersClone.add(importedFilter);
+                }
+                loggerPreferences.setSavedFilters(savedFiltersClone);
+            }
+        });
+
+        this.btnExportFilters.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                ArrayList<SavedFilter> savedFilters = loggerPreferences.getSavedFilters();
+                String jsonOutput = loggerPreferences.getGson().toJson(savedFilters);
+                MoreHelp.showLargeOutputDialog("Export Saved Filters", jsonOutput);
+            }
+        });
+
+        this.btnImportColorFilters.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
+                Map<UUID, ColorFilter> colorFilterMap =
+                        loggerPreferences.getGson().fromJson(json, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
+                Map<UUID, ColorFilter> cloneMap = new HashMap<>(loggerPreferences.getColorFilters());
+                cloneMap.putAll(colorFilterMap);
+                for (FilterListener filterListener : LoggerPlusPlus.getInstance().getFilterListeners()) {
+                    for (ColorFilter colorFilter : colorFilterMap.values()) {
+                        filterListener.onFilterAdd(colorFilter);
+                    }
+                }
+                loggerPreferences.setColorFilters(cloneMap);
+            }
+        });
+
+        this.btnExportColorFilters.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                Map<UUID,ColorFilter> colorFilters = loggerPreferences.getColorFilters();
+                String jsonOutput = loggerPreferences.getGson().toJson(colorFilters);
+                MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
+            }
+        });
     }
+
 
     public void setAutoSaveBtn(boolean enabled){
         btnAutoSaveLogs.setSelected(enabled);
@@ -573,31 +699,33 @@ public class LoggerOptionsPanel extends JScrollPane{
         loggerPreferences.setEnabled(isSelected);
     }
 
-    private void toggleEsEnabledButton(boolean isSelected) {
-        new Thread(() -> {
-            if(isSelected) {
-                esEnabled.setText("Starting...");
-            }
-            try {
-                LoggerPlusPlus.getInstance().setEsEnabled(isSelected);
-                esEnabled.setText((isSelected ? "Enabled" : "Disabled"));
-                esEnabled.setSelected(isSelected);
+    private void toggleEsEnabledButton(final boolean isSelected) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
                 if(isSelected) {
-                    GridBagConstraints gbc = new GridBagConstraints();
-                    gbc.gridx = 0;
-                    gbc.gridwidth = 3;
-                    elasticPanel.add(esValueChangeWarning, gbc);
-                }else{
-                    elasticPanel.remove(esValueChangeWarning);
+                    esEnabled.setText("Starting...");
                 }
-            } catch (Exception e) {
-                if(isSelected) {
-                    MoreHelp.showWarningMessage("Elastic Search could not be enabled. Please check your settings.\n" + e.getMessage());
+                try {
+                    LoggerPlusPlus.getInstance().setEsEnabled(isSelected);
+                    esEnabled.setText((isSelected ? "Enabled" : "Disabled"));
+                    esEnabled.setSelected(isSelected);
+                    if(isSelected) {
+                        GridBagConstraints gbc = new GridBagConstraints();
+                        gbc.gridx = 0;
+                        gbc.gridwidth = 3;
+                        elasticPanel.add(esValueChangeWarning, gbc);
+                    }else{
+                        elasticPanel.remove(esValueChangeWarning);
+                    }
+                } catch (Exception e) {
+                    if(isSelected) {
+                        MoreHelp.showWarningMessage("Elastic Search could not be enabled. Please check your settings.\n" + e.getMessage());
+                    }
+                    esEnabled.setText("Connection Failed");
+                    esEnabled.setSelected(false);
                 }
-                esEnabled.setText("Connection Failed");
-                esEnabled.setSelected(false);
             }
-
         }).start();
     }
 
