@@ -10,7 +10,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +18,7 @@ import java.util.UUID;
 /**
  * Created by corey on 19/07/17.
  */
-public class ColorFilterDialog extends JFrame implements WindowListener {
+public class ColorFilterDialog extends JFrame {
     private static ColorFilterDialog instance;
     private Map<UUID, ColorFilter> filters;
     private ArrayList<FilterListener> filterListeners;
@@ -33,7 +32,6 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
-        this.addWindowListener(this);
         buildDialog();
         pack();
     }
@@ -97,6 +95,7 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
         btnClose.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                applyChanges();
                 ColorFilterDialog.this.dispatchEvent(new WindowEvent(ColorFilterDialog.this, WindowEvent.WINDOW_CLOSING));
             }
         });
@@ -108,10 +107,13 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
 
     }
 
-    @Override
-    public void windowOpened(WindowEvent windowEvent) {}
-    @Override
-    public void windowClosing(WindowEvent windowEvent) {
+
+    public void addColorFilter(String title, String filterString) throws Filter.FilterException {
+        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filterString));
+    }
+
+    private void applyChanges(){
+        //
         ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
         newFilters.removeAll(originalFilters.keySet());
 
@@ -143,18 +145,5 @@ public class ColorFilterDialog extends JFrame implements WindowListener {
         }
         LoggerPlusPlus.getInstance().getLoggerPreferences().setColorFilters(filters);
     }
-    @Override
-    public void windowClosed(WindowEvent windowEvent) {}
-    @Override
-    public void windowIconified(WindowEvent windowEvent) {}
-    @Override
-    public void windowDeiconified(WindowEvent windowEvent) {}
-    @Override
-    public void windowActivated(WindowEvent windowEvent) {}
-    @Override
-    public void windowDeactivated(WindowEvent windowEvent) {}
 
-    public void addColorFilter(String title, String filterString) throws Filter.FilterException {
-        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filterString));
-    }
 }

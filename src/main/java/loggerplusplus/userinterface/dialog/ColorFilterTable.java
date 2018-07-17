@@ -19,8 +19,11 @@ import java.util.UUID;
  * Created by corey on 19/07/17.
  */
 public class ColorFilterTable extends JTable {
+    private final ArrayList<FilterListener> filterListeners;
+
 
     ColorFilterTable(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
+        this.filterListeners = filterListeners;
         this.setModel(new ColorFilterTableModel(filters, filterListeners));
         this.setFillsViewportHeight(true);
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -68,12 +71,20 @@ public class ColorFilterTable extends JTable {
         if(this.getSelectedRow() > 0){
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()-1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()-1, this.getSelectedRow()-1);
+            ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
+            for (FilterListener filterListener : this.filterListeners) {
+                filterListener.onFilterChange(filter);
+            }
         }
     }
     public void moveSelectedDown() {
         if(this.getSelectedRow() >= 0 && this.getSelectedRow() < this.getRowCount()){
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
+            ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
+            for (FilterListener filterListener : this.filterListeners) {
+                filterListener.onFilterChange(filter);
+            }
         }
     }
 }
