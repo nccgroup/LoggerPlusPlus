@@ -1,3 +1,9 @@
+v 3.08
+=========================================================================
+- Added import/export of color/saved filters.
+- Automatically display changes when modifying color filters.
+- Mitigate CSV injection.
+
 v 3.07
 =========================================================================
 - Added elasticsearch connectivity. Uploads every 2 minutes.
