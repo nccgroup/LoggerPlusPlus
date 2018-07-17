@@ -106,7 +106,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
     }
 
     public void removeAtIndex(int row) {
-        if(row < filters.size() || row >= filters.size()) return;
+        if(row < 0 || row >= filters.size()) return;
         filters.remove(row);
         this.fireTableRowsDeleted(row, row);
     }
