@@ -204,14 +204,11 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     //FilterListeners
     @Override
     public void onFilterChange(final ColorFilter filter) {
-        Thread onChangeThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i< getModel().getData().size(); i++) {
-                    boolean colorResult = getModel().getRow(i).testColorFilter(filter, filter.shouldRetest());
-                    if(colorResult || filter.isModified()){
-                        getModel().fireTableRowsUpdated(i, i);
-                    }
+        Thread onChangeThread = new Thread(() -> {
+            for (int i = 0; i< getModel().getData().size(); i++) {
+                boolean colorResult = getModel().getRow(i).testColorFilter(filter, filter.shouldRetest());
+                if(colorResult || filter.isModified()){
+                    getModel().fireTableRowsUpdated(i, i);
                 }
             }
         });
@@ -221,13 +218,10 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     @Override
     public void onFilterAdd(final ColorFilter filter) {
         if(!filter.isEnabled() || filter.getFilter() == null) return;
-        Thread onAddThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i< getModel().getData().size(); i++) {
-                    boolean colorResult = getModel().getRow(i).testColorFilter(filter, false);
-                    if(colorResult) getModel().fireTableRowsUpdated(i, i);
-                }
+        Thread onAddThread = new Thread(() -> {
+            for (int i = 0; i< getModel().getData().size(); i++) {
+                boolean colorResult = getModel().getRow(i).testColorFilter(filter, false);
+                if(colorResult) getModel().fireTableRowsUpdated(i, i);
             }
         });
         onAddThread.start();
@@ -236,13 +230,10 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     @Override
     public void onFilterRemove(final ColorFilter filter) {
         if(!filter.isEnabled() || filter.getFilter() == null) return;
-        Thread onRemoveThread = new Thread(new Runnable(){
-            @Override
-            public void run() {
-                for (int i = 0; i< getModel().getData().size(); i++) {
-                    boolean wasPresent = getModel().getRow(i).matchingColorFilters.remove(filter.getUid());
-                    if(wasPresent) getModel().fireTableRowsUpdated(i, i);
-                }
+        Thread onRemoveThread = new Thread(() -> {
+            for (int i = 0; i< getModel().getData().size(); i++) {
+                boolean wasPresent = getModel().getRow(i).matchingColorFilters.remove(filter.getUid());
+                if(wasPresent) getModel().fireTableRowsUpdated(i, i);
             }
         });
         onRemoveThread.start();

@@ -71,21 +71,25 @@ public class ColorFilterTableModel extends AbstractTableModel {
     }
 
     public boolean validFilterAtRow(int row) {
-        return getFilterAtRow(row) != null;
+        return getFilterAtRow(row).getFilter() != null;
     }
 
-    public Filter getFilterAtRow(int row){
-        return filters.get(rowUUIDs.get((short) row)).getFilter();
+//    public Filter getFilterAtRow(int row){
+//        return filters.get(rowUUIDs.get((short) row)).getFilter();
+//    }
+
+    public ColorFilter getFilterAtRow(int row){
+        return filters.get(rowUUIDs.get((short) row));
     }
 
     public void setValueAt(Object value, int row, int col) {
         UUID rowUid = rowUUIDs.get((short) row);
+        ColorFilter filter = filters.get(rowUid);
         switch (col) {
             case 0:
-                filters.get(rowUid).setName((String) value);
+                filter.setName((String) value);
                 break;
             case 1: {
-                ColorFilter filter = filters.get(rowUid);
                 filter.setFilterString((String) value);
                 try {
                     filter.setFilter(FilterCompiler.parseString((String) value));
@@ -95,16 +99,19 @@ public class ColorFilterTableModel extends AbstractTableModel {
                 break;
             }
             case 2:
-                filters.get(rowUid).setForegroundColor((Color) value);
+                filter.setForegroundColor((Color) value);
                 break;
             case 3:
-                filters.get(rowUid).setBackgroundColor((Color) value);
+                filter.setBackgroundColor((Color) value);
                 break;
             case 4:
-                filters.get(rowUid).setEnabled((Boolean) value);
+                filter.setEnabled((Boolean) value);
                 break;
             default:
                 return;
+        }
+        for (FilterListener filterListener : this.filterListeners) {
+            filterListener.onFilterChange(filter);
         }
     }
 
@@ -139,9 +146,12 @@ public class ColorFilterTableModel extends AbstractTableModel {
     public void onClick(int row, int column) {
         if(row != -1 && row < filters.size() && column == 5) {
             synchronized (rowUUIDs) {
-                this.filters.remove(rowUUIDs.get((short) row));
+                ColorFilter removedFilter = this.filters.remove(rowUUIDs.get((short) row));
                 this.fireTableRowsDeleted(row, row);
                 rowUUIDs.remove((short) row);
+                for (FilterListener filterListener : this.filterListeners) {
+                    filterListener.onFilterRemove(removedFilter);
+                }
                 for (int i = row + 1; i <= rowUUIDs.size(); i++) {
                     rowUUIDs.put((short) (i - 1), rowUUIDs.get((short) i));
                     filters.get(rowUUIDs.get((short) i)).setPriority((short) (i-1));
