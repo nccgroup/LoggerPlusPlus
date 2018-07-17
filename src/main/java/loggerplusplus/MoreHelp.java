@@ -190,4 +190,18 @@ public class MoreHelp {
 		if(!showMessages) return;
 		MoreHelp.showMessage(updateMessage);
 	}
+
+	public static void showLargeOutputDialog(String title, String output){
+		JTextArea outputArea = new JTextArea(20,20);
+		outputArea.append(output);
+		outputArea.setWrapStyleWord(true);
+		outputArea.setLineWrap(true);
+		JScrollPane scrollPane = new JScrollPane(outputArea);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JOptionPane.showMessageDialog(null, scrollPane, title, JOptionPane.PLAIN_MESSAGE);
+	}
+
+	public static String showLargeInputDialog(String title, String message){
+		return JOptionPane.showInputDialog(title);
+	}
 }

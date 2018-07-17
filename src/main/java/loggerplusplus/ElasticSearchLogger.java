@@ -59,7 +59,12 @@ public class ElasticSearchLogger implements LogEntryListener{
             adminClient = client.admin().indices();
             createIndices();
             pendingEntries = new ArrayList<>();
-            indexTask = executorService.scheduleAtFixedRate(this::indexPendingEntries,prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
+            indexTask = executorService.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    indexPendingEntries();
+                }
+            }, prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
         }else{
             if(this.indexTask != null){
                 indexTask.cancel(true);

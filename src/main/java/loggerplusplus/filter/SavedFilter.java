@@ -37,4 +37,14 @@ public class SavedFilter {
     public void setFilterString(String filterString) {
         this.filterString = filterString;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o instanceof SavedFilter){
+            SavedFilter other = (SavedFilter) o;
+            return other.name.equals(name) && other.filterString.equals(filterString);
+        }else{
+            return super.equals(o);
+        }
+    }
 }
