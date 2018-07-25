@@ -17,6 +17,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
 
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
+        if(invocation == null) return null;
         JMenuItem filterMenu = new JMenu("Logger++");
 
         if (invocation.getSelectedMessages().length == 0 ||
@@ -36,7 +37,9 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     }else{
                         context = "REQUEST";
                     }
-                    matchPattern = Pattern.compile(new String(msg).substring(invocation.getSelectionBounds()[0], invocation.getSelectionBounds()[1]), Pattern.LITERAL);
+                    byte[] selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getRequest(),
+                            invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
+                    matchPattern = Pattern.compile(new String(selectedBytes), Pattern.LITERAL);
                 }catch (NullPointerException nPException){ return null; }
                 break;
             }
@@ -50,7 +53,9 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     }else{
                         context = "RESPONSE";
                     }
-                    matchPattern = Pattern.compile(new String(msg).substring(invocation.getSelectionBounds()[0], invocation.getSelectionBounds()[1]), Pattern.LITERAL);
+                    byte[] selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getResponse(),
+                            invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
+                    matchPattern = Pattern.compile(new String(selectedBytes), Pattern.LITERAL);
                 }catch (NullPointerException nPException){ return null; }
                 break;
             }
