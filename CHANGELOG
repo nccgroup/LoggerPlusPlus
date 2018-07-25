@@ -1,3 +1,9 @@
+v 3.09
+=========================================================================
+- Fix incorrect handling of request/response due to charset differences.
+- Fix selection filters not escaping selection i.e. regex.
+- Fix filters with escape sequences breaking after changes.
+
 v 3.08
 =========================================================================
 - Added import/export of color/saved filters.
