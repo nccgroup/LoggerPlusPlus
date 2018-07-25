@@ -195,12 +195,12 @@ public class Filter extends RowFilter<Object, Object> {
         if(right instanceof Boolean){
             return ((Boolean) right ? "" : "!") + left;
         }
-        String lString = left.toString();
-        if(left instanceof Pattern) lString = "/" + left + "/";
-        if(left instanceof String) lString = "\"" + left + "\"";
-        String rString = right.toString();
-        if(right instanceof Pattern) rString = "/" + right + "/";
-        if(right instanceof String) rString = "\"" + right + "\"";
+        String lString = escapeSequences(left.toString());
+        if(left instanceof Pattern) lString = "/" + lString + "/";
+        if(left instanceof String) lString = "\"" + lString + "\"";
+        String rString = escapeSequences(right.toString());
+        if(right instanceof Pattern) rString = "/" + rString + "/";
+        if(right instanceof String) rString = "\"" + rString + "\"";
         return lString + " " + operation.representation + " " + rString;
     }
 
@@ -220,5 +220,10 @@ public class Filter extends RowFilter<Object, Object> {
             } catch (Filter.FilterException e) {}
             return filter;
         }
+    }
+
+    private String escapeSequences(String input){
+        return input.replaceAll("\\n", "\\\\n").replaceAll("\r", "\\\\r")
+                .replaceAll("\t", "\\\\t").replaceAll("\f", "\\\\f");
     }
 }
