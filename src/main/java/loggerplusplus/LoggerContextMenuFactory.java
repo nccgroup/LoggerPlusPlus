@@ -25,8 +25,8 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             return null;
         }
 
-        final Pattern matchPattern;
         final String context;
+        final byte[] selectedBytes;
         switch (invocation.getInvocationContext()){
             case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
             case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
@@ -37,9 +37,8 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     }else{
                         context = "REQUEST";
                     }
-                    byte[] selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getRequest(),
+                    selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getRequest(),
                             invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
-                    matchPattern = Pattern.compile(new String(selectedBytes), Pattern.LITERAL);
                 }catch (NullPointerException nPException){ return null; }
                 break;
             }
@@ -53,14 +52,16 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     }else{
                         context = "RESPONSE";
                     }
-                    byte[] selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getResponse(),
+                    selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getResponse(),
                             invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
-                    matchPattern = Pattern.compile(new String(selectedBytes), Pattern.LITERAL);
                 }catch (NullPointerException nPException){ return null; }
                 break;
             }
             default: return null;
         }
+
+        String sanitizedString = Pattern.quote(new String(selectedBytes));
+        final Pattern matchPattern = Pattern.compile(sanitizedString, Pattern.LITERAL);
 
         final LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
 
