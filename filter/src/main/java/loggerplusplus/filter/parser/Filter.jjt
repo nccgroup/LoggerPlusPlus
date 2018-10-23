@@ -1,0 +1,197 @@
+options {
+    MULTI=true;
+    STATIC=false;
+//    LOOKAHEAD=3;
+}
+
+PARSER_BEGIN(SyntaxChecker)
+package loggerplusplus.filter.parser;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+public class SyntaxChecker {
+
+    public SyntaxChecker(String s){
+        this(new StringReader(s));
+    }
+
+    public static void main(String[] args) throws IOException {
+        String str;
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        while(!(str = in.readLine()).equalsIgnoreCase("END")) {
+            try {
+                SimpleNode root = parseFilter(str);
+                root.dump("");
+            } catch (Throwable e) {
+                System.out.println("Syntax check failed: " + e.getMessage());
+            }
+        }
+    }
+
+    public static SimpleNode parseFilter(String string) throws IOException, ParseException {
+        SyntaxChecker syntaxChecker = new SyntaxChecker(string);
+        return syntaxChecker.Filter();
+    }
+}
+
+PARSER_END(SyntaxChecker)
+
+SKIP:  { " " | "\t" | "\n" | "\r" }
+TOKEN [IGNORE_CASE]: {
+    <EQ: "=" | "==" >
+    | <NEQ: "!=" >
+    | <GT: ">" >
+    | <LT: "<" >
+    | <GEQ: ">=" >
+    | <LEQ: "<=" >
+    | <OR: "|" | "||" | "OR" >
+    | <AND: "&" | "&&" | "AND" >
+    | <XOR: "^" | "XOR">
+    | <BOOLEAN: "TRUE" | "FALSE">
+    | <SINGLEQUOTEDSTRING: "'" ("\\" ~[] | ~["\'", "\\"])+ "'" >
+    | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
+    | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
+    | <DIGIT: ["0"-"9"] >
+    | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
+    | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
+    | <LPAREN: "(">
+    | <RPAREN: ")">
+}
+
+SimpleNode Filter() #FILTER :
+{}
+{
+    Expression() <EOF>
+    {return jjtThis;}
+}
+
+void Expression() #EXPRESSION :
+{}
+{
+    (<LPAREN> Expression() <RPAREN> | Comparison())
+    ((And() | Or() | Xor()) ((<LPAREN> Expression() <RPAREN> | Comparison())))*
+}
+
+void Brackets() #void :
+{}
+{
+    <LPAREN> Expression() <RPAREN>
+}
+
+void Comparison() #COMPARISON:
+{}
+{
+    (
+        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean() | Filter())
+        | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
+        | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
+        | Identifier() (
+            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean() | Filter())
+            | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
+        )
+    )
+}
+
+
+//SimpleNode Filter() #FILTER :
+//{}
+//{
+//    (
+//        (LParen() Filter() RParen())
+//        |
+//        Expr()
+//    )
+//    ((And() | Or() | Xor()) Filter())*
+//    {return jjtThis;}
+//}
+//
+//void Expr() #EXPR:
+//{}
+//{
+//    (
+//        Boolean() ((Eq() | Neq() | Xor()) (Identifier() | Boolean() | Filter()))?
+//        | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
+//        | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
+//        | Identifier() (
+//            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean() | Filter())
+//            | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
+//        )?
+//    )
+//}
+
+void Number() #NUMBER :
+{Token t;}
+{
+    t=<NUMBER> {jjtThis.value = t.image;}
+}
+
+void String() #STRING :
+{Token t;}
+{
+    ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )
+    {jjtThis.value = t.image.substring(1,t.image.length()-1);}
+}
+void Regex() #REGEX :
+{Token t;}
+{
+    t=<REGEX> {jjtThis.value = t.image.substring(1,t.image.length()-1);}
+}
+void Identifier() #IDENTIFIER :
+{Token t;}
+{
+    t=<IDENTIFIER> {jjtThis.value = t.image;}
+}
+
+void Boolean() #BOOLEAN :
+{Token t;}
+{
+    t=<BOOLEAN> {jjtThis.value = t.image;}
+}
+
+void Eq() #EQ :
+{Token t;}
+{
+    t=<EQ> {jjtThis.value = t.image;}
+}
+void Neq() #NEQ :
+{Token t;}
+{
+    t=<NEQ> {jjtThis.value = t.image;}
+}
+void Gt() #GT :
+{Token t;}
+{
+    t=<GT> {jjtThis.value = t.image;}
+}
+void Geq() #GEQ :
+{Token t;}
+{
+    t=<GEQ> {jjtThis.value = t.image;}
+}
+void Lt() #LT :
+{Token t;}
+{
+    t=<LT> {jjtThis.value = t.image;}
+}
+void Leq() #LEQ :
+{Token t;}
+{
+    t=<LEQ> {jjtThis.value = t.image;}
+}
+void And() #AND :
+{Token t;}
+{
+    t=<AND> {jjtThis.value = t.image;}
+}
+void Or() #OR :
+{Token t;}
+{
+    t=<OR> {jjtThis.value = t.image;}
+}
+
+void Xor() #XOR :
+{Token t;}
+{
+    t=<XOR> {jjtThis.value = t.image;}
+}
