@@ -255,8 +255,9 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
     @Override
     public void onRequestAdded(LogEntry logEntry, boolean hasResponse) {
-        int rowNo = LoggerPlusPlus.getInstance().getLogManager().getLogEntries().size()-1;
-        getModel().fireTableRowsInserted(rowNo, rowNo);
+//        int rowNo = LoggerPlusPlus.getInstance().getLogManager().getLogEntries().size()-1;
+//        getModel().fireTableRowsInserted(rowNo, rowNo);
+        getModel().fireTableDataChanged();
 
         if(LoggerPlusPlus.getInstance().getLoggerPreferences().getAutoScroll()) {
             JScrollBar scrollBar = LoggerPlusPlus.getInstance().getLogScrollPanel().getVerticalScrollBar();
@@ -267,23 +268,25 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     @Override
     public void onResponseUpdated(LogEntry existingEntry) {
         //Calculate adjusted row in case it's moved. Update 10 either side to account for deleted rows
-        if(!(existingEntry instanceof LogEntry.PendingRequestEntry)){
-            return;
-        }
-        int row = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow();
-        if(row == -1) return;
-        LogManager logManager = LoggerPlusPlus.getInstance().getLogManager();
-        if(logManager.getLogEntries().size() == logManager.getMaximumEntries()) {
-            int newRow = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
-            getModel().fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
-        }else{
-            getModel().fireTableRowsUpdated(row, row);
-        }
+//        if(!(existingEntry instanceof LogEntry.PendingRequestEntry)){
+//            return;
+//        }
+//        int row = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow();
+//        if(row == -1) return;
+//        LogManager logManager = LoggerPlusPlus.getInstance().getLogManager();
+//        if(logManager.getLogEntries().size() == logManager.getMaximumEntries()) {
+//            int newRow = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
+//            getModel().fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
+//        }else{
+//            getModel().fireTableRowsUpdated(row, row);
+//        }
+        getModel().fireTableDataChanged();
     }
 
     @Override
     public void onRequestRemoved(int index, LogEntry logEntry) {
-        getModel().fireTableRowsDeleted(index, index);
+//        getModel().fireTableRowsDeleted(index, index);
+        getModel().fireTableDataChanged();
     }
 
     //Custom sorter to fix issues with columnModel having different model column and view column counts.
