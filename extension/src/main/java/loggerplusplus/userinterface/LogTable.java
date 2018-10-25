@@ -164,7 +164,9 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
     public void setFilter(Filter filter){
-        ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
+        try {
+            ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
+        }catch (NullPointerException ignored){}
     }
 
     @Override
@@ -303,7 +305,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             //Temporary fix is to let the grepTable update the row again, such as on redraw.
             try {
                 return super.convertRowIndexToModel(index);
-            }catch (NullPointerException e){
+            }catch (NullPointerException | IndexOutOfBoundsException e){
                 return this.getViewRowCount()-1;
             }
         }

@@ -2,12 +2,13 @@ package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
-import loggerplusplus.filter.FilterCompiler;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.parser.ParseException;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -92,8 +93,8 @@ public class ColorFilterTableModel extends AbstractTableModel {
             case 1: {
                 filter.setFilterString((String) value);
                 try {
-                    filter.setFilter(FilterCompiler.parseString((String) value));
-                } catch (Filter.FilterException e) {
+                    filter.setFilter(new Filter((String) value));
+                } catch (ParseException | IOException e) {
                     filter.setFilter(null);
                 }
                 break;

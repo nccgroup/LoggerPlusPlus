@@ -77,7 +77,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			+ "{'id':44,'name':'Response','enabled':true,'defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'string','readonly':true,'order':45,'visible':false,'description':'Full Response Body','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
 			+ "{'id':48,'name':'ResponseHeaders','enabled':true,'defaultVisibleName':'Response Headers','visibleName':'Response Headers','preferredWidth':150,'type':'string','readonly':true,'order':45,'visible':false,'description':'Comma Delimited Response Headers','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
 			+ "{'id':45,'name':'ResponseTime','enabled':true,'defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows date and time of receiving the response in this extension','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
-			+ "{'id':46,'name':'ResponseDelay','enabled':true,'defaultVisibleName':'Response Delay','visibleName':'Response Delay','preferredWidth':100,'type':'string','readonly':true,'order':15,'visible':true,'description':'Shows delay between making the request, and receiving the response.','isRegEx':false,'regExString':'','regExCaseSensitive':false}"
+			+ "{'id':46,'name':'ResponseDelay','enabled':true,'defaultVisibleName':'Response Delay (ms)','visibleName':'Response Delay','preferredWidth':100,'type':'int','readonly':true,'order':15,'visible':true,'description':'Shows delay between making the request, and receiving the response.','isRegEx':false,'regExString':'','regExCaseSensitive':false}"
 			+ "]";
 
 	private Map<Integer, LogTableColumn> columnMap;
@@ -126,7 +126,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			}
 			if(column.getType().equals("int")
 					|| column.getType().equals("short")
-					|| column.getType().equals("double"))
+					|| column.getType().equals("double")
+					|| column.getType().equals("long"))
 				column.setCellRenderer(new LeftTableCellRenderer());
 		}
 	}
