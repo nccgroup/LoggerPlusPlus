@@ -10,6 +10,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.regex.Pattern;
+
 public class SyntaxChecker {
 
     public SyntaxChecker(String s){
@@ -53,6 +55,7 @@ TOKEN [IGNORE_CASE]: {
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
+    | <REGEXLITERAL: "/\\Q" (~[])* "\\E/" >
     | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
@@ -83,11 +86,11 @@ void Comparison() #COMPARISON:
 {}
 {
     (
-        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean() | Filter())
+        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean())
         | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
         | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
         | Identifier() (
-            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean() | Filter())
+            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean())
             | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
         )
     )
@@ -120,33 +123,42 @@ void Comparison() #COMPARISON:
 //    )
 //}
 
-void Number() #NUMBER :
+Float Number() #NUMBER :
 {Token t;}
 {
-    t=<NUMBER> {jjtThis.value = t.image;}
+    t=<NUMBER> {jjtThis.value = Float.parseFloat(t.image);}
+    {return (Float) jjtThis.value;}
 }
 
-void String() #STRING :
+String String() #STRING :
 {Token t;}
 {
     ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )
     {jjtThis.value = t.image.substring(1,t.image.length()-1);}
+    {return (String) jjtThis.value;}
 }
-void Regex() #REGEX :
+Pattern Regex() #REGEX :
 {Token t;}
 {
-    t=<REGEX> {jjtThis.value = t.image.substring(1,t.image.length()-1);}
+    (
+    t=<REGEXLITERAL>
+    |
+    t=<REGEX>
+    ){jjtThis.value = Pattern.compile(t.image.substring(1,t.image.length()-1));}
+    {return (Pattern) jjtThis.value;}
 }
-void Identifier() #IDENTIFIER :
+String Identifier() #IDENTIFIER :
 {Token t;}
 {
     t=<IDENTIFIER> {jjtThis.value = t.image;}
+    {return (String) jjtThis.value;}
 }
 
-void Boolean() #BOOLEAN :
+Boolean Boolean() #BOOLEAN :
 {Token t;}
 {
-    t=<BOOLEAN> {jjtThis.value = t.image;}
+    t=<BOOLEAN> {jjtThis.value = Boolean.parseBoolean(t.image);}
+    {return (Boolean) jjtThis.value;}
 }
 
 void Eq() #EQ :
@@ -189,7 +201,6 @@ void Or() #OR :
 {
     t=<OR> {jjtThis.value = t.image;}
 }
-
 void Xor() #XOR :
 {Token t;}
 {

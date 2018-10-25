@@ -2,12 +2,13 @@ package loggerplusplus;
 
 import burp.*;
 import loggerplusplus.filter.Filter;
-import loggerplusplus.filter.FilterCompiler;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -190,9 +191,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
             setFilter((Filter) null);
         } else {
             try {
-                Filter filter = FilterCompiler.parseString(filterString);
+                Filter filter = new Filter(filterString);
                 setFilter(filter);
-            } catch (Filter.FilterException fException) {
+            } catch (ParseException | IOException e) {
                 logViewPanel.getLogTable().setFilter(null);
                 formatFilter(filterString, Color.RED);
             }

@@ -39,13 +39,15 @@ public interface SyntaxCheckerConstants {
   /** RegularExpression Id. */
   int DIGIT = 18;
   /** RegularExpression Id. */
-  int REGEX = 19;
+  int REGEXLITERAL = 19;
   /** RegularExpression Id. */
-  int IDENTIFIER = 20;
+  int REGEX = 20;
   /** RegularExpression Id. */
-  int LPAREN = 21;
+  int IDENTIFIER = 21;
   /** RegularExpression Id. */
-  int RPAREN = 22;
+  int LPAREN = 22;
+  /** RegularExpression Id. */
+  int RPAREN = 23;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -71,6 +73,7 @@ public interface SyntaxCheckerConstants {
     "<DOUBLEQUOTEDSTRING>",
     "<NUMBER>",
     "<DIGIT>",
+    "<REGEXLITERAL>",
     "<REGEX>",
     "<IDENTIFIER>",
     "\"(\"",

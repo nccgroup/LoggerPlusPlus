@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
 import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 import loggerplusplus.userinterface.renderer.ButtonRenderer;
 
@@ -201,7 +202,7 @@ public class FilterLibraryPanel extends JSplitPane {
                 try {
                     dialog.addColorFilter(sharedFilter.title, sharedFilter.filter);
                     dialog.setVisible(true);
-                } catch (Filter.FilterException e) {
+                } catch (ParseException | IOException e) {
                     MoreHelp.showMessage("Could not apply Color Filter.");
                 }
             }

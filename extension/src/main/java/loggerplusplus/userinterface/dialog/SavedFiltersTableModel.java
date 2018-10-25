@@ -2,11 +2,12 @@ package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.Filter;
-import loggerplusplus.filter.FilterCompiler;
 import loggerplusplus.filter.SavedFilter;
+import loggerplusplus.filter.parser.ParseException;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -59,8 +60,8 @@ public class SavedFiltersTableModel extends AbstractTableModel {
                 SavedFilter filter = filters.get(row);
                 filter.setFilterString((String) value);
                 try {
-                    filter.setFilter(FilterCompiler.parseString((String) value));
-                } catch (Filter.FilterException e) {
+                    filter.setFilter(new Filter((String) value));
+                } catch (ParseException | IOException e) {
                     filter.setFilter(null);
                 }
                 break;

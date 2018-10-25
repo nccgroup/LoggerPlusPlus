@@ -3,14 +3,17 @@ package loggerplusplus;
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.CompoundFilter;
 import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.LogTable;
+import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class LoggerContextMenuFactory implements IContextMenuFactory {
@@ -69,9 +72,11 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
-                    Filter filter = new Filter(context, "==", matchPattern);
+                    Filter filter = new Filter(context +  " == /" + matchPattern + "/");
                     LoggerPlusPlus.getInstance().setFilter(filter);
-                } catch (Filter.FilterException e1) {return;}
+                } catch (ParseException | IOException e) {
+                    return;
+                }
             }
         });
 
@@ -83,10 +88,10 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        Filter rFilter = new Filter(context, "==", matchPattern);
-                        Filter filter = new CompoundFilter(logTable.getCurrentFilter(), "&&", rFilter);
+                        Filter filter = new Filter(logTable.getCurrentFilter().toString() + " && "
+                                + context + " == /" + matchPattern + "/");
                         LoggerPlusPlus.getInstance().setFilter(filter);
-                    } catch (Filter.FilterException e1) {
+                    } catch (ParseException | IOException e) {
                         return;
                     }
                 }
@@ -95,10 +100,10 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        Filter rFilter = new Filter(context, "==", matchPattern);
-                        Filter filter = new CompoundFilter(logTable.getCurrentFilter(), "||", rFilter);
+                        Filter filter = new Filter(logTable.getCurrentFilter().toString() + " || "
+                                + context + " == /" + matchPattern + "/");
                         LoggerPlusPlus.getInstance().setFilter(filter);
-                    } catch (Filter.FilterException e1) {
+                    } catch (ParseException | IOException e) {
                         return;
                     }
                 }
@@ -113,9 +118,10 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new Filter(context, "==", matchPattern));
+                    colorFilter.setFilter(new Filter(context + " == /" + matchPattern + "/"));
                     LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
-                } catch (Filter.FilterException e1) {
+                    new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners()).setVisible(true);
+                } catch (ParseException | IOException e) {
                     return;
                 }
             }

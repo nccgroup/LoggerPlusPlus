@@ -4,12 +4,14 @@ import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.parser.ParseException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -108,7 +110,7 @@ public class ColorFilterDialog extends JFrame {
     }
 
 
-    public void addColorFilter(String title, String filterString) throws Filter.FilterException {
+    public void addColorFilter(String title, String filterString) throws IOException, ParseException {
         ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filterString));
     }
 

@@ -1,6 +1,9 @@
 package loggerplusplus.filter;
 
+import loggerplusplus.filter.parser.ParseException;
+
 import java.awt.*;
+import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -23,11 +26,11 @@ public class ColorFilter implements Comparable<ColorFilter>{
         this.enabled = true;
     }
 
-    public ColorFilter(String title, String filterString) throws Filter.FilterException {
+    public ColorFilter(String title, String filterString) throws IOException, ParseException {
         this();
         this.name = title;
         this.setFilterString(filterString);
-        this.setFilter(FilterCompiler.parseString(filterString));
+        this.setFilter(new Filter(filterString));
     }
 
     public UUID getUid() {

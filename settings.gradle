@@ -1,1 +1,1 @@
-rootProject.name = 'burplogger++'
+include 'extension', 'filter'

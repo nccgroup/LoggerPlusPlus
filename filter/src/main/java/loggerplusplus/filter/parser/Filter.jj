@@ -11,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.regex.Pattern;
+
 public class SyntaxChecker/*@bgen(jjtree)*/implements SyntaxCheckerTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
   protected JJTSyntaxCheckerState jjtree = new JJTSyntaxCheckerState();
 
@@ -57,6 +59,7 @@ TOKEN [IGNORE_CASE]: {
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
+    | <REGEXLITERAL: "/\\Q" (~[])* "\\E/" >
     | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
@@ -150,11 +153,11 @@ void Comparison()            :
     try {
 /*@egen*/
     (
-        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean() | Filter())
+        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean())
         | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
         | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
         | Identifier() (
-            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean() | Filter())
+            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean())
             | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
         )
     )/*@bgen(jjtree)*/
@@ -207,7 +210,7 @@ void Comparison()            :
 //    )
 //}
 
-void Number()         :
+Float Number()         :
 {/*@bgen(jjtree) NUMBER */
  ASTNUMBER jjtn000 = new ASTNUMBER(JJTNUMBER);
  boolean jjtc000 = true;
@@ -216,12 +219,13 @@ void Number()         :
 {/*@bgen(jjtree) NUMBER */
     try {
 /*@egen*/
-    t=<NUMBER>/*@bgen(jjtree)*/
-               {
-                 jjtree.closeNodeScope(jjtn000, true);
-                 jjtc000 = false;
-               }
-/*@egen*/ {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    t=<NUMBER> {jjtn000.value = Float.parseFloat(t.image);}/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {return (Float) jjtn000.value;}/*@bgen(jjtree)*/
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -230,7 +234,7 @@ void Number()         :
 /*@egen*/
 }
 
-void String()         :
+String String()         :
 {/*@bgen(jjtree) STRING */
  ASTSTRING jjtn000 = new ASTSTRING(JJTSTRING);
  boolean jjtc000 = true;
@@ -239,13 +243,14 @@ void String()         :
 {/*@bgen(jjtree) STRING */
     try {
 /*@egen*/
-    ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )/*@bgen(jjtree)*/
+    ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )
+    {jjtn000.value = t.image.substring(1,t.image.length()-1);}/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
     }
 /*@egen*/
-    {jjtn000.value = t.image.substring(1,t.image.length()-1);}/*@bgen(jjtree)*/
+    {return (String) jjtn000.value;}/*@bgen(jjtree)*/
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -253,7 +258,7 @@ void String()         :
     }
 /*@egen*/
 }
-void Regex()        :
+Pattern Regex()        :
 {/*@bgen(jjtree) REGEX */
  ASTREGEX jjtn000 = new ASTREGEX(JJTREGEX);
  boolean jjtc000 = true;
@@ -262,12 +267,17 @@ void Regex()        :
 {/*@bgen(jjtree) REGEX */
     try {
 /*@egen*/
-    t=<REGEX>/*@bgen(jjtree)*/
-              {
-                jjtree.closeNodeScope(jjtn000, true);
-                jjtc000 = false;
-              }
-/*@egen*/ {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    (
+    t=<REGEXLITERAL>
+    |
+    t=<REGEX>
+    ){jjtn000.value = Pattern.compile(t.image.substring(1,t.image.length()-1));}/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {return (Pattern) jjtn000.value;}/*@bgen(jjtree)*/
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -275,7 +285,7 @@ void Regex()        :
     }
 /*@egen*/
 }
-void Identifier()             :
+String Identifier()             :
 {/*@bgen(jjtree) IDENTIFIER */
  ASTIDENTIFIER jjtn000 = new ASTIDENTIFIER(JJTIDENTIFIER);
  boolean jjtc000 = true;
@@ -284,12 +294,13 @@ void Identifier()             :
 {/*@bgen(jjtree) IDENTIFIER */
     try {
 /*@egen*/
-    t=<IDENTIFIER>/*@bgen(jjtree)*/
-                   {
-                     jjtree.closeNodeScope(jjtn000, true);
-                     jjtc000 = false;
-                   }
-/*@egen*/ {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    t=<IDENTIFIER> {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {return (String) jjtn000.value;}/*@bgen(jjtree)*/
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -298,7 +309,7 @@ void Identifier()             :
 /*@egen*/
 }
 
-void Boolean()          :
+Boolean Boolean()          :
 {/*@bgen(jjtree) BOOLEAN */
  ASTBOOLEAN jjtn000 = new ASTBOOLEAN(JJTBOOLEAN);
  boolean jjtc000 = true;
@@ -307,12 +318,13 @@ void Boolean()          :
 {/*@bgen(jjtree) BOOLEAN */
     try {
 /*@egen*/
-    t=<BOOLEAN>/*@bgen(jjtree)*/
-                {
-                  jjtree.closeNodeScope(jjtn000, true);
-                  jjtc000 = false;
-                }
-/*@egen*/ {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    t=<BOOLEAN> {jjtn000.value = Boolean.parseBoolean(t.image);}/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {return (Boolean) jjtn000.value;}/*@bgen(jjtree)*/
     } finally {
       if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
@@ -497,7 +509,6 @@ void Or()     :
     }
 /*@egen*/
 }
-
 void Xor()      :
 {/*@bgen(jjtree) XOR */
  ASTXOR jjtn000 = new ASTXOR(JJTXOR);
