@@ -35,28 +35,26 @@ public class PopOutPanel extends JPanel {
         this.revalidate();
         this.repaint();
         this.isPoppedOut = false;
-        //TODO Set button popout text
+        this.popoutFrame.dispose();
     }
 
     public void popOut(){
-        //TODO Set button popin text
         this.popoutFrame = new JFrame();
-        final PopOutPanel _this = this;
         popoutFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         popoutFrame.addWindowListener(new WindowListener() {
             @Override
             public void windowOpened(WindowEvent windowEvent) {
                 popoutFrame.add(component);
                 isPoppedOut = true;
-                _this.add(placeholder, BorderLayout.CENTER);
-                _this.revalidate();
-                _this.repaint();
+                PopOutPanel.this.add(placeholder, BorderLayout.CENTER);
+                PopOutPanel.this.revalidate();
+                PopOutPanel.this.repaint();
                 popoutFrame.pack();
             }
 
             @Override
             public void windowClosing(WindowEvent windowEvent) {
-                popIn();
+                if(isPoppedOut) popIn();
             }
 
             @Override
