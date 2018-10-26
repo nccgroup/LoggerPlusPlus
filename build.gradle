@@ -5,6 +5,8 @@ repositories {
 }
 
 dependencies {
+    compile project(':filter')
+    compile project(':extension')
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 

@@ -1,3 +1,11 @@
+v 3.10
+=========================================================================
+- Change "Response Delay" column type from String to int for better sorting.
+- Log response time as soon as received. (Fix delays caused by Scheduler).
+- Implement live logging and RTT recording for non-proxy tools.
+- Implement JavaCC/JJTree parser for Filters.
+- Gradle Project Restructure.
+
 v 3.09
 =========================================================================
 - Fix incorrect handling of request/response due to charset differences.

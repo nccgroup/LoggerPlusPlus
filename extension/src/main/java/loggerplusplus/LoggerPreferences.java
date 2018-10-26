@@ -56,6 +56,7 @@ public class LoggerPreferences {
 	private boolean isEnabled4TargetTab;
 	private String tableDetailsJSONString;
 	private boolean autoSave;
+	private boolean otherToolLiveLogging;
 	private ArrayList<SavedFilter> savedFilters;
 	private Map<UUID, ColorFilter> colorFilters;
 	private View view;
@@ -375,6 +376,15 @@ public class LoggerPreferences {
 		return autoScroll;
 	}
 
+	public boolean getOtherToolLiveLogging(){
+		return this.otherToolLiveLogging;
+	}
+
+	public void setOtherToolLiveLogging(boolean enable){
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("otherToolLiveLogging", String.valueOf(enable));
+		this.otherToolLiveLogging = enable;
+	}
+
 	public Gson getGson() {
 		return gson;
 	}
@@ -443,6 +453,7 @@ public class LoggerPreferences {
 		this.esClusterName = getStringSetting("esClusterName", "elasticsearch");
 		this.esIndex = getStringSetting("esIndex", "logger");
 		this.esDelay = getIntSetting("esDelay", 120);
+		this.otherToolLiveLogging = getBooleanSetting("otherToolLiveLogging", true);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){

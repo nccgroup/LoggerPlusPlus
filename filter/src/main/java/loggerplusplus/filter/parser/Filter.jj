@@ -59,7 +59,7 @@ TOKEN [IGNORE_CASE]: {
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
-    | <REGEXLITERAL: "/\\Q" (~[])* "\\E/" >
+    | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
     | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
@@ -271,7 +271,7 @@ Pattern Regex()        :
     t=<REGEXLITERAL>
     |
     t=<REGEX>
-    ){jjtn000.value = Pattern.compile(t.image.substring(1,t.image.length()-1));}/*@bgen(jjtree)*/
+    ){jjtn000.value = Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);}/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;

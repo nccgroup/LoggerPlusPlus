@@ -55,7 +55,7 @@ TOKEN [IGNORE_CASE]: {
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
-    | <REGEXLITERAL: "/\\Q" (~[])* "\\E/" >
+    | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
     | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
@@ -144,7 +144,7 @@ Pattern Regex() #REGEX :
     t=<REGEXLITERAL>
     |
     t=<REGEX>
-    ){jjtThis.value = Pattern.compile(t.image.substring(1,t.image.length()-1));}
+    ){jjtThis.value = Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);}
     {return (Pattern) jjtThis.value;}
 }
 String Identifier() #IDENTIFIER :
