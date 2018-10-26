@@ -17,10 +17,6 @@ Released under AGPL see LICENSE for more information
 Screenshots
 ----------------------
 
-<b>Grep Search</b>
-
-![Grep Panel](https://i.imgur.com/1ORZr4x.png)
-
 <b>Log Filters</b>
 
 ![Log Filters](https://i.imgur.com/mgWgcPT.jpg)
@@ -28,6 +24,10 @@ Screenshots
 <b>Row Highlights</b>
 
 ![Row Highlights](https://i.imgur.com/xGYbx38g.jpg)
+
+<b>Grep Search</b>
+
+![Grep Panel](https://i.imgur.com/1ORZr4x.png)
 
 <br />
 
