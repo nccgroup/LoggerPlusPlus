@@ -25,6 +25,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
     //UX
     private PopOutPanel uiPopOutPanel;
+    private PopOutPanel uiReqRespPopOut;
     private JTabbedPane tabbedWrapper;
     private LogViewPanel logViewPanel;
     private VariableViewPanel logSplitPanel;
@@ -91,13 +92,29 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                         super.setView(view);
                     }
                 };
-                logSplitPanel = new VariableViewPanel(logViewPanel, "Log Table", reqRespPanel, "Request/Response", loggerPreferences.getView()){
+                uiReqRespPopOut = new PopOutPanel(reqRespPanel, "Request/Response"){
+                    @Override
+                    public void popOut() {
+                        LoggerPlusPlus.this.logSplitPanel.setView(VariableViewPanel.View.HORIZONTAL);
+                        super.popOut();
+                        LoggerPlusPlus.this.getMenu().getPopoutReqRespMenuItem().setText("Pop In Request/Response Panel");
+                    }
+
+                    @Override
+                    public void popIn() {
+                        super.popIn();
+                        LoggerPlusPlus.this.getMenu().getPopoutReqRespMenuItem().setText("Pop Out Request/Response Panel");
+                    }
+                };
+
+                logSplitPanel = new VariableViewPanel(logViewPanel, "Log Table", uiReqRespPopOut, "Request/Response", loggerPreferences.getView()){
                     @Override
                     public void setView(View view) {
                         loggerPreferences.setView(view);
                         super.setView(view);
                     }
                 };
+
                 gbc.gridy++;
                 gbc.weighty = 1;
                 logOuterPanel.add(logSplitPanel, gbc);
@@ -109,13 +126,13 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                     @Override
                     public void popOut() {
                         super.popOut();
-                        LoggerPlusPlus.this.getMenu().getPopoutItem().setText("Pop In");
+                        LoggerPlusPlus.this.getMenu().getPopoutMainMenuItem().setText("Pop In Main Panel");
                     }
 
                     @Override
                     public void popIn() {
                         super.popIn();
-                        LoggerPlusPlus.this.getMenu().getPopoutItem().setText("Pop Out");
+                        LoggerPlusPlus.this.getMenu().getPopoutMainMenuItem().setText("Pop Out Main Panel");
                     }
 
                     @Override
@@ -123,6 +140,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                         if(loggerMenu != null && loggerMenu.getParent() != null){
                             loggerMenu.getParent().remove(loggerMenu);
                         }
+                        if(this.isPoppedOut()) this.getPopoutFrame().dispose();
                         super.removeNotify();
                     }
                 };
@@ -273,7 +291,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
         return this.tabbedWrapper;
     }
 
-    public PopOutPanel getPopoutPanel() {
+    public PopOutPanel getMainPopOutPanel() {
         return uiPopOutPanel;
     }
 
@@ -291,5 +309,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
 
     public void setEsEnabled(boolean esEnabled) throws Exception {
         this.elasticSearchLogger.setEnabled(esEnabled);
+    }
+
+    public PopOutPanel getReqRespPopOutPanel() {
+        return this.uiReqRespPopOut;
     }
 }
