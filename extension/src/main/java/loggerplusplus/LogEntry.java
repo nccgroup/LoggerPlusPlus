@@ -63,7 +63,6 @@ public class LogEntry extends RowFilter.Entry
 	public int requestLength=-1;
 	public String clientIP="";
 	public boolean hasSetCookies=false;
-	public Date responseDateTime;
 	public String responseTime="";
 	public String responseMimeType ="";
 	public String responseInferredMimeType ="";
@@ -81,6 +80,8 @@ public class LogEntry extends RowFilter.Entry
 	public int requestBodyOffset;
 	public int responseBodyOffset;
 	public String requestTime;
+	public Date responseDateTime;
+	public Date requestDateTime;
 	public int requestResponseDelay;
 	public String responseHeaders;
 	public String requestHeaders;
@@ -92,7 +93,8 @@ public class LogEntry extends RowFilter.Entry
 		this.uuid = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
 		this.comment = "";
-		this.requestTime = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+		this.requestDateTime = new Date();
+		this.requestTime = LogManager.sdf.format(this.requestDateTime);
 	}
 
 	public LogEntry(boolean isImported){
@@ -252,13 +254,13 @@ public class LogEntry extends RowFilter.Entry
 	}
 
 	public void processResponse(IHttpRequestResponse requestResponse) {
+		if(this.responseDateTime == null){
+			this.responseDateTime = new Date();
+		}
 		if(!isImported) {
 			this.responseTime = LogManager.sdf.format(responseDateTime);
-			try {
-				Date requestDate = LogManager.sdf.parse(this.requestTime);
-				this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDate.getTime());
-			} catch (ParseException e) {
-			}
+			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
+			this.requestDateTime = null;
 			this.responseDateTime = null;
 		}
 
@@ -467,7 +469,7 @@ public class LogEntry extends RowFilter.Entry
 				return requestResponse != null && requestResponse.getResponse() != null ? new String(ArrayUtils.subarray(requestResponse.getResponse(), responseBodyOffset, requestResponse.getResponse().length)) : "";
 			case 45: //responseTime
 				return responseTime != null ? responseTime : "";
-			case 46: //requestResponseDelay
+			case 46: //RTT
 				return requestResponseDelay;
 			case 47: //requestHeaders
 				return requestHeaders != null ? requestHeaders : "";
@@ -667,7 +669,7 @@ public class LogEntry extends RowFilter.Entry
 					return new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
 				case REQUESTTIME: //requestTime
 					return requestTime;
-				case RESPONSEDELAY:
+				case RTT:
 					return requestResponseDelay;
 				case REQUESTHEADERS:
 					return requestHeaders != null ? requestHeaders : "";
@@ -717,7 +719,7 @@ public class LogEntry extends RowFilter.Entry
 		METHOD("METHOD"),
 		RESPONSETIME("RESPONSETIME"),
 		REQUESTTIME("REQUESTTIME"),
-		RESPONSEDELAY("RESPONSEDELAY"),
+		RTT("RTT"),
 		COMMENT("COMMENT"),
 		REQUESTCONTENTTYPE("REQUESTCONTENTTYPE"),
 		URLEXTENSION("URLEXTENSION"),
@@ -794,8 +796,13 @@ public class LogEntry extends RowFilter.Entry
 
 	public static class PendingRequestEntry extends LogEntry {
 		private int logRow;
+		private UUID reference;
 		public PendingRequestEntry() {
 			super();
+		}
+
+		public PendingRequestEntry(UUID reference){
+			this.reference = reference;
 		}
 
 		public int getLogRow() {

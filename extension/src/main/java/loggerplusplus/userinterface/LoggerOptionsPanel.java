@@ -44,6 +44,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     private JToggleButton tglbtnIsEnabled = new JToggleButton("Logger++ is running");
     private JCheckBox chkIsRestrictedToScope = new JCheckBox("In scope items only");
     private JCheckBox chkUpdateOnStartup = new JCheckBox();
+    private JCheckBox chkOtherToolLiveLogging = new JCheckBox();
     private JCheckBox chkAutoImport = new JCheckBox("Auto import proxy history on startup.");
     private JCheckBox chkAllTools = new JCheckBox("All Tools");
     private JCheckBox chkSpider = new JCheckBox("Spider");
@@ -244,6 +245,18 @@ public class LoggerOptionsPanel extends JScrollPane{
             gbc.gridx = 3;
             otherPanel.add(chkUpdateOnStartup, gbc);
         }
+
+        gbc.gridy++;
+        gbc.gridx = 1;
+        gbc.gridwidth = 2;
+        otherPanel.add(new JLabel("Live Logging For Non-Proxy Tools:"), gbc);
+        gbc.gridwidth = 1;
+        gbc.gridx++;
+        otherPanel.add(Box.createHorizontalStrut(7), gbc);
+        gbc.gridx++;
+        otherPanel.add(chkOtherToolLiveLogging, gbc);
+
+
         gbc.gridy++;
         gbc.gridx = 1;
         JLabel lblResponseSettings = new JLabel("Response Timeout (s):");
@@ -401,6 +414,13 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 loggerPreferences.setUpdateOnStartup(chkUpdateOnStartup.isSelected());
+            }
+        });
+
+        chkOtherToolLiveLogging.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                loggerPreferences.setOtherToolLiveLogging(chkOtherToolLiveLogging.isSelected());
             }
         });
 
@@ -734,6 +754,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         chkAutoImport.setSelected(loggerPreferences.autoImportProxyHistory());
         chkIsRestrictedToScope.setSelected(loggerPreferences.isRestrictedToScope());
         chkUpdateOnStartup.setSelected(loggerPreferences.checkUpdatesOnStartup());
+        chkOtherToolLiveLogging.setSelected(loggerPreferences.getOtherToolLiveLogging());
         chkAllTools.setSelected(loggerPreferences.isEnabled4All());
         if(loggerPreferences.isEnabled4All()){
             chkSpider.setEnabled(false);
