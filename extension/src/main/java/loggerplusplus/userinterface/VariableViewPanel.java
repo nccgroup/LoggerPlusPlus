@@ -58,4 +58,6 @@ public class VariableViewPanel extends JPanel {
         this.view = view;
     }
 
+
+
 }

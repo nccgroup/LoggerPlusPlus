@@ -12,7 +12,8 @@ import java.awt.event.ActionEvent;
  */
 public class LoggerMenu extends javax.swing.JMenu {
 
-    private JMenuItem popoutItem;
+    private JMenuItem popoutMainMenuItem;
+    private JMenuItem popoutReqRespMenuItem;
 
     public LoggerMenu(){
         super(LoggerPlusPlus.getInstance().getTabCaption());
@@ -25,13 +26,21 @@ public class LoggerMenu extends javax.swing.JMenu {
         });
         this.add(colorFilters);
 
-        popoutItem = new JMenuItem(new AbstractAction("Pop Out") {
+        popoutMainMenuItem = new JMenuItem(new AbstractAction("Pop Out Main Panel") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.getInstance().getPopoutPanel().toggle();
+                LoggerPlusPlus.getInstance().getMainPopOutPanel().toggle();
             }
         });
-        this.add(popoutItem);
+        this.add(popoutMainMenuItem);
+
+        popoutReqRespMenuItem = new JMenuItem(new AbstractAction("Pop Out Request/Response Panel") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                LoggerPlusPlus.getInstance().getReqRespPopOutPanel().toggle();
+            }
+        });
+        this.add(popoutReqRespMenuItem);
 
         JMenu viewMenu = new JMenu("View");
         ButtonGroup bGroup = new ButtonGroup();
@@ -97,7 +106,11 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(viewMenu);
     }
 
-    public JMenuItem getPopoutItem() {
-        return popoutItem;
+    public JMenuItem getPopoutMainMenuItem() {
+        return popoutMainMenuItem;
+    }
+
+    public JMenuItem getPopoutReqRespMenuItem() {
+        return popoutReqRespMenuItem;
     }
 }
