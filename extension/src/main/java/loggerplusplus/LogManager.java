@@ -4,7 +4,6 @@ import burp.*;
 import loggerplusplus.filter.ColorFilter;
 
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -24,10 +23,12 @@ public class LogManager implements IHttpListener, IProxyListener {
     private HashMap<UUID, LogEntry.PendingRequestEntry> pendingToolRequests;
     private ArrayList<LogEntryListener> logEntryListeners;
     private ExecutorService executorService;
+    static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private final String randIdentifier;
+    private final Pattern uuidPattern;
     //Stats
     private int totalRequests = 0;
     private short lateResponses = 0;
-    public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     LogManager(LoggerPreferences prefs){
         this.prefs = prefs;
@@ -36,6 +37,9 @@ public class LogManager implements IHttpListener, IProxyListener {
         pendingProxyRequests = new HashMap<>();
         pendingToolRequests = new HashMap<>();
         LoggerPlusPlus.getCallbacks().getProxyHistory();
+
+        randIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
+        uuidPattern = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
 
         executorService = Executors.newCachedThreadPool();
 
@@ -67,7 +71,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         },30000, 30000, TimeUnit.MILLISECONDS);
     }
 
-    Pattern uuidPattern = Pattern.compile("\\$LPP:(.*)\\$");
+
 
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
@@ -87,7 +91,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         if(messageIsRequest){
             UUID uuid = UUID.randomUUID();
             logEntry = new LogEntry.PendingRequestEntry(uuid);
-            requestResponse.setComment(requestResponse.getComment() + ";$LPP:" + uuid + "$");
+            requestResponse.setComment(requestResponse.getComment() + ";$LPP:" + randIdentifier + ":" + uuid + "$");
             synchronized (pendingToolRequests){
                 pendingToolRequests.put(uuid, (LogEntry.PendingRequestEntry) logEntry);
             }
@@ -95,8 +99,8 @@ public class LogManager implements IHttpListener, IProxyListener {
         }else{
             //Pull the uuid we stored in the comment
             Matcher matcher = uuidPattern.matcher(requestResponse.getComment());
-            if(matcher.find()){
-                UUID uuid = UUID.fromString(matcher.group(1));
+            if(matcher.find() && matcher.group(1).equals(randIdentifier)){
+                UUID uuid = UUID.fromString(matcher.group(2));
                 synchronized (pendingToolRequests){
                     logEntry = pendingToolRequests.remove(uuid);
                 }
@@ -124,6 +128,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                     IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
                     logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
                     if(requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
+                    addNewRequest(logEntry, true);
                 }else{
                     if(messageIsRequest){
                         logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
