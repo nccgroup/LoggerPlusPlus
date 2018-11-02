@@ -76,11 +76,6 @@ public class PopOutPanel extends JPanel {
         popoutFrame.setVisible(true);
     }
 
-    @Override
-    public void removeNotify() {
-        super.removeNotify();
-    }
-
     public JFrame getPopoutFrame() {
         return popoutFrame;
     }
