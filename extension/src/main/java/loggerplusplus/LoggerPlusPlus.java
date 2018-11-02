@@ -95,7 +95,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                 uiReqRespPopOut = new PopOutPanel(reqRespPanel, "Request/Response"){
                     @Override
                     public void popOut() {
-                        LoggerPlusPlus.this.logSplitPanel.setView(VariableViewPanel.View.HORIZONTAL);
+                        LoggerPlusPlus.this.logSplitPanel.setView(VariableViewPanel.View.VERTICAL);
                         super.popOut();
                         LoggerPlusPlus.this.getMenu().getPopoutReqRespMenuItem().setText("Pop In Request/Response Panel");
                     }
