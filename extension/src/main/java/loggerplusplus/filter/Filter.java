@@ -5,6 +5,8 @@ import loggerplusplus.LogEntry;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.parser.*;
 import loggerplusplus.userinterface.LogTable;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -124,20 +126,21 @@ public class Filter extends RowFilter<Object, Object> {
                 left = getEntryValue((LogEntry.columnNamesType) (leftNode).jjtGetValue(), entry);
             }else{
                 left = leftNode.jjtGetValue();
+                if(left instanceof String) left = StringEscapeUtils.unescapeJava((String) left);
             }
 
             if(rightNode instanceof ASTIDENTIFIER){
                 right = getEntryValue((LogEntry.columnNamesType) (rightNode).jjtGetValue(), entry);
             }else{
                 right = rightNode.jjtGetValue();
+                if(right instanceof String) right = StringEscapeUtils.unescapeJava((String) right);
             }
 
             SimpleNode operator = ((SimpleNode) node.jjtGetChild(1));
-
-
+            
             if(left instanceof String){
                 if(right instanceof String){
-                    return ((String) left).equalsIgnoreCase((String) right) ^ (operator instanceof ASTNEQ);
+                    return StringUtils.containsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
                 }else if(right instanceof Pattern){
                     return ((Pattern) right).matcher((String) left).find() ^ (operator instanceof ASTNEQ);
                 }else if(right instanceof Number){
