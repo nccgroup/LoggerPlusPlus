@@ -86,7 +86,8 @@ public class LogViewPanel extends JPanel {
             this.filterField.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
+                    if(!actionEvent.getActionCommand().equals("comboBoxEdited"))
+                        LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
                 }
             });
 
