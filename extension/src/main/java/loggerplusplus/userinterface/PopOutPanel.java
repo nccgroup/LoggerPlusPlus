@@ -78,8 +78,6 @@ public class PopOutPanel extends JPanel {
 
     @Override
     public void removeNotify() {
-        popIn();
-        popoutFrame.dispose();
         super.removeNotify();
     }
 
