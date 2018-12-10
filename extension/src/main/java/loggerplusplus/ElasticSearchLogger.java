@@ -129,16 +129,16 @@ public class ElasticSearchLogger implements LogEntryListener{
                 Map<String, Object> jsonMap = new HashMap<>();
                 jsonMap.put("protocol", logEntry.protocol);
                 jsonMap.put("method", logEntry.method);
-                jsonMap.put("host", logEntry.method);
-                jsonMap.put("path", logEntry.method);
-                jsonMap.put("requesttime", logEntry.method);
-                jsonMap.put("responsetime", logEntry.method);
-                jsonMap.put("status", logEntry.method);
-                jsonMap.put("title", logEntry.method);
-                jsonMap.put("newcookies", logEntry.method);
-                jsonMap.put("sentcookies", logEntry.method);
-                jsonMap.put("referrer", logEntry.method);
-                jsonMap.put("requestcontenttype", logEntry.method);
+                jsonMap.put("host", logEntry.host);
+                jsonMap.put("path", logEntry.relativeURL);
+                jsonMap.put("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime);
+                jsonMap.put("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime);
+                jsonMap.put("status", logEntry.status);
+                jsonMap.put("title", logEntry.title);
+                jsonMap.put("newcookies", logEntry.newCookies);
+                jsonMap.put("sentcookies", logEntry.sentCookies);
+                jsonMap.put("referrer", logEntry.referrerURL);
+                jsonMap.put("requestcontenttype", logEntry.requestContentType);
 
                 IndexRequest indexRequest = new IndexRequest(this.indexName, "doc").source(jsonMap);
 
