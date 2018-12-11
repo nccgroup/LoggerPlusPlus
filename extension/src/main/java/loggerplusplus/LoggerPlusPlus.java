@@ -14,7 +14,7 @@ import java.util.ArrayList;
 /**
  * Created by corey on 07/09/17.
  */
-public class LoggerPlusPlus implements ITab, IBurpExtender {
+public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListener {
     public static IBurpExtenderCallbacks callbacks;
     public static LoggerPlusPlus instance;
     private static IContextMenuFactory contextMenuFactory;
@@ -134,15 +134,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                         super.popIn();
                         LoggerPlusPlus.this.getMenu().getPopoutMainMenuItem().setText("Pop Out Main Panel");
                     }
-
-                    @Override
-                    public void removeNotify(){
-                        if(loggerMenu != null && loggerMenu.getParent() != null){
-                            loggerMenu.getParent().remove(loggerMenu);
-                        }
-                        if(this.isPoppedOut()) this.getPopoutFrame().dispose();
-                        super.removeNotify();
-                    }
                 };
                 tabbedWrapper.addTab("View Logs", null, logOuterPanel, null);
                 tabbedWrapper.addTab("Filter Library", null, new FilterLibraryPanel(), null);
@@ -167,6 +158,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                 LoggerPlusPlus.getCallbacks().registerHttpListener(logManager);
                 LoggerPlusPlus.getCallbacks().registerProxyListener(logManager);
                 LoggerPlusPlus.getCallbacks().registerContextMenuFactory(contextMenuFactory);
+                LoggerPlusPlus.getCallbacks().registerExtensionStateListener(LoggerPlusPlus.this);
 
                 if(loggerPreferences.autoImportProxyHistory()){
                     Thread importThread = new Thread(new Runnable() {
@@ -181,6 +173,15 @@ public class LoggerPlusPlus implements ITab, IBurpExtender {
                 }
             }
         });
+    }
+
+    @Override
+    public void extensionUnloaded() {
+        if(loggerMenu != null && loggerMenu.getParent() != null){
+            loggerMenu.getParent().remove(loggerMenu);
+        }
+        if(uiPopOutPanel.isPoppedOut()) uiPopOutPanel.getPopoutFrame().dispose();
+        if(uiReqRespPopOut.isPoppedOut()) uiReqRespPopOut.getPopoutFrame().dispose();
     }
 
     public static IBurpExtenderCallbacks getCallbacks() {
