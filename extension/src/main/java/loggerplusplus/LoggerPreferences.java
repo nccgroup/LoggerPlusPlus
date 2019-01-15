@@ -72,7 +72,6 @@ public class LoggerPreferences {
 	private String esClusterName;
 	private String esIndex;
 	private int esDelay;
-	private boolean esHttpProtocol;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -358,15 +357,6 @@ public class LoggerPreferences {
 		this.esDelay = delay;
 	}
 
-	public boolean getEsHttpProtocol(){
-		return esHttpProtocol;
-	}
-
-	public void setEsHttpProtocol(boolean value){
-		LoggerPlusPlus.getCallbacks().saveExtensionSetting("esHttpProtocol", String.valueOf(value));
-		this.esHttpProtocol = value;
-	}
-
 
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
@@ -464,7 +454,6 @@ public class LoggerPreferences {
 		this.esIndex = getStringSetting("esIndex", "logger");
 		this.esDelay = getIntSetting("esDelay", 120);
 		this.otherToolLiveLogging = getBooleanSetting("otherToolLiveLogging", true);
-		this.esHttpProtocol = getBooleanSetting("esHttpProtocol", false);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
