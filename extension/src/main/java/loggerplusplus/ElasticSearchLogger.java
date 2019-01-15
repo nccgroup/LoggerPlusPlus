@@ -2,26 +2,20 @@ package loggerplusplus;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.*;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -38,7 +32,6 @@ public class ElasticSearchLogger implements LogEntryListener{
     private short port;
     private String clusterName;
     private boolean isEnabled;
-    private boolean isEsHttpProtocol;
     private String indexName;
     private LoggerPreferences prefs;
 
@@ -59,19 +52,12 @@ public class ElasticSearchLogger implements LogEntryListener{
         if(isEnabled){
             this.address = InetAddress.getByName(prefs.getEsAddress());
             this.port = prefs.getEsPort();
-            this.isEsHttpProtocol = prefs.getEsHttpProtocol();
             this.clusterName = prefs.getEsClusterName();
             this.indexName = prefs.getEsIndex();
             Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
 
-            if (this.isEsHttpProtocol) {
-                httpClient = new RestHighLevelClient(RestClient.builder(
-                        new HttpHost(this.address, this.port, "http")));
-            } else {
-                client = new PreBuiltTransportClient(settings)
-                        .addTransportAddress(new TransportAddress(this.address, this.port));
-                adminClient = client.admin().indices();
-            }
+            httpClient = new RestHighLevelClient(RestClient.builder(
+                    new HttpHost(this.address, this.port, "http")));
 
             createIndices();
             pendingEntries = new ArrayList<>();
@@ -96,75 +82,46 @@ public class ElasticSearchLogger implements LogEntryListener{
         GetIndexRequest request = new GetIndexRequest();
         request.indices(this.indexName);
 
-        if (this.isEsHttpProtocol) {
-            boolean exists = false;
+        boolean exists = false;
+        try {
+            exists = httpClient.indices().exists(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(!exists) {
+            CreateIndexRequest _request = new CreateIndexRequest(this.indexName);
+
             try {
-                exists = httpClient.indices().exists(request, RequestOptions.DEFAULT);
+                CreateIndexResponse createIndexResponse = httpClient.indices().create(_request, RequestOptions.DEFAULT);
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-
-            if(!exists) {
-                CreateIndexRequest _request = new CreateIndexRequest(this.indexName);
-
-                try {
-                    CreateIndexResponse createIndexResponse = httpClient.indices().create(_request, RequestOptions.DEFAULT);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        } else {
-            boolean exists = adminClient.prepareExists(this.indexName).get().isExists();
-            if(!exists) {
-                CreateIndexRequestBuilder response = adminClient.prepareCreate(this.indexName);
-                response.get();
             }
         }
     }
 
     public IndexRequest buildIndexRequest(LogEntry logEntry){
         try{
-            if (isEsHttpProtocol) {
-                Map<String, Object> jsonMap = new HashMap<>();
-                jsonMap.put("protocol", logEntry.protocol);
-                jsonMap.put("method", logEntry.method);
-                jsonMap.put("host", logEntry.host);
-                jsonMap.put("path", logEntry.relativeURL);
-                jsonMap.put("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime);
-                jsonMap.put("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime);
-                jsonMap.put("status", logEntry.status);
-                jsonMap.put("title", logEntry.title);
-                jsonMap.put("newcookies", logEntry.newCookies);
-                jsonMap.put("sentcookies", logEntry.sentCookies);
-                jsonMap.put("referrer", logEntry.referrerURL);
-                jsonMap.put("requestcontenttype", logEntry.requestContentType);
-
-                IndexRequest indexRequest = new IndexRequest(this.indexName, "doc").source(jsonMap);
-
-                return indexRequest;
-            } else {
-                IndexRequestBuilder requestBuilder = client.prepareIndex(this.indexName, "requestresponse")
-                        .setSource(
-                                jsonBuilder().startObject()
-                                    .field("protocol", logEntry.protocol)
-                                    .field("method", logEntry.method)
-                                    .field("host", logEntry.host)
-                                    .field("path", logEntry.relativeURL)
-                                    .field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime)
-                                    .field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime)
-                                    .field("status", logEntry.status)
-                                    .field("title", logEntry.title)
-                                    .field("newcookies", logEntry.newCookies)
-                                    .field("sentcookies", logEntry.sentCookies)
-                                    .field("referrer", logEntry.referrerURL)
-                                    .field("requestcontenttype", logEntry.requestContentType)
-    //                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-    //                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
-                                .endObject()
-                        );
-                return requestBuilder.request();
-            }
+            IndexRequestBuilder requestBuilder = client.prepareIndex(this.indexName, "requestresponse")
+                    .setSource(
+                            jsonBuilder().startObject()
+                                .field("protocol", logEntry.protocol)
+                                .field("method", logEntry.method)
+                                .field("host", logEntry.host)
+                                .field("path", logEntry.relativeURL)
+                                .field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime)
+                                .field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime)
+                                .field("status", logEntry.status)
+                                .field("title", logEntry.title)
+                                .field("newcookies", logEntry.newCookies)
+                                .field("sentcookies", logEntry.sentCookies)
+                                .field("referrer", logEntry.referrerURL)
+                                .field("requestcontenttype", logEntry.requestContentType)
+//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
+//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
+                            .endObject()
+                    );
+            return requestBuilder.request();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -181,14 +138,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     private void indexPendingEntries(){
         if(!this.isEnabled || this.pendingEntries.size() == 0) return;
 
-        BulkRequest httpBulkBuilder = null;
-        BulkRequestBuilder bulkBuilder = null;
-
-        if (isEsHttpProtocol) {
-            httpBulkBuilder = new BulkRequest();
-        } else {
-            bulkBuilder = client.prepareBulk();
-        }
+        BulkRequest httpBulkBuilder = new BulkRequest();
 
         ArrayList<LogEntry> entriesInBulk;
         synchronized (pendingEntries){
@@ -199,29 +149,21 @@ public class ElasticSearchLogger implements LogEntryListener{
         for (LogEntry logEntry : entriesInBulk) {
             IndexRequest request = buildIndexRequest(logEntry);
             if(request != null) {
-                if (isEsHttpProtocol) {
-                    httpBulkBuilder.add(request);
-                } else {
-                    bulkBuilder.add(request);
-                }
+                httpBulkBuilder.add(request);
             }else{
                 //Could not build index request. Ignore it?
             }
         }
 
-        if (isEsHttpProtocol) {
-            try {
-                BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            BulkResponse resp = bulkBuilder.get();
-            if(resp.hasFailures()){
-                for (BulkItemResponse bulkItemResponse : resp.getItems()) {
+        try {
+            BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
+            if(bulkResponse.hasFailures()){
+                for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
                     System.err.println(bulkItemResponse.getFailureMessage());
                 }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
 //        if(resp.hasFailures()){
