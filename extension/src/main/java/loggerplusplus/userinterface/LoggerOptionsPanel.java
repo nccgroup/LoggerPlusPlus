@@ -68,6 +68,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     private final JTextField esIndexField = new JTextField();
     private final JSpinner esUploadDelay = new JSpinner(new SpinnerNumberModel(120, 10, 999999, 10));
     private final JLabel esValueChangeWarning = new JLabel("Warning: Changing preferences while running will disable the upload service and clear all pending values.");
+    private JCheckBox esHttpProtocol = new JCheckBox("HTTP Protocol");
 
 
     private final JLabel lblColumnSettings = new JLabel("Note 0: Right click on columns' headers to change settings.");
@@ -219,6 +220,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridwidth = 1;
         gbc.gridx = 2;
         elasticPanel.add(esSecondsHint, gbc);
+        elasticPanel.add(esHttpProtocol);
 
 
 
@@ -658,6 +660,12 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
+        esHttpProtocol.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                loggerPreferences.setEsHttpProtocol(esHttpProtocol.isSelected());
+            }
+        });
+
         this.btnImportFilters.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -781,6 +789,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         this.esClusterField.setText(loggerPreferences.getEsClusterName());
         this.esIndexField.setText(loggerPreferences.getEsIndex());
         this.esUploadDelay.setValue(loggerPreferences.getEsDelay());
+        esHttpProtocol.setSelected(loggerPreferences.getEsHttpProtocol());
 
         if (!loggerPreferences.canSaveCSV()) {
             btnSaveLogs.setEnabled(false);
