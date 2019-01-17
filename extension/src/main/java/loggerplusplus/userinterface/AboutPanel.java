@@ -12,6 +12,7 @@
 
 package loggerplusplus.userinterface;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.LoggerPreferences;
 import loggerplusplus.MoreHelp;
@@ -27,14 +28,12 @@ import java.net.URL;
 
 public class AboutPanel extends JPanel {
 
-	private final burp.IBurpExtenderCallbacks callbacks;
 	private final LoggerPreferences loggerPreferences;
 	/**
 	 * Create the panel.
 	 */
 	public AboutPanel() {
-		this.callbacks = LoggerPlusPlus.getCallbacks();
-		this.loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
+		this.loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
 		this.setLayout(new BorderLayout());
 		JPanel msgpane = new JPanel();
 		ScrollablePanel scrollablePanel = new ScrollablePanel();
@@ -117,7 +116,7 @@ public class AboutPanel extends JPanel {
 		JButton btnOpenExtensionHome = new JButton("Open extension homepage");
 		btnOpenExtensionHome.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				openWebpage(loggerPreferences.getProjectLink());
+				openWebpage(Globals.PROJECT_LINK);
 			}
 		});
 		gbc.insets = new Insets(0, 0, 10, 0);
@@ -138,7 +137,7 @@ public class AboutPanel extends JPanel {
 		JButton btnReportAnIssue = new JButton("Report a bug/feature!");
 		btnReportAnIssue.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				openWebpage(loggerPreferences.getProjectIssueLink());
+				openWebpage(Globals.PROJECT_ISSUE_LINK);
 			}
 		});
 		gbc.gridy++;
@@ -157,7 +156,7 @@ public class AboutPanel extends JPanel {
 				}).start();
 			}
 		});
-		if(!callbacks.isExtensionBapp()) {
+		if(!LoggerPlusPlus.callbacks.isExtensionBapp()) {
 			gbc.gridy++;
 			msgpane.add(btnCheckForUpdate, gbc);
 		}
@@ -166,10 +165,10 @@ public class AboutPanel extends JPanel {
 		gbc.weightx = 100;
 		msgpane.add(new JLabel(""), gbc);
 		
-		lblDynamicname.setText(loggerPreferences.getAppName());
-		lblDynamicversion.setText(String.valueOf(loggerPreferences.getVersion()));
-		lblDynamicsource.setText(loggerPreferences.getProjectLink());
-		lblDynamicauthor.setText(loggerPreferences.getAuthor());
+		lblDynamicname.setText(Globals.APP_NAME);
+		lblDynamicversion.setText(String.valueOf(Globals.VERSION));
+		lblDynamicsource.setText(Globals.PROJECT_LINK);
+		lblDynamicauthor.setText(Globals.AUTHOR);
 
 
 		this.add(new JScrollPane(scrollablePanel), BorderLayout.CENTER);

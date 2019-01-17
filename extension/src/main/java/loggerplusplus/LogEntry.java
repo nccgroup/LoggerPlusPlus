@@ -112,7 +112,7 @@ public class LogEntry extends RowFilter.Entry
 		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
-		LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
+		LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
@@ -172,7 +172,7 @@ public class LogEntry extends RowFilter.Entry
 							// to ensure it is enabled as it is process consuming
 							if(logTable.getColumnModel().isColumnEnabled("usesCookieJar")){
 								// Check to see if it uses cookie Jars!
-								List<ICookie> cookieJars = LoggerPlusPlus.getCallbacks().getCookieJarContents();
+								List<ICookie> cookieJars = LoggerPlusPlus.callbacks.getCookieJarContents();
 								boolean oneNotMatched = false;
 								boolean anyParamMatched = false;
 
@@ -245,7 +245,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllReq[i] = allMatches.toString();
 
 					}catch(Exception e){
-						LoggerPlusPlus.getCallbacks().printError("Error in regular expression: " + regexString);
+						LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
 					}
 
 				}
@@ -268,15 +268,15 @@ public class LogEntry extends RowFilter.Entry
 		if (requestResponse instanceof IHttpRequestResponsePersisted){
 			this.requestResponse = requestResponse;
 		}else {
-			this.requestResponse = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
+			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
 		}
 
-		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.getCallbacks().getHelpers().analyzeResponse(requestResponse.getResponse());
+		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
 		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
 		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
 
-		LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
+		LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
 		this.status= tempAnalyzedResp.getStatusCode();
@@ -347,7 +347,7 @@ public class LogEntry extends RowFilter.Entry
 						this.regexAllResp[i] = allMatches.toString();
 
 					}catch(Exception e){
-						LoggerPlusPlus.getCallbacks().printError("Error in regular expression: " + regexString);
+						LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
 					}
 
 				}
@@ -380,7 +380,7 @@ public class LogEntry extends RowFilter.Entry
 			case 0://number
 				return 0;
 			case 1://tool
-				return LoggerPlusPlus.getCallbacks().getToolName(tool);
+				return LoggerPlusPlus.callbacks.getToolName(tool);
 			case 2://host
 				return this.protocol + "://" + this.host;
 			case 3://method
@@ -540,7 +540,7 @@ public class LogEntry extends RowFilter.Entry
 	public String toCSVString(boolean includeRequests, boolean includeResponses) {
 		StringBuilder result = new StringBuilder();
 
-		LogTableColumnModel columnModel = LoggerPlusPlus.getInstance().getLogTable().getColumnModel();
+		LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
 		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
 		Collections.sort(columns);
 		boolean firstDone = false;
@@ -576,7 +576,7 @@ public class LogEntry extends RowFilter.Entry
 			switch(columnName)
 			{
 				case TOOL:
-					return LoggerPlusPlus.getCallbacks().getToolName(tool);
+					return LoggerPlusPlus.callbacks.getToolName(tool);
 				case URL:
 					return this.url;
 				case PATH:

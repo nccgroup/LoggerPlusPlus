@@ -35,7 +35,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
                 try {
                     byte[] msg = invocation.getSelectedMessages()[0].getRequest();
-                    if(LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
+                    if(LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
                         context = "REQUESTHEADERS";
                     }else{
                         context = "REQUEST";
@@ -50,7 +50,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
                 try{
                     byte[] msg = invocation.getSelectedMessages()[0].getResponse();
-                    if(LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
+                    if(LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
                         context = "RESPONSEHEADERS";
                     }else{
                         context = "RESPONSE";
@@ -66,14 +66,14 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
         String sanitizedString = Pattern.quote(new String(selectedBytes));
         final Pattern matchPattern = Pattern.compile(sanitizedString, Pattern.LITERAL);
 
-        final LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
+        final LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As Filter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     Filter filter = new Filter(context +  " == /" + matchPattern + "/");
-                    LoggerPlusPlus.getInstance().setFilter(filter);
+                    LoggerPlusPlus.instance.setFilter(filter);
                 } catch (ParseException | IOException e) {
                     return;
                 }
@@ -90,7 +90,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     try {
                         Filter filter = new Filter(logTable.getCurrentFilter().toString() + " && "
                                 + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.getInstance().setFilter(filter);
+                        LoggerPlusPlus.instance.setFilter(filter);
                     } catch (ParseException | IOException e) {
                         return;
                     }
@@ -102,7 +102,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     try {
                         Filter filter = new Filter(logTable.getCurrentFilter().toString() + " || "
                                 + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.getInstance().setFilter(filter);
+                        LoggerPlusPlus.instance.setFilter(filter);
                     } catch (ParseException | IOException e) {
                         return;
                     }
@@ -119,8 +119,8 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new Filter(context + " == /" + matchPattern + "/"));
-                    LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
-                    new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners()).setVisible(true);
+                    LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
+                    new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners()).setVisible(true);
                 } catch (ParseException | IOException e) {
                     return;
                 }

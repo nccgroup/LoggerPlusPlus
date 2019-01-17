@@ -48,7 +48,7 @@ public class HistoryField extends JComboBox {
     HistoryField(final int maxHistory, String burpSaveLocation){
         this(maxHistory);
         this.burpSaveLocation = burpSaveLocation;
-        String oldSearches = LoggerPlusPlus.getCallbacks().loadExtensionSetting(burpSaveLocation);
+        String oldSearches = LoggerPlusPlus.callbacks.loadExtensionSetting(burpSaveLocation);
         if(oldSearches != null){
             ArrayList<String> pastHistory = new Gson().fromJson(oldSearches, new TypeToken<List<String>>(){}.getType());
             if(pastHistory != null)
@@ -68,7 +68,7 @@ public class HistoryField extends JComboBox {
             if(history.contains(val)) history.remove(val);
             history.add((String) val);
             if(burpSaveLocation != null){
-                LoggerPlusPlus.getCallbacks().saveExtensionSetting(burpSaveLocation, new Gson().toJson(history, new TypeToken<List<String>>(){}.getType()));
+                LoggerPlusPlus.callbacks.saveExtensionSetting(burpSaveLocation, new Gson().toJson(history, new TypeToken<List<String>>(){}.getType()));
             }
             this.fireContentsChanged(val, history.size()-1, history.size()-1);
         }

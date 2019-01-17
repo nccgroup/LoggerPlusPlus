@@ -16,7 +16,7 @@ public class FileLogger implements LogEntryListener{
     private boolean autoLogIncludeResponses = false;
 
     public FileLogger(){
-        loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
+        loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
         exp = new ExcelExporter();
     }
 
@@ -28,7 +28,7 @@ public class FileLogger implements LogEntryListener{
             }
 
         } catch (IOException ex) {
-            LoggerPlusPlus.getCallbacks().printError(ex.getMessage());
+            LoggerPlusPlus.callbacks.printError(ex.getMessage());
         }
     }
 
@@ -36,7 +36,7 @@ public class FileLogger implements LogEntryListener{
         try {
             exp.exportItem(entry, includeRequests, includeResponses);
         } catch (IOException e) {
-            LoggerPlusPlus.getCallbacks().printError("Could not write log item. Autologging has been disabled.");
+            LoggerPlusPlus.callbacks.printError("Could not write log item. Autologging has been disabled.");
             MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
             this.setAutoSave(false);
         }
@@ -93,7 +93,7 @@ public class FileLogger implements LogEntryListener{
             return true;
         }
         try {
-            String thisHeader = LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog);
+            String thisHeader = LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog);
             String oldHeader = reader.readLine();
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {
@@ -175,7 +175,7 @@ public class FileLogger implements LogEntryListener{
                     if (autoSaveFile.length() == 0)
                         exp.addHeader(autoSaveWriter, autoLogIncludeRequests, autoLogIncludeResponses);
 
-                    LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
+                    LoggerPlusPlus.instance.getLogManager().addLogListener(this);
 
                 } catch (IOException e) {
                     autoSaveFile = null;
@@ -190,10 +190,10 @@ public class FileLogger implements LogEntryListener{
                 autoSaveWriter.close();
             } catch (Exception e) {}
             autoSaveWriter = null;
-            LoggerPlusPlus.getInstance().getLogManager().removeLogListener(this);
+            LoggerPlusPlus.instance.getLogManager().removeLogListener(this);
         }
         loggerPreferences.setAutoSave(enabled);
-        LoggerPlusPlus.getInstance().getLoggerOptionsPanel().setAutoSaveBtn(enabled);
+        LoggerPlusPlus.instance.getLoggerOptionsPanel().setAutoSaveBtn(enabled);
     }
 
     @Override
@@ -224,22 +224,22 @@ public class FileLogger implements LogEntryListener{
     public class ExcelExporter {
 
         public void addHeader(FileWriter writer, boolean isFullLog) throws IOException {
-            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog) + "\n");
+            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog) + "\n");
         }
 
         public void addHeader(FileWriter writer, boolean includeRequest, boolean includeResponse) throws IOException {
-            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), includeRequest, includeResponse) + "\n");
+            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), includeRequest, includeResponse) + "\n");
         }
 
         public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
             FileWriter out = new FileWriter(file, append);
 
             if (header) {
-                out.write(LogEntry.getCSVHeader(LoggerPlusPlus.getInstance().getLogTable(), isFullLog));
+                out.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog));
                 out.write("\n");
             }
 
-            for (LogEntry item : LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
+            for (LogEntry item : LoggerPlusPlus.instance.getLogManager().getLogEntries()) {
                 out.write(item.toCSVString(isFullLog) + "\n");
             }
 

@@ -30,7 +30,7 @@ public class ColorFilterDialog extends JFrame {
     public ColorFilterDialog(ArrayList<FilterListener> listeners){
         if(instance != null) instance.dispose();
         instance = this;
-        this.filters = LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters();
+        this.filters = LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters();
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
@@ -145,7 +145,7 @@ public class ColorFilterDialog extends JFrame {
                 listener.onFilterRemove(originalFilters.get(uid));
             }
         }
-        LoggerPlusPlus.getInstance().getLoggerPreferences().setColorFilters(filters);
+        LoggerPlusPlus.instance.getLoggerPreferences().setColorFilters(filters);
     }
 
 }

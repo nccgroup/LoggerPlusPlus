@@ -95,7 +95,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     public LoggerOptionsPanel() {
         contentWrapper = new JPanel(new GridBagLayout());
         this.setViewportView(contentWrapper);
-        this.loggerPreferences = LoggerPlusPlus.getInstance().getLoggerPreferences();
+        this.loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
         this.loggerPreferences.setAutoSave(false);
         this.fileLogger = new FileLogger();
         this.esValueChangeWarning.setForeground(Color.RED);
@@ -236,7 +236,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1;
-        if(!LoggerPlusPlus.getCallbacks().isExtensionBapp()) {
+        if(!LoggerPlusPlus.callbacks.isExtensionBapp()) {
             gbc.gridx = gbc.gridy = 1;
             gbc.gridx = 1;
             otherPanel.add(new JLabel("Check For Updates:"), gbc);
@@ -522,9 +522,9 @@ public class LoggerOptionsPanel extends JScrollPane{
             public void actionPerformed(ActionEvent actionEvent) {
                 int result = MoreHelp.askConfirmMessage("Burp Proxy Import", "Import history from burp suite proxy? This will clear the current entries.", new String[]{"Import", "Cancel"});
                 if(result == JOptionPane.OK_OPTION) {
-                    LoggerPlusPlus.getInstance().getLogManager().reset();
-                    for (IHttpRequestResponse requestResponse : LoggerPlusPlus.getCallbacks().getProxyHistory()) {
-                        LoggerPlusPlus.getInstance().getLogManager().importExisting(requestResponse);
+                    LoggerPlusPlus.instance.getLogManager().reset();
+                    for (IHttpRequestResponse requestResponse : LoggerPlusPlus.callbacks.getProxyHistory()) {
+                        LoggerPlusPlus.instance.getLogManager().importExisting(requestResponse);
                     }
                 }
             }
@@ -535,8 +535,8 @@ public class LoggerOptionsPanel extends JScrollPane{
             public void actionPerformed(ActionEvent e) {
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
-                LoggerPlusPlus.getInstance().reset();
-                LoggerPlusPlus.getInstance().getLogTable().getModel().fireTableDataChanged();
+                LoggerPlusPlus.instance.reset();
+                LoggerPlusPlus.instance.getLogTable().getModel().fireTableDataChanged();
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
             }
@@ -547,8 +547,8 @@ public class LoggerOptionsPanel extends JScrollPane{
                 boolean origState = loggerPreferences.isEnabled();
                 loggerPreferences.setEnabled(false);
                 loggerPreferences.resetLoggerPreferences();
-                LoggerPlusPlus.getInstance().getLogTable().getColumnModel().resetToDefaultVariables();
-                LoggerPlusPlus.getInstance().getLogTable().getModel().fireTableStructureChanged();
+                LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
+                LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
                 fileLogger.setAutoSave(false);
                 loggerPreferences.setEnabled(origState);
                 setPreferencesValues();
@@ -581,7 +581,7 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         int maxSearchThreads = 50;
         spnSearchThreads.setModel(new SpinnerNumberModel(
-                Math.min(LoggerPlusPlus.getInstance().getLoggerPreferences().getSearchThreads(), maxSearchThreads), 1, maxSearchThreads, 1));
+                Math.min(LoggerPlusPlus.instance.getLoggerPreferences().getSearchThreads(), maxSearchThreads), 1, maxSearchThreads, 1));
         spnSearchThreads.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
@@ -687,7 +687,7 @@ public class LoggerOptionsPanel extends JScrollPane{
                         loggerPreferences.getGson().fromJson(json, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
                 Map<UUID, ColorFilter> cloneMap = new HashMap<>(loggerPreferences.getColorFilters());
                 cloneMap.putAll(colorFilterMap);
-                for (FilterListener filterListener : LoggerPlusPlus.getInstance().getFilterListeners()) {
+                for (FilterListener filterListener : LoggerPlusPlus.instance.getFilterListeners()) {
                     for (ColorFilter colorFilter : colorFilterMap.values()) {
                         filterListener.onFilterAdd(colorFilter);
                     }
@@ -725,7 +725,7 @@ public class LoggerOptionsPanel extends JScrollPane{
                     esEnabled.setText("Starting...");
                 }
                 try {
-                    LoggerPlusPlus.getInstance().setEsEnabled(isSelected);
+                    LoggerPlusPlus.instance.setEsEnabled(isSelected);
                     esEnabled.setText((isSelected ? "Enabled" : "Disabled"));
                     esEnabled.setSelected(isSelected);
                     if(isSelected) {

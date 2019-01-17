@@ -55,7 +55,7 @@ public class TableHeaderMenu extends JPopupMenu{
 						            columnObj.getRegExData().setRegExString(newValue);
 									saveAndReloadTableSettings(); //TODO do we need it?
 						        } catch (PatternSyntaxException exception) {
-						            LoggerPlusPlus.getCallbacks().printError("provided regular expression was wrong. It cannot be saved.");
+						            LoggerPlusPlus.callbacks.printError("provided regular expression was wrong. It cannot be saved.");
 						            MoreHelp.showWarningMessage("The provided regular expression string was NOT in correct format. It cannot be saved.");
 						        }
 							}
@@ -194,9 +194,9 @@ public class TableHeaderMenu extends JPopupMenu{
 	public void saveAndReloadTableSettings(){
 		//Stop automatically logging, prevents changing of csv format midway through
 		//TODO constant csv format?
-		if(LoggerPlusPlus.getInstance().getLoggerPreferences().getAutoSave()){
-			LoggerPlusPlus.getInstance().getLoggerPreferences().setAutoSave(false);
-			LoggerPlusPlus.getInstance().getLoggerOptionsPanel().getFileLogger().setAutoSave(false);
+		if(LoggerPlusPlus.instance.getLoggerPreferences().getAutoSave()){
+			LoggerPlusPlus.instance.getLoggerPreferences().setAutoSave(false);
+			LoggerPlusPlus.instance.getLoggerOptionsPanel().getFileLogger().setAutoSave(false);
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
 		logTable.saveTableChanges();
