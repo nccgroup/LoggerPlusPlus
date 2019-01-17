@@ -28,7 +28,7 @@ public class LogViewPanel extends JPanel {
             @Override
             public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.instance.getLoggerPreferences().setAutoScroll(
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
         });
@@ -40,7 +40,7 @@ public class LogViewPanel extends JPanel {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.instance.getLoggerPreferences().setAutoScroll(
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
             @Override
@@ -77,7 +77,7 @@ public class LogViewPanel extends JPanel {
                 @Override
                 public void keyReleased(KeyEvent e) {
                     if(e.getKeyChar() == KeyEvent.VK_ENTER){
-                        LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
+                        LoggerPlusPlus.instance.setFilter((String) filterField.getSelectedItem());
                     }else {
                         super.keyReleased(e);
                     }
@@ -87,7 +87,7 @@ public class LogViewPanel extends JPanel {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     if(!actionEvent.getActionCommand().equals("comboBoxEdited"))
-                        LoggerPlusPlus.getInstance().setFilter((String) filterField.getSelectedItem());
+                        LoggerPlusPlus.instance.setFilter((String) filterField.getSelectedItem());
                 }
             });
 
@@ -117,7 +117,7 @@ public class LogViewPanel extends JPanel {
             colorFilterButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                new ColorFilterDialog(LoggerPlusPlus.getInstance().getFilterListeners()).setVisible(true);
+                new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners()).setVisible(true);
                 }
             });
 
@@ -129,7 +129,7 @@ public class LogViewPanel extends JPanel {
             clearLogsButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.getInstance().getLogManager().reset();
+                    LoggerPlusPlus.instance.getLogManager().reset();
                     LogTable logTable = getLogTable();
                     logTable.getModel().fireTableDataChanged();
                 }

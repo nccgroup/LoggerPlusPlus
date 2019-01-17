@@ -81,7 +81,7 @@ public class Filter extends RowFilter<Object, Object> {
         }
     }
 
-    public boolean evaluate(Entry entry){
+    private boolean evaluate(Entry entry){
         try {
             return evaluate(this.root, entry);
         } catch (ParseException e) {
@@ -201,7 +201,7 @@ public class Filter extends RowFilter<Object, Object> {
         if(entry instanceof LogEntry){
             return ((LogEntry) entry).getValueByKey(identifier);
         }else{
-            LogTable logTable = LoggerPlusPlus.getInstance().getLogTable();
+            LogTable logTable = LoggerPlusPlus.instance.getLogTable();
             Integer columnNo = logTable.getColumnModel().getColumnIndexByName(identifier.getValue());
             if(columnNo == null) return "";
             return entry.getValue(columnNo);

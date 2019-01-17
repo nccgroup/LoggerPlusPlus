@@ -36,7 +36,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         logEntryListeners = new ArrayList<>();
         pendingProxyRequests = new HashMap<>();
         pendingToolRequests = new HashMap<>();
-        LoggerPlusPlus.getCallbacks().getProxyHistory();
+        LoggerPlusPlus.callbacks.getProxyHistory();
 
         randIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
         uuidPattern = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
@@ -53,7 +53,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingProxyRequests){
                     for (Integer reference : keys) {
                         long entryTime = pendingProxyRequests.get(reference).requestDateTime.getTime();
-                        if(timeNow - entryTime > LoggerPlusPlus.getInstance().getLoggerPreferences().getResponseTimeout()){
+                        if(timeNow - entryTime > LoggerPlusPlus.instance.getLoggerPreferences().getResponseTimeout()){
                             pendingProxyRequests.remove(reference);
                         }
                     }
@@ -62,7 +62,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingToolRequests){
                     for (UUID reference : toolKeys) {
                         long entryTime = pendingToolRequests.get(reference).requestDateTime.getTime();
-                        if(timeNow - entryTime > LoggerPlusPlus.getInstance().getLoggerPreferences().getResponseTimeout()){
+                        if(timeNow - entryTime > LoggerPlusPlus.instance.getLoggerPreferences().getResponseTimeout()){
                             pendingToolRequests.remove(reference);
                         }
                     }
@@ -120,12 +120,12 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void processHttpMessage(final LogEntry logEntry, final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse){
         executorService.submit(() -> {
             if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY || logEntry.isImported){
-                IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+                IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
-                if (!isValidTool(toolFlag) || (prefs.isRestrictedToScope() && !LoggerPlusPlus.getCallbacks().isInScope(uUrl)))
+                if (!isValidTool(toolFlag) || (prefs.isRestrictedToScope() && !LoggerPlusPlus.callbacks.isInScope(uUrl)))
                     return;
                 if(!prefs.getOtherToolLiveLogging()) { //If we're not tracking req/resp separate
-                    IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.getCallbacks().saveBuffersToTempFiles(requestResponse);
+                    IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
                     logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
                     if(requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
                     addNewRequest(logEntry, true);
@@ -174,10 +174,10 @@ public class LogManager implements IHttpListener, IProxyListener {
             @Override
             public void run() {
                 IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
-                IRequestInfo analyzedReq = LoggerPlusPlus.getCallbacks().getHelpers().analyzeRequest(requestResponse);
+                IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
-                int toolFlag = LoggerPlusPlus.getCallbacks().TOOL_PROXY;
-                if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.getCallbacks().isInScope(uUrl))){
+                int toolFlag = LoggerPlusPlus.callbacks.TOOL_PROXY;
+                if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.callbacks.isInScope(uUrl))){
                     if(messageIsRequest){
                         //New Proxy Request
                         //We need to change messageInfo when we get a response so do not save to buffers
@@ -220,7 +220,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     private void updatePendingRequest(LogEntry.PendingRequestEntry pendingRequest, IHttpRequestResponse messageInfo) {
         //Fill in gaps of request with response
         if(messageInfo == null) {
-            LoggerPlusPlus.getCallbacks().printError("Warning: Response received with null messageInfo.");
+            LoggerPlusPlus.callbacks.printError("Warning: Response received with null messageInfo.");
             return;
         }
         pendingRequest.processResponse(messageInfo);

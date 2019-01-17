@@ -105,17 +105,17 @@ public class GrepPanel extends JPanel{
                     } else if (obj instanceof LogEntryMatches.Match) {
                         obj = ((LogEntryMatches) path.getPathComponent(path.getPathCount() - 2)).entry;
                     }
-                    final int index = LoggerPlusPlus.getInstance().getLogTable().getModel().getData().indexOf(obj);
+                    final int index = LoggerPlusPlus.instance.getLogTable().getModel().getData().indexOf(obj);
                     JMenuItem viewInLogs = new JMenuItem(new AbstractAction("View in Logs") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            LogTable table = LoggerPlusPlus.getInstance().getLogTable();
+                            LogTable table = LoggerPlusPlus.instance.getLogTable();
                             table.changeSelection(table.convertRowIndexToView(index), 1, false, false);
-                            LoggerPlusPlus.getInstance().getTabbedPane().setSelectedIndex(0);
+                            LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
                         }
                     });
                     menu.add(viewInLogs);
-                    if(LoggerPlusPlus.getInstance().getLogTable().convertRowIndexToView(index) == -1){
+                    if(LoggerPlusPlus.instance.getLogTable().convertRowIndexToView(index) == -1){
                         viewInLogs.setEnabled(false);
                         viewInLogs.setToolTipText("Unavailable. Hidden by filter.");
                         viewInLogs.addMouseListener(new MouseAdapter() {
@@ -215,16 +215,16 @@ public class GrepPanel extends JPanel{
                     grepModel.clearResults();
                     progressBarModel.startSearch();
                     searchFutures.clear();
-                    GrepPanel.this.searchExecutor = Executors.newFixedThreadPool(LoggerPlusPlus.getInstance().getLoggerPreferences().getSearchThreads());
+                    GrepPanel.this.searchExecutor = Executors.newFixedThreadPool(LoggerPlusPlus.instance.getLoggerPreferences().getSearchThreads());
                     ArrayList<LogEntry> logEntryList;
-                    synchronized (LoggerPlusPlus.getInstance().getLogManager().getLogEntries()) {
-                        logEntryList = new ArrayList<>(LoggerPlusPlus.getInstance().getLogManager().getLogEntries());
+                    synchronized (LoggerPlusPlus.instance.getLogManager().getLogEntries()) {
+                        logEntryList = new ArrayList<>(LoggerPlusPlus.instance.getLogManager().getLogEntries());
                     }
                     for (final LogEntry entry : logEntryList) {
                         Future f = searchExecutor.submit(new Runnable() {
                             @Override
                             public void run() {
-                                if (!searchInScopeOnly.isSelected() || LoggerPlusPlus.getCallbacks().isInScope(entry.url)) {
+                                if (!searchInScopeOnly.isSelected() || LoggerPlusPlus.callbacks.isInScope(entry.url)) {
                                     final LogEntryMatches matches = new LogEntryMatches(entry, activePattern);
                                     if (matches.results.size() > 0 && !Thread.currentThread().isInterrupted()){
                                         uniqueValueTable.addMatches(matches.results);
@@ -410,7 +410,7 @@ public class GrepPanel extends JPanel{
     private class SearchBarModel extends DefaultBoundedRangeModel {
         public void startSearch(){
             this.setMinimum(0);
-            this.setMaximum(LoggerPlusPlus.getInstance().getLogManager().getTotalRequests());
+            this.setMaximum(LoggerPlusPlus.instance.getLogManager().getTotalRequests());
             this.setValue(0);
         }
 

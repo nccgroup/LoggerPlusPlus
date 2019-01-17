@@ -46,13 +46,13 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             rowSorter.setModel(this.getModel());
         }catch (NullPointerException nPException){
             getColumnModel().resetToDefaultVariables();
-            LoggerPlusPlus.getCallbacks().printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
+            LoggerPlusPlus.callbacks.printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
             rowSorter.setModel(this.getModel());
         }
         setRowSorter(rowSorter);
 
-        Integer sortColumn = LoggerPlusPlus.getInstance().getLoggerPreferences().getSortColumn();
-        SortOrder sortOrder = LoggerPlusPlus.getInstance().getLoggerPreferences().getSortOrder();
+        Integer sortColumn = LoggerPlusPlus.instance.getLoggerPreferences().getSortColumn();
+        SortOrder sortOrder = LoggerPlusPlus.instance.getLoggerPreferences().getSortOrder();
         if(sortColumn != -1 && sortOrder != null){
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
@@ -64,18 +64,18 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
                 LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(start));
                 if (logEntry.requestResponse != null && !getModel().getCurrentlyDisplayedItem().equals(logEntry.requestResponse)) {
                     if (logEntry.requestResponse.getRequest() != null)
-                        LoggerPlusPlus.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                        LoggerPlusPlus.instance.getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
                     if (logEntry.requestResponse.getResponse() != null)
-                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                        LoggerPlusPlus.instance.getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
                     else
-                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                        LoggerPlusPlus.instance.getResponseViewer().setMessage(new byte[0], false);
                     getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
                 }
             }
         };
 
         this.setSelectionModel(model);
-        LoggerPlusPlus.getInstance().getLogManager().addLogListener(this);
+        LoggerPlusPlus.instance.getLogManager().addLogListener(this);
         registerListeners();
     }
 
@@ -97,7 +97,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
-                Map<UUID, ColorFilter> colorFilters = LoggerPlusPlus.getInstance().getLoggerPreferences().getColorFilters();
+                Map<UUID, ColorFilter> colorFilters = LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters();
                 for (UUID uid : entry.getMatchingColorFilters()) {
                     if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
                         colorFilter = colorFilters.get(uid);
@@ -155,7 +155,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             }
         });
 
-        LoggerPlusPlus.getInstance().addFilterListener(this);
+        LoggerPlusPlus.instance.addFilterListener(this);
     }
 
 
@@ -177,11 +177,11 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
             if(logEntry.requestResponse != null) {
                     if(logEntry.requestResponse.getRequest() != null)
-                        LoggerPlusPlus.getInstance().getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
+                        LoggerPlusPlus.instance.getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
                     if (logEntry.requestResponse.getResponse() != null)
-                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
+                        LoggerPlusPlus.instance.getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
                     else
-                        LoggerPlusPlus.getInstance().getResponseViewer().setMessage(new byte[0], false);
+                        LoggerPlusPlus.instance.getResponseViewer().setMessage(new byte[0], false);
                 this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
             }
             super.changeSelection(row, col, toggle, extend);
@@ -255,12 +255,12 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
     @Override
     public void onRequestAdded(LogEntry logEntry, boolean hasResponse) {
-//        int rowNo = LoggerPlusPlus.getInstance().getLogManager().getLogEntries().size()-1;
+//        int rowNo = LoggerPlusPlus.instance.getLogManager().getLogEntries().size()-1;
 //        getModel().fireTableRowsInserted(rowNo, rowNo);
         getModel().fireTableDataChanged();
 
-        if(LoggerPlusPlus.getInstance().getLoggerPreferences().getAutoScroll()) {
-            JScrollBar scrollBar = LoggerPlusPlus.getInstance().getLogScrollPanel().getVerticalScrollBar();
+        if(LoggerPlusPlus.instance.getLoggerPreferences().getAutoScroll()) {
+            JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
             scrollBar.setValue(scrollBar.getMaximum());
         }
     }
@@ -273,7 +273,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 //        }
 //        int row = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow();
 //        if(row == -1) return;
-//        LogManager logManager = LoggerPlusPlus.getInstance().getLogManager();
+//        LogManager logManager = LoggerPlusPlus.instance.getLogManager();
 //        if(logManager.getLogEntries().size() == logManager.getMaximumEntries()) {
 //            int newRow = ((LogEntry.PendingRequestEntry) existingEntry).getLogRow() - logManager.getMaximumEntries() - logManager.getTotalRequests();
 //            getModel().fireTableRowsUpdated(newRow - 10, Math.min(logManager.getMaximumEntries(), newRow + 10));
@@ -317,12 +317,12 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         public void setSortKeys(List list) {
             super.setSortKeys(list);
             if(list == null){
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setSortColumn(null);
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setSortOrder(null);
+                LoggerPlusPlus.instance.getLoggerPreferences().setSortColumn(null);
+                LoggerPlusPlus.instance.getLoggerPreferences().setSortOrder(null);
             }else {
                 SortKey sortKey = (SortKey) list.get(0);
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setSortColumn(sortKey.getColumn());
-                LoggerPlusPlus.getInstance().getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
+                LoggerPlusPlus.instance.getLoggerPreferences().setSortColumn(sortKey.getColumn());
+                LoggerPlusPlus.instance.getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
             }
         }
 

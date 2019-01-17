@@ -28,7 +28,7 @@ import java.util.*;
 // To keep the header descriptor JSON objects and to converts them to list objects
 
 public class LogTableColumnModel extends DefaultTableColumnModel {
-	private final String defaultLogTableColumnsJson = "["
+	public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = "["
 			+ "{'id':0,'name':'Number','enabled':true,'defaultVisibleName':'#','visibleName':'#','preferredWidth':35,'type':'int','readonly':true,'order':0,'visible':true,'description':'Item index number','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
 			+ "{'id':1,'name':'Tool','enabled':true,'defaultVisibleName':'Tool','visibleName':'Tool','preferredWidth':70,'type':'string','readonly':true,'order':2,'visible':true,'description':'Tool name','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
 			+ "{'id':2,'name':'Host','enabled':true,'defaultVisibleName':'Host','visibleName':'Host','preferredWidth':150,'type':'string','readonly':true,'order':3,'visible':true,'description':'Host and Protocol (similar to the Proxy tab)','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
@@ -90,11 +90,11 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	private void populateHeaders(){
-		String logTableColumnsJSON = LoggerPlusPlus.getInstance().getLoggerPreferences().getTableDetailsJSONString();
+		String logTableColumnsJSON = LoggerPlusPlus.instance.getLoggerPreferences().getTableDetailsJSONString();
 		if(logTableColumnsJSON.isEmpty()) {
 			// we have to start fresh! nothing was saved so the default string will be used.
-			saveColumnJSON(defaultLogTableColumnsJson);
-			logTableColumnsJSON = defaultLogTableColumnsJson;
+			saveColumnJSON(DEFAULT_LOG_TABLE_COLUMNS_JSON);
+			logTableColumnsJSON = DEFAULT_LOG_TABLE_COLUMNS_JSON;
 		}
 
 		Type listType = new TypeToken<List<LogTableColumn>>() {}.getType();
@@ -105,8 +105,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}catch(Exception e){
 			// if there was an error in saved grepTable configuration JSON object we have to use the default JSON object
-			LoggerPlusPlus.getCallbacks().printError("Error in parsing the grepTable structure JSON object. The default configuration will be used.");
-			logTableColumnsJSON = defaultLogTableColumnsJson;
+			LoggerPlusPlus.callbacks.printError("Error in parsing the grepTable structure JSON object. The default configuration will be used.");
+			logTableColumnsJSON = DEFAULT_LOG_TABLE_COLUMNS_JSON;
 			tempColumnDefList = gson.fromJson(logTableColumnsJSON, listType);
 		}
 
@@ -133,7 +133,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	public void resetToDefaultVariables() {
-		saveColumnJSON(defaultLogTableColumnsJson);
+		saveColumnJSON(DEFAULT_LOG_TABLE_COLUMNS_JSON);
 		populateHeaders();
 	}
 
@@ -144,7 +144,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	}
 
 	public void saveColumnJSON(String logTableColumnsJSON) {
-		LoggerPlusPlus.getInstance().getLoggerPreferences().setTableDetailsJSONString(logTableColumnsJSON);
+		LoggerPlusPlus.instance.getLoggerPreferences().setTableDetailsJSONString(logTableColumnsJSON);
 	}
 
 	public LogTableColumn getColumnByName(String colName){
@@ -158,7 +158,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 	public boolean isColumnEnabled(String colName){
 		Integer modelColumnIndex = nameToModelIndexMap.get(colName.toUpperCase());
 		if(modelColumnIndex == null){
-			LoggerPlusPlus.getCallbacks().printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
+			LoggerPlusPlus.callbacks.printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
 			return false;
 		}else {
 			return columnMap.get(modelColumnIndex).isEnabled();
