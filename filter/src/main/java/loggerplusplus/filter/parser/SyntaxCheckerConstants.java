@@ -48,6 +48,8 @@ public interface SyntaxCheckerConstants {
   int LPAREN = 22;
   /** RegularExpression Id. */
   int RPAREN = 23;
+  /** RegularExpression Id. */
+  int INVERSE = 24;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -78,6 +80,7 @@ public interface SyntaxCheckerConstants {
     "<IDENTIFIER>",
     "\"(\"",
     "\")\"",
+    "\"!\"",
   };
 
 }
