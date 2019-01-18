@@ -25,7 +25,7 @@ public class PreferenceFactory {
         prefs = new Preferences(LoggerPlusPlus.gsonProvider, LoggerPlusPlus.callbacks);
     }
 
-    private static Preferences build(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
+    public static Preferences build(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
         PreferenceFactory preferenceFactory = new PreferenceFactory(gsonProvider, callbacks);
         preferenceFactory.registerTypeAdapters();
         preferenceFactory.createDefaults();
