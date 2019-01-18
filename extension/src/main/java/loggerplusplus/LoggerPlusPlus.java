@@ -1,8 +1,10 @@
 package loggerplusplus;
 
 import burp.*;
+
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.filter.parser.ParseException;
@@ -24,6 +26,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     private static IContextMenuFactory contextMenuFactory;
     private ArrayList<FilterListener> filterListeners;
     private LoggerPreferences loggerPreferences;
+    private Preferences preferences;
     private LogManager logManager;
     private ElasticSearchLogger elasticSearchLogger;
 
@@ -50,7 +53,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
 
         callbacks.setExtensionName("Logger++");
-
+        preferences = PreferenceFactory.build(LoggerPlusPlus.gsonProvider, callbacks);
         filterListeners = new ArrayList<>();
         loggerPreferences = new LoggerPreferences(LoggerPlusPlus.this);
         logManager = new LogManager(loggerPreferences);
