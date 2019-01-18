@@ -60,6 +60,7 @@ TOKEN [IGNORE_CASE]: {
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
     | <RPAREN: ")">
+    | <INVERSE: "!">
 }
 
 SimpleNode Filter() #FILTER :
@@ -72,7 +73,10 @@ SimpleNode Filter() #FILTER :
 void Expression() #EXPRESSION :
 {}
 {
-    (<LPAREN> Expression() <RPAREN> | Comparison())
+    (Inverse() (<LPAREN> Expression() <RPAREN>
+                 | Identifier())
+    | (<LPAREN> Expression() <RPAREN> | Comparison())
+    )
     ((And() | Or() | Xor()) ((<LPAREN> Expression() <RPAREN> | Comparison())))*
 }
 
@@ -122,6 +126,13 @@ void Comparison() #COMPARISON:
 //        )?
 //    )
 //}
+
+String Inverse() #INVERSE:
+{Token t;}
+{
+    t=<INVERSE> {jjtThis.value = t.image;}
+    {return (String) jjtThis.value;}
+}
 
 Float Number() #NUMBER :
 {Token t;}
