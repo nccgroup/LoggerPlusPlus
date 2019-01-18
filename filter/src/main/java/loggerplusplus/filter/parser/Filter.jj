@@ -64,6 +64,7 @@ TOKEN [IGNORE_CASE]: {
     | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
     | <LPAREN: "(">
     | <RPAREN: ")">
+    | <INVERSE: "!">
 }
 
 SimpleNode Filter()         :
@@ -113,7 +114,10 @@ void Expression()             :
 {/*@bgen(jjtree) EXPRESSION */
     try {
 /*@egen*/
-    (<LPAREN> Expression() <RPAREN> | Comparison())
+    (Inverse() (<LPAREN> Expression() <RPAREN>
+                 | Identifier())
+    | (<LPAREN> Expression() <RPAREN> | Comparison())
+    )
     ((And() | Or() | Xor()) ((<LPAREN> Expression() <RPAREN> | Comparison())))*/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -209,6 +213,30 @@ void Comparison()            :
 //        )?
 //    )
 //}
+
+String Inverse()         :
+{/*@bgen(jjtree) INVERSE */
+ ASTINVERSE jjtn000 = new ASTINVERSE(JJTINVERSE);
+ boolean jjtc000 = true;
+ jjtree.openNodeScope(jjtn000);
+/*@egen*/Token t;}
+{/*@bgen(jjtree) INVERSE */
+    try {
+/*@egen*/
+    t=<INVERSE> {jjtn000.value = t.image;}/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {return (String) jjtn000.value;}/*@bgen(jjtree)*/
+    } finally {
+      if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+/*@egen*/
+}
 
 Float Number()         :
 {/*@bgen(jjtree) NUMBER */
