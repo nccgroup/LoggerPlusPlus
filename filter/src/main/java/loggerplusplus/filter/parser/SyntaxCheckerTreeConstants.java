@@ -7,20 +7,21 @@ public interface SyntaxCheckerTreeConstants
   public int JJTEXPRESSION = 1;
   public int JJTVOID = 2;
   public int JJTCOMPARISON = 3;
-  public int JJTNUMBER = 4;
-  public int JJTSTRING = 5;
-  public int JJTREGEX = 6;
-  public int JJTIDENTIFIER = 7;
-  public int JJTBOOLEAN = 8;
-  public int JJTEQ = 9;
-  public int JJTNEQ = 10;
-  public int JJTGT = 11;
-  public int JJTGEQ = 12;
-  public int JJTLT = 13;
-  public int JJTLEQ = 14;
-  public int JJTAND = 15;
-  public int JJTOR = 16;
-  public int JJTXOR = 17;
+  public int JJTINVERSE = 4;
+  public int JJTNUMBER = 5;
+  public int JJTSTRING = 6;
+  public int JJTREGEX = 7;
+  public int JJTIDENTIFIER = 8;
+  public int JJTBOOLEAN = 9;
+  public int JJTEQ = 10;
+  public int JJTNEQ = 11;
+  public int JJTGT = 12;
+  public int JJTGEQ = 13;
+  public int JJTLT = 14;
+  public int JJTLEQ = 15;
+  public int JJTAND = 16;
+  public int JJTOR = 17;
+  public int JJTXOR = 18;
 
 
   public String[] jjtNodeName = {
@@ -28,6 +29,7 @@ public interface SyntaxCheckerTreeConstants
     "EXPRESSION",
     "void",
     "COMPARISON",
+    "INVERSE",
     "NUMBER",
     "STRING",
     "REGEX",
@@ -44,4 +46,4 @@ public interface SyntaxCheckerTreeConstants
     "XOR",
   };
 }
-/* JavaCC - OriginalChecksum=3e091f2ef3f48a239462829578701c0b (do not edit this line) */
+/* JavaCC - OriginalChecksum=ecb4a263e5e95a4355fdd40c104eee98 (do not edit this line) */

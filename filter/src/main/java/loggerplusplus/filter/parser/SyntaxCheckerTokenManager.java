@@ -36,6 +36,7 @@ private int jjMoveStringLiteralDfa0_0(){
          jjmatchedKind = 1;
          return jjMoveNfa_0(0, 0);
       case 33:
+         jjmatchedKind = 24;
          return jjMoveStringLiteralDfa1_0(0x40L);
       case 40:
          jjmatchedKind = 22;
@@ -496,7 +497,8 @@ private int jjMoveNfa_0(int startState, int curPos)
 /** Token literal values. */
 public static final String[] jjstrLiteralImages = {
 "", null, null, null, null, null, "\41\75", "\76", "\74", "\76\75", "\74\75", 
-null, null, null, null, null, null, null, null, null, null, null, "\50", "\51", };
+null, null, null, null, null, null, null, null, null, null, null, "\50", "\51", 
+"\41", };
 protected Token jjFillToken()
 {
    final Token t;
@@ -706,10 +708,10 @@ public static final String[] lexStateNames = {
 
 /** Lex State array. */
 public static final int[] jjnewLexState = {
-   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 };
 static final long[] jjtoToken = {
-   0xffffe1L, 
+   0x1ffffe1L, 
 };
 static final long[] jjtoSkip = {
    0x1eL, 
