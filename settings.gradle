@@ -1,1 +1,7 @@
 include 'extension', 'filter'
+
+includeBuild('../BurpExtenderUtilities'){
+    dependencySubstitution{
+        substitute module('com.github.CoreyD97:BurpExtenderUtilities') with project(':')
+    }
+}

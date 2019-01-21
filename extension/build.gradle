@@ -15,7 +15,7 @@ dependencies {
     compile project(':filter')
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     compile 'org.swinglabs:swingx:1.6.1'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:a21b23481f'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:-SNAPSHOT'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.apache.commons:commons-text:1.1'
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.5.2'
