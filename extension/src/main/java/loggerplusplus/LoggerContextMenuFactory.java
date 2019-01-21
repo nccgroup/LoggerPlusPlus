@@ -12,9 +12,13 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static loggerplusplus.Globals.PREF_COLOR_FILTERS;
 
 public class LoggerContextMenuFactory implements IContextMenuFactory {
 
@@ -119,7 +123,8 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new Filter(context + " == /" + matchPattern + "/"));
-                    LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
+                    HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                    colorFilters.put(colorFilter.getUid(), colorFilter);
                     new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners()).setVisible(true);
                 } catch (ParseException | IOException e) {
                     return;

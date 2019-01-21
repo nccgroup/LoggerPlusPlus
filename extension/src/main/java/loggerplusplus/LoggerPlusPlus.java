@@ -22,11 +22,10 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     public static LoggerPlusPlus instance;
     public static IBurpExtenderCallbacks callbacks;
     public static IGsonProvider gsonProvider;
+    public static Preferences preferences;
 
     private static IContextMenuFactory contextMenuFactory;
     private ArrayList<FilterListener> filterListeners;
-    private LoggerPreferences loggerPreferences;
-    private Preferences preferences;
     private LogManager logManager;
     private ElasticSearchLogger elasticSearchLogger;
 
@@ -51,15 +50,14 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         LoggerPlusPlus.callbacks = callbacks;
         LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
+        LoggerPlusPlus.preferences = PreferenceFactory.build(LoggerPlusPlus.gsonProvider, callbacks);
 
         callbacks.setExtensionName("Logger++");
-        preferences = PreferenceFactory.build(LoggerPlusPlus.gsonProvider, callbacks);
         filterListeners = new ArrayList<>();
-        loggerPreferences = new LoggerPreferences(LoggerPlusPlus.this);
-        logManager = new LogManager(loggerPreferences);
-        elasticSearchLogger = new ElasticSearchLogger(logManager, loggerPreferences);
+        logManager = new LogManager();
+        elasticSearchLogger = new ElasticSearchLogger(logManager);
 
-        if(!callbacks.isExtensionBapp() && loggerPreferences.checkUpdatesOnStartup()){
+        if(!callbacks.isExtensionBapp() && (boolean) preferences.getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
             MoreHelp.checkForUpdate(false);
         }
 
@@ -72,15 +70,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
             @Override
             public void run()
             {
-                try {
-                    Class.forName("org.apache.commons.lang3.StringEscapeUtils");
-                    loggerPreferences.setCanSaveCSV(true);
-                } catch(ClassNotFoundException e) {
-                    LoggerPlusPlus.callbacks.printError("Warning: Error in loading Appache Commons Lang library.\r\nThe results cannot be saved in CSV format.\r\n"
-                            + "Please reload this extension after adding this library to the Java Environment section of burp suite.\r\n"
-                            + "This library is downloadable via http://commons.apache.org/proper/commons-lang/download_lang.cgi");
-                }
-
                 //UI
                 JPanel logOuterPanel = new JPanel(new GridBagLayout());
                 logViewPanel = new LogViewPanel(logManager);
@@ -93,10 +82,11 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
                 requestViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
                 responseViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
-                reqRespPanel = new VariableViewPanel(requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", loggerPreferences.getReqRespView()){
+                VariableViewPanel.View reqRespView = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
+                reqRespPanel = new VariableViewPanel(requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", reqRespView){
                     @Override
                     public void setView(View view) {
-                        loggerPreferences.setReqRespView(view);
+                        LoggerPlusPlus.preferences.setSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT, view);
                         super.setView(view);
                     }
                 };
@@ -115,10 +105,12 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                     }
                 };
 
-                logSplitPanel = new VariableViewPanel(logViewPanel, "Log Table", uiReqRespPopOut, "Request/Response", loggerPreferences.getView()){
+
+                VariableViewPanel.View mainLayout = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_LAYOUT);
+                logSplitPanel = new VariableViewPanel(logViewPanel, "Log Table", uiReqRespPopOut, "Request/Response", mainLayout){
                     @Override
                     public void setView(View view) {
-                        loggerPreferences.setView(view);
+                        LoggerPlusPlus.preferences.setSetting(Globals.PREF_LAYOUT, view);
                         super.setView(view);
                     }
                 };
@@ -168,7 +160,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
-                if(loggerPreferences.autoImportProxyHistory()){
+                if((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
                     Thread importThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -248,8 +240,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
     }
 
-    public LoggerPreferences getLoggerPreferences() {
-        return loggerPreferences;
+    public Preferences getPreferences() {
+        return preferences;
     }
 
     public LogTable getLogTable() {

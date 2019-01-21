@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
 
@@ -194,8 +195,8 @@ public class TableHeaderMenu extends JPopupMenu{
 	public void saveAndReloadTableSettings(){
 		//Stop automatically logging, prevents changing of csv format midway through
 		//TODO constant csv format?
-		if(LoggerPlusPlus.instance.getLoggerPreferences().getAutoSave()){
-			LoggerPlusPlus.instance.getLoggerPreferences().setAutoSave(false);
+		if((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SAVE)){
+			LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SAVE, false);
 			LoggerPlusPlus.instance.getLoggerOptionsPanel().getFileLogger().setAutoSave(false);
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}

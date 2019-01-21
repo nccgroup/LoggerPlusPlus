@@ -112,7 +112,7 @@ public class MoreHelp {
 
 	public static void checkForUpdate(boolean showMessages) {
 		IExtensionHelpers helper = LoggerPlusPlus.callbacks.getHelpers();
-		Double currenVersion = LoggerPreferences.version;
+		Double currenVersion = Globals.VERSION;
 		Double latestVersion = 0.0;
 		int updateStatus = -1;
 		String updateMessage = "";

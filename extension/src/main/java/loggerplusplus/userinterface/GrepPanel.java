@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
@@ -215,7 +216,8 @@ public class GrepPanel extends JPanel{
                     grepModel.clearResults();
                     progressBarModel.startSearch();
                     searchFutures.clear();
-                    GrepPanel.this.searchExecutor = Executors.newFixedThreadPool(LoggerPlusPlus.instance.getLoggerPreferences().getSearchThreads());
+                    int searchThreads = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SEARCH_THREADS);
+                    GrepPanel.this.searchExecutor = Executors.newFixedThreadPool(searchThreads);
                     ArrayList<LogEntry> logEntryList;
                     synchronized (LoggerPlusPlus.instance.getLogManager().getLogEntries()) {
                         logEntryList = new ArrayList<>(LoggerPlusPlus.instance.getLogManager().getLogEntries());
