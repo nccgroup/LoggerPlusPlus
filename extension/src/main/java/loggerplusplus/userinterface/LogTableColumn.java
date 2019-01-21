@@ -17,7 +17,10 @@ package loggerplusplus.userinterface;
 // a sample JSON object which will be converted to this object is as follows:
 // "{'columnsDefinition':[{'id':'number','visibleName':'#','width':50,'type':'int','readonly':true,'order':1,'visible':true,'description':'Item index number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}]}";
 
+import com.google.gson.*;
+
 import javax.swing.table.TableColumn;
+import java.lang.reflect.Type;
 
 public class LogTableColumn extends TableColumn implements Comparable<LogTableColumn>{
 	private String name;
@@ -150,6 +153,58 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	@Override
 	public int compareTo(LogTableColumn logTableColumn) {
 		return this.getOrder().compareTo(logTableColumn.getOrder());
+	}
+
+	public static class ColumnSerializer implements JsonDeserializer<LogTableColumn>, JsonSerializer<LogTableColumn> {
+		//id, name, enabled, defaultVisibleName, visibleName, width, type, readonly, order, visible, description, isRegEx, regExData
+		@Override
+		public JsonElement serialize(LogTableColumn column, Type type, JsonSerializationContext jsonSerializationContext) {
+			JsonObject object = new JsonObject();
+			object.addProperty("id", column.getIdentifier());
+			object.addProperty("name", column.getName());
+			object.addProperty("enabled", column.isEnabled());
+			object.addProperty("defaultVisibleName", column.getDefaultVisibleName());
+			object.addProperty("visibleName", column.getVisibleName());
+			object.addProperty("preferredWidth", column.getPreferredWidth());
+			object.addProperty("type", column.getType());
+			object.addProperty("readonly", column.isReadonly());
+			object.addProperty("order", column.getOrder());
+			object.addProperty("visible", column.isVisible());
+			object.addProperty("description", column.getDescription());
+			object.addProperty("isRegEx", column.isRegEx());
+			object.addProperty("regExString", column.getRegExData().getRegExString());
+			object.addProperty("regExCaseSensitive", column.getRegExData().isRegExCaseSensitive());
+			return object;
+		}
+
+		@Override
+		public LogTableColumn deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+			LogTableColumn column = null;
+			column = new LogTableColumn();
+			JsonObject object = jsonElement.getAsJsonObject();
+			column.setIdentifier(object.get("id").getAsInt());
+			column.setName(object.get("name").getAsString());
+			column.setEnabled(object.get("enabled").getAsBoolean());
+			column.setDefaultVisibleName(object.get("defaultVisibleName").getAsString());
+			column.setVisibleName(object.get("visibleName").getAsString());
+			column.setWidth(object.get("preferredWidth").getAsInt());
+			column.setType(object.get("type").getAsString());
+			column.setReadonly(object.get("readonly").getAsBoolean());
+			column.setOrder(object.get("order").getAsInt());
+			column.setVisible(object.get("visible").getAsBoolean());
+			column.setDescription(object.get("description").getAsString());
+			column.setIsRegEx(object.get("isRegEx").getAsBoolean());
+			LogTableColumn.RegExData regExData = new LogTableColumn.RegExData();
+			if(object.has("regExData")) {
+				regExData.setRegExString(object.getAsJsonObject("regExData").get("regExString").getAsString());
+				regExData.setRegExCaseSensitive(object.getAsJsonObject("regExData").get("regExCaseSensitive").getAsBoolean());
+			}else{
+				regExData.setRegExString(object.get("regExString").getAsString());
+				regExData.setRegExCaseSensitive(object.get("regExCaseSensitive").getAsBoolean());
+			}
+			column.setRegExData(regExData);
+			return column;
+		}
 	}
 
 }

@@ -10,13 +10,11 @@ import java.io.*;
 public class FileLogger implements LogEntryListener{
     private FileWriter autoSaveWriter;
     private File autoSaveFile;
-    private final LoggerPreferences loggerPreferences;
     private final ExcelExporter exp;
     private boolean autoLogIncludeRequests = false;
     private boolean autoLogIncludeResponses = false;
 
     public FileLogger(){
-        loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
         exp = new ExcelExporter();
     }
 
@@ -164,7 +162,7 @@ public class FileLogger implements LogEntryListener{
         if (enabled) {
             autoSaveFile = getSaveFile("logger++_auto", true);
             if (autoSaveFile != null) {
-                loggerPreferences.setAutoSave(true);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SAVE, true);
                 try {
                     autoSaveWriter = new FileWriter(autoSaveFile, true);
                     int result = JOptionPane.showConfirmDialog(null, "Include REQUEST bodies in the logs?","Automatic Logging", JOptionPane.YES_OPTION);
@@ -192,7 +190,7 @@ public class FileLogger implements LogEntryListener{
             autoSaveWriter = null;
             LoggerPlusPlus.instance.getLogManager().removeLogListener(this);
         }
-        loggerPreferences.setAutoSave(enabled);
+        LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SAVE, enabled);
         LoggerPlusPlus.instance.getLoggerOptionsPanel().setAutoSaveBtn(enabled);
     }
 

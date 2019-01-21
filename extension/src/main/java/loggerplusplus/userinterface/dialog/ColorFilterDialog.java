@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface.dialog;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
@@ -30,7 +31,7 @@ public class ColorFilterDialog extends JFrame {
     public ColorFilterDialog(ArrayList<FilterListener> listeners){
         if(instance != null) instance.dispose();
         instance = this;
-        this.filters = LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters();
+        this.filters = (Map<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
         this.filterListeners = listeners;
         this.filterTable = new ColorFilterTable(filters, filterListeners);
@@ -145,7 +146,7 @@ public class ColorFilterDialog extends JFrame {
                 listener.onFilterRemove(originalFilters.get(uid));
             }
         }
-        LoggerPlusPlus.instance.getLoggerPreferences().setColorFilters(filters);
+        LoggerPlusPlus.preferences.setSetting(Globals.PREF_COLOR_FILTERS, filters);
     }
 
 }

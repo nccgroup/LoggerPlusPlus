@@ -10,6 +10,10 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.UUID;
+
+import static loggerplusplus.Globals.PREF_COLOR_FILTERS;
 
 /**
  * Created by corey on 24/08/17.
@@ -82,7 +86,8 @@ public class LogEntryMenu extends JPopupMenu {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new Filter(columnName + " == " + columnValue));
-                    LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters().put(colorFilter.getUid(), colorFilter);
+                    HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                    colorFilters.put(colorFilter.getUid(), colorFilter);
                     ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners());
                     colorFilterDialog.setVisible(true);
                 } catch (IOException | ParseException e1) {

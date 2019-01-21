@@ -13,11 +13,9 @@
 package loggerplusplus.userinterface;
 
 import burp.IHttpRequestResponse;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
-import loggerplusplus.FileLogger;
-import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.LoggerPreferences;
-import loggerplusplus.MoreHelp;
+import loggerplusplus.*;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.filter.SavedFilter;
@@ -37,9 +35,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
+
+import static loggerplusplus.Globals.*;
 
 public class LoggerOptionsPanel extends JScrollPane{
-    private final LoggerPreferences loggerPreferences;
+    private final Preferences preferences;
 
     private JToggleButton tglbtnIsEnabled = new JToggleButton("Logger++ is running");
     private JCheckBox chkIsRestrictedToScope = new JCheckBox("In scope items only");
@@ -95,8 +96,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     public LoggerOptionsPanel() {
         contentWrapper = new JPanel(new GridBagLayout());
         this.setViewportView(contentWrapper);
-        this.loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
-        this.loggerPreferences.setAutoSave(false);
+        this.preferences = LoggerPlusPlus.preferences;
         this.fileLogger = new FileLogger();
         this.esValueChangeWarning.setForeground(Color.RED);
         JPanel innerContainer = new JPanel(new GridBagLayout());
@@ -404,34 +404,34 @@ public class LoggerOptionsPanel extends JScrollPane{
     private void setComponentsActions() {
         chkIsRestrictedToScope.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setRestrictedToScope(chkIsRestrictedToScope.isSelected());
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_RESTRICT_TO_SCOPE, chkIsRestrictedToScope.isSelected());
             }
         });
 
         chkUpdateOnStartup.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                loggerPreferences.setUpdateOnStartup(chkUpdateOnStartup.isSelected());
+                preferences.setSetting(PREF_UPDATE_ON_STARTUP, chkUpdateOnStartup.isSelected());
             }
         });
 
         chkOtherToolLiveLogging.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                loggerPreferences.setOtherToolLiveLogging(chkOtherToolLiveLogging.isSelected());
+                LoggerPlusPlus.preferences.setSetting(PREF_LOG_OTHER_LIVE, chkOtherToolLiveLogging.isSelected());
             }
         });
 
         chkAutoImport.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                loggerPreferences.setAutoImportProxyHistory(chkAutoImport.isSelected());
+                LoggerPlusPlus.preferences.setSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, chkAutoImport.isSelected());
             }
         });
 
         chkAllTools.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4All(chkAllTools.isSelected());
+                LoggerPlusPlus.preferences.setSetting(PREF_LOG_GLOBAL, chkAllTools.isSelected());
                 chkSpider.setEnabled(!chkAllTools.isSelected());
                 chkIntruder.setEnabled(!chkAllTools.isSelected());
                 chkScanner.setEnabled(!chkAllTools.isSelected());
@@ -445,49 +445,49 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         chkSpider.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Spider(chkSpider.isSelected());
+                preferences.setSetting(PREF_LOG_SPIDER, chkSpider.isSelected());
             }
         });
 
         chkIntruder.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Intruder(chkIntruder.isSelected());
+                preferences.setSetting(PREF_LOG_INTRUDER, chkIntruder.isSelected());
             }
         });
 
         chkScanner.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Scanner(chkScanner.isSelected());
+                preferences.setSetting(PREF_LOG_SCANNER, chkScanner.isSelected());
             }
         });
 
         chkRepeater.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Repeater(chkRepeater.isSelected());
+                preferences.setSetting(PREF_LOG_REPEATER, chkRepeater.isSelected());
             }
         });
 
         chkSequencer.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Sequencer(chkSequencer.isSelected());
+                preferences.setSetting(PREF_LOG_SEQUENCER, chkSequencer.isSelected());
             }
         });
 
         chkProxy.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Proxy(chkProxy.isSelected());
+                preferences.setSetting(PREF_LOG_PROXY, chkProxy.isSelected());
             }
         });
 
         chkExtender.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4Extender(chkExtender.isSelected());
+                preferences.setSetting(PREF_LOG_EXTENDER, chkExtender.isSelected());
             }
         });
 
         chkTarget.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
-                loggerPreferences.setEnabled4TargetTab(chkTarget.isSelected());
+                preferences.setSetting(PREF_LOG_TARGET_TAB, chkTarget.isSelected());
             }
         });
 
@@ -500,7 +500,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         btnAutoSaveLogs.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                fileLogger.setAutoSave(!loggerPreferences.getAutoSave());
+                fileLogger.setAutoSave(!(boolean) LoggerPlusPlus.preferences.getSetting(PREF_AUTO_SAVE));
             }
         });
 
@@ -533,43 +533,50 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         btnClearLogs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                boolean origState = loggerPreferences.isEnabled();
-                loggerPreferences.setEnabled(false);
+                boolean origState = (Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ENABLED);
+                LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, false);
                 LoggerPlusPlus.instance.reset();
                 LoggerPlusPlus.instance.getLogTable().getModel().fireTableDataChanged();
-                loggerPreferences.setEnabled(origState);
+                LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, origState);
                 setPreferencesValues();
             }
         });
 
-        btnResetSettings.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent arg0) {
-                boolean origState = loggerPreferences.isEnabled();
-                loggerPreferences.setEnabled(false);
-                loggerPreferences.resetLoggerPreferences();
-                LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
-                LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
-                fileLogger.setAutoSave(false);
-                loggerPreferences.setEnabled(origState);
-                setPreferencesValues();
-            }
 
-        });
+        //TODO Fix reset settings.
+        btnResetSettings.setEnabled(false);
+//        btnResetSettings.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent arg0) {
+//                boolean origState = (Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ENABLED);
+//                LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, false);
+//
+//                LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
+//                LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
+//                fileLogger.setAutoSave(false);
+//                LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, origState);
+//                setPreferencesValues();
+//            }
+//
+//        });
 
-        spnResponseTimeout.setModel(new SpinnerNumberModel(loggerPreferences.getResponseTimeout()/1000, 10, 600, 1));
+        long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
+        spnResponseTimeout.setModel(new SpinnerNumberModel(responseTimeout/1000, 10, 600, 1));
         spnResponseTimeout.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                loggerPreferences.setResponseTimeout(((Integer) spnResponseTimeout.getValue()).longValue()*1000);
+                LoggerPlusPlus.preferences.setSetting(PREF_RESPONSE_TIMEOUT,
+                        ((Integer) spnResponseTimeout.getValue()).longValue()*1000);
             }
         });
 
+
         int maxEntriesMax = 1000000;
-        spnMaxEntries.setModel(new SpinnerNumberModel(Math.min(loggerPreferences.getMaximumEntries(), maxEntriesMax), 10, maxEntriesMax, 10));
+        int maxEntries = (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+        spnMaxEntries.setModel(new SpinnerNumberModel(Math.min(maxEntries, maxEntriesMax), 10, maxEntriesMax, 10));
         spnMaxEntries.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                loggerPreferences.setMaximumEntries((Integer) spnMaxEntries.getValue());
+                LoggerPlusPlus.preferences.setSetting(PREF_MAXIMUM_ENTRIES, spnMaxEntries.getValue());
             }
         });
         spnMaxEntries.getEditor().getComponent(0).addFocusListener(new FocusAdapter() {
@@ -580,12 +587,13 @@ public class LoggerOptionsPanel extends JScrollPane{
         });
 
         int maxSearchThreads = 50;
+        int currentSearchThreads = (int) LoggerPlusPlus.preferences.getSetting(PREF_SEARCH_THREADS);
         spnSearchThreads.setModel(new SpinnerNumberModel(
-                Math.min(LoggerPlusPlus.instance.getLoggerPreferences().getSearchThreads(), maxSearchThreads), 1, maxSearchThreads, 1));
+                Math.min(currentSearchThreads, maxSearchThreads), 1, maxSearchThreads, 1));
         spnSearchThreads.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                loggerPreferences.setSearchThreads((Integer) spnSearchThreads.getValue());
+                LoggerPlusPlus.preferences.setSetting(PREF_SEARCH_THREADS, spnSearchThreads.getValue());
             }
         });
 
@@ -604,7 +612,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void focusLost(FocusEvent focusEvent) {
                 super.focusLost(focusEvent);
-                loggerPreferences.setEsAddress(esAddressField.getText());
+                LoggerPlusPlus.preferences.setSetting(PREF_ELASTIC_ADDRESS, esAddressField.getText());
             }
         });
         this.esPortSpinner.getModel().addChangeListener(new ChangeListener() {
@@ -612,7 +620,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             public void stateChanged(ChangeEvent changeEvent) {
                 toggleEsEnabledButton(false);
                 Integer spinnerval = (Integer) esPortSpinner.getValue();
-                loggerPreferences.setEsPort(spinnerval.shortValue());
+                LoggerPlusPlus.preferences.setSetting(PREF_ELASTIC_PORT, spinnerval.shortValue());
             }
         });
         this.esClusterField.getDocument().addDocumentListener(new DocumentListener() {
@@ -629,7 +637,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void focusLost(FocusEvent focusEvent) {
                 super.focusLost(focusEvent);
-                loggerPreferences.setEsClusterName(esClusterField.getText());
+                LoggerPlusPlus.preferences.setSetting(PREF_ELASTIC_CLUSTER_NAME, esClusterField.getText());
             }
         });
 
@@ -637,14 +645,14 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void focusLost(FocusEvent focusEvent) {
                 super.focusLost(focusEvent);
-                loggerPreferences.setEsIndex(esIndexField.getText());
+                LoggerPlusPlus.preferences.setSetting(PREF_ELASTIC_INDEX, esIndexField.getText());
             }
         });
 
         this.esUploadDelay.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent changeEvent) {
-                loggerPreferences.setEsDelay((Integer) esUploadDelay.getValue());
+                LoggerPlusPlus.preferences.setSetting(PREF_ELASTIC_DELAY, esUploadDelay.getValue());
                 toggleEsEnabledButton(false);
             }
         });
@@ -660,21 +668,22 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 String json = MoreHelp.showLargeInputDialog("Import Saved Filters", null);
-                ArrayList<SavedFilter> importedFilters =
-                        loggerPreferences.getGson().fromJson(json, new TypeToken<ArrayList<SavedFilter>>(){}.getType());
-                ArrayList<SavedFilter> savedFiltersClone = new ArrayList<>(loggerPreferences.getSavedFilters());
+                ArrayList<SavedFilter> importedFilters = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
+                        new TypeToken<ArrayList<SavedFilter>>(){}.getType());
+                ArrayList<SavedFilter> savedFilters = (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
+                ArrayList<SavedFilter> savedFiltersClone = new ArrayList<>(savedFilters);
                 for (SavedFilter importedFilter : importedFilters) {
                     if(!savedFiltersClone.contains(importedFilter)) savedFiltersClone.add(importedFilter);
                 }
-                loggerPreferences.setSavedFilters(savedFiltersClone);
+                LoggerPlusPlus.preferences.setSetting(PREF_SAVED_FILTERS, savedFiltersClone);
             }
         });
 
         this.btnExportFilters.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                ArrayList<SavedFilter> savedFilters = loggerPreferences.getSavedFilters();
-                String jsonOutput = loggerPreferences.getGson().toJson(savedFilters);
+                ArrayList<SavedFilter> savedFilters = (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
+                String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(savedFilters);
                 MoreHelp.showLargeOutputDialog("Export Saved Filters", jsonOutput);
             }
         });
@@ -683,24 +692,25 @@ public class LoggerOptionsPanel extends JScrollPane{
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
-                Map<UUID, ColorFilter> colorFilterMap =
-                        loggerPreferences.getGson().fromJson(json, new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
-                Map<UUID, ColorFilter> cloneMap = new HashMap<>(loggerPreferences.getColorFilters());
+                Map<UUID, ColorFilter> colorFilterMap = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
+                                new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
+                HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                Map<UUID, ColorFilter> cloneMap = new HashMap<>(colorFilters);
                 cloneMap.putAll(colorFilterMap);
                 for (FilterListener filterListener : LoggerPlusPlus.instance.getFilterListeners()) {
                     for (ColorFilter colorFilter : colorFilterMap.values()) {
                         filterListener.onFilterAdd(colorFilter);
                     }
                 }
-                loggerPreferences.setColorFilters(cloneMap);
+                LoggerPlusPlus.preferences.setSetting(PREF_COLOR_FILTERS, cloneMap);
             }
         });
 
         this.btnExportColorFilters.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Map<UUID,ColorFilter> colorFilters = loggerPreferences.getColorFilters();
-                String jsonOutput = loggerPreferences.getGson().toJson(colorFilters);
+                HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(colorFilters);
                 MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
             }
         });
@@ -714,7 +724,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     private void toggleEnabledButton(boolean isSelected) {
         tglbtnIsEnabled.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
         tglbtnIsEnabled.setSelected(isSelected);
-        loggerPreferences.setEnabled(isSelected);
+        LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, isSelected);
     }
 
     private void toggleEsEnabledButton(final boolean isSelected) {
@@ -749,12 +759,12 @@ public class LoggerOptionsPanel extends JScrollPane{
 
     private void setPreferencesValues() {
 
-        chkAutoImport.setSelected(loggerPreferences.autoImportProxyHistory());
-        chkIsRestrictedToScope.setSelected(loggerPreferences.isRestrictedToScope());
-        chkUpdateOnStartup.setSelected(loggerPreferences.checkUpdatesOnStartup());
-        chkOtherToolLiveLogging.setSelected(loggerPreferences.getOtherToolLiveLogging());
-        chkAllTools.setSelected(loggerPreferences.isEnabled4All());
-        if(loggerPreferences.isEnabled4All()){
+        chkAutoImport.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_AUTO_IMPORT_PROXY_HISTORY));
+        chkIsRestrictedToScope.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_RESTRICT_TO_SCOPE));
+        chkUpdateOnStartup.setSelected((Boolean) preferences.getSetting(PREF_UPDATE_ON_STARTUP));
+        chkOtherToolLiveLogging.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE));
+        chkAllTools.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_GLOBAL));
+        if((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_GLOBAL)){
             chkSpider.setEnabled(false);
             chkIntruder.setEnabled(false);
             chkScanner.setEnabled(false);
@@ -764,30 +774,21 @@ public class LoggerOptionsPanel extends JScrollPane{
             chkExtender.setEnabled(false);
             chkTarget.setEnabled(false);
         }
-        chkSpider.setSelected(loggerPreferences.isEnabled4Spider());
-        chkIntruder.setSelected(loggerPreferences.isEnabled4Intruder());
-        chkScanner.setSelected(loggerPreferences.isEnabled4Scanner());
-        chkRepeater.setSelected(loggerPreferences.isEnabled4Repeater());
-        chkSequencer.setSelected(loggerPreferences.isEnabled4Sequencer());
-        chkProxy.setSelected(loggerPreferences.isEnabled4Proxy());
-        chkExtender.setSelected(loggerPreferences.isEnabled4Extender());
-        chkTarget.setSelected(loggerPreferences.isEnabled4TargetTab());
-        toggleEnabledButton(loggerPreferences.isEnabled());
+        chkSpider.setSelected((Boolean) preferences.getSetting(PREF_LOG_SPIDER));
+        chkIntruder.setSelected((Boolean) preferences.getSetting(PREF_LOG_INTRUDER));
+        chkScanner.setSelected((Boolean) preferences.getSetting(PREF_LOG_SCANNER));
+        chkRepeater.setSelected((Boolean) preferences.getSetting(PREF_LOG_REPEATER));
+        chkSequencer.setSelected((Boolean) preferences.getSetting(PREF_LOG_SEQUENCER));
+        chkProxy.setSelected((Boolean) preferences.getSetting(PREF_LOG_PROXY));
+        chkExtender.setSelected((Boolean) preferences.getSetting(PREF_LOG_EXTENDER));
+        chkTarget.setSelected((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB));
+        toggleEnabledButton((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED));
 
-        this.esAddressField.setText(loggerPreferences.getEsAddress());
-        this.esPortSpinner.setValue(loggerPreferences.getEsPort());
-        this.esClusterField.setText(loggerPreferences.getEsClusterName());
-        this.esIndexField.setText(loggerPreferences.getEsIndex());
-        this.esUploadDelay.setValue(loggerPreferences.getEsDelay());
-
-        if (!loggerPreferences.canSaveCSV()) {
-            btnSaveLogs.setEnabled(false);
-            btnSaveFullLogs.setEnabled(false);
-            btnAutoSaveLogs.setEnabled(false);
-            btnSaveLogs.setToolTipText("Please look at the extension's error tab.");
-            btnSaveFullLogs.setToolTipText("Please look at the extension's error tab.");
-            btnAutoSaveLogs.setToolTipText("Please look at the extension's error tab.");
-        }
+        this.esAddressField.setText((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
+        this.esPortSpinner.setValue(LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT));
+        this.esClusterField.setText((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_CLUSTER_NAME));
+        this.esIndexField.setText((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INDEX));
+        this.esUploadDelay.setValue(LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_DELAY));
     }
 
     public static void openWebpage(URI uri) {

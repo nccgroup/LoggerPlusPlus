@@ -9,8 +9,8 @@ import loggerplusplus.filter.Filter;
 import static loggerplusplus.Globals.*;
 
 import loggerplusplus.filter.SavedFilter;
-import loggerplusplus.userinterface.LogTableColumnModel;
-import org.elasticsearch.action.admin.indices.template.delete.DeleteIndexTemplateRequest;
+import loggerplusplus.userinterface.LogTableColumn;
+import loggerplusplus.userinterface.VariableViewPanel;
 
 import java.util.*;
 
@@ -19,6 +19,7 @@ public class PreferenceFactory {
     private Preferences prefs;
     private IGsonProvider gsonProvider;
     private HashMap<UUID, ColorFilter> defaultColorFilters;
+    private ArrayList<LogTableColumn> defaultlogTableColumns;
 
     private PreferenceFactory(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
         this.gsonProvider = gsonProvider;
@@ -34,15 +35,19 @@ public class PreferenceFactory {
     }
 
     private void createDefaults(){
-        defaultColorFilters = this.gsonProvider.getGson().fromJson(Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
+        defaultColorFilters = this.gsonProvider.getGson().fromJson(
+                Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
+        defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
+                Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
     }
 
     private void registerTypeAdapters(){
         LoggerPlusPlus.gsonProvider.registerTypeAdapter(Filter.class, new Filter.FilterSerializer());
+        LoggerPlusPlus.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
     }
 
     private void registerSettings() {
-        prefs.addSetting(PREF_LOG_TABLE_SETTINGS, String.class, LogTableColumnModel.DEFAULT_LOG_TABLE_COLUMNS_JSON);
+        prefs.addSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns);
         prefs.addSetting(PREF_LAST_USED_VERSION, Double.class, Globals.VERSION);
         prefs.addSetting(PREF_IS_DEBUG, Boolean.class, false);
         prefs.addSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
@@ -63,8 +68,8 @@ public class PreferenceFactory {
         prefs.addSetting(PREF_SORT_ORDER, String.class, "ASCENDING");
         prefs.addSetting(PREF_RESPONSE_TIMEOUT, Long.class, 60000);
         prefs.addSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 5000);
-        prefs.addSetting(PREF_LAYOUT, String.class, "VERTICAL");
-        prefs.addSetting(PREF_MESSAGE_VIEW_LAYOUT, String.class, "HORIZONTAL");
+        prefs.addSetting(PREF_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.VERTICAL);
+        prefs.addSetting(PREF_MESSAGE_VIEW_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.HORIZONTAL);
         prefs.addSetting(PREF_SEARCH_THREADS, Integer.class, 5);
         prefs.addSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false);
         prefs.addSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true);
@@ -73,6 +78,9 @@ public class PreferenceFactory {
         prefs.addSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch");
         prefs.addSetting(PREF_ELASTIC_INDEX, String.class, "logger");
         prefs.addSetting(PREF_ELASTIC_DELAY, Integer.class, 120);
+
+        prefs.addVolatileSetting(PREF_AUTO_SAVE, Boolean.class, false);
+        prefs.addVolatileSetting(PREF_AUTO_SCROLL, Boolean.class, true);
     }
 
 }

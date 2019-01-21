@@ -14,7 +14,6 @@ package loggerplusplus.userinterface;
 
 import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.LoggerPreferences;
 import loggerplusplus.MoreHelp;
 
 import javax.swing.*;
@@ -28,12 +27,10 @@ import java.net.URL;
 
 public class AboutPanel extends JPanel {
 
-	private final LoggerPreferences loggerPreferences;
 	/**
 	 * Create the panel.
 	 */
 	public AboutPanel() {
-		this.loggerPreferences = LoggerPlusPlus.instance.getLoggerPreferences();
 		this.setLayout(new BorderLayout());
 		JPanel msgpane = new JPanel();
 		ScrollablePanel scrollablePanel = new ScrollablePanel();

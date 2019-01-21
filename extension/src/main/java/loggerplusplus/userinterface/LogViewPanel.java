@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LogManager;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
@@ -28,7 +29,7 @@ public class LogViewPanel extends JPanel {
             @Override
             public void mouseWheelMoved(MouseWheelEvent mouseWheelEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                LoggerPlusPlus.instance.getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SCROLL,
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
         });
@@ -40,7 +41,7 @@ public class LogViewPanel extends JPanel {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
-                LoggerPlusPlus.instance.getLoggerPreferences().setAutoScroll(
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SCROLL,
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
             @Override

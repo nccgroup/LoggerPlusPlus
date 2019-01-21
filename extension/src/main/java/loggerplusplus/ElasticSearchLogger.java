@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -33,14 +34,12 @@ public class ElasticSearchLogger implements LogEntryListener{
     private String clusterName;
     private boolean isEnabled;
     private String indexName;
-    private LoggerPreferences prefs;
 
     private final ScheduledExecutorService executorService;
     private ScheduledFuture indexTask;
 
 
-    public ElasticSearchLogger(LogManager logManager, LoggerPreferences prefs){
-        this.prefs = prefs;
+    public ElasticSearchLogger(LogManager logManager){
         this.isEnabled = false;
         this.indexName = "logger";
 
@@ -50,10 +49,10 @@ public class ElasticSearchLogger implements LogEntryListener{
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
         if(isEnabled){
-            this.address = InetAddress.getByName(prefs.getEsAddress());
-            this.port = prefs.getEsPort();
-            this.clusterName = prefs.getEsClusterName();
-            this.indexName = prefs.getEsIndex();
+            this.address = InetAddress.getByName((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
+            this.port = (short) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT);
+            this.clusterName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_CLUSTER_NAME);
+            this.indexName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
             Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
 
             httpClient = new RestHighLevelClient(RestClient.builder(
@@ -61,12 +60,13 @@ public class ElasticSearchLogger implements LogEntryListener{
 
             createIndices();
             pendingEntries = new ArrayList<>();
+            int delay = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_DELAY);
             indexTask = executorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     indexPendingEntries();
                 }
-            }, prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
+            }, delay, delay, TimeUnit.SECONDS);
         }else{
             if(this.indexTask != null){
                 indexTask.cancel(true);

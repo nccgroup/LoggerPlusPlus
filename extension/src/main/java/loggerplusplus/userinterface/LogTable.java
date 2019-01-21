@@ -4,9 +4,9 @@ package loggerplusplus.userinterface;
 // extend JTable to handle cell selection and column move/resize
 //
 
+import loggerplusplus.Globals;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LogEntryListener;
-import loggerplusplus.LogManager;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.Filter;
@@ -51,8 +51,13 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         }
         setRowSorter(rowSorter);
 
-        Integer sortColumn = LoggerPlusPlus.instance.getLoggerPreferences().getSortColumn();
-        SortOrder sortOrder = LoggerPlusPlus.instance.getLoggerPreferences().getSortOrder();
+        Integer sortColumn = (Integer) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_COLUMN);
+        SortOrder sortOrder;
+        try{
+            sortOrder = SortOrder.valueOf((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_ORDER));
+        }catch(Exception e){
+            sortOrder = SortOrder.ASCENDING;
+        }
         if(sortColumn != -1 && sortOrder != null){
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
@@ -97,7 +102,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
-                Map<UUID, ColorFilter> colorFilters = LoggerPlusPlus.instance.getLoggerPreferences().getColorFilters();
+                Map<UUID, ColorFilter> colorFilters = (Map<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
                 for (UUID uid : entry.getMatchingColorFilters()) {
                     if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
                         colorFilter = colorFilters.get(uid);
@@ -191,7 +196,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     // to save the new grepTable changes
     public void saveTableChanges(){
         // save it to the relevant variables and preferences
-        this.getColumnModel().saveColumnJSON();
+        this.getColumnModel().saveLayout();
     }
 
     @Override
@@ -259,7 +264,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 //        getModel().fireTableRowsInserted(rowNo, rowNo);
         getModel().fireTableDataChanged();
 
-        if(LoggerPlusPlus.instance.getLoggerPreferences().getAutoScroll()) {
+        if((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
             JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
             scrollBar.setValue(scrollBar.getMaximum());
         }
@@ -317,12 +322,12 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         public void setSortKeys(List list) {
             super.setSortKeys(list);
             if(list == null){
-                LoggerPlusPlus.instance.getLoggerPreferences().setSortColumn(null);
-                LoggerPlusPlus.instance.getLoggerPreferences().setSortOrder(null);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, null);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, null);
             }else {
                 SortKey sortKey = (SortKey) list.get(0);
-                LoggerPlusPlus.instance.getLoggerPreferences().setSortColumn(sortKey.getColumn());
-                LoggerPlusPlus.instance.getLoggerPreferences().setSortOrder(sortKey.getSortOrder());
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, String.valueOf(sortKey.getSortOrder()));
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, sortKey.getColumn());
             }
         }
 

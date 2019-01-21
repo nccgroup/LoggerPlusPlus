@@ -10,14 +10,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static loggerplusplus.Globals.*;
+import static loggerplusplus.LoggerPlusPlus.preferences;
 
 /**
  * Created by corey on 07/09/17.
  */
 public class LogManager implements IHttpListener, IProxyListener {
-    private final LoggerPreferences prefs;
     private ArrayList<LogEntry> logEntries;
     private HashMap<Integer, LogEntry.PendingRequestEntry> pendingProxyRequests;
     private HashMap<UUID, LogEntry.PendingRequestEntry> pendingToolRequests;
@@ -30,8 +33,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     private int totalRequests = 0;
     private short lateResponses = 0;
 
-    LogManager(LoggerPreferences prefs){
-        this.prefs = prefs;
+    LogManager(){
         logEntries = new ArrayList<>();
         logEntryListeners = new ArrayList<>();
         pendingProxyRequests = new HashMap<>();
@@ -53,7 +55,8 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingProxyRequests){
                     for (Integer reference : keys) {
                         long entryTime = pendingProxyRequests.get(reference).requestDateTime.getTime();
-                        if(timeNow - entryTime > LoggerPlusPlus.instance.getLoggerPreferences().getResponseTimeout()){
+                        long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
+                        if(timeNow - entryTime > responseTimeout){
                             pendingProxyRequests.remove(reference);
                         }
                     }
@@ -62,7 +65,8 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingToolRequests){
                     for (UUID reference : toolKeys) {
                         long entryTime = pendingToolRequests.get(reference).requestDateTime.getTime();
-                        if(timeNow - entryTime > LoggerPlusPlus.instance.getLoggerPreferences().getResponseTimeout()){
+                        long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
+                        if(timeNow - entryTime > responseTimeout){
                             pendingToolRequests.remove(reference);
                         }
                     }
@@ -76,10 +80,10 @@ public class LogManager implements IHttpListener, IProxyListener {
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
         if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return;
-        if(requestResponse == null || !prefs.isEnabled()) return;
+        if(requestResponse == null || !(Boolean) preferences.getSetting(PREF_ENABLED)) return;
         Date nowDate = new Date();
 
-        if(!prefs.getOtherToolLiveLogging()){
+        if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE)){
             //Submit normally, we're not tracking requests and responses separately.
             if(!messageIsRequest) {
                 processHttpMessage(new LogEntry(), toolFlag, false, requestResponse);
@@ -122,9 +126,9 @@ public class LogManager implements IHttpListener, IProxyListener {
             if(toolFlag != IBurpExtenderCallbacks.TOOL_PROXY || logEntry.isImported){
                 IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
-                if (!isValidTool(toolFlag) || (prefs.isRestrictedToScope() && !LoggerPlusPlus.callbacks.isInScope(uUrl)))
+                if (!isValidTool(toolFlag) || !shouldLog(uUrl))
                     return;
-                if(!prefs.getOtherToolLiveLogging()) { //If we're not tracking req/resp separate
+                if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE)) { //If we're not tracking req/resp separate
                     IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
                     logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
                     if(requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
@@ -145,7 +149,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     @Override
     public void processProxyMessage(final boolean messageIsRequest, final IInterceptedProxyMessage proxyMessage) {
         //REQUEST AND RESPONSE SEPARATE
-        if(proxyMessage == null || !prefs.isEnabled()) return;
+        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED)) return;
         Date nowDate = new Date();
 
         final LogEntry.PendingRequestEntry logEntry;
@@ -177,7 +181,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
                 int toolFlag = LoggerPlusPlus.callbacks.TOOL_PROXY;
-                if (isValidTool(toolFlag) && (!prefs.isRestrictedToScope() || LoggerPlusPlus.callbacks.isInScope(uUrl))){
+                if (isValidTool(toolFlag) && shouldLog(uUrl)){
                     if(messageIsRequest){
                         //New Proxy Request
                         //We need to change messageInfo when we get a response so do not save to buffers
@@ -195,7 +199,8 @@ public class LogManager implements IHttpListener, IProxyListener {
     private void addNewRequest(LogEntry logEntry, boolean hasResponse){
         //After handling request / response logEntries generation.
         //Add to grepTable / modify existing entry.
-        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+        HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+        for (ColorFilter colorFilter : colorFilters.values()) {
             logEntry.testColorFilter(colorFilter, false);
         }
 
@@ -225,7 +230,9 @@ public class LogManager implements IHttpListener, IProxyListener {
         }
         pendingRequest.processResponse(messageInfo);
 
-        for (ColorFilter colorFilter : prefs.getColorFilters().values()) {
+
+        HashMap<UUID, ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+        for (ColorFilter colorFilter : colorFilters.values()) {
             pendingRequest.testColorFilter(colorFilter, true);
         }
         for (LogEntryListener logEntryListener : logEntryListeners) {
@@ -238,15 +245,20 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     private boolean isValidTool(int toolFlag){
-        return (prefs.isEnabled4All() ||
-                (prefs.isEnabled4Proxy() && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
-                (prefs.isEnabled4Intruder() && toolFlag== IBurpExtenderCallbacks.TOOL_INTRUDER) ||
-                (prefs.isEnabled4Repeater() && toolFlag== IBurpExtenderCallbacks.TOOL_REPEATER) ||
-                (prefs.isEnabled4Scanner() && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
-                (prefs.isEnabled4Sequencer() && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
-                (prefs.isEnabled4Spider() && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
-                (prefs.isEnabled4Extender() && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
-                (prefs.isEnabled4TargetTab() && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
+        return ((Boolean) preferences.getSetting(PREF_LOG_GLOBAL) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_PROXY) && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_INTRUDER) && toolFlag== IBurpExtenderCallbacks.TOOL_INTRUDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_REPEATER) && toolFlag== IBurpExtenderCallbacks.TOOL_REPEATER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SCANNER) && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SEQUENCER) && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SPIDER) && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
+    }
+
+    private boolean shouldLog(URL url){
+        return (!(Boolean) preferences.getSetting(PREF_RESTRICT_TO_SCOPE)
+                || LoggerPlusPlus.callbacks.isInScope(url));
     }
 
     public void reset() {
@@ -271,7 +283,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public int getMaximumEntries() {
-        return prefs.getMaximumEntries();
+        return (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
     }
 
     public void importExisting(IHttpRequestResponse requestResponse) {

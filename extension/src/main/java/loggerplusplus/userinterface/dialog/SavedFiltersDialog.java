@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface.dialog;
 
+import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.SavedFilter;
 
@@ -22,7 +23,7 @@ public class SavedFiltersDialog extends JFrame{
     public SavedFiltersDialog(){
         if(instance != null) instance.dispose();
         instance = this;
-        this.savedFilters = LoggerPlusPlus.instance.getLoggerPreferences().getSavedFilters();
+        this.savedFilters = (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SAVED_FILTERS);
         this.filterTable = new SavedFiltersTable(savedFilters);
         buildDialog();
         pack();
@@ -34,7 +35,7 @@ public class SavedFiltersDialog extends JFrame{
             public void windowClosing(WindowEvent windowEvent) {}
             @Override
             public void windowClosed(WindowEvent windowEvent) {
-                LoggerPlusPlus.instance.getLoggerPreferences().setSavedFilters(savedFilters);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SAVED_FILTERS, savedFilters);
             }
             @Override
             public void windowIconified(WindowEvent windowEvent) {}
