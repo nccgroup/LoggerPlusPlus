@@ -30,7 +30,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;
     private InetAddress address;
-    private short port;
+    private int port;
     private String clusterName;
     private boolean isEnabled;
     private String indexName;
@@ -50,7 +50,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
         if(isEnabled){
             this.address = InetAddress.getByName((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
-            this.port = (short) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT);
+            this.port = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT);
             this.clusterName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_CLUSTER_NAME);
             this.indexName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
             Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
