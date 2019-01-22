@@ -66,7 +66,7 @@ public class PreferenceFactory {
         prefs.addSetting(PREF_SAVED_FILTERS, new TypeToken<List<SavedFilter>>() {}.getType(), new ArrayList<SavedFilter>());
         prefs.addSetting(PREF_SORT_COLUMN, Integer.class, -1);
         prefs.addSetting(PREF_SORT_ORDER, String.class, "ASCENDING");
-        prefs.addSetting(PREF_RESPONSE_TIMEOUT, Long.class, 60000);
+        prefs.addSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60000);
         prefs.addSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 5000);
         prefs.addSetting(PREF_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.VERTICAL);
         prefs.addSetting(PREF_MESSAGE_VIEW_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.HORIZONTAL);
@@ -74,7 +74,7 @@ public class PreferenceFactory {
         prefs.addSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false);
         prefs.addSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true);
         prefs.addSetting(PREF_ELASTIC_ADDRESS, String.class, "127.0.0.1");
-        prefs.addSetting(PREF_ELASTIC_PORT, Short.class, 9300);
+        prefs.addSetting(PREF_ELASTIC_PORT, Integer.class, 9300);
         prefs.addSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch");
         prefs.addSetting(PREF_ELASTIC_INDEX, String.class, "logger");
         prefs.addSetting(PREF_ELASTIC_DELAY, Integer.class, 120);
