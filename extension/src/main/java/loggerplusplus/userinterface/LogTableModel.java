@@ -100,7 +100,10 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
         return this.logManager.getLogEntries();
     }
 
-    public LogEntry getRow(int row) {return this.logManager.getLogEntries().get(row);}
+    public LogEntry getRow(int row) {
+        if(this.logManager.getLogEntries().size() <= row) return null;
+        return this.logManager.getLogEntries().get(row);
+    }
 
     public int getModelColumnCount() {
         return columnModel.getModelColumnCount();

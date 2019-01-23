@@ -55,9 +55,9 @@ public class LoggerOptionsPanel extends JScrollPane{
             JToggleButton thisButton = (JToggleButton) actionEvent.getSource();
             toggleEnabledButton(thisButton.isSelected());
         });
+        tglbtnIsEnabled.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED));
 
-
-        PanelBuilder.ComponentGroup logFromPanel = panelBuilder.createComponentGroup("Log From");
+                PanelBuilder.ComponentGroup logFromPanel = panelBuilder.createComponentGroup("Log From");
         logFromPanel.addSetting(PREF_RESTRICT_TO_SCOPE, "In scope items only");
         GridBagConstraints strutConstraints = logFromPanel.generateNextConstraints();
         strutConstraints.weighty = strutConstraints.weightx = 0;

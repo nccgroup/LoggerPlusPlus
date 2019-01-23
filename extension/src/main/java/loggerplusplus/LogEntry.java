@@ -140,6 +140,8 @@ public class LogEntry extends RowFilter.Entry
 			this.urlExtension = "";
 		}
 
+		this.comment = requestResponse.getComment();
+
 		if(message!=null){
 			if(logTable.getColumnModel().isColumnEnabled("listenerInterface")) // This is good to increase the speed when it is time consuming
 				this.listenerInterface=message.getListenerInterface();
@@ -301,6 +303,8 @@ public class LogEntry extends RowFilter.Entry
 				}
 			}
 		}
+
+		this.comment = requestResponse.getComment();
 
 		Pattern titlePattern = Pattern.compile("(?<=<title>)(.)+(?=</title>)");
 		Matcher titleMatcher = titlePattern.matcher(strFullResponse);

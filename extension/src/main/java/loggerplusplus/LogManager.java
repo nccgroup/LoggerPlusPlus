@@ -102,15 +102,19 @@ public class LogManager implements IHttpListener, IProxyListener {
             processHttpMessage(logEntry, toolFlag, true, requestResponse);
         }else{
             //Pull the uuid we stored in the comment
-            Matcher matcher = uuidPattern.matcher(requestResponse.getComment());
-            if(matcher.find() && matcher.group(1).equals(randIdentifier)){
-                UUID uuid = UUID.fromString(matcher.group(2));
-                synchronized (pendingToolRequests){
-                    logEntry = pendingToolRequests.remove(uuid);
-                }
-                if(logEntry != null) {
-                    logEntry.setResponseDateTime(nowDate);
-                    processHttpMessage(logEntry, toolFlag, false, requestResponse);
+            if(requestResponse.getComment() != null) {
+                Matcher matcher = uuidPattern.matcher(requestResponse.getComment());
+                if (matcher.find() && matcher.group(1).equals(randIdentifier)) {
+                    UUID uuid = UUID.fromString(matcher.group(2));
+                    synchronized (pendingToolRequests) {
+                        logEntry = pendingToolRequests.remove(uuid);
+                    }
+                    if (logEntry != null) {
+                        logEntry.setResponseDateTime(nowDate);
+                        processHttpMessage(logEntry, toolFlag, false, requestResponse);
+                    }
+                } else {
+                    //No longer in the map. Perhaps got cleaned out? Drop the response...
                 }
             }else{
                 //No longer in the map. Perhaps got cleaned out? Drop the response...
@@ -128,7 +132,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 URL uUrl = analyzedReq.getUrl();
                 if (!isValidTool(toolFlag) || !shouldLog(uUrl))
                     return;
-                if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE)) { //If we're not tracking req/resp separate
+                if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE) || logEntry.isImported) { //If we're not tracking req/resp separate
                     IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
                     logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
                     if(requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
