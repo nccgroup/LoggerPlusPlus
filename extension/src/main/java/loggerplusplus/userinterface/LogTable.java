@@ -96,6 +96,8 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         Component c = super.prepareRenderer(renderer, row, column);
         LogEntry entry = this.getModel().getRow(convertRowIndexToModel(row));
 
+        if(entry == null) return c;
+
         if(this.getSelectedRow() == row){
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
@@ -129,7 +131,6 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
     private void registerListeners(){
-        final LogTable _this = this;
         this.addMouseListener( new MouseAdapter()
         {
             @Override
@@ -153,8 +154,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
                     final int row = convertRowIndexToModel(rowAtPoint(p));
                     final int col = convertColumnIndexToModel(columnAtPoint(p));
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
-                        getSelectionModel().setSelectionInterval(row, row);
-                        new LogEntryMenu(_this, row, col).show(e.getComponent(), e.getX(), e.getY());
+                        new LogEntryMenu(LogTable.this, row, col).show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
             }
