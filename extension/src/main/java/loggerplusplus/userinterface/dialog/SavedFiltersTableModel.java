@@ -1,7 +1,7 @@
 package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.SavedFilter;
 import loggerplusplus.filter.parser.ParseException;
 
@@ -15,7 +15,7 @@ import java.util.ArrayList;
  */
 public class SavedFiltersTableModel extends AbstractTableModel {
     private final ArrayList<SavedFilter> filters;
-    private final String[] columnNames = {"Title", "Filter", ""};
+    private final String[] columnNames = {"Title", "LogFilter", ""};
     private final JButton applyButton = new JButton("Apply");
 
     SavedFiltersTableModel(ArrayList<SavedFilter> filters){
@@ -60,8 +60,8 @@ public class SavedFiltersTableModel extends AbstractTableModel {
                 SavedFilter filter = filters.get(row);
                 filter.setFilterString((String) value);
                 try {
-                    filter.setFilter(new Filter((String) value));
-                } catch (ParseException | IOException e) {
+                    filter.setFilter(new LogFilter((String) value));
+                } catch (ParseException e) {
                     filter.setFilter(null);
                 }
                 break;
@@ -96,7 +96,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
 
     public void onClick(int row, int column) {
         if(row != -1 && row < filters.size() && column == 2) {
-            Filter filter = this.filters.get(row).getFilter();
+            LogFilter filter = this.filters.get(row).getFilter();
             LoggerPlusPlus.instance.setFilter(filter);
         }
     }

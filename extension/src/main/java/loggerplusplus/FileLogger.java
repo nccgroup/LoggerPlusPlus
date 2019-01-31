@@ -195,7 +195,7 @@ public class FileLogger implements LogEntryListener{
     }
 
     @Override
-    public void onRequestAdded(final LogEntry logEntry, boolean hasResponse) {
+    public void onRequestAdded(int modelIndex, final LogEntry logEntry, boolean hasResponse) {
 
     }
 

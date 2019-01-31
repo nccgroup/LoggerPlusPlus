@@ -5,18 +5,18 @@ package loggerplusplus.filter;
  */
 public class SavedFilter {
     private String name;
-    private Filter filter;
+    private LogFilter filter;
     private String filterString;
 
     public SavedFilter(){
 
     }
 
-    public Filter getFilter() {
+    public LogFilter getFilter() {
         return filter;
     }
 
-    public void setFilter(Filter filter) {
+    public void setFilter(LogFilter filter) {
         this.filter = filter;
         if(filter != null)
             this.filterString = filter.toString();

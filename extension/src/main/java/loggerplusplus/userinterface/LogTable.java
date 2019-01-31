@@ -9,15 +9,13 @@ import loggerplusplus.LogEntry;
 import loggerplusplus.LogEntryListener;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.table.TableStringConverter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -41,15 +39,18 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
 
 
-        TableRowSorter rowSorter = new LogTableRowSorter();
-        try {
-            rowSorter.setModel(this.getModel());
-        }catch (NullPointerException nPException){
-            getColumnModel().resetToDefaultVariables();
-            LoggerPlusPlus.callbacks.printError("Failed to create grepTable from stored preferences. Table structure has been reset.");
-            rowSorter.setModel(this.getModel());
-        }
-        setRowSorter(rowSorter);
+        this.setAutoCreateRowSorter(true);
+        this.getRowSorter().addRowSorterListener(rowSorterEvent -> {
+            List<? extends RowSorter.SortKey> sortKeys = LogTable.this.getRowSorter().getSortKeys();
+            if(sortKeys == null || sortKeys.size() == 0){
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, null);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, null);
+            }else {
+                RowSorter.SortKey sortKey = sortKeys.get(0);
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, String.valueOf(sortKey.getSortOrder()));
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, sortKey.getColumn());
+            }
+        });
 
         Integer sortColumn = (Integer) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_COLUMN);
         SortOrder sortOrder;
@@ -93,8 +94,16 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
     {
-        Component c = super.prepareRenderer(renderer, row, column);
-        LogEntry entry = this.getModel().getRow(convertRowIndexToModel(row));
+        Component c = null;
+        try {
+            c = super.prepareRenderer(renderer, row, column);
+        }catch (NullPointerException e){
+            c = super.prepareRenderer(renderer, row, column);
+        }
+        LogEntry entry = null;
+        try{
+            entry = this.getModel().getRow(convertRowIndexToModel(row));
+        }catch (Exception ignored){}
 
         if(entry == null) return c;
 
@@ -123,11 +132,6 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             }
         }
         return c;
-    }
-
-    @Override
-    public int convertColumnIndexToView(int i) {
-        return this.getColumnModel().getColumnViewLocation(i);
     }
 
     private void registerListeners(){
@@ -164,14 +168,17 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
 
-    public Filter getCurrentFilter(){
-        return (Filter) ((TableRowSorter) this.getRowSorter()).getRowFilter();
+    public LogFilter getCurrentFilter(){
+        return (LogFilter) ((TableRowSorter) this.getRowSorter()).getRowFilter();
     }
 
-    public void setFilter(Filter filter){
+    public void setFilter(LogFilter filter){
         try {
             ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
-        }catch (NullPointerException ignored){}
+        }catch (NullPointerException ignored){
+            ignored.printStackTrace();
+        }
+        this.getRowSorter().allRowsChanged();
     }
 
     @Override
@@ -259,10 +266,8 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     public void onFilterRemoveAll() {}
 
     @Override
-    public void onRequestAdded(LogEntry logEntry, boolean hasResponse) {
-//        int rowNo = LoggerPlusPlus.instance.getLogManager().getLogEntries().size()-1;
-//        getModel().fireTableRowsInserted(rowNo, rowNo);
-        getModel().fireTableDataChanged();
+    public void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
+        getModel().fireTableRowsInserted(modelIndex, modelIndex);
 
         if((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
             JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
@@ -294,83 +299,4 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         getModel().fireTableDataChanged();
     }
 
-    //Custom sorter to fix issues with columnModel having different model column and view column counts.
-    class LogTableRowSorter extends TableRowSorter {
-        public TableModel tableModel;
-
-        @Override
-        public void setModel(TableModel model) {
-            this.tableModel = model;
-            super.setModel(model);
-            this.setModelWrapper(new TableRowSorterModelWrapper());
-            this.setMaxSortKeys(1);
-        }
-
-        @Override
-        public int convertRowIndexToModel(int index) {
-            //On occasion, for reasons unknown the conversion will cause a null pointer.
-            //The exact same line with identical parameters will often work if run again
-            //Temporary fix is to let the grepTable update the row again, such as on redraw.
-            try {
-                return super.convertRowIndexToModel(index);
-            }catch (NullPointerException | IndexOutOfBoundsException e){
-                return this.getViewRowCount()-1;
-            }
-        }
-
-        @Override
-        public void setSortKeys(List list) {
-            super.setSortKeys(list);
-            if(list == null){
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, null);
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, null);
-            }else {
-                SortKey sortKey = (SortKey) list.get(0);
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, String.valueOf(sortKey.getSortOrder()));
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, sortKey.getColumn());
-            }
-        }
-
-        private class TableRowSorterModelWrapper extends ModelWrapper<LogTableModel, Integer> {
-            private TableRowSorterModelWrapper() {
-            }
-
-            public LogTableModel getModel() {
-                return (LogTableModel) LogTableRowSorter.this.tableModel;
-            }
-
-            public int getColumnCount() {
-                return LogTableRowSorter.this.tableModel == null?0:((LogTableModel)LogTableRowSorter.this.tableModel).getModelColumnCount();
-            }
-
-            public int getRowCount() {
-                return LogTableRowSorter.this.tableModel == null?0:LogTableRowSorter.this.tableModel.getRowCount();
-            }
-
-            public Object getValueAt(int row, int column) {
-                return LogTableRowSorter.this.tableModel.getValueAt(row, column);
-            }
-
-            public String getStringValueAt(int row, int column) {
-                TableStringConverter converter = LogTableRowSorter.this.getStringConverter();
-                if(converter != null) {
-                    String value = converter.toString(LogTableRowSorter.this.tableModel, row, column);
-                    return value != null?value:"";
-                } else {
-                    Object o = this.getValueAt(row, column);
-                    if(o == null) {
-                        return "";
-                    } else {
-                        String string = o.toString();
-                        return string == null?"":string;
-                    }
-                }
-            }
-
-            public Integer getIdentifier(int index) {
-                return Integer.valueOf(index);
-            }
-        }
-        
-    }
 }

@@ -18,11 +18,22 @@ package loggerplusplus.userinterface;
 // "{'columnsDefinition':[{'id':'number','visibleName':'#','width':50,'type':'int','readonly':true,'order':1,'visible':true,'description':'Item index number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}]}";
 
 import com.google.gson.*;
+import loggerplusplus.Globals;
 
 import javax.swing.table.TableColumn;
 import java.lang.reflect.Type;
 
 public class LogTableColumn extends TableColumn implements Comparable<LogTableColumn>{
+
+    public enum ColumnIdentifier {
+        NUMBER, TOOL, URL, PATH, QUERY, STATUS, PROTOCOL, HOSTNAME, HOST, MIMETYPE, RESPONSELENGTH, TARGETPORT,
+        METHOD, RESPONSETIME, REQUESTTIME, RTT, COMMENT, REQUESTCONTENTTYPE, URLEXTENSION, REFERRER,
+        HASQUERYSTRINGPARAM, HASBODYPARAM, HASCOOKIEPARAM, REQUESTLENGTH, RESPONSECONTENTTYPE, INFERREDTYPE,
+        HASSETCOOKIES, PARAMS, TITLE, ISSSL, TARGETIP, NEWCOOKIES, LISTENERINTERFACE, CLIENTIP, COMPLETE,
+        SENTCOOKIES, USESCOOKIEJAR, REGEX1REQ, REGEX2REQ, REGEX3REQ, REGEX4REQ, REGEX5REQ, REGEX1RESP,
+        REGEX2RESP, REGEX3RESP, REGEX4RESP, REGEX5RESP, REQUEST, RESPONSE, REQUESTHEADERS, RESPONSEHEADERS;
+    }
+
 	private String name;
 	private boolean enabled;
 	private String visibleName;
@@ -46,12 +57,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	}
 
 	@Override
-	public int getModelIndex() {
-		return this.getIdentifier();
-	}
-
-	@Override
-	public Integer getIdentifier() { return (Integer) this.identifier; }
+	public ColumnIdentifier getIdentifier() { return (ColumnIdentifier) this.identifier; }
 	public String getName() {
 		return name;
 	}
@@ -73,14 +79,8 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public String getType() {
 		return type;
 	}
-	public void setType(String type) {
-		this.type = type;
-	}
 	public boolean isReadonly() {
 		return readonly;
-	}
-	public void setReadonly(boolean readonly) {
-		this.readonly = readonly;
 	}
 	public Integer getOrder() {
 		return order;
@@ -100,9 +100,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public boolean isRegEx() {
 		return isRegEx;
 	}
-	public void setRegEx(boolean isRegEx) {
-		this.isRegEx = isRegEx;
-	}
 	public RegExData getRegExData() {
 		return regExData;
 	}
@@ -114,18 +111,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		return defaultVisibleName;
 	}
 
-	public void setDefaultVisibleName(String defaultVisibleName) {
-		this.defaultVisibleName = defaultVisibleName;
-	}
-
-	public void setIsRegEx(boolean isRegEx) {
-		this.isRegEx = isRegEx;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
 	public static class RegExData{
 		private String regExString;
 		private boolean regExCaseSensitive;
@@ -133,14 +118,16 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		public String getRegExString() {
 			return regExString;
 		}
-		public void setRegExString(String regExString) {
-			this.regExString = regExString;
-		}
 		public boolean isRegExCaseSensitive() {
 			return regExCaseSensitive;
 		}
-		public void setRegExCaseSensitive(boolean regExCaseSensitive) {
-			this.regExCaseSensitive = regExCaseSensitive;
+
+		public void setRegExCaseSensitive(boolean caseSensitive) {
+			regExCaseSensitive = caseSensitive;
+		}
+
+		public void setRegExString(String regExString) {
+			this.regExString = regExString;
 		}
 	}
 
@@ -160,20 +147,21 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		@Override
 		public JsonElement serialize(LogTableColumn column, Type type, JsonSerializationContext jsonSerializationContext) {
 			JsonObject object = new JsonObject();
-			object.addProperty("id", column.getIdentifier());
-			object.addProperty("name", column.getName());
-			object.addProperty("enabled", column.isEnabled());
-			object.addProperty("defaultVisibleName", column.getDefaultVisibleName());
-			object.addProperty("visibleName", column.getVisibleName());
-			object.addProperty("preferredWidth", column.getPreferredWidth());
-			object.addProperty("type", column.getType());
-			object.addProperty("readonly", column.isReadonly());
-			object.addProperty("order", column.getOrder());
-			object.addProperty("visible", column.isVisible());
-			object.addProperty("description", column.getDescription());
-			object.addProperty("isRegEx", column.isRegEx());
-			object.addProperty("regExString", column.getRegExData().getRegExString());
-			object.addProperty("regExCaseSensitive", column.getRegExData().isRegExCaseSensitive());
+			object.addProperty("id", String.valueOf(column.identifier));
+			object.addProperty("index", column.modelIndex);
+			object.addProperty("name", column.name);
+			object.addProperty("enabled", column.enabled);
+			object.addProperty("defaultVisibleName", column.defaultVisibleName);
+			object.addProperty("visibleName", column.visibleName);
+			object.addProperty("preferredWidth", column.width);
+			object.addProperty("type", column.type);
+			object.addProperty("readonly", column.readonly);
+			object.addProperty("order", column.order);
+			object.addProperty("visible", column.visible);
+			object.addProperty("description", column.description);
+			object.addProperty("isRegEx", column.isRegEx);
+			object.addProperty("regExString", column.regExData.regExString);
+			object.addProperty("regExCaseSensitive", column.regExData.regExCaseSensitive);
 			return object;
 		}
 
@@ -182,25 +170,26 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			LogTableColumn column = null;
 			column = new LogTableColumn();
 			JsonObject object = jsonElement.getAsJsonObject();
-			column.setIdentifier(object.get("id").getAsInt());
-			column.setName(object.get("name").getAsString());
-			column.setEnabled(object.get("enabled").getAsBoolean());
-			column.setDefaultVisibleName(object.get("defaultVisibleName").getAsString());
-			column.setVisibleName(object.get("visibleName").getAsString());
-			column.setWidth(object.get("preferredWidth").getAsInt());
-			column.setType(object.get("type").getAsString());
-			column.setReadonly(object.get("readonly").getAsBoolean());
-			column.setOrder(object.get("order").getAsInt());
-			column.setVisible(object.get("visible").getAsBoolean());
-			column.setDescription(object.get("description").getAsString());
-			column.setIsRegEx(object.get("isRegEx").getAsBoolean());
+			column.identifier = ColumnIdentifier.valueOf(object.get("id").getAsString());
+			column.modelIndex = object.get("index").getAsInt();
+			column.name = object.get("name").getAsString();
+			column.enabled = object.get("enabled").getAsBoolean();
+			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();
+			column.visibleName = object.get("visibleName").getAsString();
+			column.width = object.get("preferredWidth").getAsInt();
+			column.type = object.get("type").getAsString();
+			column.readonly = object.get("readonly").getAsBoolean();
+			column.order = object.get("order").getAsInt();
+			column.visible = object.get("visible").getAsBoolean();
+			column.description = object.get("description").getAsString();
+			column.isRegEx = object.get("isRegEx").getAsBoolean();
 			LogTableColumn.RegExData regExData = new LogTableColumn.RegExData();
 			if(object.has("regExData")) {
-				regExData.setRegExString(object.getAsJsonObject("regExData").get("regExString").getAsString());
-				regExData.setRegExCaseSensitive(object.getAsJsonObject("regExData").get("regExCaseSensitive").getAsBoolean());
+				regExData.regExString = object.getAsJsonObject("regExData").get("regExString").getAsString();
+				regExData.regExCaseSensitive = object.getAsJsonObject("regExData").get("regExCaseSensitive").getAsBoolean();
 			}else{
-				regExData.setRegExString(object.get("regExString").getAsString());
-				regExData.setRegExCaseSensitive(object.get("regExCaseSensitive").getAsBoolean());
+				regExData.regExString = object.get("regExString").getAsString();
+				regExData.regExCaseSensitive = object.get("regExCaseSensitive").getAsBoolean();
 			}
 			column.setRegExData(regExData);
 			return column;

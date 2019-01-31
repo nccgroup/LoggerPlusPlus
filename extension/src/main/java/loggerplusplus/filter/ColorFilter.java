@@ -12,7 +12,7 @@ import java.util.UUID;
 public class ColorFilter implements Comparable<ColorFilter>{
     private UUID uid;
     private String name;
-    private Filter filter;
+    private LogFilter filter;
     private String filterString;
     private Color backgroundColor;
     private Color foregroundColor;
@@ -30,7 +30,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
         this();
         this.name = title;
         this.setFilterString(filterString);
-        this.setFilter(new Filter(filterString));
+        this.setFilter(new LogFilter(filterString));
     }
 
     public UUID getUid() {
@@ -53,11 +53,11 @@ public class ColorFilter implements Comparable<ColorFilter>{
         modified = true;
     }
 
-    public Filter getFilter() {
+    public LogFilter getFilter() {
         return filter;
     }
 
-    public void setFilter(Filter filter) {
+    public void setFilter(LogFilter filter) {
         this.filter = filter;
         if(filter != null)
             this.filterString = filter.toString();
