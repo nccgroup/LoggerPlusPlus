@@ -5,7 +5,7 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.*;
@@ -14,6 +14,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * Created by corey on 07/09/17.
@@ -51,10 +54,17 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
         LoggerPlusPlus.preferences = PreferenceFactory.build(LoggerPlusPlus.gsonProvider, callbacks);
+        logManager = new LogManager();
+
+        Double lastVersion = (Double) preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
+        preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
+        if(lastVersion < Globals.VERSION){
+            //Reset preferences which may cause issues.
+            preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
+        }
 
         callbacks.setExtensionName("Logger++");
         filterListeners = new ArrayList<>();
-        logManager = new LogManager();
         elasticSearchLogger = new ElasticSearchLogger(logManager);
 
         if(!callbacks.isExtensionBapp() && (boolean) preferences.getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
@@ -161,13 +171,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
                 if((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
-                    Thread importThread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            for(IHttpRequestResponse requestResponse : LoggerPlusPlus.callbacks.getProxyHistory()) {
-                                LoggerPlusPlus.instance.getLogManager().importExisting(requestResponse);
-                            }
-                        }
+                    Thread importThread = new Thread(() -> {
+                        logManager.importProxyHistory(false);
                     });
                     importThread.start();
                 }
@@ -199,12 +204,12 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     public void setFilter(String filterString){
         if (filterString == null || filterString.length() == 0) {
-            setFilter((Filter) null);
+            setFilter((LogFilter) null);
         } else {
             try {
-                Filter filter = new Filter(filterString);
+                LogFilter filter = new LogFilter(filterString);
                 setFilter(filter);
-            } catch (ParseException | IOException e) {
+            } catch (ParseException e) {
                 logViewPanel.getLogTable().setFilter(null);
                 formatFilter(filterString, Color.RED);
             }
@@ -218,7 +223,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         logViewPanel.getFilterPanel().getFilterField().setColor(color);
     }
 
-    public void setFilter(Filter filter){
+    public void setFilter(LogFilter filter){
         HistoryField filterComboField = logViewPanel.getFilterPanel().getFilterField();
         Color color;
         String filterString;

@@ -3,7 +3,7 @@ package loggerplusplus;
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.LogTable;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static loggerplusplus.Globals.PREF_COLOR_FILTERS;
@@ -72,13 +71,13 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
 
         final LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 
-        JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As Filter") {
+        JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
-                    Filter filter = new Filter(context +  " == /" + matchPattern + "/");
+                    LogFilter filter = new LogFilter(context +  " == /" + matchPattern + "/");
                     LoggerPlusPlus.instance.setFilter(filter);
-                } catch (ParseException | IOException e) {
+                } catch (ParseException e) {
                     return;
                 }
             }
@@ -87,15 +86,15 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
         filterMenu.add(useAsFilter);
 
         if(logTable.getCurrentFilter() != null) {
-            JMenu addToCurrentFilter = new JMenu("Add Selection To Filter");
+            JMenu addToCurrentFilter = new JMenu("Add Selection To LogFilter");
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        Filter filter = new Filter(logTable.getCurrentFilter().toString() + " && "
+                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && "
                                 + context + " == /" + matchPattern + "/");
                         LoggerPlusPlus.instance.setFilter(filter);
-                    } catch (ParseException | IOException e) {
+                    } catch (ParseException e) {
                         return;
                     }
                 }
@@ -104,10 +103,10 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        Filter filter = new Filter(logTable.getCurrentFilter().toString() + " || "
+                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || "
                                 + context + " == /" + matchPattern + "/");
                         LoggerPlusPlus.instance.setFilter(filter);
-                    } catch (ParseException | IOException e) {
+                    } catch (ParseException e) {
                         return;
                     }
                 }
@@ -117,16 +116,16 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             filterMenu.add(addToCurrentFilter);
         }
 
-        JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set Selection as Color Filter") {
+        JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set Selection as Color LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new Filter(context + " == /" + matchPattern + "/"));
+                    colorFilter.setFilter(new LogFilter(context + " == /" + matchPattern + "/"));
                     HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUid(), colorFilter);
                     new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners()).setVisible(true);
-                } catch (ParseException | IOException e) {
+                } catch (ParseException e) {
                     return;
                 }
             }

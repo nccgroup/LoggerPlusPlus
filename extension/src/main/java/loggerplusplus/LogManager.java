@@ -3,6 +3,7 @@ package loggerplusplus;
 import burp.*;
 import loggerplusplus.filter.ColorFilter;
 
+import javax.swing.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -10,38 +11,41 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static loggerplusplus.Globals.*;
+import static loggerplusplus.LoggerPlusPlus.callbacks;
 import static loggerplusplus.LoggerPlusPlus.preferences;
 
 /**
  * Created by corey on 07/09/17.
  */
 public class LogManager implements IHttpListener, IProxyListener {
-    private ArrayList<LogEntry> logEntries;
+    static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private static final String randIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
+    private static final Pattern uuidPattern = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
+
+    private final ArrayList<LogEntry> logEntries;
+    private AtomicInteger submittedCount;
+
     private HashMap<Integer, LogEntry.PendingRequestEntry> pendingProxyRequests;
     private HashMap<UUID, LogEntry.PendingRequestEntry> pendingToolRequests;
     private ArrayList<LogEntryListener> logEntryListeners;
     private ExecutorService executorService;
-    static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    private final String randIdentifier;
-    private final Pattern uuidPattern;
     //Stats
     private int totalRequests = 0;
     private short lateResponses = 0;
 
     LogManager(){
         logEntries = new ArrayList<>();
+        submittedCount = new AtomicInteger(0);
         logEntryListeners = new ArrayList<>();
         pendingProxyRequests = new HashMap<>();
         pendingToolRequests = new HashMap<>();
         LoggerPlusPlus.callbacks.getProxyHistory();
-
-        randIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
-        uuidPattern = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
 
         executorService = Executors.newCachedThreadPool();
 
@@ -147,6 +151,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 }
             }
         });
+        System.out.println("Submitted: " + submittedCount.incrementAndGet());
     }
 
 
@@ -209,20 +214,25 @@ public class LogManager implements IHttpListener, IProxyListener {
         }
 
         synchronized (logEntries) {
-            while(logEntries.size() >= getMaximumEntries()){
+            while (logEntries.size() >= getMaximumEntries()) {
                 final LogEntry removed = logEntries.remove(0);
                 for (LogEntryListener listener : logEntryListeners) {
                     listener.onRequestRemoved(0, removed);
                 }
             }
+        }
+        int modelIndex;
+        synchronized (logEntries) {
             logEntries.add(logEntry);
-            for (LogEntryListener listener : logEntryListeners) {
-                listener.onRequestAdded(logEntry, hasResponse);
-            }
-            totalRequests++;
-            if(logEntry instanceof LogEntry.PendingRequestEntry){
-                ((LogEntry.PendingRequestEntry) logEntry).setLogRow(totalRequests-1);
-            }
+            modelIndex = logEntries.size()-1;
+            System.out.println("Processed: " + logEntries.size());
+        }
+        for (LogEntryListener listener : logEntryListeners) {
+            listener.onRequestAdded(modelIndex, logEntry, hasResponse);
+        }
+        totalRequests++;
+        if(logEntry instanceof LogEntry.PendingRequestEntry){
+            ((LogEntry.PendingRequestEntry) logEntry).setLogRow(totalRequests-1);
         }
     }
 
@@ -266,8 +276,12 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public void reset() {
-        this.logEntries.clear();
-        this.pendingProxyRequests.clear();
+        synchronized (this.logEntries) {
+            this.logEntries.clear();
+        }
+        synchronized (this.pendingProxyRequests) {
+            this.pendingProxyRequests.clear();
+        }
         this.lateResponses = 0;
         this.totalRequests = 0;
     }
@@ -294,5 +308,27 @@ public class LogManager implements IHttpListener, IProxyListener {
         int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
         LogEntry logEntry = new LogEntry(true);
         processHttpMessage(logEntry, toolFlag, false, requestResponse);
+    }
+
+    public void importProxyHistory(boolean askConfirmation){
+        int result = JOptionPane.OK_OPTION;
+        if(askConfirmation)
+            result = MoreHelp.askConfirmMessage("Burp Proxy Import",
+                    "Import history from burp suite proxy? This will clear the current entries." +
+                    "\nLarge imports may take a few minutes to process." +
+                    "\nNote: History will be truncated to the maximum entries configured in the options.", new String[]{"Import", "Cancel"});
+
+        if(result == JOptionPane.OK_OPTION) {
+            new Thread(() -> {
+                LoggerPlusPlus.instance.getLogManager().reset();
+                IHttpRequestResponse[] history = callbacks.getProxyHistory();
+                int maxEntries = (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+                int startIndex = Math.max(0, history.length-maxEntries);
+                for (int index = startIndex; index < history.length; index++) {
+                    importExisting(history[index]);
+                }
+            }).start();
+        }
+        reset();
     }
 }

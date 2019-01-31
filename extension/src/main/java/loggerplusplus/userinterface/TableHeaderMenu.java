@@ -5,9 +5,12 @@ import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
 
 import javax.swing.*;
+import javax.swing.table.TableColumn;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -132,7 +135,9 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()) {
+				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
+				while (columnEnumeration.hasMoreElements()) {
+					LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
 					if(logTableColumn.isEnabled() && !logTableColumn.isVisible()){
 						logTable.getColumnModel().toggleHidden(logTableColumn);
 					}
@@ -146,7 +151,9 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all enabled");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()){
+				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
+				while (columnEnumeration.hasMoreElements()) {
+					LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
 					if(!logTableColumn.isEnabled()){
 						logTable.getColumnModel().toggleDisabled(logTableColumn);
 					}
@@ -156,7 +163,9 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		subMenuEnabledCols.add(item);
 
-		for (final LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()) {
+		Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
+		while (columnEnumeration.hasMoreElements()) {
+			LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
 			if(logTableColumn.isEnabled()){
 				JMenuItem visibleItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
 				visibleItem.setSelected(logTableColumn.isVisible());

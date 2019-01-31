@@ -5,7 +5,7 @@ import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
+import loggerplusplus.filter.LogFilter;
 import static loggerplusplus.Globals.*;
 
 import loggerplusplus.filter.SavedFilter;
@@ -42,7 +42,7 @@ public class PreferenceFactory {
     }
 
     private void registerTypeAdapters(){
-        LoggerPlusPlus.gsonProvider.registerTypeAdapter(Filter.class, new Filter.FilterSerializer());
+        LoggerPlusPlus.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
         LoggerPlusPlus.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
     }
 

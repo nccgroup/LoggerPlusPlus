@@ -96,7 +96,7 @@ public class LogViewPanel extends JPanel {
             gbc.gridx = 0;
             gbc.weightx = 0;
             gbc.weighty = 1;
-            this.add(new JLabel(" Filter: "), gbc);
+            this.add(new JLabel(" LogFilter: "), gbc);
 
             gbc.gridx = 1;
             gbc.weightx = 99.0;

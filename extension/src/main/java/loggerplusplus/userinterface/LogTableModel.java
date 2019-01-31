@@ -7,17 +7,20 @@ import loggerplusplus.LogEntry;
 import loggerplusplus.LogManager;
 
 import javax.swing.table.DefaultTableModel;
+import java.util.ArrayList;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
 public class LogTableModel extends DefaultTableModel implements IMessageEditorController {
 
+    private final LogManager logManager;
+    private final ArrayList<LogEntry> entries;
     private LogTableColumnModel columnModel;
     private IHttpRequestResponse currentlyDisplayedItem;
-    private LogManager logManager;
 
     public LogTableModel(LogManager logManager){
         this.logManager = logManager;
+        this.entries = logManager.getLogEntries();
     }
 
     public void setColumnModel(LogTableColumnModel columnModel){
@@ -27,13 +30,18 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
     @Override
     public int getRowCount()
     {
+        if(logManager == null) return 0;
+        if(entries==null) {
+            return 0;
+        }
+
         // To delete the Request/Response logTable the log section is empty (after deleting the logs when an item is already selected)
-        if(currentlyDisplayedItem!=null && logManager.getLogEntries().size() <= 0){
+        //TODO Move to selectionChanged
+        if(currentlyDisplayedItem!=null && entries.size() <= 0){
             currentlyDisplayedItem = null;
         }
-        //DefaultTableModel calls this before we can set the entries list.
-        if(logManager == null || logManager.getLogEntries()==null) return 0;
-        return logManager.getLogEntries().size();
+
+        return entries.size();
     }
 
     @Override
@@ -47,19 +55,19 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return !this.columnModel.getModelColumn(columnIndex).isReadonly();
+        return !this.columnModel.getColumn(columnIndex).isReadonly();
     }
 
     @Override
     public void setValueAt(Object value, int rowIndex, int colIndex) {
-        LogEntry logEntry = logManager.getLogEntries().get(rowIndex);
+        LogEntry logEntry = entries.get(rowIndex);
         logEntry.comment = (String) value;
         fireTableCellUpdated(rowIndex, colIndex);
     }
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-        String type = columnModel.getModelColumn(columnIndex).getType();
+        String type = columnModel.getColumn(columnIndex).getType();
         switch (type.toUpperCase()){
             case "INTEGER":
             case "INT": return Integer.class;
@@ -73,18 +81,19 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
 
     @Override
     public void removeRow(int row) {
-        synchronized (logManager.getLogEntries()) {
-            logManager.getLogEntries().remove(row);
-            this.fireTableRowsDeleted(row, row);
-        }
+        entries.remove(row);
+        this.fireTableRowsDeleted(row, row);
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex)
     {
-        if(rowIndex >= logManager.getLogEntries().size()) return null;
-        if(columnIndex == 0) return rowIndex+1;
-        return logManager.getLogEntries().get(rowIndex).getValue(columnIndex);
+        if(rowIndex >= entries.size()) return null;
+        if(columnIndex == 0) {
+            return rowIndex+1;
+        }
+        LogTableColumn column = columnModel.getColumn(columnIndex);
+        return entries.get(rowIndex).getValueByKey(column.getIdentifier());
     }
 
 
@@ -97,18 +106,13 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
     }
 
     public List<LogEntry> getData() {
-        return this.logManager.getLogEntries();
+        return this.entries;
     }
 
     public LogEntry getRow(int row) {
-        if(this.logManager.getLogEntries().size() <= row) return null;
-        return this.logManager.getLogEntries().get(row);
+        if(this.entries.size() <= row) return null;
+        return this.entries.get(row);
     }
-
-    public int getModelColumnCount() {
-        return columnModel.getModelColumnCount();
-    }
-
 
     //
     // implement IMessageEditorController

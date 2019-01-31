@@ -17,24 +17,22 @@ import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.userinterface.LogTable;
 import loggerplusplus.userinterface.LogTableColumn;
 import loggerplusplus.userinterface.LogTableColumnModel;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.swing.*;
+import javax.swing.table.TableColumn;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static loggerplusplus.userinterface.LogTableColumn.ColumnIdentifier.*;
 
 //
 // class to hold details of each log entry
 //
 //TODO Better column to value mapping.
-public class LogEntry extends RowFilter.Entry
+public class LogEntry
 {
 
 	public boolean isImported;
@@ -116,19 +114,13 @@ public class LogEntry extends RowFilter.Entry
 
 		this.tool = tool;
 		this.requestResponse = requestResponse;
-
 		this.url = url;
-		if(logTable.getColumnModel().isColumnEnabled("path")) // This is good to increase the speed when it is time consuming
-			this.relativeURL = url.getPath();
+		this.relativeURL = url.getPath();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
-
-		if(logTable.getColumnModel().isColumnEnabled("targetPort")) // This is good to increase the speed when it is time consuming
-			this.targetPort = tempRequestResponseHttpService.getPort();
-
-		if(logTable.getColumnModel().isColumnEnabled("method")) // This is good to increase the speed when it is time consuming
-			this.method = tempAnalyzedReq.getMethod();
+		this.targetPort = tempRequestResponseHttpService.getPort();
+		this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
 			String tempPath = url.getPath().replaceAll("\\\\", "/");
@@ -143,11 +135,8 @@ public class LogEntry extends RowFilter.Entry
 		this.comment = requestResponse.getComment();
 
 		if(message!=null){
-			if(logTable.getColumnModel().isColumnEnabled("listenerInterface")) // This is good to increase the speed when it is time consuming
-				this.listenerInterface=message.getListenerInterface();
-
-			if(logTable.getColumnModel().isColumnEnabled("clientIP")) // This is good to increase the speed when it is time consuming
-				this.clientIP=message.getClientIpAddress().toString();
+			this.listenerInterface=message.getListenerInterface();
+			this.clientIP=message.getClientIpAddress().toString();
 		}
 		requestBodyOffset = tempAnalyzedReq.getBodyOffset();
 		this.requestLength = requestResponse.getRequest().length - requestBodyOffset;
@@ -156,103 +145,97 @@ public class LogEntry extends RowFilter.Entry
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
-		if(logTable.getColumnModel().isColumnEnabled("sentCookies") ||
-				logTable.getColumnModel().isColumnEnabled("hasCookieParam") ||
-				logTable.getColumnModel().isColumnEnabled("usesCookieJar") ||
-				logTable.getColumnModel().isColumnEnabled("referrer") ||
-				logTable.getColumnModel().isColumnEnabled("requestContentType")){ // This is good to increase the speed when it is time consuming
-			for(String item:lstFullRequestHeader){
-				if(item.indexOf(":")>=0){
-					String[] headerItem = item.split(":\\s",2);
-					headerItem[0] = headerItem[0].toLowerCase();
-					if(headerItem[0].equals("cookie")){
-						this.sentCookies = headerItem[1];
-						if(!this.sentCookies.isEmpty()){
-							this.hasCookieParam = true;
-							this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
+		for(String item:lstFullRequestHeader){
+			if(item.indexOf(":")>=0){
+				String[] headerItem = item.split(":\\s",2);
+				headerItem[0] = headerItem[0].toLowerCase();
+				if(headerItem[0].equals("cookie")){
+					this.sentCookies = headerItem[1];
+					if(!this.sentCookies.isEmpty()){
+						this.hasCookieParam = true;
+						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
-							// to ensure it is enabled as it is process consuming
-							if(logTable.getColumnModel().isColumnEnabled("usesCookieJar")){
-								// Check to see if it uses cookie Jars!
-								List<ICookie> cookieJars = LoggerPlusPlus.callbacks.getCookieJarContents();
-								boolean oneNotMatched = false;
-								boolean anyParamMatched = false;
+						// Check to see if it uses cookie Jars!
+						List<ICookie> cookieJars = LoggerPlusPlus.callbacks.getCookieJarContents();
+						boolean oneNotMatched = false;
+						boolean anyParamMatched = false;
 
-								for(ICookie cookieItem : cookieJars){
-									if(cookieItem.getDomain().equals(this.host)){
-										// now we want to see if any of these cookies have been set here!
-										String currentCookieJarParam = cookieItem.getName()+"="+cookieItem.getValue()+";";
-										if(this.sentCookies.contains(currentCookieJarParam)){
-											anyParamMatched = true;
-										}else{
-											oneNotMatched = true;
-										}
-									}
-									if(anyParamMatched && oneNotMatched){
-										break; // we do not need to analyse it more!
-									}
-								}
-								if(oneNotMatched && anyParamMatched){
-									this.usesCookieJar=cookieJarStatus.PARTIALLY;
-								}else if(!oneNotMatched && anyParamMatched){
-									this.usesCookieJar=cookieJarStatus.YES;
+						for(ICookie cookieItem : cookieJars){
+							if(cookieItem.getDomain().equals(this.host)){
+								// now we want to see if any of these cookies have been set here!
+								String currentCookieJarParam = cookieItem.getName()+"="+cookieItem.getValue()+";";
+								if(this.sentCookies.contains(currentCookieJarParam)){
+									anyParamMatched = true;
+								}else{
+									oneNotMatched = true;
 								}
 							}
+							if(anyParamMatched && oneNotMatched){
+								break; // we do not need to analyse it more!
+							}
 						}
-					}else if(headerItem[0].equals("referer")){
-						this.referrerURL = headerItem[1];
-					}else if(headerItem[0].equals("content-type")){
-						this.requestContentType = headerItem[1];
+						if(oneNotMatched && anyParamMatched){
+							this.usesCookieJar=cookieJarStatus.PARTIALLY;
+						}else if(!oneNotMatched && anyParamMatched){
+							this.usesCookieJar=cookieJarStatus.YES;
+						}
 					}
+				}else if(headerItem[0].equals("referer")){
+					this.referrerURL = headerItem[1];
+				}else if(headerItem[0].equals("content-type")){
+					this.requestContentType = headerItem[1];
 				}
 			}
 		}
 
 		// RegEx processing for requests - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
-		for(int i=1;i<5;i++){
-			String regexVarName = "regex"+(i+1)+"Req";
-			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
-				// so this rule is enabled!
-				// check to see if the RegEx is not empty
-				LogTableColumn regexColumn = logTable.getColumnModel().getColumnByName(regexVarName);
-				String regexString = regexColumn.getRegExData().getRegExString();
-				if(!regexString.isEmpty()){
-					// now we can process it safely!
-					Pattern p = null;
-					try{
-						if(regexColumn.getRegExData().isRegExCaseSensitive())
-							p = Pattern.compile(regexString);
-						else
-							p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
-
-						Matcher m = p.matcher(strFullRequest);
-						StringBuilder allMatches = new StringBuilder();
-						int counter = 1;
-						while (m.find()) {
-							if(counter==2){
-								allMatches.insert(0, "�");
-								allMatches.append("�");
-							}
-							if(counter > 1){
-								allMatches.append("�"+m.group()+"�");
-							}else{
-								allMatches.append(m.group());
-							}
-							counter++;
-
-						}
-
-
-						this.regexAllReq[i] = allMatches.toString();
-
-					}catch(Exception e){
-						LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
-					}
-
-				}
-			}
-		}
+//		LogTableColumn.ColumnIdentifier[] regexReqColumns = new LogTableColumn.ColumnIdentifier[]{
+//				REGEX1REQ, REGEX2REQ, REGEX3REQ, REGEX4REQ, REGEX5REQ
+//		};
+//
+//		for (LogTableColumn.ColumnIdentifier regexReqColumn : regexReqColumns) {
+//			int columnIndex = logTable.getColumnModel().getColumnIndex(regexReqColumn);
+//			if(columnIndex == -1){
+//				continue;
+//			}
+//			LogTableColumn column = (LogTableColumn) logTable.getColumnModel().getColumn(columnIndex);
+//			String regexString = regexColumn.getRegExData().getRegExString();
+//			if(!regexString.isEmpty()){
+//				// now we can process it safely!
+//				Pattern p = null;
+//				try{
+//					if(regexColumn.getRegExData().isRegExCaseSensitive())
+//						p = Pattern.compile(regexString);
+//					else
+//						p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
+//
+//					Matcher m = p.matcher(strFullRequest);
+//					StringBuilder allMatches = new StringBuilder();
+//					int counter = 1;
+//					while (m.find()) {
+//						if(counter==2){
+//							allMatches.insert(0, "�");
+//							allMatches.append("�");
+//						}
+//						if(counter > 1){
+//							allMatches.append("�"+m.group()+"�");
+//						}else{
+//							allMatches.append(m.group());
+//						}
+//						counter++;
+//
+//					}
+//
+//					//TODO Fix storage of regex result
+////					this.regexAllReq[i] = allMatches.toString();
+//
+//				}catch(Exception e){
+//					LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
+//				}
+//
+//			}
+//		}
 	}
 
 	public void processResponse(IHttpRequestResponse requestResponse) {
@@ -282,25 +265,19 @@ public class LogEntry extends RowFilter.Entry
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
 		this.status= tempAnalyzedResp.getStatusCode();
-		if(logTable.getColumnModel().isColumnEnabled("MimeType")) // This is good to increase the speed when it is time consuming
-			this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
-		if(logTable.getColumnModel().isColumnEnabled("InferredType")) // This is good to increase the speed when it is time consuming
-			this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
-
-		if(logTable.getColumnModel().isColumnEnabled("newCookies")) // This is good to increase the speed when it is time consuming
-			for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
-				this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
-			}
+		this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
+		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
+		for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
+			this.newCookies += cookieItem.getName()+"="+cookieItem.getValue()+"; ";
+		}
 		this.hasSetCookies = !newCookies.isEmpty();
 
-		if(logTable.getColumnModel().isColumnEnabled("responseContentType")){ // This is good to increase the speed when it is time consuming
-			for(String item:lstFullResponseHeader){
-				item = item.toLowerCase();
-				if(item.startsWith("content-type: ")){
-					String[] temp = item.split("content-type:\\s",2);
-					if(temp.length>0)
-						this.responseContentType = temp[1];
-				}
+		for(String item:lstFullResponseHeader){
+			item = item.toLowerCase();
+			if(item.startsWith("content-type: ")){
+				String[] temp = item.split("content-type:\\s",2);
+				if(temp.length>0)
+					this.responseContentType = temp[1];
 			}
 		}
 
@@ -314,179 +291,59 @@ public class LogEntry extends RowFilter.Entry
 
 		// RegEx processing for responses - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
-		for(int i=0;i<5;i++){
-			String regexVarName = "regex"+(i+1)+"Resp";
-			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
-				// so this rule is enabled!
-				// check to see if the RegEx is not empty
-				LogTableColumn regexColumn = logTable.getColumnModel().getColumnByName(regexVarName);
-				String regexString = regexColumn.getRegExData().getRegExString();
-				if(!regexString.isEmpty()){
-					// now we can process it safely!
-					Pattern p = null;
-					try{
-						if(regexColumn.getRegExData().isRegExCaseSensitive())
-							p = Pattern.compile(regexString);
-						else
-							p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
+//		for(int i=0;i<5;i++){
+//			String regexVarName = "regex"+(i+1)+"Resp";
+//			if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
+//				// so this rule is enabled!
+//				// check to see if the RegEx is not empty
+//				LogTableColumn regexColumn = logTable.getColumnModel().getColumnByName(regexVarName);
+//				String regexString = regexColumn.getRegExData().getRegExString();
+//				if(!regexString.isEmpty()){
+//					// now we can process it safely!
+//					Pattern p = null;
+//					try{
+//						if(regexColumn.getRegExData().isRegExCaseSensitive())
+//							p = Pattern.compile(regexString);
+//						else
+//							p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
+//
+//						Matcher m = p.matcher(strFullResponse);
+//						StringBuilder allMatches = new StringBuilder();
+//
+//						int counter = 1;
+//						while (m.find()) {
+//							if(counter==2){
+//								allMatches.insert(0, "�");
+//								allMatches.append("�");
+//							}
+//							if(counter > 1){
+//								allMatches.append("�"+m.group()+"�");
+//							}else{
+//								allMatches.append(m.group());
+//							}
+//							counter++;
+//
+//						}
+//
+//						this.regexAllResp[i] = allMatches.toString();
+//
+//					}catch(Exception e){
+//						LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
+//					}
+//
+//				}
+//			}
+//		}
 
-						Matcher m = p.matcher(strFullResponse);
-						StringBuilder allMatches = new StringBuilder();
-
-						int counter = 1;
-						while (m.find()) {
-							if(counter==2){
-								allMatches.insert(0, "�");
-								allMatches.append("�");
-							}
-							if(counter > 1){
-								allMatches.append("�"+m.group()+"�");
-							}else{
-								allMatches.append(m.group());
-							}
-							counter++;
-
-						}
-
-						this.regexAllResp[i] = allMatches.toString();
-
-					}catch(Exception e){
-						LoggerPlusPlus.callbacks.printError("Error in regular expression: " + regexString);
-					}
-
-				}
-			}
-		}
-		if(!logTable.getColumnModel().isColumnEnabled("response") && !logTable.getColumnModel().isColumnEnabled("request")){
-			this.requestResponse = null;
-		}
+//		if(!logTable.getColumnModel().isColumnEnabled("response") && !logTable.getColumnModel().isColumnEnabled("request")){
+//			this.requestResponse = null;
+//		}
 
 		this.complete = true;
 	}
 
 	public void setResponseDateTime(Date responseTime) {
 		this.responseDateTime = responseTime;
-	}
-
-	@Override
-	public Object getModel() {
-		return null;
-	}
-
-	@Override
-	public int getValueCount() {
-		return 42;
-	}
-
-	@Override
-	public Object getValue(int i) {
-		switch (i) {
-			case 0://number
-				return 0;
-			case 1://tool
-				return LoggerPlusPlus.callbacks.getToolName(tool);
-			case 2://host
-				return this.protocol + "://" + this.host;
-			case 3://method
-				return method;
-			case 4: //url
-				return url;
-			case 5: //path
-				return this.relativeURL;
-			case 6: //query
-				return this.url != null ? (this.url.getQuery() == null ? "" : this.url.getQuery()) : "";
-			case 7: //params
-				return params;
-			case 8: //status
-				return status;
-			case 9: //responseLength
-				return responseLength;
-			case 10: //responseMimeType
-				return responseMimeType;
-			case 11: //urlExtension
-				return urlExtension;
-			case 12: //comment
-				return comment;
-			case 13: //isSSL
-				return isSSL;
-			case 14: //newCookies
-				return newCookies;
-			case 15: //requestTime
-				return requestTime;
-			case 16: //listenerInterface
-				return listenerInterface;
-			case 17: //clientIP
-				return clientIP;
-			case 18: //responseContentType
-				return responseContentType;
-			case 19: //responseInferredMimeType
-				return responseInferredMimeType;
-			case 20: //hasQueryStringParam
-				return this.url.getQuery() != null;
-			case 21: //hasBodyParam
-				return hasBodyParam;
-			case 22: //hasCookieParam
-				return hasCookieParam;
-			case 23: //sentCookies
-				return sentCookies;
-			case 24: //usesCookieJar
-				return usesCookieJar.toString();
-			case 25: //protocol
-				return protocol;
-			case 26: //hostname
-				return this.host;
-			case 27: //targetPort
-				return targetPort;
-			case 28: //requestContentType
-				return requestContentType;
-			case 29: //referrerURL
-				return referrerURL;
-			case 30: //requestLength
-				return requestLength;
-			case 31: //hasSetCookies
-				return hasSetCookies;
-			case 32: //complete
-				return complete;
-			case 33: //regex1Req
-				return regexAllReq[0];
-			case 34: //regex2Req
-				return regexAllReq[1];
-			case 35: //regex3Req
-				return regexAllReq[2];
-			case 36: //regex4Req
-				return regexAllReq[3];
-			case 37: //regex5Req
-				return regexAllReq[4];
-			case 38: //regex1Resp
-				return regexAllResp[0];
-			case 39: //regex2Resp
-				return regexAllResp[1];
-			case 40: //regex3Resp
-				return regexAllResp[2];
-			case 41: //regex4Resp
-				return regexAllResp[3];
-			case 42: //regex5Resp
-				return regexAllResp[4];
-			case 43: //request
-				return requestResponse != null && requestResponse.getRequest() != null ? new String(ArrayUtils.subarray(requestResponse.getRequest(), requestBodyOffset, requestResponse.getRequest().length)) : "";
-			case 44: //response
-				return requestResponse != null && requestResponse.getResponse() != null ? new String(ArrayUtils.subarray(requestResponse.getResponse(), responseBodyOffset, requestResponse.getResponse().length)) : "";
-			case 45: //responseTime
-				return responseTime != null ? responseTime : "";
-			case 46: //RTT
-				return requestResponseDelay;
-			case 47: //requestHeaders
-				return requestHeaders != null ? requestHeaders : "";
-			case 48: //requestHeaders
-				return responseHeaders != null ? responseHeaders : "";
-			default:
-				return null;
-		}
-	}
-
-	@Override
-	public Object getIdentifier() {
-		return null;
 	}
 
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
@@ -497,7 +354,12 @@ public class LogEntry extends RowFilter.Entry
 		StringBuilder result = new StringBuilder();
 
 		boolean firstDone = false;
-		ArrayList<LogTableColumn> columns = table.getColumnModel().getAllColumns();
+		ArrayList<LogTableColumn> columns = new ArrayList<>();
+		Enumeration<TableColumn> columnEnumeration = table.getColumnModel().getColumns();
+		while(columnEnumeration.hasMoreElements()){
+			columns.add((LogTableColumn) columnEnumeration.nextElement());
+		}
+
 		Collections.sort(columns);
 		for (LogTableColumn logTableColumn : columns) {
 			if(logTableColumn.isVisible() && logTableColumn.isEnabled()) {
@@ -545,7 +407,12 @@ public class LogEntry extends RowFilter.Entry
 		StringBuilder result = new StringBuilder();
 
 		LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
-		ArrayList<LogTableColumn> columns = columnModel.getAllColumns();
+		ArrayList<LogTableColumn> columns = new ArrayList<>();
+		Enumeration<TableColumn> columnEnumeration = columnModel.getColumns();
+		while(columnEnumeration.hasMoreElements()){
+			columns.add((LogTableColumn) columnEnumeration.nextElement());
+		}
+
 		Collections.sort(columns);
 		boolean firstDone = false;
 		for (LogTableColumn logTableColumn : columns) {
@@ -556,7 +423,7 @@ public class LogEntry extends RowFilter.Entry
 					firstDone = true;
 				}
 				result.append(StringEscapeUtils.escapeCsv(sanitize(
-						getValue(logTableColumn.getIdentifier()).toString())));
+						getValueByKey(logTableColumn.getIdentifier()).toString())));
 			}
 		}
 
@@ -573,9 +440,8 @@ public class LogEntry extends RowFilter.Entry
 		return result.toString();
 	}
 
-	public Object getValueByKey(columnNamesType columnName){
+	public Object getValueByKey(LogTableColumn.ColumnIdentifier columnName){
 
-		// switch (name.toLowerCase()) // this works fine in Java v7
 		try{
 			switch(columnName)
 			{
@@ -695,72 +561,6 @@ public class LogEntry extends RowFilter.Entry
 		PARTIALLY("Partially");
 		private String value;
 		cookieJarStatus(String value) {
-			this.value = value;
-		}
-		public String getValue() {
-			return value;
-		}
-		@Override
-		public String toString() {
-			return getValue();
-		}
-	}
-
-	// This has been designed for Java v6 that cannot support String in "switch"
-	public enum columnNamesType {
-		NUMBER("NUMBER"),
-		TOOL("TOOL"),
-		URL("URL"),
-		PATH("PATH"),
-		QUERY("QUERY"),
-		STATUS("STATUS"),
-		PROTOCOL("PROTOCOL"),
-		HOSTNAME("HOSTNAME"),
-		HOST("HOST"),
-		MIMETYPE("MIMETYPE"),
-		RESPONSELENGTH("RESPONSELENGTH"),
-		TARGETPORT("TARGETPORT"),
-		METHOD("METHOD"),
-		RESPONSETIME("RESPONSETIME"),
-		REQUESTTIME("REQUESTTIME"),
-		RTT("RTT"),
-		COMMENT("COMMENT"),
-		REQUESTCONTENTTYPE("REQUESTCONTENTTYPE"),
-		URLEXTENSION("URLEXTENSION"),
-		REFERRER("REFERRER"),
-		HASQUERYSTRINGPARAM("HASQUERYSTRINGPARAM"),
-		HASBODYPARAM("HASBODYPARAM"),
-		HASCOOKIEPARAM("HASCOOKIEPARAM"),
-		REQUESTLENGTH("REQUESTLENGTH"),
-		RESPONSECONTENTTYPE("RESPONSECONTENTTYPE"),
-		INFERREDTYPE("INFERREDTYPE"),
-		HASSETCOOKIES("HASSETCOOKIES"),
-		PARAMS("PARAMS"),
-		TITLE("TITLE"),
-		ISSSL("ISSSL"),
-		TARGETIP("TARGETIP"),
-		NEWCOOKIES("NEWCOOKIES"),
-		LISTENERINTERFACE("LISTENERINTERFACE"),
-		CLIENTIP("CLIENTIP"),
-		COMPLETE("COMPLETE"),
-		SENTCOOKIES("SENTCOOKIES"),
-		USESCOOKIEJAR("USESCOOKIEJAR"),
-		REGEX1REQ("REGEX1REQ"),
-		REGEX2REQ("REGEX2REQ"),
-		REGEX3REQ("REGEX3REQ"),
-		REGEX4REQ("REGEX4REQ"),
-		REGEX5REQ("REGEX5REQ"),
-		REGEX1RESP("REGEX1RESP"),
-		REGEX2RESP("REGEX2RESP"),
-		REGEX3RESP("REGEX3RESP"),
-		REGEX4RESP("REGEX4RESP"),
-		REGEX5RESP("REGEX5RESP"),
-		REQUEST("REQUEST"),
-		RESPONSE("RESPONSE"),
-		REQUESTHEADERS("REQUESTHEADERS"),
-		RESPONSEHEADERS("RESPONSEHEADERS");
-		private String value;
-		columnNamesType(String value) {
 			this.value = value;
 		}
 		public String getValue() {

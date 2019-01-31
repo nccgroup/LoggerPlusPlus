@@ -3,7 +3,6 @@ package loggerplusplus.userinterface.dialog;
 import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.filter.parser.ParseException;
 
@@ -87,7 +86,7 @@ public class ColorFilterDialog extends JFrame {
             }
         });
         JPanel rightPanel = new JPanel(new BorderLayout());
-        JButton btnAddFilter = new JButton("Add Filter");
+        JButton btnAddFilter = new JButton("Add LogFilter");
         btnAddFilter.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {

@@ -89,7 +89,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             logExtender.setEnabled(globalDisabled);
         }
 
-        logAllTools.addActionListener(actionEvent -> {
+        logAllTools.addChangeListener(changeEvent -> {
             boolean globalDisabled = !logAllTools.isSelected();
             logSpider.setEnabled(globalDisabled);
             logIntruder.setEnabled(globalDisabled);
@@ -101,17 +101,10 @@ public class LoggerOptionsPanel extends JScrollPane{
             logExtender.setEnabled(globalDisabled);
         });
 
-
         PanelBuilder.ComponentGroup importGroup = panelBuilder.createComponentGroup("Import");
         importGroup.addSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, "Import proxy history on startup");
         importGroup.addButton("Import Burp Proxy History", actionEvent -> {
-            int result = MoreHelp.askConfirmMessage("Burp Proxy Import", "Import history from burp suite proxy? This will clear the current entries.", new String[]{"Import", "Cancel"});
-            if(result == JOptionPane.OK_OPTION) {
-                LoggerPlusPlus.instance.getLogManager().reset();
-                for (IHttpRequestResponse requestResponse : LoggerPlusPlus.callbacks.getProxyHistory()) {
-                    LoggerPlusPlus.instance.getLogManager().importExisting(requestResponse);
-                }
-            }
+            LoggerPlusPlus.instance.getLogManager().importProxyHistory(true);
         });
 
         importGroup.addButton("Import From CSV (Not Implemented)", null).setEnabled(false);
@@ -159,7 +152,7 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         JSpinner spnMaxEntries = (JSpinner) otherPanel.addSetting(PREF_MAXIMUM_ENTRIES, "Maximum Log Entries: ");
         ((SpinnerNumberModel) spnMaxEntries.getModel()).setMinimum(10);
-        ((SpinnerNumberModel) spnMaxEntries.getModel()).setMaximum(9999999);
+        ((SpinnerNumberModel) spnMaxEntries.getModel()).setMaximum(Integer.MAX_VALUE);
         ((SpinnerNumberModel) spnMaxEntries.getModel()).setStepSize(10);
 
         JSpinner spnSearchThreads = (JSpinner) otherPanel.addSetting(PREF_SEARCH_THREADS, "Search Threads: ");
@@ -171,7 +164,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             otherPanel.addSetting(PREF_UPDATE_ON_STARTUP, "Check For Updates");
         }
         
-        PanelBuilder.ComponentGroup savedFilterSharing = panelBuilder.createComponentGroup("Saved Filter Sharing");
+        PanelBuilder.ComponentGroup savedFilterSharing = panelBuilder.createComponentGroup("Saved LogFilter Sharing");
         savedFilterSharing.addButton("Import Saved Filters", actionEvent -> {
             String json = MoreHelp.showLargeInputDialog("Import Saved Filters", null);
             ArrayList<SavedFilter> importedFilters = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
@@ -189,7 +182,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             MoreHelp.showLargeOutputDialog("Export Saved Filters", jsonOutput);
         });
 
-        PanelBuilder.ComponentGroup colorFilterSharing = panelBuilder.createComponentGroup("Color Filter Sharing");
+        PanelBuilder.ComponentGroup colorFilterSharing = panelBuilder.createComponentGroup("Color LogFilter Sharing");
         colorFilterSharing.addButton("Import Color Filters", actionEvent -> {
             String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
             Map<UUID, ColorFilter> colorFilterMap = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
@@ -212,7 +205,7 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         PanelBuilder.ComponentGroup resetPanel = panelBuilder.createComponentGroup("Reset");
         resetPanel.addButton("Reset All Settings", actionEvent -> {
-            JOptionPane.showMessageDialog(null, "TODO");//TODO Reimplement
+            LoggerPlusPlus.preferences.resetSettings(LoggerPlusPlus.preferences.getPreferenceKeys());
         });
         resetPanel.addButton("Clear The Logs", actionEvent -> {
             LoggerPlusPlus.instance.reset();

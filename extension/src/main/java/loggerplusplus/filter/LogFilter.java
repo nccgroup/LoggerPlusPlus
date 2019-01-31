@@ -2,23 +2,27 @@ package loggerplusplus.filter;
 
 import com.google.gson.*;
 import loggerplusplus.LogEntry;
-import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.parser.*;
-import loggerplusplus.userinterface.LogTable;
+import loggerplusplus.userinterface.LogTableColumn;
+import loggerplusplus.userinterface.LogTableModel;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import java.io.IOException;
+import javax.swing.table.TableModel;
 import java.lang.reflect.Type;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class Filter extends RowFilter<Object, Object> {
+public class LogFilter extends RowFilter<LogTableModel, Integer> {
 
     String originalString;
     SimpleNode root;
+    static final NumberFormat numberFormat = new DecimalFormat("##.###");
 
-    public Filter(String filterString) throws IOException, ParseException {
+    public LogFilter(String filterString) throws ParseException {
         this.originalString = filterString;
         try {
             root = SyntaxChecker.parseFilter(filterString);
@@ -37,7 +41,7 @@ public class Filter extends RowFilter<Object, Object> {
             SimpleNode node = (SimpleNode) simpleNode.jjtGetChild(i);
             if(node instanceof ASTIDENTIFIER){
                 try {
-                    LogEntry.columnNamesType type = LogEntry.columnNamesType.valueOf(((String) node.jjtGetValue()).toUpperCase());
+                    LogTableColumn.ColumnIdentifier type = LogTableColumn.ColumnIdentifier.valueOf(((String) node.jjtGetValue()).toUpperCase());
                     node.jjtSetValue(type);
                 }catch (IllegalArgumentException e){
                     ASTSTRING stringNode = new ASTSTRING(node.getId());
@@ -81,7 +85,7 @@ public class Filter extends RowFilter<Object, Object> {
         }
     }
 
-    private boolean evaluate(Entry entry){
+    private boolean evaluate(LogEntry entry){
         try {
             return evaluate(this.root, entry);
         } catch (ParseException e) {
@@ -89,7 +93,7 @@ public class Filter extends RowFilter<Object, Object> {
         }
     }
 
-    private boolean evaluate(SimpleNode node, Entry entry) throws ParseException {
+    private boolean evaluate(SimpleNode node, LogEntry entry) throws ParseException {
         if(node instanceof ASTCOMPARISON){
             return evaluateComparison(node, entry);
         }else if(node instanceof ASTEXPRESSION | node instanceof ASTFILTER){
@@ -115,7 +119,7 @@ public class Filter extends RowFilter<Object, Object> {
         return false;
     }
 
-    private boolean evaluateComparison(SimpleNode node, Entry entry) throws ParseException {
+    private boolean evaluateComparison(SimpleNode node, LogEntry entry) throws ParseException {
         if(node instanceof ASTCOMPARISON){
             SimpleNode leftNode, rightNode;
             Object left, right;
@@ -123,21 +127,21 @@ public class Filter extends RowFilter<Object, Object> {
             leftNode = (SimpleNode) node.jjtGetChild(0);
             rightNode = (SimpleNode) node.jjtGetChild(2);
             if(leftNode instanceof ASTIDENTIFIER){
-                left = getEntryValue((LogEntry.columnNamesType) (leftNode).jjtGetValue(), entry);
+                left = getEntryValue((LogTableColumn.ColumnIdentifier) (leftNode).jjtGetValue(), entry);
             }else{
                 left = leftNode.jjtGetValue();
                 if(left instanceof String) left = StringEscapeUtils.unescapeJava((String) left);
             }
 
             if(rightNode instanceof ASTIDENTIFIER){
-                right = getEntryValue((LogEntry.columnNamesType) (rightNode).jjtGetValue(), entry);
+                right = getEntryValue((LogTableColumn.ColumnIdentifier) (rightNode).jjtGetValue(), entry);
             }else{
                 right = rightNode.jjtGetValue();
                 if(right instanceof String) right = StringEscapeUtils.unescapeJava((String) right);
             }
 
             SimpleNode operator = ((SimpleNode) node.jjtGetChild(1));
-            
+
             if(left instanceof String){
                 if(right instanceof String){
                     return StringUtils.containsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
@@ -191,29 +195,27 @@ public class Filter extends RowFilter<Object, Object> {
             }else if(left instanceof Boolean) {
                 Boolean rightVal = Boolean.parseBoolean(String.valueOf(right));
                 return rightVal.equals(left)  ^ (operator instanceof ASTNEQ);
+            }else{
+                return String.valueOf(left).equals(String.valueOf(right));
             }
 
         }
         return false;
     }
 
-    private Object getEntryValue(LogEntry.columnNamesType identifier, Entry entry){
-        if(entry instanceof LogEntry){
-            return ((LogEntry) entry).getValueByKey(identifier);
+    private Object getEntryValue(LogTableColumn.ColumnIdentifier identifier, LogEntry entry){
+        if(entry != null){
+            return entry.getValueByKey(identifier);
         }else{
-            LogTable logTable = LoggerPlusPlus.instance.getLogTable();
-            Integer columnNo = logTable.getColumnModel().getColumnIndexByName(identifier.getValue());
-            if(columnNo == null) return "";
-            return entry.getValue(columnNo);
+//            LogTable logTable = LoggerPlusPlus.instance.getLogTable();
+//            Integer columnNo = logTable.getColumnModel().getColumnIndexByName(identifier.getValue());
+//            if(columnNo == null) return "";
+//            return entry.getValue(columnNo);
+            return null;
         }
     }
 
     public boolean matches(LogEntry entry){
-        return this.evaluate(entry);
-    }
-
-    @Override
-    public boolean include(Entry<?, ?> entry) {
         return this.evaluate(entry);
     }
 
@@ -229,6 +231,9 @@ public class Filter extends RowFilter<Object, Object> {
             if(node instanceof ASTREGEX){
                 return "/" + String.valueOf(node.jjtGetValue()) + "/";
             }
+            if(node instanceof ASTNUMBER){
+                return numberFormat.format(node.jjtGetValue());
+            }
             return String.valueOf(node.jjtGetValue());
         }else{
             StringBuilder sb = new StringBuilder();
@@ -242,26 +247,31 @@ public class Filter extends RowFilter<Object, Object> {
         }
     }
 
-    public static class FilterException extends Exception{
-        public FilterException(String msg) {
-            super(msg);
+    @Override
+    public boolean include(Entry entry) {
+        int identifier = (int) entry.getIdentifier();
+        TableModel tableModel = (TableModel) entry.getModel();
+        if(tableModel instanceof LogTableModel){
+            LogEntry logEntry = ((LogTableModel) tableModel).getRow(identifier);
+            return this.evaluate(logEntry);
         }
+        return false;
     }
 
-    public static class FilterSerializer implements JsonSerializer<Filter>, JsonDeserializer<Filter> {
+    public static class FilterSerializer implements JsonSerializer<LogFilter>, JsonDeserializer<LogFilter> {
         @Override
-        public JsonElement serialize(Filter filter, Type type, JsonSerializationContext jsonSerializationContext) {
+        public JsonElement serialize(LogFilter filter, Type type, JsonSerializationContext jsonSerializationContext) {
             JsonObject object = new JsonObject();
             object.addProperty("filter", filter.toString());
             return object;
         }
 
         @Override
-        public Filter deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-            Filter filter = null;
+        public LogFilter deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            LogFilter filter = null;
             try {
-                filter = new Filter(jsonElement.getAsJsonObject().get("filter").getAsString());
-            } catch (ParseException | IOException e) {}
+                filter = new LogFilter(jsonElement.getAsJsonObject().get("filter").getAsString());
+            } catch (ParseException e) {}
             return filter;
         }
     }

@@ -87,7 +87,7 @@ public class SavedFiltersDialog extends JFrame{
         });
 
         JPanel rightPanel = new JPanel(new BorderLayout());
-        JButton btnAddFilter = new JButton("Add Filter");
+        JButton btnAddFilter = new JButton("Add LogFilter");
         btnAddFilter.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {

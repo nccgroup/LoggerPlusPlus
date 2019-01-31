@@ -1,8 +1,8 @@
 package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 
 import javax.swing.*;
@@ -20,7 +20,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
     private final Map<Short, UUID> rowUUIDs = new HashMap<Short, UUID>();
     private final Map<UUID, ColorFilter> filters;
     private final ArrayList<FilterListener> filterListeners;
-    private final String[] columnNames = {"Title", "Filter", "Foreground Color", "Background Color", "Enabled", ""};
+    private final String[] columnNames = {"Title", "LogFilter", "Foreground Color", "Background Color", "Enabled", ""};
     private final JButton removeButton = new JButton("Remove");
 
     ColorFilterTableModel(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
@@ -75,7 +75,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
         return getFilterAtRow(row).getFilter() != null;
     }
 
-//    public Filter getFilterAtRow(int row){
+//    public LogFilter getFilterAtRow(int row){
 //        return filters.get(rowUUIDs.get((short) row)).getFilter();
 //    }
 
@@ -93,8 +93,8 @@ public class ColorFilterTableModel extends AbstractTableModel {
             case 1: {
                 filter.setFilterString((String) value);
                 try {
-                    filter.setFilter(new Filter((String) value));
-                } catch (ParseException | IOException e) {
+                    filter.setFilter(new LogFilter((String) value));
+                } catch (ParseException e) {
                     filter.setFilter(null);
                 }
                 break;

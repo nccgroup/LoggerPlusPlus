@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
-import loggerplusplus.filter.Filter;
 import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 import loggerplusplus.userinterface.renderer.ButtonRenderer;
@@ -27,7 +26,7 @@ import java.util.ArrayList;
  */
 public class FilterLibraryPanel extends JSplitPane {
     ArrayList<SharedFilter> library;
-    String[] columnNames = {"Title", "Filter", "Submitted By", "", ""};
+    String[] columnNames = {"Title", "LogFilter", "Submitted By", "", ""};
     JButton btnFilter;
     JButton btnColorFilter;
     JLabel lblSelectedTitle;
@@ -38,8 +37,8 @@ public class FilterLibraryPanel extends JSplitPane {
 
     public FilterLibraryPanel(){
         library = new ArrayList<>();
-        btnFilter = new JButton("Set as Filter");
-        btnColorFilter = new JButton("Use as Color Filter");
+        btnFilter = new JButton("Set as LogFilter");
+        btnColorFilter = new JButton("Use as Color LogFilter");
         final JTable libraryTable = new JTable(new LibraryTableModel()){
             @Override
             public void changeSelection(int rowIndex, int columnIndex, boolean toggle, boolean extend) {
@@ -118,7 +117,7 @@ public class FilterLibraryPanel extends JSplitPane {
 
         gbc.gridx = 0;
         gbc.gridy = 1;
-        detailsPanel.add(new JLabel("Filter:"), gbc);
+        detailsPanel.add(new JLabel("LogFilter:"), gbc);
         gbc.gridx++;
         gbc.gridwidth = 3;
         lblSelectedFilter = new JLabel();
@@ -203,7 +202,7 @@ public class FilterLibraryPanel extends JSplitPane {
                     dialog.addColorFilter(sharedFilter.title, sharedFilter.filter);
                     dialog.setVisible(true);
                 } catch (ParseException | IOException e) {
-                    MoreHelp.showMessage("Could not apply Color Filter.");
+                    MoreHelp.showMessage("Could not apply Color LogFilter.");
                 }
             }
         }
