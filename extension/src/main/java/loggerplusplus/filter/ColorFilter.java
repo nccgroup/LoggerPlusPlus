@@ -124,4 +124,9 @@ public class ColorFilter implements Comparable<ColorFilter>{
     public boolean shouldRetest() {
         return shouldRetest;
     }
+
+    @Override
+    public String toString() {
+        return "ColorFilter[" + this.filter.toString() + "]";
+    }
 }

@@ -99,7 +99,8 @@ public class LogManager implements IHttpListener, IProxyListener {
         if(messageIsRequest){
             UUID uuid = UUID.randomUUID();
             logEntry = new LogEntry.PendingRequestEntry(uuid);
-            requestResponse.setComment(requestResponse.getComment() + ";$LPP:" + randIdentifier + ":" + uuid + "$");
+            String originalComment = requestResponse.getComment() != null ? requestResponse.getComment() : "";
+            requestResponse.setComment(originalComment + "$LPP:" + randIdentifier + ":" + uuid + "$");
             synchronized (pendingToolRequests){
                 pendingToolRequests.put(uuid, (LogEntry.PendingRequestEntry) logEntry);
             }
@@ -114,6 +115,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                         logEntry = pendingToolRequests.remove(uuid);
                     }
                     if (logEntry != null) {
+                        requestResponse.setComment(matcher.replaceAll(""));
                         logEntry.setResponseDateTime(nowDate);
                         processHttpMessage(logEntry, toolFlag, false, requestResponse);
                     }
@@ -151,7 +153,6 @@ public class LogManager implements IHttpListener, IProxyListener {
                 }
             }
         });
-        System.out.println("Submitted: " + submittedCount.incrementAndGet());
     }
 
 
@@ -225,7 +226,6 @@ public class LogManager implements IHttpListener, IProxyListener {
         synchronized (logEntries) {
             logEntries.add(logEntry);
             modelIndex = logEntries.size()-1;
-            System.out.println("Processed: " + logEntries.size());
         }
         for (LogEntryListener listener : logEntryListeners) {
             listener.onRequestAdded(modelIndex, logEntry, hasResponse);

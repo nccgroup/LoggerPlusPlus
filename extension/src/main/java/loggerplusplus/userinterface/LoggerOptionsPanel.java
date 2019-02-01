@@ -234,7 +234,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             }, PanelBuilder.Alignment.TOPMIDDLE);
         } catch (Exception e) {
             e.printStackTrace();
-            mainComponent = new JLabel("Could not build the options panel!");
+            mainComponent = new JLabel("Could not buildPreferences the options panel!");
         }
 
         this.setViewportView(mainComponent);
