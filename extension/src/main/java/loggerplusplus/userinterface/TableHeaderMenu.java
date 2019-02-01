@@ -165,7 +165,7 @@ public class TableHeaderMenu extends JPopupMenu{
 
 		Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
 		while (columnEnumeration.hasMoreElements()) {
-			LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
+			LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
 			if(logTableColumn.isEnabled()){
 				JMenuItem visibleItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
 				visibleItem.setSelected(logTableColumn.isVisible());

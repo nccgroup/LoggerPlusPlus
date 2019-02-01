@@ -219,6 +219,7 @@ public class LogFilter extends RowFilter<LogTableModel, Integer> {
         return this.evaluate(entry);
     }
 
+    @Override
     public String toString() {
         return toString(this.root);
     }

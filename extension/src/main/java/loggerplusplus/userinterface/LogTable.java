@@ -14,6 +14,7 @@ import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
 
 import javax.swing.*;
+import javax.swing.event.RowSorterEvent;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -41,6 +42,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
         this.setAutoCreateRowSorter(true);
         this.getRowSorter().addRowSorterListener(rowSorterEvent -> {
+            if(rowSorterEvent.getType() != RowSorterEvent.Type.SORT_ORDER_CHANGED) return;
             List<? extends RowSorter.SortKey> sortKeys = LogTable.this.getRowSorter().getSortKeys();
             if(sortKeys == null || sortKeys.size() == 0){
                 LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, null);
@@ -81,7 +83,6 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         };
 
         this.setSelectionModel(model);
-        LoggerPlusPlus.instance.getLogManager().addLogListener(this);
         registerListeners();
     }
 
@@ -158,6 +159,8 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
                     final int row = convertRowIndexToModel(rowAtPoint(p));
                     final int col = convertColumnIndexToModel(columnAtPoint(p));
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                        int viewRow = convertRowIndexToView(row);
+                        LogTable.this.setRowSelectionInterval(viewRow, viewRow);
                         new LogEntryMenu(LogTable.this, row, col).show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
@@ -165,6 +168,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         });
 
         LoggerPlusPlus.instance.addFilterListener(this);
+        LoggerPlusPlus.instance.getLogManager().addLogListener(this);
     }
 
 

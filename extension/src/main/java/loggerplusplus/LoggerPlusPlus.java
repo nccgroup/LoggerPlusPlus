@@ -4,6 +4,7 @@ import burp.*;
 
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.FilterListener;
@@ -12,16 +13,14 @@ import loggerplusplus.userinterface.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 
 /**
  * Created by corey on 07/09/17.
  */
-public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListener {
+public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListener, ILogProvider {
     public static LoggerPlusPlus instance;
     public static IBurpExtenderCallbacks callbacks;
     public static IGsonProvider gsonProvider;
@@ -53,7 +52,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         LoggerPlusPlus.callbacks = callbacks;
         LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
-        LoggerPlusPlus.preferences = PreferenceFactory.build(LoggerPlusPlus.gsonProvider, callbacks);
+        LoggerPlusPlus.preferences = new LoggerPreferenceFactory(LoggerPlusPlus.gsonProvider, this, callbacks).buildPreferences();
         logManager = new LogManager();
 
         Double lastVersion = (Double) preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
@@ -201,6 +200,17 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return uiPopOutPanel;
     }
 
+    @Override
+    public void logOutput(String message) {
+        callbacks.printOutput(message);
+        System.out.println(message);
+    }
+
+    @Override
+    public void logError(String errorMessage) {
+        callbacks.printError(errorMessage);
+        System.err.println(errorMessage);
+    }
 
     public void setFilter(String filterString){
         if (filterString == null || filterString.length() == 0) {

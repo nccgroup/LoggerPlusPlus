@@ -2,6 +2,8 @@ package loggerplusplus;
 
 import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.coreyd97.BurpExtenderUtilities.ILogProvider;
+import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import loggerplusplus.filter.ColorFilter;
@@ -14,39 +16,35 @@ import loggerplusplus.userinterface.VariableViewPanel;
 
 import java.util.*;
 
-public class PreferenceFactory {
+public class LoggerPreferenceFactory extends PreferenceFactory {
 
-    private Preferences prefs;
-    private IGsonProvider gsonProvider;
     private HashMap<UUID, ColorFilter> defaultColorFilters;
     private ArrayList<LogTableColumn> defaultlogTableColumns;
 
-    private PreferenceFactory(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
-        this.gsonProvider = gsonProvider;
-        prefs = new Preferences(LoggerPlusPlus.gsonProvider, LoggerPlusPlus.callbacks);
+    public LoggerPreferenceFactory(IGsonProvider gsonProvider, ILogProvider logProvider, IBurpExtenderCallbacks callbacks){
+        super(gsonProvider, logProvider, callbacks);
     }
 
-    public static Preferences build(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
-        PreferenceFactory preferenceFactory = new PreferenceFactory(gsonProvider, callbacks);
-        preferenceFactory.registerTypeAdapters();
-        preferenceFactory.createDefaults();
-        preferenceFactory.registerSettings();
-        return preferenceFactory.prefs;
+    public LoggerPreferenceFactory(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
+        super(gsonProvider, callbacks);
     }
 
-    private void createDefaults(){
+    @Override
+    protected void createDefaults(){
         defaultColorFilters = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
     }
 
-    private void registerTypeAdapters(){
-        LoggerPlusPlus.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
-        LoggerPlusPlus.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
+    @Override
+    protected void registerTypeAdapters(){
+        this.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
+        this.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
     }
 
-    private void registerSettings() {
+    @Override
+    protected void registerSettings() {
         prefs.addSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns);
         prefs.addSetting(PREF_LAST_USED_VERSION, Double.class, Globals.VERSION);
         prefs.addSetting(PREF_IS_DEBUG, Boolean.class, false);

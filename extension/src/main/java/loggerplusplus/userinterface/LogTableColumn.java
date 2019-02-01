@@ -196,4 +196,8 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		}
 	}
 
+    @Override
+    public String toString() {
+        return "LogTableColumn[" + identifier + "]";
+    }
 }

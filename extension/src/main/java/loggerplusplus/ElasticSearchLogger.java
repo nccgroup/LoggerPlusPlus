@@ -151,7 +151,7 @@ public class ElasticSearchLogger implements LogEntryListener{
             if(request != null) {
                 httpBulkBuilder.add(request);
             }else{
-                //Could not build index request. Ignore it?
+                //Could not buildPreferences index request. Ignore it?
             }
         }
 
