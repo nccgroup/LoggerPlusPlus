@@ -32,7 +32,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     public LogTable(LogTableModel tableModel, LogTableColumnModel logTableColumnModel)
     {
         super(tableModel, logTableColumnModel);
-//        this.setTableHeader(new TableHeader (getColumnModel(),this)); // This was used to create tool tips
+        this.setTableHeader(new TableHeader (getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
