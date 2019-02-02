@@ -16,7 +16,7 @@ import java.text.NumberFormat;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class LogFilter extends RowFilter<LogTableModel, Integer> {
+public class LogFilter extends RowFilter<TableModel, Integer> {
 
     String originalString;
     SimpleNode root;

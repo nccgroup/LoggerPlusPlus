@@ -18,12 +18,16 @@ package loggerplusplus.userinterface;
 // "{'columnsDefinition':[{'id':'number','visibleName':'#','width':50,'type':'int','readonly':true,'order':1,'visible':true,'description':'Item index number','isRegEx':false,'regExData':{'regExString':'','regExCaseSensitive':false}}]}";
 
 import com.google.gson.*;
-import loggerplusplus.Globals;
+import loggerplusplus.userinterface.renderer.LeftTableCellRenderer;
 
 import javax.swing.table.TableColumn;
 import java.lang.reflect.Type;
 
 public class LogTableColumn extends TableColumn implements Comparable<LogTableColumn>{
+
+    public LogTableColumn(int modelIndex){
+        super(modelIndex);
+    }
 
     public enum ColumnIdentifier {
         NUMBER, TOOL, URL, PATH, QUERY, STATUS, PROTOCOL, HOSTNAME, HOST, MIMETYPE, RESPONSELENGTH, TARGETPORT,
@@ -38,9 +42,8 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	private boolean enabled;
 	private String visibleName;
 	private String type;
-	private boolean readonly;
-	private Integer order;
 	private boolean visible;
+	private boolean readOnly;
 	private String description;
 	private boolean isRegEx;
 	private RegExData regExData;
@@ -79,15 +82,15 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public String getType() {
 		return type;
 	}
-	public boolean isReadonly() {
-		return readonly;
+
+	public boolean isReadOnly() {
+		return readOnly;
 	}
-	public Integer getOrder() {
-		return order;
+
+	public void setReadOnly(boolean readOnly) {
+		this.readOnly = readOnly;
 	}
-	public void setOrder(Integer order) {
-		this.order = order;
-	}
+
 	public boolean isVisible() {
 		return visible;
 	}
@@ -139,7 +142,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 
 	@Override
 	public int compareTo(LogTableColumn logTableColumn) {
-		return this.getOrder().compareTo(logTableColumn.getOrder());
+		return Integer.compare(this.getModelIndex(), logTableColumn.getModelIndex());
 	}
 
 	public static class ColumnSerializer implements JsonDeserializer<LogTableColumn>, JsonSerializer<LogTableColumn> {
@@ -155,8 +158,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			object.addProperty("visibleName", column.visibleName);
 			object.addProperty("preferredWidth", column.width);
 			object.addProperty("type", column.type);
-			object.addProperty("readonly", column.readonly);
-			object.addProperty("order", column.order);
+			object.addProperty("readonly", column.readOnly);
 			object.addProperty("visible", column.visible);
 			object.addProperty("description", column.description);
 			object.addProperty("isRegEx", column.isRegEx);
@@ -168,18 +170,18 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		@Override
 		public LogTableColumn deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
 			LogTableColumn column = null;
-			column = new LogTableColumn();
 			JsonObject object = jsonElement.getAsJsonObject();
-			column.identifier = ColumnIdentifier.valueOf(object.get("id").getAsString());
-			column.modelIndex = object.get("index").getAsInt();
+			int modelIndex = (object.has("index") ? object.get("index").getAsInt() : 0);
+            column = new LogTableColumn(modelIndex);
+            column.identifier = ColumnIdentifier.valueOf(object.get("id").getAsString());
 			column.name = object.get("name").getAsString();
-			column.enabled = object.get("enabled").getAsBoolean();
+//			column.enabled = object.get("enabled").getAsBoolean();
+			column.enabled = true;
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();
 			column.visibleName = object.get("visibleName").getAsString();
 			column.width = object.get("preferredWidth").getAsInt();
 			column.type = object.get("type").getAsString();
-			column.readonly = object.get("readonly").getAsBoolean();
-			column.order = object.get("order").getAsInt();
+			column.readOnly = object.get("readonly").getAsBoolean();
 			column.visible = object.get("visible").getAsBoolean();
 			column.description = object.get("description").getAsString();
 			column.isRegEx = object.get("isRegEx").getAsBoolean();
@@ -192,6 +194,11 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 				regExData.regExCaseSensitive = object.get("regExCaseSensitive").getAsBoolean();
 			}
 			column.setRegExData(regExData);
+
+			if(column.getType().equals("int") || column.getType().equals("short")
+					|| column.getType().equals("double") || column.getType().equals("long")){
+				column.setCellRenderer(new LeftTableCellRenderer());
+			}
 			return column;
 		}
 	}

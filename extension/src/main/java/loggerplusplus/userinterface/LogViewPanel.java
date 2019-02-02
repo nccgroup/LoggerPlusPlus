@@ -22,8 +22,9 @@ public class LogViewPanel extends JPanel {
     public LogViewPanel(LogManager logManager){
         this.setLayout(new GridLayout());
 
-        LogTableModel tableModel = new LogTableModel(logManager);
-        logTable = new LogTable(tableModel);
+        LogTableColumnModel columnModel = new LogTableColumnModel();
+        LogTableModel tableModel = new LogTableModel(logManager, columnModel);
+        logTable = new LogTable(tableModel, columnModel);
         logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
         logTableScrollPane.addMouseWheelListener(new MouseWheelListener() {
             @Override
