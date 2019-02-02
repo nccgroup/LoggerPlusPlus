@@ -1,5 +1,7 @@
 package loggerplusplus.userinterface;
 
+import org.jdesktop.swingx.JXTableHeader;
+
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
@@ -11,12 +13,11 @@ import java.awt.event.MouseEvent;
 public class TableHeader extends JTableHeader {
 
 	private final LogTableColumnModel tableColumnModel;
-	private final LogTable logTable;
 	
 	TableHeader(TableColumnModel tcm, final LogTable logTable) {
 		super(tcm);
 		this.tableColumnModel = (LogTableColumnModel) tcm;
-		this.logTable = logTable;
+		this.setTable(logTable);
 
 		this.addMouseListener(new MouseAdapter(){
 			@Override
@@ -26,8 +27,8 @@ public class TableHeader extends JTableHeader {
 				{
 					// get the coordinates of the mouse click
 					Point p = e.getPoint();
-					int columnID = columnAtPoint(p);
-					LogTableColumn column = tableColumnModel.getColumn(columnID);
+					int columnID = logTable.convertColumnIndexToModel(columnAtPoint(p));
+					LogTableColumn column = (LogTableColumn) tableColumnModel.getColumn(columnID);
 					//TODO
 					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTable, column);
 					tblHeaderMenu.showMenu(e);
@@ -44,8 +45,8 @@ public class TableHeader extends JTableHeader {
 
 		// get the coordinates of the mouse click
 		Point p = e.getPoint();
-		int columnID = logTable.columnAtPoint(p);
-		LogTableColumn column = logTable.getColumnModel().getColumn(columnID);
+		int columnID = TableHeader.this.getTable().convertColumnIndexToModel(TableHeader.this.getTable().columnAtPoint(p));
+		LogTableColumn column = (LogTableColumn) TableHeader.this.getTable().getColumnModel().getColumn(columnID);
 
 		String retStr;
 		try {

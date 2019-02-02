@@ -13,13 +13,14 @@
 package loggerplusplus.userinterface;
 
 import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.userinterface.renderer.LeftTableCellRenderer;
 
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
-import java.beans.PropertyChangeEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 
 import static loggerplusplus.Globals.PREF_LOG_TABLE_SETTINGS;
 
@@ -28,176 +29,94 @@ import static loggerplusplus.Globals.PREF_LOG_TABLE_SETTINGS;
 
 public class LogTableColumnModel extends DefaultTableColumnModel {
 
-	public LogTableColumnModel() {
-		super();
-		populateHeaders();
-	}
+    private final HashMap<Integer, LogTableColumn> allColumns;
 
-	private void populateHeaders(){
-		ArrayList<LogTableColumn> logTableColumns = (ArrayList<LogTableColumn>)
-				LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
+    public LogTableColumnModel() {
+        super();
+        allColumns = new HashMap<>();
 
+        ArrayList<LogTableColumn> columnList = (ArrayList<LogTableColumn>)
+                LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
 
-		// Sorting based on order number
-		Collections.sort(logTableColumns);
+        // Sorting based on order number
+        Collections.sort(columnList);
 
-		for(LogTableColumn column : logTableColumns){
-			super.addColumn(column);
-			if(column.getType().equals("int")
-					|| column.getType().equals("short")
-					|| column.getType().equals("double")
-					|| column.getType().equals("long"))
-				column.setCellRenderer(new LeftTableCellRenderer());
-		}
-	}
+        for(LogTableColumn column : columnList){
+            allColumns.put(column.getModelIndex(), column);
+            addColumn(column);
+        }
+    }
 
-	public void resetToDefaultVariables() {
-		LoggerPlusPlus.preferences.resetSetting(PREF_LOG_TABLE_SETTINGS);
-		while(this.getColumns().hasMoreElements()){
-			this.removeColumn(this.getColumns().nextElement());
-		}
-		populateHeaders();
-	}
+    @Override
+    public TableColumn getColumn(int modelIndex) {
+        return allColumns.get(modelIndex);
+    }
 
-	@Override
-	public LogTableColumn getColumn(int i) {
-		return (LogTableColumn) super.getColumn(i);
-	}
+    public void resetToDefaultVariables() {
+        LoggerPlusPlus.preferences.resetSetting(PREF_LOG_TABLE_SETTINGS);
+        Enumeration<TableColumn> columns = this.getColumns();
+        while(columns.hasMoreElements()){
+            this.removeColumn(columns.nextElement());
+        }
+    }
 
-	public void saveLayout() {
-		LoggerPlusPlus.preferences.setSetting(PREF_LOG_TABLE_SETTINGS, this.tableColumns);
-	}
+    public void saveLayout() {
+        LoggerPlusPlus.preferences.setSetting(PREF_LOG_TABLE_SETTINGS, this.allColumns.values());
+    }
 
-//	public LogTableColumn getColumnByName(String colName){
-//		return columnMap.get(viewColumns.get(colName.toUpperCase()));
-//	}
+    @Override
+    public void moveColumn(int modelFrom, int modelTo) {
+        super.moveColumn(modelFrom, modelTo);
 
-//	public Integer getColumnIndexByName(String colName){
-//		return viewColumns.get(colName.toUpperCase());
-//	}
+//        We've moved the columns around in the model.
+//        We must loop over them and update their model indexes.
 
-//	public boolean isColumnEnabled(String colName){
-//		Integer modelColumnIndex = viewColumns.get(colName.toUpperCase());
-//		if(modelColumnIndex == null){
-//			LoggerPlusPlus.callbacks.printError("Column Enabled check on nonexistent column! Corrupted column set? \"" + colName + "\"");
-//			return false;
-//		}else {
-//			return columnMap.get(modelColumnIndex).isEnabled();
-//		}
-//	}
+        LogTableColumn movedColumn = (LogTableColumn) this.getColumn(modelFrom);
+        movedColumn.setModelIndex(modelTo);
+        if(modelFrom < modelTo) { //Moving right
+            for (int i = modelFrom + 1; i <= modelTo; i++) { //From original pos to new pos
+                LogTableColumn nextCol = (LogTableColumn) getColumn(i);
+                nextCol.setModelIndex(i-1); //Move left one place
+                this.allColumns.put(i-1, nextCol);
+            }
+            this.allColumns.put(modelTo, movedColumn);
+            saveLayout();
+            this.fireColumnMoved(new TableColumnModelEvent(this, modelFrom, modelTo));
+        }else if(modelFrom > modelTo){ //Moving left
+            for (int i = modelTo; i < modelFrom; i++) { //From original pos to new pos
+                LogTableColumn nextCol = (LogTableColumn) getColumn(i);
+                nextCol.setModelIndex(i+1); //Move right one place.
+                this.allColumns.put(i+1, nextCol);
+            }
+            this.allColumns.put(modelTo, movedColumn);
+            saveLayout();
+            this.fireColumnMoved(new TableColumnModelEvent(this, modelFrom, modelTo));
+        }else{
+            //no change
+        }
+    }
 
-//	@Override
-//	public void addColumn(TableColumn tableColumn) {
-//		super.addColumn(tableColumn);
-//		addToView((Integer) tableColumn.getIdentifier(), true);
-//	}
-
-//	private void removeColumnFromViewMap(LogTableColumn.ColumnIdentifier viewColumn, boolean saveToPrefs){
-//		viewColumns.remove(viewColumn);
-//		reorderViewColumns(saveToPrefs);
-//	}
-
-//	private void addToView(LogTableColumn.ColumnIdentifier modelColumn, boolean saveToPrefs){
-//		viewToModelMap.add(modelColumn);
-//		reorderViewColumns(saveToPrefs);
-//	}
-
-//	@Override
-//	public void removeColumn(TableColumn tableColumn) {
-//		int viewLoc = getColumnViewLocation(tableColumn.getModelIndex());
-//		removeColumnFromViewMap(viewLoc, true);
-//		super.removeColumn(tableColumn);
-//	}
-//
-//	@Override
-//	public int getColumnCount() {
-//		return columnMap.size();
-//	}
-
-//	@Override
-//	public Enumeration<TableColumn> getColumns() {
-//		ArrayList<TableColumn> columns = new ArrayList<TableColumn>();
-//		for (Integer colIndex : viewToModelMap) {
-//			columns.add(columnMap.get(colIndex));
-//		}
-//		return Collections.enumeration(columns);
-//	}
-
-//	public ArrayList<LogTableColumn> getAllColumns(){
-//		return new ArrayList<LogTableColumn>(columnMap.values());
-//	}
-
-//	@Override
-//	public int getColumnIndex(Object o) {
-//		if(o instanceof LogTableColumn){
-//			return ((LogTableColumn) o).getModelIndex();
-//		}
-//		return -1;
-//	}
-
-//	@Override
-//	public LogTableColumn getColumn(int viewColumn) {
-//		return columnMap.get(viewToModelMap.get(viewColumn));
-//	}
-
-//	public int getColumnViewLocation(int modelColumnIndex) {
-//		return viewToModelMap.indexOf(modelColumnIndex);
-//	}
-
-//	private void reorderViewColumns(boolean saveToPrefs){
-//		Collections.sort(viewToModelMap, new Comparator<Integer>() {
-//			@Override
-//			public int compare(Integer colModelId, Integer otherColModelId) {
-//				return columnMap.get(colModelId).compareTo(columnMap.get(otherColModelId));
-//			}
-//		});
-//		if(saveToPrefs) {
-//			saveLayout();
-//		}
-//	}
-
-
-//	@Override
-//	public void moveColumn(int viewFrom, int viewTo) {
-////		viewToModelMap
-//		columnMap.get(viewToModelMap.get(viewFrom)).setOrder(viewTo);
-//		if(viewFrom < viewTo) {
-//			for (int i = viewFrom + 1; i <= viewTo; i++) {
-//				columnMap.get(viewToModelMap.get(i)).setOrder(i-1);
-//			}
-//			reorderViewColumns(true);
-//		}else if(viewFrom > viewTo){
-//			for (int i = viewFrom-1; i >= viewTo; i--) {
-//				columnMap.get(viewToModelMap.get(i)).setOrder(i+1);
-//			}
-//			reorderViewColumns(true);
+    public void toggleDisabled(LogTableColumn logTableColumn) {
+//		logTableColumn.setEnabled(!logTableColumn.isEnabled());
+//		if(logTableColumn.isEnabled()){
+//			logTableColumn.setVisible(true); // when a field is enabled, then it becomes visible automatically
+//			//Add column to view
+//			addColumn(logTableColumn);
 //		}else{
-//			//no change
+//			//Remove column from view
+//			removeColumn(logTableColumn);
 //		}
-//		this.fireColumnMoved(new TableColumnModelEvent(this, viewFrom, viewTo));
-//	}
+    }
 
-	public void toggleDisabled(LogTableColumn logTableColumn) {
-		logTableColumn.setEnabled(!logTableColumn.isEnabled());
-		if(logTableColumn.isEnabled()){
-			logTableColumn.setVisible(true); // when a field is enabled, then it becomes visible automatically
-			//Add column to view
-			addColumn(logTableColumn);
-		}else{
-			//Remove column from view
-			removeColumn(logTableColumn);
-		}
-	}
-
-	public void toggleHidden(LogTableColumn logTableColumn) {
-		logTableColumn.setVisible(!logTableColumn.isVisible());
-		if(logTableColumn.isVisible() && logTableColumn.isEnabled()){
-			//Add the column to the view
-			addColumn(logTableColumn);
-		}else{
-			//Remove the column from the view and adjust others to fit.
-			removeColumn(logTableColumn);
-		}
-	}
+    public void toggleHidden(LogTableColumn logTableColumn) {
+        logTableColumn.setVisible(!logTableColumn.isVisible());
+        if(logTableColumn.isVisible()){ //&& logTableColumn.isEnabled()){
+            //Add the column to the view
+            addColumn(logTableColumn);
+        }else{
+            //Remove the column from the view and adjust others to fit.
+            removeColumn(logTableColumn);
+        }
+    }
 
 }

@@ -12,6 +12,7 @@ import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.FilterListener;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
+import org.jdesktop.swingx.JXTable;
 
 import javax.swing.*;
 import javax.swing.event.RowSorterEvent;
@@ -28,11 +29,10 @@ import java.util.UUID;
 public class LogTable extends JTable implements FilterListener, LogEntryListener
 {
 
-    public LogTable(LogTableModel tableModel)
+    public LogTable(LogTableModel tableModel, LogTableColumnModel logTableColumnModel)
     {
-        super(tableModel, new LogTableColumnModel());
-        this.getModel().setColumnModel(this.getColumnModel());
-        this.setTableHeader(new TableHeader (getColumnModel(),this)); // This was used to create tool tips
+        super(tableModel, logTableColumnModel);
+//        this.setTableHeader(new TableHeader (getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
@@ -156,12 +156,18 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
             private void onMouseEvent(MouseEvent e){
                 if ( SwingUtilities.isRightMouseButton( e )){
                     Point p = e.getPoint();
+                    final int viewCol = columnAtPoint(p);
                     final int row = convertRowIndexToModel(rowAtPoint(p));
-                    final int col = convertColumnIndexToModel(columnAtPoint(p));
+                    final int modelCol = convertColumnIndexToModel(columnAtPoint(p));
+
+                    System.out.println("Click: View [" +  viewCol + "], Model [" + modelCol + "], "
+                            + LogTable.this.getColumnModel().getColumn(modelCol)
+                            + " Value: " + getModel().getValueAt(row, modelCol));
+
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
                         int viewRow = convertRowIndexToView(row);
                         LogTable.this.setRowSelectionInterval(viewRow, viewRow);
-                        new LogEntryMenu(LogTable.this, row, col).show(e.getComponent(), e.getX(), e.getY());
+                        new LogEntryMenu(LogTable.this, row, modelCol).show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
             }

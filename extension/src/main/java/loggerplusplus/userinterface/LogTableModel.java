@@ -6,24 +6,22 @@ import burp.IMessageEditorController;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LogManager;
 
+import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
-public class LogTableModel extends DefaultTableModel implements IMessageEditorController {
+public class LogTableModel extends AbstractTableModel implements IMessageEditorController {
 
     private final LogManager logManager;
     private final ArrayList<LogEntry> entries;
     private LogTableColumnModel columnModel;
     private IHttpRequestResponse currentlyDisplayedItem;
 
-    public LogTableModel(LogManager logManager){
+    public LogTableModel(LogManager logManager, LogTableColumnModel columnModel){
         this.logManager = logManager;
         this.entries = logManager.getLogEntries();
-    }
-
-    public void setColumnModel(LogTableColumnModel columnModel){
         this.columnModel = columnModel;
     }
 
@@ -47,53 +45,59 @@ public class LogTableModel extends DefaultTableModel implements IMessageEditorCo
     @Override
     public int getColumnCount()
     {
-        if(this.columnModel != null)
+        if(this.columnModel != null) {
             return this.columnModel.getColumnCount();
-        else
+        }else
             return 0;
     }
 
     @Override
-    public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return !this.columnModel.getColumn(columnIndex).isReadonly();
+    public boolean isCellEditable(int rowModelIndex, int columnModelIndex) {
+        return !((LogTableColumn) this.columnModel.getColumn(columnModelIndex)).isReadOnly();
     }
 
     @Override
-    public void setValueAt(Object value, int rowIndex, int colIndex) {
-        LogEntry logEntry = entries.get(rowIndex);
-        logEntry.comment = (String) value;
-        fireTableCellUpdated(rowIndex, colIndex);
+    public void setValueAt(Object value, int rowModelIndex, int columnModelIndex) {
+        LogEntry logEntry = entries.get(rowModelIndex);
+//        logEntry.comment = (String) value;
+        fireTableCellUpdated(rowModelIndex, columnModelIndex);
     }
 
     @Override
-    public Class<?> getColumnClass(int columnIndex) {
-        String type = columnModel.getColumn(columnIndex).getType();
-        switch (type.toUpperCase()){
-            case "INTEGER":
-            case "INT": return Integer.class;
-            case "SHORT": return Short.class;
-            case "BOOLEAN":
-            case "BOOL": return Boolean.class;
-            case "STRING": return String.class;
-            default: return String.class;
-        }
+    public Class<?> getColumnClass(int columnModelIndex) {
+//        System.out.println("Get Class: " + columnModelIndex);
+        Object val = getValueAt(0, columnModelIndex);
+        return val == null ? String.class : val.getClass();
+//        String type = columnModel.getColumn(columnModelIndex).getType();
+//        switch (type.toUpperCase()){
+//            case "INTEGER":
+//            case "INT": return Integer.class;
+//            case "SHORT": return Short.class;
+//            case "BOOLEAN":
+//            case "BOOL": return Boolean.class;
+//            case "STRING": return String.class;
+//            default: return String.class;
+//        }
     }
 
-    @Override
     public void removeRow(int row) {
         entries.remove(row);
         this.fireTableRowsDeleted(row, row);
     }
 
     @Override
-    public Object getValueAt(int rowIndex, int columnIndex)
+    public Object getValueAt(int rowIndex, int colModelIndex)
     {
         if(rowIndex >= entries.size()) return null;
-        if(columnIndex == 0) {
+
+        LogTableColumn column = (LogTableColumn) columnModel.getColumn(colModelIndex);
+        if(column.getIdentifier() == LogTableColumn.ColumnIdentifier.NUMBER){
             return rowIndex+1;
         }
-        LogTableColumn column = columnModel.getColumn(columnIndex);
-        return entries.get(rowIndex).getValueByKey(column.getIdentifier());
+
+        Object val = entries.get(rowIndex).getValueByKey(column.getIdentifier());
+//        System.out.println("GetVal: Index=" + colModelIndex + ", " + column + ", Model Index=" + column.getModelIndex() + " = " + val);
+        return val;
     }
 
 

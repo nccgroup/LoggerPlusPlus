@@ -21,10 +21,10 @@ import static loggerplusplus.userinterface.LogTableColumn.ColumnIdentifier.URL;
  */
 public class LogEntryMenu extends JPopupMenu {
 
-    LogEntryMenu(final LogTable logTable, final int row, final int col){
-        final LogEntry entry = logTable.getModel().getRow(row);
-        final String columnName = logTable.getColumnModel().getColumn(logTable.convertColumnIndexToView(col)).getName();
-        final String columnValue = logTable.getModel().getValueAt(row, col).toString();
+    LogEntryMenu(final LogTable logTable, final int modelRow, final int modelColumn){
+        final LogEntry entry = logTable.getModel().getRow(modelRow);
+        final String columnName = ((LogTableColumn) logTable.getColumnModel().getColumn(modelColumn)).getName();
+        final String columnValue = logTable.getModel().getValueAt(modelRow, modelColumn).toString();
         final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
         String title = entry.getValueByKey(URL).toString();
         if(title.length() > 50) title = title.substring(0, 47) + "...";
@@ -179,7 +179,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem removeItem = new JMenuItem(new AbstractAction("Remove Item") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                logTable.getModel().removeRow(row);
+                logTable.getModel().removeRow(modelRow);
             }
         });
         this.add(removeItem);

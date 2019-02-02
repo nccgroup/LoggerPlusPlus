@@ -137,7 +137,7 @@ public class TableHeaderMenu extends JPopupMenu{
 			public void actionPerformed(ActionEvent e) {
 				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
 				while (columnEnumeration.hasMoreElements()) {
-					LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
+					LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
 					if(logTableColumn.isEnabled() && !logTableColumn.isVisible()){
 						logTable.getColumnModel().toggleHidden(logTableColumn);
 					}
@@ -153,7 +153,7 @@ public class TableHeaderMenu extends JPopupMenu{
 			public void actionPerformed(ActionEvent e) {
 				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
 				while (columnEnumeration.hasMoreElements()) {
-					LogTableColumn logTableColumn = (LogTableColumn) logTable.getColumnModel().getColumns().nextElement();
+					LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
 					if(!logTableColumn.isEnabled()){
 						logTable.getColumnModel().toggleDisabled(logTableColumn);
 					}
