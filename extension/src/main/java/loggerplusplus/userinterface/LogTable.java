@@ -161,7 +161,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
                     final int modelCol = convertColumnIndexToModel(columnAtPoint(p));
 
                     System.out.println("Click: View [" +  viewCol + "], Model [" + modelCol + "], "
-                            + LogTable.this.getColumnModel().getColumn(modelCol)
+                            + LogTable.this.getColumnModel().getModelColumn(modelCol)
                             + " Value: " + getModel().getValueAt(row, modelCol));
 
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {

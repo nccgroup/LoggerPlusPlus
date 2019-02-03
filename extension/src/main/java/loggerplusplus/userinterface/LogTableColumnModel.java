@@ -43,12 +43,23 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
         for(LogTableColumn column : columnList){
             allColumns.put(column.getModelIndex(), column);
-            addColumn(column);
+            if(column.isVisible())
+                addColumn(column);
         }
     }
 
     @Override
-    public TableColumn getColumn(int modelIndex) {
+    public void addColumn(TableColumn tableColumn) {
+        super.addColumn(tableColumn);
+    }
+
+    @Override
+    public TableColumn getColumn(int viewIndex) {
+        return allColumns.get(super.getColumn(viewIndex).getModelIndex());
+    }
+
+
+    public LogTableColumn getModelColumn(int modelIndex){
         return allColumns.get(modelIndex);
     }
 
@@ -119,4 +130,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         }
     }
 
+    public Enumeration<LogTableColumn> getAllColumns() {
+        return Collections.enumeration(this.allColumns.values());
+    }
 }
