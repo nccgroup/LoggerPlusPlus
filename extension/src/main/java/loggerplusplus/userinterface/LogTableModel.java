@@ -53,7 +53,7 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
 
     @Override
     public boolean isCellEditable(int rowModelIndex, int columnModelIndex) {
-        return !((LogTableColumn) this.columnModel.getColumn(columnModelIndex)).isReadOnly();
+        return !(this.columnModel.getModelColumn(columnModelIndex)).isReadOnly();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
     {
         if(rowIndex >= entries.size()) return null;
 
-        LogTableColumn column = (LogTableColumn) columnModel.getColumn(colModelIndex);
+        LogTableColumn column = (LogTableColumn) columnModel.getModelColumn(colModelIndex);
         if(column.getIdentifier() == LogTableColumn.ColumnIdentifier.NUMBER){
             return rowIndex+1;
         }

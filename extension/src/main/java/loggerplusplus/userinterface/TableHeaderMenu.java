@@ -163,20 +163,18 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		subMenuEnabledCols.add(item);
 
-		Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
+		Enumeration<LogTableColumn> columnEnumeration = logTable.getColumnModel().getAllColumns();
 		while (columnEnumeration.hasMoreElements()) {
 			LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
-			if(logTableColumn.isEnabled()){
-				JMenuItem visibleItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
-				visibleItem.setSelected(logTableColumn.isVisible());
-				visibleItem.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						logTable.getColumnModel().toggleHidden(logTableColumn);
-						saveAndReloadTableSettings();
-					}
-				});
-				subMenuVisibleCols.add(visibleItem);
-			}
+			JMenuItem visibleItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
+			visibleItem.setSelected(logTableColumn.isVisible());
+			visibleItem.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					logTable.getColumnModel().toggleHidden(logTableColumn);
+					saveAndReloadTableSettings();
+				}
+			});
+			subMenuVisibleCols.add(visibleItem);
 
 			JMenuItem enabledItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
 			enabledItem.setSelected(logTableColumn.isEnabled());
@@ -210,7 +208,7 @@ public class TableHeaderMenu extends JPopupMenu{
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
 		logTable.saveTableChanges();
-		logTable.getModel().fireTableStructureChanged();
+//		logTable.getModel().fireTableStructureChanged();
 	}
 
 
