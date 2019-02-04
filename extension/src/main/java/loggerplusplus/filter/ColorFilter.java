@@ -24,6 +24,7 @@ public class ColorFilter implements Comparable<ColorFilter>{
     public ColorFilter(){
         this.uid = UUID.randomUUID();
         this.enabled = true;
+        this.shouldRetest = true;
     }
 
     public ColorFilter(String title, String filterString) throws IOException, ParseException {
