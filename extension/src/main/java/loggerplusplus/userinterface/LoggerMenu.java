@@ -103,8 +103,21 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenu.add(viewMenuItem);
         bGroup.add(viewMenuItem);
         viewMenuItem.setSelected(currentReqRespView == VariableViewPanel.View.TABS);
-
         this.add(viewMenu);
+
+        JCheckBoxMenuItem debugOption = new JCheckBoxMenuItem("Debug");
+        if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG) != null) {
+            debugOption.setSelected((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG));
+        }
+        debugOption.addActionListener((e) -> {
+            Boolean currentSetting = (Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG);
+            if(currentSetting == null) {
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_IS_DEBUG, true);
+            }else{
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_IS_DEBUG, !currentSetting);
+            }
+        });
+        this.add(debugOption);
     }
 
     public JMenuItem getPopoutMainMenuItem() {

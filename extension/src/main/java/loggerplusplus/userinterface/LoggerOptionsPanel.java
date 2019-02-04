@@ -12,7 +12,6 @@
 
 package loggerplusplus.userinterface;
 
-import burp.IHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.google.gson.reflect.TypeToken;
 import loggerplusplus.FileLogger;

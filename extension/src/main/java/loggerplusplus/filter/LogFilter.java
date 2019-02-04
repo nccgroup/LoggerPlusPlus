@@ -204,15 +204,8 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     }
 
     private Object getEntryValue(LogTableColumn.ColumnIdentifier identifier, LogEntry entry){
-        if(entry != null){
-            return entry.getValueByKey(identifier);
-        }else{
-//            LogTable logTable = LoggerPlusPlus.instance.getLogTable();
-//            Integer columnNo = logTable.getColumnModel().getColumnIndexByName(identifier.getValue());
-//            if(columnNo == null) return "";
-//            return entry.getValue(columnNo);
-            return null;
-        }
+        if (entry == null) return null;
+        else return entry.getValueByKey(identifier);
     }
 
     public boolean matches(LogEntry entry){
@@ -240,8 +233,10 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
             StringBuilder sb = new StringBuilder();
             if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append("(");
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                if(i != 0) sb.append(" ");
                 sb.append(toString((SimpleNode) node.jjtGetChild(i)));
+                if(i != node.jjtGetNumChildren()-1 && !(node.jjtGetChild(i) instanceof ASTINVERSE)){
+                    sb.append(" ");
+                }
             }
             if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append(")");
             return sb.toString();

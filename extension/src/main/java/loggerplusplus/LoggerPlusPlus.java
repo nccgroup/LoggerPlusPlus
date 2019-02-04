@@ -57,7 +57,11 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
         Double lastVersion = (Double) preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
         preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
-        if(lastVersion < Globals.VERSION){
+        if(lastVersion > Globals.VERSION){
+            //If we had a newer version previously.
+            //reset all settings
+            preferences.resetSettings(preferences.getPreferenceKeys());
+        }else if(lastVersion < Globals.VERSION){
             //Reset preferences which may cause issues.
             preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
         }
@@ -203,13 +207,33 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     @Override
     public void logOutput(String message) {
         callbacks.printOutput(message);
-        System.out.println(message);
+        if(preferences == null) {
+            Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
+            if(isDebug){
+                System.out.println(message);
+            }
+        }else{
+            if (preferences.getSetting(Globals.PREF_IS_DEBUG) != null
+                    && (boolean) preferences.getSetting(Globals.PREF_IS_DEBUG)) {
+                System.out.println(message);
+            }
+        }
     }
 
     @Override
     public void logError(String errorMessage) {
         callbacks.printError(errorMessage);
-        System.err.println(errorMessage);
+        if(preferences == null) {
+            Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
+            if(isDebug){
+                System.err.println(errorMessage);
+            }
+        }else{
+            if (preferences.getSetting(Globals.PREF_IS_DEBUG) != null
+                    && (boolean) preferences.getSetting(Globals.PREF_IS_DEBUG)) {
+                System.err.println(errorMessage);
+            }
+        }
     }
 
     public void setFilter(String filterString){
