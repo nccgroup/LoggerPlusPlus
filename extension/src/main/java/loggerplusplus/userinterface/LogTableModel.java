@@ -90,7 +90,7 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
     {
         if(rowIndex >= entries.size()) return null;
 
-        LogTableColumn column = (LogTableColumn) columnModel.getModelColumn(colModelIndex);
+        LogTableColumn column = columnModel.getModelColumn(colModelIndex);
         if(column.getIdentifier() == LogTableColumn.ColumnIdentifier.NUMBER){
             return rowIndex+1;
         }

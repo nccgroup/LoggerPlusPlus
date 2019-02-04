@@ -24,16 +24,15 @@ import java.util.HashMap;
 
 import static loggerplusplus.Globals.PREF_LOG_TABLE_SETTINGS;
 
-
-// To keep the header descriptor JSON objects and to converts them to list objects
+//The visible columns are stored in the underlying class.
 
 public class LogTableColumnModel extends DefaultTableColumnModel {
 
-    private final HashMap<Integer, LogTableColumn> allColumns;
+    private final ArrayList<LogTableColumn> allColumns;
 
     public LogTableColumnModel() {
         super();
-        allColumns = new HashMap<>();
+        allColumns = new ArrayList<>();
 
         ArrayList<LogTableColumn> columnList = (ArrayList<LogTableColumn>)
                 LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
@@ -41,24 +40,45 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         // Sorting based on order number
         Collections.sort(columnList);
 
-        for(LogTableColumn column : columnList){
-            allColumns.put(column.getModelIndex(), column);
-            if(column.isVisible())
+        for (int i = 0; i < columnList.size(); i++) {
+            LogTableColumn column = columnList.get(i);
+            column.setModelIndex(i);
+            allColumns.add(column);
+            if (column.isVisible())
                 addColumn(column);
         }
     }
 
     @Override
-    public void addColumn(TableColumn tableColumn) {
-        super.addColumn(tableColumn);
+    public void addColumn(TableColumn column) {
+        //We should add the column at the correct position based on its order value.
+        if (column == null) {
+            throw new IllegalArgumentException("Object is null");
+        } else {
+            if(this.tableColumns.size() == 0){
+                this.tableColumns.addElement(column);
+            }else {
+                //Find the first element with a greater order than the one to be added and add it before it.
+                boolean added = false;
+                for (int i = 0; i < this.tableColumns.size(); i++) {
+                    if (((LogTableColumn) this.tableColumns.get(i)).getOrder() > ((LogTableColumn) column).getOrder()){
+                        this.tableColumns.add(i-1, column);
+                        added = true;
+                        break;
+                    }
+                }
+                if(!added){ //No elements with a greater order value. Add it to the end.
+                    this.tableColumns.addElement(column);
+                }
+            }
+            column.addPropertyChangeListener(this);
+            this.fireColumnAdded(new TableColumnModelEvent(this, 0, this.getColumnCount() - 1));
+        }
     }
 
-    @Override
-    public TableColumn getColumn(int viewIndex) {
-        return allColumns.get(super.getColumn(viewIndex).getModelIndex());
-    }
 
-
+    //TableModel gets the column from the model index, not the view index.
+    //If we dont do this all the values are wrong!
     public LogTableColumn getModelColumn(int modelIndex){
         return allColumns.get(modelIndex);
     }
@@ -72,39 +92,30 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     }
 
     public void saveLayout() {
-        LoggerPlusPlus.preferences.setSetting(PREF_LOG_TABLE_SETTINGS, this.allColumns.values());
+        LoggerPlusPlus.preferences.setSetting(PREF_LOG_TABLE_SETTINGS, this.allColumns);
     }
 
     @Override
-    public void moveColumn(int modelFrom, int modelTo) {
-        super.moveColumn(modelFrom, modelTo);
-
-//        We've moved the columns around in the model.
-//        We must loop over them and update their model indexes.
-
-        LogTableColumn movedColumn = (LogTableColumn) this.getColumn(modelFrom);
-        movedColumn.setModelIndex(modelTo);
-        if(modelFrom < modelTo) { //Moving right
-            for (int i = modelFrom + 1; i <= modelTo; i++) { //From original pos to new pos
-                LogTableColumn nextCol = (LogTableColumn) getColumn(i);
-                nextCol.setModelIndex(i-1); //Move left one place
-                this.allColumns.put(i-1, nextCol);
+    public void moveColumn(int viewFrom, int viewTo) {
+//		viewToModelMap
+        super.moveColumn(viewFrom, viewTo);
+        ((LogTableColumn) getColumn(viewFrom)).setOrder(viewTo);
+        if(viewFrom < viewTo) {
+            for (int i = viewFrom + 1; i <= viewTo; i++) {
+                ((LogTableColumn) getColumn(i)).setOrder(i-1);
             }
-            this.allColumns.put(modelTo, movedColumn);
+            //Save the changes
             saveLayout();
-            this.fireColumnMoved(new TableColumnModelEvent(this, modelFrom, modelTo));
-        }else if(modelFrom > modelTo){ //Moving left
-            for (int i = modelTo; i < modelFrom; i++) { //From original pos to new pos
-                LogTableColumn nextCol = (LogTableColumn) getColumn(i);
-                nextCol.setModelIndex(i+1); //Move right one place.
-                this.allColumns.put(i+1, nextCol);
+        }else if(viewFrom > viewTo){
+            for (int i = viewFrom-1; i >= viewTo; i--) {
+                ((LogTableColumn) getColumn(i)).setOrder(i+1);
             }
-            this.allColumns.put(modelTo, movedColumn);
+            //Save the changes
             saveLayout();
-            this.fireColumnMoved(new TableColumnModelEvent(this, modelFrom, modelTo));
         }else{
             //no change
         }
+        this.fireColumnMoved(new TableColumnModelEvent(this, viewFrom, viewTo));
     }
 
     public void toggleDisabled(LogTableColumn logTableColumn) {
@@ -131,6 +142,6 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     }
 
     public Enumeration<LogTableColumn> getAllColumns() {
-        return Collections.enumeration(this.allColumns.values());
+        return Collections.enumeration(this.allColumns);
     }
 }
