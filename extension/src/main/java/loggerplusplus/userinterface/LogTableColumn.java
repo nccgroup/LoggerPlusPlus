@@ -25,10 +25,6 @@ import java.lang.reflect.Type;
 
 public class LogTableColumn extends TableColumn implements Comparable<LogTableColumn>{
 
-    public LogTableColumn(int modelIndex){
-        super(modelIndex);
-    }
-
     public enum ColumnIdentifier {
         NUMBER, TOOL, URL, PATH, QUERY, STATUS, PROTOCOL, HOSTNAME, HOST, MIMETYPE, RESPONSELENGTH, TARGETPORT,
         METHOD, RESPONSETIME, REQUESTTIME, RTT, COMMENT, REQUESTCONTENTTYPE, URLEXTENSION, REFERRER,
@@ -39,6 +35,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
     }
 
 	private String name;
+    private int order;
 	private boolean enabled;
 	private String visibleName;
 	private String type;
@@ -86,9 +83,16 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public boolean isReadOnly() {
 		return readOnly;
 	}
-
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
+	}
+
+	public int getOrder() {
+		return order;
+	}
+
+	public void setOrder(int order) {
+		this.order = order;
 	}
 
 	public boolean isVisible() {
@@ -142,7 +146,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 
 	@Override
 	public int compareTo(LogTableColumn logTableColumn) {
-		return Integer.compare(this.getModelIndex(), logTableColumn.getModelIndex());
+		return Integer.compare(this.order, logTableColumn.order);
 	}
 
 	public static class ColumnSerializer implements JsonDeserializer<LogTableColumn>, JsonSerializer<LogTableColumn> {
@@ -151,7 +155,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		public JsonElement serialize(LogTableColumn column, Type type, JsonSerializationContext jsonSerializationContext) {
 			JsonObject object = new JsonObject();
 			object.addProperty("id", String.valueOf(column.identifier));
-			object.addProperty("index", column.modelIndex);
+			object.addProperty("order", column.order);
 			object.addProperty("name", column.name);
 			object.addProperty("enabled", column.enabled);
 			object.addProperty("defaultVisibleName", column.defaultVisibleName);
@@ -171,10 +175,10 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 		public LogTableColumn deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
 			LogTableColumn column = null;
 			JsonObject object = jsonElement.getAsJsonObject();
-			int modelIndex = (object.has("index") ? object.get("index").getAsInt() : 0);
-            column = new LogTableColumn(modelIndex);
+            column = new LogTableColumn();
             column.identifier = ColumnIdentifier.valueOf(object.get("id").getAsString());
 			column.name = object.get("name").getAsString();
+			column.order = object.get("order").getAsInt();
 //			column.enabled = object.get("enabled").getAsBoolean();
 			column.enabled = true;
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();

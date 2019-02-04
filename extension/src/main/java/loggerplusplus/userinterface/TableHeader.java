@@ -28,7 +28,7 @@ public class TableHeader extends JTableHeader {
 					// get the coordinates of the mouse click
 					Point p = e.getPoint();
 					int columnID = logTable.convertColumnIndexToModel(columnAtPoint(p));
-					LogTableColumn column = (LogTableColumn) tableColumnModel.getColumn(columnID);
+					LogTableColumn column = tableColumnModel.getModelColumn(columnID);
 					//TODO
 					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTable, column);
 					tblHeaderMenu.showMenu(e);
