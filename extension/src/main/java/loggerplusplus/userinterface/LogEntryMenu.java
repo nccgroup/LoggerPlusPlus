@@ -23,7 +23,7 @@ public class LogEntryMenu extends JPopupMenu {
 
     LogEntryMenu(final LogTable logTable, final int modelRow, final int modelColumn){
         final LogEntry entry = logTable.getModel().getRow(modelRow);
-        final String columnName = ((LogTableColumn) logTable.getColumnModel().getColumn(modelColumn)).getName();
+        final String columnName = ((LogTableColumn) logTable.getColumnModel().getModelColumn(modelColumn)).getName();
         final String columnValue = logTable.getModel().getValueAt(modelRow, modelColumn).toString();
         final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
         String title = entry.getValueByKey(URL).toString();
