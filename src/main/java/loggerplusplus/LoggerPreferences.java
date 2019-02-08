@@ -71,6 +71,7 @@ public class LoggerPreferences {
 	private String esClusterName;
 	private String esIndex;
 	private int esDelay;
+	private boolean isEnabled4IncludeReqRes;
 
 	// Reading from registry constantly is expensive so I have changed the preferences to load them in objects
 
@@ -356,6 +357,14 @@ public class LoggerPreferences {
 		this.esDelay = delay;
 	}
 
+	public synchronized boolean isEnabled4IncludeReqRes() {
+		return isEnabled4IncludeReqRes;
+	}
+
+	public synchronized  void setEnabled4IncludeReqRes(boolean isEnabled4IncludeReqRes) {
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logrequestresponse", String.valueOf(isEnabled4IncludeReqRes));
+		this.isEnabled4IncludeReqRes = isEnabled4IncludeReqRes;
+	}
 
 	//Do not persist over restarts.
 	public void setAutoSave(boolean autoSave) {
@@ -443,6 +452,7 @@ public class LoggerPreferences {
 		this.esClusterName = getStringSetting("esClusterName", "elasticsearch");
 		this.esIndex = getStringSetting("esIndex", "logger");
 		this.esDelay = getIntSetting("esDelay", 120);
+		this.isEnabled4IncludeReqRes = getBooleanSetting("logrequestresponse", false);
 	}
 
 	private Boolean getBooleanSetting(String setting, Boolean fallback){
