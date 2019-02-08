@@ -66,6 +66,7 @@ public class LoggerOptionsPanel extends JScrollPane{
     private final JTextField esClusterField = new JTextField();
     private final JTextField esIndexField = new JTextField();
     private final JSpinner esUploadDelay = new JSpinner(new SpinnerNumberModel(120, 10, 999999, 10));
+    private final JCheckBox chkIncludeReqRes = new JCheckBox();
     private final JLabel esValueChangeWarning = new JLabel("Warning: Changing preferences while running will disable the upload service and clear all pending values.");
 
 
@@ -218,8 +219,11 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridwidth = 1;
         gbc.gridx = 2;
         elasticPanel.add(esSecondsHint, gbc);
-
-
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        elasticPanel.add(new JLabel("Include Request and Response:"), gbc);
+        gbc.gridx = 1;
+        elasticPanel.add(chkIncludeReqRes, gbc);
 
         gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
@@ -631,6 +635,12 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
+        chkIncludeReqRes.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                loggerPreferences.setEnabled4IncludeReqRes(chkIncludeReqRes.isSelected());
+            }
+        });
+
         this.esEnabled.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -760,6 +770,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         this.esClusterField.setText(loggerPreferences.getEsClusterName());
         this.esIndexField.setText(loggerPreferences.getEsIndex());
         this.esUploadDelay.setValue(loggerPreferences.getEsDelay());
+        this.chkIncludeReqRes.setSelected(loggerPreferences.isEnabled4IncludeReqRes());
 
         if (!loggerPreferences.canSaveCSV()) {
             btnSaveLogs.setEnabled(false);

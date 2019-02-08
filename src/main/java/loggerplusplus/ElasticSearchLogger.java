@@ -33,6 +33,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     private boolean isEnabled;
     private String indexName;
     private LoggerPreferences prefs;
+    private boolean wantRequestResponse;
 
     private final ScheduledExecutorService executorService;
     private ScheduledFuture indexTask;
@@ -65,6 +66,7 @@ public class ElasticSearchLogger implements LogEntryListener{
                     indexPendingEntries();
                 }
             }, prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
+            this.wantRequestResponse = prefs.isEnabled4IncludeReqRes();
         }else{
             if(this.indexTask != null){
                 indexTask.cancel(true);
@@ -151,14 +153,17 @@ public class ElasticSearchLogger implements LogEntryListener{
                                 .field("path", logEntry.relativeURL)
                                 .field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime)
                                 .field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime)
+                                .field("responsedelay", logEntry.requestResponseDelay)
                                 .field("status", logEntry.status)
                                 .field("title", logEntry.title)
                                 .field("newcookies", logEntry.newCookies)
                                 .field("sentcookies", logEntry.sentCookies)
                                 .field("referrer", logEntry.referrerURL)
                                 .field("requestcontenttype", logEntry.requestContentType)
-//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
+                                .field("requestlength", logEntry.requestLength)
+                                .field("responselength", logEntry.responseLength)
+                                .field("requestbody", this.wantRequestResponse ?  new String(logEntry.requestResponse.getRequest()) : "")
+                                .field("responsebody", this.wantRequestResponse ?  new String(logEntry.requestResponse.getResponse()) : "")
                             .endObject()
                     );
             return requestBuilder.request();
