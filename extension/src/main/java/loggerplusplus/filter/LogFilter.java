@@ -27,7 +27,6 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
         try {
             root = SyntaxChecker.parseFilter(filterString);
         }catch (TokenMgrError | Exception e){
-            e.printStackTrace();
             throw new ParseException("Could not parse the filter.");
         }
 

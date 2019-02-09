@@ -27,11 +27,17 @@ public class ColorFilter implements Comparable<ColorFilter>{
         this.shouldRetest = true;
     }
 
-    public ColorFilter(String title, String filterString) throws IOException, ParseException {
+    public ColorFilter(String title, String filterString) throws ParseException {
         this();
         this.name = title;
         this.setFilterString(filterString);
         this.setFilter(new LogFilter(filterString));
+    }
+
+    public ColorFilter(String title, LogFilter filter) throws ParseException {
+        this();
+        this.name = title;
+        this.setFilter(new LogFilter(filter.toString()));
     }
 
     public UUID getUid() {

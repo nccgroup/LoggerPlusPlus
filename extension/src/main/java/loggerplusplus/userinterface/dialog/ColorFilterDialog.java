@@ -4,6 +4,7 @@ import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 
 import javax.swing.*;
@@ -110,8 +111,8 @@ public class ColorFilterDialog extends JFrame {
     }
 
 
-    public void addColorFilter(String title, String filterString) throws IOException, ParseException {
-        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filterString));
+    public void addColorFilter(String title, LogFilter filter) throws ParseException {
+        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filter));
     }
 
     private void applyChanges(){
