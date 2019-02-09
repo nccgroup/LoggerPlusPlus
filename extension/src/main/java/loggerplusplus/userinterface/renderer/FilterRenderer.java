@@ -1,9 +1,8 @@
 package loggerplusplus.userinterface.renderer;
 
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.userinterface.dialog.ColorFilterTable;
 import loggerplusplus.userinterface.dialog.ColorFilterTableModel;
-import loggerplusplus.userinterface.dialog.SavedFiltersTable;
-import loggerplusplus.userinterface.dialog.SavedFiltersTableModel;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -20,10 +19,8 @@ public class FilterRenderer extends DefaultTableCellRenderer {
         boolean validFilter;
         if(table instanceof ColorFilterTable){
             validFilter = ((ColorFilterTableModel) table.getModel()).validFilterAtRow(row);
-        }else if(table instanceof SavedFiltersTable){
-            validFilter = ((SavedFiltersTableModel) table.getModel()).validFilterAtRow(row);
         }else{
-            return c;
+            validFilter = (value instanceof LogFilter);
         }
 
         if(validFilter){

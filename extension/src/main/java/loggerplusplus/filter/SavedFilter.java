@@ -1,5 +1,7 @@
 package loggerplusplus.filter;
 
+import loggerplusplus.filter.parser.ParseException;
+
 /**
  * Created by corey on 19/07/17.
  */
@@ -8,8 +10,9 @@ public class SavedFilter {
     private LogFilter filter;
     private String filterString;
 
-    public SavedFilter(){
-
+    public SavedFilter(String name, String filterString) throws ParseException {
+        this.name = name;
+        this.setFilter(new LogFilter(filterString));
     }
 
     public LogFilter getFilter() {
@@ -46,5 +49,10 @@ public class SavedFilter {
         }else{
             return super.equals(o);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "SavedFilter[" + this.name + ", " + (this.filter == null ? this.filterString : this.filter) + "]";
     }
 }

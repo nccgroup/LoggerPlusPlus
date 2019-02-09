@@ -4,17 +4,15 @@ import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
-import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.LogFilter;
-import static loggerplusplus.Globals.*;
-
 import loggerplusplus.filter.SavedFilter;
 import loggerplusplus.userinterface.LogTableColumn;
-import loggerplusplus.userinterface.VariableViewPanel;
 
 import java.util.*;
+
+import static loggerplusplus.Globals.*;
 
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
@@ -66,8 +64,6 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.addSetting(PREF_SORT_ORDER, String.class, "ASCENDING");
         prefs.addSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60000);
         prefs.addSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 5000);
-        prefs.addSetting(PREF_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.VERTICAL);
-        prefs.addSetting(PREF_MESSAGE_VIEW_LAYOUT, VariableViewPanel.View.class, VariableViewPanel.View.HORIZONTAL);
         prefs.addSetting(PREF_SEARCH_THREADS, Integer.class, 5);
         prefs.addSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false);
         prefs.addSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true);

@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import com.coreyd97.BurpExtenderUtilities.VariableViewPanel;
 import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;

@@ -1,13 +1,9 @@
 package loggerplusplus;
 
 import burp.*;
-
-import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
-import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
-import com.coreyd97.BurpExtenderUtilities.ILogProvider;
-import com.coreyd97.BurpExtenderUtilities.Preferences;
-import loggerplusplus.filter.LogFilter;
+import com.coreyd97.BurpExtenderUtilities.*;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.*;
 
@@ -95,14 +91,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
                 requestViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
                 responseViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
-                VariableViewPanel.View reqRespView = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
-                reqRespPanel = new VariableViewPanel(requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", reqRespView){
-                    @Override
-                    public void setView(View view) {
-                        LoggerPlusPlus.preferences.setSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT, view);
-                        super.setView(view);
-                    }
-                };
+                reqRespPanel = new VariableViewPanel(preferences, Globals.PREF_MESSAGE_VIEW_LAYOUT,
+                        requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response");
                 uiReqRespPopOut = new PopOutPanel(reqRespPanel, "Request/Response"){
                     @Override
                     public void popOut() {
@@ -118,15 +108,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                     }
                 };
 
-
-                VariableViewPanel.View mainLayout = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_LAYOUT);
-                logSplitPanel = new VariableViewPanel(logViewPanel, "Log Table", uiReqRespPopOut, "Request/Response", mainLayout){
-                    @Override
-                    public void setView(View view) {
-                        LoggerPlusPlus.preferences.setSetting(Globals.PREF_LAYOUT, view);
-                        super.setView(view);
-                    }
-                };
+                logSplitPanel = new VariableViewPanel(preferences, Globals.PREF_LAYOUT,
+                        logViewPanel, "Log Table",
+                        uiReqRespPopOut, "Request/Response", VariableViewPanel.View.HORIZONTAL);
 
                 gbc.gridy++;
                 gbc.weighty = 1;
@@ -149,7 +133,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                     }
                 };
                 tabbedWrapper.addTab("View Logs", null, logOuterPanel, null);
-                tabbedWrapper.addTab("Filter Library", null, new FilterLibraryPanel(), null);
+                tabbedWrapper.addTab("Filter Library", null, new SavedFiltersPanel(), null);
                 tabbedWrapper.addTab("Grep Values", null, grepPanel, null);
                 tabbedWrapper.addTab("Options", null, optionsJPanel, null);
                 tabbedWrapper.addTab("About", null, new AboutPanel(), null);

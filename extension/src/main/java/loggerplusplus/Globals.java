@@ -8,7 +8,7 @@ import static loggerplusplus.userinterface.LogTableColumn.ColumnIdentifier.*;
 public class Globals {
     public static final String APP_NAME = "Burp Suite Logger++";
     public static final double VERSION = 3.10;
-    public static final String AUTHOR = "Soroush Dalili (@irsdl), Corey Arthur (@CoreyD97) from NCC Group";
+    public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String COMPANY_LINK = "https://www.nccgroup.trust/";
     public static final String AUTHOR_LINK = "https://soroush.secproject.com/";
     public static final String PROJECT_LINK = "https://github.com/NCCGroup/BurpSuiteLoggerPlusPlus";

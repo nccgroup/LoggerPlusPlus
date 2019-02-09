@@ -4,7 +4,6 @@ import loggerplusplus.Globals;
 import loggerplusplus.LogManager;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
-import loggerplusplus.userinterface.dialog.SavedFiltersDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -102,18 +101,6 @@ public class LogViewPanel extends JPanel {
             gbc.gridx = 1;
             gbc.weightx = 99.0;
             this.add(filterField, gbc);
-
-            final JButton filterButton = new JButton("Saved Filters");
-            filterButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    new SavedFiltersDialog().setVisible(true);
-                }
-            });
-
-            gbc.gridx = 2;
-            gbc.weightx = 0;
-            this.add(filterButton, gbc);
 
             final JButton colorFilterButton = new JButton("Colorize");
             colorFilterButton.addActionListener(new ActionListener() {
