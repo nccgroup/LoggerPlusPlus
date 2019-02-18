@@ -64,12 +64,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public void setName(String name) {
 		this.name = name;
 	}
-	public boolean isEnabled() {
-		return enabled;
-	}
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
 	public String getVisibleName() {
 		return visibleName;
 	}
@@ -157,7 +151,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			object.addProperty("id", String.valueOf(column.identifier));
 			object.addProperty("order", column.order);
 			object.addProperty("name", column.name);
-			object.addProperty("enabled", column.enabled);
 			object.addProperty("defaultVisibleName", column.defaultVisibleName);
 			object.addProperty("visibleName", column.visibleName);
 			object.addProperty("preferredWidth", column.width);
@@ -179,8 +172,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
             column.identifier = ColumnIdentifier.valueOf(object.get("id").getAsString());
 			column.name = object.get("name").getAsString();
 			column.order = object.get("order").getAsInt();
-//			column.enabled = object.get("enabled").getAsBoolean();
-			column.enabled = true;
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();
 			column.visibleName = object.get("visibleName").getAsString();
 			column.width = object.get("preferredWidth").getAsInt();

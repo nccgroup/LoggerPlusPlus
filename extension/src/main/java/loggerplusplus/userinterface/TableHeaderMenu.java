@@ -111,25 +111,25 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		menu.add(item);
 
-		item = new JMenuItem("Disable");
-		item.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-
-				SwingUtilities.invokeLater(new Runnable() {
-					public void run() {
-						String[] msgOptions = { "OK", "CANCEL" };
-						String message = "Are you sure you want to toggleDisabled the \""+ columnObj.getVisibleName()
-								+"\"? This column may not be populated when it is disabled (if it needs additional resources)";
-
-						if(MoreHelp.askConfirmMessage("Disabling a column", message, msgOptions)==JOptionPane.YES_OPTION){
-							logTable.getColumnModel().toggleDisabled(columnObj);
-							saveAndReloadTableSettings();
-						}
-					}
-				});
-			}
-		});
-		menu.add(item);
+//		item = new JMenuItem("Disable");
+//		item.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent e) {
+//
+//				SwingUtilities.invokeLater(new Runnable() {
+//					public void run() {
+//						String[] msgOptions = { "OK", "CANCEL" };
+//						String message = "Are you sure you want to toggleDisabled the \""+ columnObj.getVisibleName()
+//								+"\"? This column may not be populated when it is disabled (if it needs additional resources)";
+//
+//						if(MoreHelp.askConfirmMessage("Disabling a column", message, msgOptions)==JOptionPane.YES_OPTION){
+//							logTable.getColumnModel().toggleDisabled(columnObj);
+//							saveAndReloadTableSettings();
+//						}
+//					}
+//				});
+//			}
+//		});
+//		menu.add(item);
 
 		JMenu subMenuVisibleCols = new JMenu("Visible columns");
 		item = new JMenuItem("Make all visible");
@@ -138,7 +138,7 @@ public class TableHeaderMenu extends JPopupMenu{
 				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
 				while (columnEnumeration.hasMoreElements()) {
 					LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
-					if(logTableColumn.isEnabled() && !logTableColumn.isVisible()){
+					if(!logTableColumn.isVisible()){
 						logTable.getColumnModel().toggleHidden(logTableColumn);
 					}
 				}
@@ -146,22 +146,6 @@ public class TableHeaderMenu extends JPopupMenu{
 			}
 		});
 		subMenuVisibleCols.add(item);
-
-		JMenu subMenuEnabledCols = new JMenu("Enabled columns");
-		item = new JMenuItem("Make all enabled");
-		item.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
-				while (columnEnumeration.hasMoreElements()) {
-					LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
-					if(!logTableColumn.isEnabled()){
-						logTable.getColumnModel().toggleDisabled(logTableColumn);
-					}
-				}
-				saveAndReloadTableSettings();
-			}
-		});
-		subMenuEnabledCols.add(item);
 
 		Enumeration<LogTableColumn> columnEnumeration = logTable.getColumnModel().getAllColumns();
 		while (columnEnumeration.hasMoreElements()) {
@@ -175,26 +159,9 @@ public class TableHeaderMenu extends JPopupMenu{
 				}
 			});
 			subMenuVisibleCols.add(visibleItem);
-
-			JMenuItem enabledItem = new JCheckBoxMenuItem(logTableColumn.getVisibleName());
-			enabledItem.setSelected(logTableColumn.isEnabled());
-			enabledItem.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					logTable.getColumnModel().toggleDisabled(logTableColumn);
-					SwingUtilities.invokeLater(new Runnable() {
-						public void run() {
-							if(logTableColumn.isEnabled())
-								MoreHelp.showMessage("The new field might not have been populated previously. It will be populated for the new messages.");
-						}
-					});
-					saveAndReloadTableSettings();
-				}
-			});
-			subMenuEnabledCols.add(enabledItem);
 		}
 
 		menu.add(subMenuVisibleCols);
-		menu.add(subMenuEnabledCols);
 
 		menu.show(e.getComponent(), e.getX(), e.getY());
 	}
