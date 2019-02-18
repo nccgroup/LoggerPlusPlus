@@ -277,7 +277,7 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
         if((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
             JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
-            scrollBar.setValue(scrollBar.getMaximum());
+            scrollBar.setValue(scrollBar.getMaximum()+50);
         }
     }
 
