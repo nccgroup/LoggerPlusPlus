@@ -1,5 +1,8 @@
 apply plugin: 'java'
 
+group 'nccgroup'
+version '1.0-SNAPSHOT'
+
 repositories {
     mavenCentral()
 }
