@@ -55,8 +55,8 @@ TOKEN [IGNORE_CASE]: {
     | <AND: "&" | "&&" | "AND" >
     | <XOR: "^" | "XOR">
     | <BOOLEAN: "TRUE" | "FALSE">
-    | <SINGLEQUOTEDSTRING: "'" ("\\" ~[] | ~["\'", "\\"])+ "'" >
-    | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])+ "\"" >
+    | <SINGLEQUOTEDSTRING: "'" ("\\" ~[] | ~["\'", "\\"])* "'" >
+    | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])* "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
     | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
