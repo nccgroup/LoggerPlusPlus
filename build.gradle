@@ -1,8 +1,5 @@
 apply plugin: 'java'
 
-group 'nccgroup'
-version '1.0-SNAPSHOT'
-
 repositories {
     mavenCentral()
 }
@@ -17,4 +14,8 @@ task fatJar(type: Jar) {
     baseName = project.name
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+tasks.withType(Jar) {
+    destinationDir = file("$rootDir/releases")
 }
