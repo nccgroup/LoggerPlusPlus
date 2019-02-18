@@ -195,7 +195,9 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
                 Boolean rightVal = Boolean.parseBoolean(String.valueOf(right));
                 return rightVal.equals(left)  ^ (operator instanceof ASTNEQ);
             }else{
-                return String.valueOf(left).equals(String.valueOf(right));
+                String stringLeft = left == null ? "" : String.valueOf(left);
+                String stringRight = right == null ? "" : String.valueOf(right);
+                return stringLeft.equals(stringRight);
             }
 
         }
