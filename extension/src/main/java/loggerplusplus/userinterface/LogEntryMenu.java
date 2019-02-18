@@ -24,7 +24,8 @@ public class LogEntryMenu extends JPopupMenu {
     LogEntryMenu(final LogTable logTable, final int modelRow, final int modelColumn){
         final LogEntry entry = logTable.getModel().getRow(modelRow);
         final String columnName = ((LogTableColumn) logTable.getColumnModel().getModelColumn(modelColumn)).getName();
-        final String columnValue = logTable.getModel().getValueAt(modelRow, modelColumn).toString();
+        final Object columnValue = logTable.getModel().getValueAt(modelRow, modelColumn);
+        final String columnValueString = columnValue == null ? "" : columnValue.toString();
         final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
         String title = entry.getValueByKey(URL).toString();
         if(title.length() > 50) title = title.substring(0, 47) + "...";
@@ -39,7 +40,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                String value = "\"" + columnValue + "\"";
+                String value = "\"" + columnValueString + "\"";
                 try {
                     LogFilter filter = new LogFilter(columnName + "==" + value);
                     LoggerPlusPlus.instance.setFilter(filter);
@@ -55,7 +56,7 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    String value = "\"" + columnValue + "\"";
+                    String value = "\"" + columnValueString + "\"";
                     try {
                         LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && " + columnName + " == " + value);
                         LoggerPlusPlus.instance.setFilter(filter);
@@ -67,7 +68,7 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    String value = "\"" + columnValue + "\"";
+                    String value = "\"" + columnValueString + "\"";
                     try {
                         LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || " + columnName + " == " + value);
                         LoggerPlusPlus.instance.setFilter(filter);
@@ -86,7 +87,7 @@ public class LogEntryMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new LogFilter(columnName + " == \"" + columnValue + "\""));
+                    colorFilter.setFilter(new LogFilter(columnName + " == \"" + columnValueString + "\""));
                     HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUid(), colorFilter);
                     ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners());
