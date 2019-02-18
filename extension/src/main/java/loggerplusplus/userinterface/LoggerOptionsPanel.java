@@ -204,9 +204,12 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         PanelBuilder.ComponentGroup resetPanel = panelBuilder.createComponentGroup("Reset");
         resetPanel.addButton("Reset All Settings", actionEvent -> {
-            LoggerPlusPlus.preferences.resetSettings(LoggerPlusPlus.preferences.getPreferenceKeys());
-            LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
-            LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
+            int result = JOptionPane.showConfirmDialog(null, "Are you sure you wish to reset all settings? This includes the table layout!", "Warning", JOptionPane.YES_NO_OPTION);
+            if(result == JOptionPane.YES_OPTION){
+                LoggerPlusPlus.preferences.resetSettings(LoggerPlusPlus.preferences.getPreferenceKeys());
+                LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
+                LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
+            }
         });
         resetPanel.addButton("Clear The Logs", actionEvent -> {
             LoggerPlusPlus.instance.reset();
