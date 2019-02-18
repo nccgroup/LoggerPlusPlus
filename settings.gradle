@@ -1,6 +1,6 @@
 include 'extension', 'filter'
 
-rootProject.name = "LoggerPlusPlus"
+rootProject.name = 'LoggerPlusPlus'
 
 includeBuild('../BurpExtenderUtilities'){
     dependencySubstitution{
