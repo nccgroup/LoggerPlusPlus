@@ -59,7 +59,7 @@ public class Globals {
     public static final String DEFAULT_COLOR_FILTERS_JSON = "{\"2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
             "\"filter\":{\"filter\":\"!COMPLETE\"},\"filterString\":\"!COMPLETE\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
-    private static int colModelIndex = 0;
+    private static int colModelIndex = 1;
     public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = "["
             + "{'id':" + NUMBER + ",'index':" + (colModelIndex++) + ",'name':'Number','enabled':true,'defaultVisibleName':'#','visibleName':'#','preferredWidth':35,'type':'int','readonly':true,'order':1,'visible':true,'description':'Item index number','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
             + "{'id':" + COMPLETE + ",'index':" + (colModelIndex++) + ",'name':'Complete','enabled':true,'defaultVisibleName':'Complete','visibleName':'Complete','preferredWidth':80,'type':'boolean','readonly':true,'order':2,'visible':true,'description':'Indicates if a response has been received.','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
