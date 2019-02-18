@@ -33,7 +33,10 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     public LogTableColumnModel() {
         super();
         allColumns = new ArrayList<>();
+        setup();
+    }
 
+    private void setup(){
         ArrayList<LogTableColumn> columnList = (ArrayList<LogTableColumn>)
                 LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
 
@@ -62,7 +65,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
                 boolean added = false;
                 for (int i = 0; i < this.tableColumns.size(); i++) {
                     if (((LogTableColumn) this.tableColumns.get(i)).getOrder() > ((LogTableColumn) column).getOrder()){
-                        this.tableColumns.add(i-1, column);
+                        this.tableColumns.add(Math.max(i-1,0), column);
                         added = true;
                         break;
                     }
@@ -89,6 +92,8 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         while(columns.hasMoreElements()){
             this.removeColumn(columns.nextElement());
         }
+        allColumns.clear();
+        setup();
     }
 
     public void saveLayout() {
