@@ -143,7 +143,7 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
 
             if(left instanceof String){
                 if(right instanceof String){
-                    return StringUtils.containsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
+                    return StringUtils.equalsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
                 }else if(right instanceof Pattern){
                     return ((Pattern) right).matcher((String) left).find() ^ (operator instanceof ASTNEQ);
                 }else if(right instanceof Number){
