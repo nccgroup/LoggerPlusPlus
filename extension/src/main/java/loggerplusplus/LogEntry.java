@@ -362,7 +362,7 @@ public class LogEntry
 
 		Collections.sort(columns);
 		for (LogTableColumn logTableColumn : columns) {
-			if(logTableColumn.isVisible() && logTableColumn.isEnabled()) {
+			if(logTableColumn.isVisible()) {
 				if(firstDone) {
 					result.append(",");
 				}else{
@@ -416,7 +416,7 @@ public class LogEntry
 		Collections.sort(columns);
 		boolean firstDone = false;
 		for (LogTableColumn logTableColumn : columns) {
-			if(logTableColumn.isVisible() && logTableColumn.isEnabled()){
+			if(logTableColumn.isVisible()){
 				if(firstDone){
 					result.append(",");
 				}else{

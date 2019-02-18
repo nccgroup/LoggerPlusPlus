@@ -17,10 +17,7 @@ import loggerplusplus.LoggerPlusPlus;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.*;
 
 import static loggerplusplus.Globals.PREF_LOG_TABLE_SETTINGS;
 
@@ -64,8 +61,9 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
                 //Find the first element with a greater order than the one to be added and add it before it.
                 boolean added = false;
                 for (int i = 0; i < this.tableColumns.size(); i++) {
-                    if (((LogTableColumn) this.tableColumns.get(i)).getOrder() > ((LogTableColumn) column).getOrder()){
-                        this.tableColumns.add(Math.max(i-1,0), column);
+                    int currentOrderAtIndex = ((LogTableColumn) this.tableColumns.get(i)).getOrder();
+                    if (currentOrderAtIndex > ((LogTableColumn) column).getOrder()){
+                        this.tableColumns.add(i, column);
                         added = true;
                         break;
                     }
@@ -88,10 +86,11 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
     public void resetToDefaultVariables() {
         LoggerPlusPlus.preferences.resetSetting(PREF_LOG_TABLE_SETTINGS);
-        Enumeration<TableColumn> columns = this.getColumns();
-        while(columns.hasMoreElements()){
-            this.removeColumn(columns.nextElement());
+        List<TableColumn> columns = Collections.list(this.getColumns());
+        for (TableColumn column : columns) {
+            this.removeColumn(column);
         }
+        assert this.tableColumns.size() == 0;
         allColumns.clear();
         setup();
     }
