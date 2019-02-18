@@ -92,7 +92,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 requestViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
                 responseViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
                 reqRespPanel = new VariableViewPanel(preferences, Globals.PREF_MESSAGE_VIEW_LAYOUT,
-                        requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response");
+                        requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", VariableViewPanel.View.HORIZONTAL);
                 uiReqRespPopOut = new PopOutPanel(reqRespPanel, "Request/Response"){
                     @Override
                     public void popOut() {
@@ -110,7 +110,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
                 logSplitPanel = new VariableViewPanel(preferences, Globals.PREF_LAYOUT,
                         logViewPanel, "Log Table",
-                        uiReqRespPopOut, "Request/Response", VariableViewPanel.View.HORIZONTAL);
+                        uiReqRespPopOut, "Request/Response", VariableViewPanel.View.VERTICAL);
 
                 gbc.gridy++;
                 gbc.weighty = 1;
@@ -193,7 +193,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         callbacks.printOutput(message);
         if(preferences == null) {
             Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
-            if(isDebug){
+            if(isDebug != null && isDebug){
                 System.out.println(message);
             }
         }else{
@@ -209,7 +209,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         callbacks.printError(errorMessage);
         if(preferences == null) {
             Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
-            if(isDebug){
+            if(isDebug != null && isDebug){
                 System.err.println(errorMessage);
             }
         }else{
