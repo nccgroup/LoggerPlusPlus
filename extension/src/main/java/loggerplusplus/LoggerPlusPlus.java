@@ -12,6 +12,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.Future;
 
 /**
  * Created by corey on 07/09/17.
@@ -174,6 +175,14 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
         if(uiPopOutPanel.isPoppedOut()) uiPopOutPanel.getPopoutFrame().dispose();
         if(uiReqRespPopOut.isPoppedOut()) uiReqRespPopOut.getPopoutFrame().dispose();
+
+        //Stop importing...
+        this.getLogManager().getExecutorService().shutdownNow();
+        Future importFuture = this.getLogManager().getImportFuture();
+        if(!importFuture.isDone()){
+            importFuture.cancel(true);
+        }
+
     }
 
     @Override
@@ -281,6 +290,10 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     public VariableViewPanel getReqRespPanel() {
         return reqRespPanel;
+    }
+
+    public LogViewPanel getLogViewPanel() {
+        return logViewPanel;
     }
 
     public JScrollPane getLogScrollPanel() {

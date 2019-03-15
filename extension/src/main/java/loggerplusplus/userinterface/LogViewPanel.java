@@ -16,7 +16,7 @@ public class LogViewPanel extends JPanel {
     final JScrollPane logTableScrollPane;
     final LogTable logTable;
     final FilterPanel filterPanel;
-
+    JProgressBar progressBar;
 
     public LogViewPanel(LogManager logManager){
         this.setLayout(new GridLayout());
@@ -53,6 +53,22 @@ public class LogViewPanel extends JPanel {
         filterPanel = new FilterPanel();
 
         this.add(this.logTableScrollPane);
+    }
+
+    public void showImportProgress(int entries){
+        progressBar = new JProgressBar(0, entries);
+        this.remove(logTableScrollPane);
+        this.add(progressBar);
+    }
+
+    public void setProgressValue(int progressValue){
+        if(progressBar == null) return;
+        this.progressBar.setValue(progressValue);
+    }
+
+    public void showLogTable(){
+        this.remove(progressBar);
+        this.add(logTableScrollPane);
     }
 
     public LogTable getLogTable() {
