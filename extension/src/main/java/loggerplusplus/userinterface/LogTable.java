@@ -273,7 +273,13 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
     @Override
     public void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
-        getModel().fireTableRowsInserted(modelIndex, modelIndex);
+        try {
+            synchronized (this) {
+                getModel().fireTableRowsInserted(modelIndex, modelIndex);
+            }
+        }catch (Exception e){
+            //TODO Fix out of bounds exception here.
+        }
 
         if((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
             JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
