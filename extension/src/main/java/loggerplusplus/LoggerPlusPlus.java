@@ -44,6 +44,15 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
     {
+
+        //Fix Darcula's issue with JSpinner UI.
+        try {
+            Class spinnerUI = Class.forName("com.bulenkov.darcula.ui.DarculaSpinnerUI");
+            UIManager.put("com.bulenkov.darcula.ui.DarculaSpinnerUI", spinnerUI);
+        } catch (ClassNotFoundException e) {
+            //Darcula is not installed.
+        }
+
         //Burp Specific
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
