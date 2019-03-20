@@ -134,6 +134,6 @@ public class ColorFilter implements Comparable<ColorFilter>{
 
     @Override
     public String toString() {
-        return "ColorFilter[" + this.filter.toString() + "]";
+        return "ColorFilter[" + (this.filter != null ? this.filter.toString() : "") + "]";
     }
 }
