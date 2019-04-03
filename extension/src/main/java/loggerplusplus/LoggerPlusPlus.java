@@ -35,8 +35,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     private LogViewPanel logViewPanel;
     private VariableViewPanel logSplitPanel;
     private VariableViewPanel reqRespPanel;
-    private IMessageEditor requestViewer;
-    private IMessageEditor responseViewer;
+    private RequestViewerController requestViewerController;
     private GrepPanel grepPanel;
     private LoggerOptionsPanel optionsJPanel;
     private LoggerMenu loggerMenu;
@@ -99,10 +98,12 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 gbc.fill = GridBagConstraints.BOTH;
                 logOuterPanel.add(logViewPanel.getFilterPanel(), gbc);
 
-                requestViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
-                responseViewer = LoggerPlusPlus.callbacks.createMessageEditor(logViewPanel.getLogTable().getModel(), false);
+                requestViewerController = new RequestViewerController(callbacks, false, false);
                 reqRespPanel = new VariableViewPanel(preferences, Globals.PREF_MESSAGE_VIEW_LAYOUT,
-                        requestViewer.getComponent(), "Request", responseViewer.getComponent(), "Response", VariableViewPanel.View.HORIZONTAL);
+                        requestViewerController.getRequestEditor().getComponent(), "Request",
+                        requestViewerController.getResponseEditor().getComponent(), "Response",
+                        VariableViewPanel.View.HORIZONTAL);
+
                 uiReqRespPopOut = new PopOutPanel(reqRespPanel, "Request/Response"){
                     @Override
                     public void popOut() {
@@ -317,12 +318,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         filterListeners.add(listener);
     }
 
-    public IMessageEditor getRequestViewer() {
-        return requestViewer;
-    }
-
-    public IMessageEditor getResponseViewer() {
-        return responseViewer;
+    public RequestViewerController getRequestViewerController(){
+        return requestViewerController;
     }
 
     public JTabbedPane getTabbedPane() {

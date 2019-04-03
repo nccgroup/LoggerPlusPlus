@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
-public class LogTableModel extends AbstractTableModel implements IMessageEditorController {
+public class LogTableModel extends AbstractTableModel {
 
     private final LogManager logManager;
     private final ArrayList<LogEntry> entries;
@@ -33,22 +33,13 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
             return 0;
         }
 
-        // To delete the Request/Response logTable the log section is empty (after deleting the logs when an item is already selected)
-        //TODO Move to selectionChanged
-        if(currentlyDisplayedItem!=null && entries.size() <= 0){
-            currentlyDisplayedItem = null;
-        }
-
         return entries.size();
     }
 
     @Override
     public int getColumnCount()
     {
-        if(this.columnModel != null) {
-            return this.columnModel.getColumnCount();
-        }else
-            return 0;
+        return (this.columnModel != null) ? this.columnModel.getColumnCount() : 0;
     }
 
     @Override
@@ -65,7 +56,6 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
 
     @Override
     public Class<?> getColumnClass(int columnModelIndex) {
-//        System.out.println("Get Class: " + columnModelIndex);
         Object val = getValueAt(0, columnModelIndex);
         return val == null ? String.class : val.getClass();
 //        String type = columnModel.getColumn(columnModelIndex).getType();
@@ -95,18 +85,7 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
             return rowIndex+1;
         }
 
-        Object val = entries.get(rowIndex).getValueByKey(column.getIdentifier());
-//        System.out.println("GetVal: Index=" + colModelIndex + ", " + column + ", Model Index=" + column.getModelIndex() + " = " + val);
-        return val;
-    }
-
-
-    public IHttpRequestResponse getCurrentlyDisplayedItem() {
-        return this.currentlyDisplayedItem;
-    }
-
-    public void setCurrentlyDisplayedItem(IHttpRequestResponse currentlyDisplayedItem) {
-        this.currentlyDisplayedItem = currentlyDisplayedItem;
+        return entries.get(rowIndex).getValueByKey(column.getIdentifier());
     }
 
     public List<LogEntry> getData() {
@@ -116,34 +95,5 @@ public class LogTableModel extends AbstractTableModel implements IMessageEditorC
     public LogEntry getRow(int row) {
         if(this.entries.size() <= row) return null;
         return this.entries.get(row);
-    }
-
-    //
-    // implement IMessageEditorController
-    // this allows our request/response viewers to obtain details about the messages being displayed
-    //
-
-    @Override
-    public byte[] getRequest()
-    {
-        if(getCurrentlyDisplayedItem()==null)
-            return "".getBytes();
-        return getCurrentlyDisplayedItem().getRequest();
-    }
-
-    @Override
-    public byte[] getResponse()
-    {
-        if(getCurrentlyDisplayedItem()==null)
-            return "".getBytes();
-        return getCurrentlyDisplayedItem().getResponse();
-    }
-
-    @Override
-    public IHttpService getHttpService()
-    {
-        if(getCurrentlyDisplayedItem()==null)
-            return null;
-        return getCurrentlyDisplayedItem().getHttpService();
     }
 }
