@@ -48,6 +48,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         try {
             Class spinnerUI = Class.forName("com.bulenkov.darcula.ui.DarculaSpinnerUI");
             UIManager.put("com.bulenkov.darcula.ui.DarculaSpinnerUI", spinnerUI);
+            Class sliderUI = Class.forName("com.bulenkov.darcula.ui.DarculaSliderUI");
+            UIManager.put("com.bulenkov.darcula.ui.DarculaSliderUI", sliderUI);
         } catch (ClassNotFoundException e) {
             //Darcula is not installed.
         }
@@ -248,33 +250,36 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 setFilter(filter);
             } catch (ParseException e) {
                 logViewPanel.getLogTable().setFilter(null);
-                formatFilter(filterString, Color.RED);
+                formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
             }
         }
     }
 
-    public void formatFilter(String string, Color color){
-        if(string != logViewPanel.getFilterPanel().getFilterField().getSelectedItem()) {
-            logViewPanel.getFilterPanel().getFilterField().setSelectedItem(string);
-        }
-        logViewPanel.getFilterPanel().getFilterField().setColor(color);
-    }
-
     public void setFilter(LogFilter filter){
         HistoryField filterComboField = logViewPanel.getFilterPanel().getFilterField();
-        Color color;
+        Color foregroundColor = null;
+        Color backgroundColor;
         String filterString;
         if (filter == null) {
             logViewPanel.getLogTable().setFilter(null);
             filterString = "";
-            color = Color.WHITE;
+            backgroundColor = null;
         } else {
             logViewPanel.getLogTable().setFilter(filter);
             filterString = filter.toString();
             ((HistoryField.HistoryComboModel) filterComboField.getModel()).addToHistory(filterString);
-            color = Color.GREEN;
+            foregroundColor = Color.BLACK;
+            backgroundColor = new Color(76,255, 155);
         }
-        formatFilter(filterString, color);
+        formatFilter(filterString, foregroundColor, backgroundColor);
+    }
+
+    public void formatFilter(String string, Color foregroundColor, Color backgroundColor){
+        if(string != logViewPanel.getFilterPanel().getFilterField().getSelectedItem()) {
+            logViewPanel.getFilterPanel().getFilterField().setSelectedItem(string);
+        }
+        logViewPanel.getFilterPanel().getFilterField().setForegroundColor(foregroundColor);
+        logViewPanel.getFilterPanel().getFilterField().setBackgroundColor(backgroundColor);
     }
 
     public void reset(){

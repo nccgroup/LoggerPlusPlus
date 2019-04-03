@@ -33,6 +33,7 @@ public class HistoryField extends JComboBox {
             @Override
             protected JTextField createEditorComponent() {
                 editorComponent = new JTextField();
+                editorComponent.setOpaque(false);
                 return editorComponent;
             }
 
@@ -56,8 +57,11 @@ public class HistoryField extends JComboBox {
         }
     }
 
-    public void setColor(Color color){
-        ((JComponent) this.getEditor().getEditorComponent()).setOpaque(false);
+    public void setForegroundColor(Color color){
+        this.getEditor().getEditorComponent().setForeground(color);
+    }
+
+    public void setBackgroundColor(Color color){
         this.getEditor().getEditorComponent().setBackground(color);
     }
 
