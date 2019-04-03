@@ -4,15 +4,11 @@ package loggerplusplus.userinterface;
 // extend JTable to handle cell selection and column move/resize
 //
 
-import loggerplusplus.Globals;
-import loggerplusplus.LogEntry;
-import loggerplusplus.LogEntryListener;
-import loggerplusplus.LoggerPlusPlus;
+import loggerplusplus.*;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.LogFilter;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
-import org.jdesktop.swingx.JXTable;
 
 import javax.swing.*;
 import javax.swing.event.RowSorterEvent;
@@ -39,8 +35,10 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
 
-
         this.setAutoCreateRowSorter(true);
+        ((DefaultRowSorter) this.getRowSorter()).setMaxSortKeys(1);
+        ((DefaultRowSorter) this.getRowSorter()).setSortsOnUpdates(true);
+
         this.getRowSorter().addRowSorterListener(rowSorterEvent -> {
             if(rowSorterEvent.getType() != RowSorterEvent.Type.SORT_ORDER_CHANGED) return;
             List<? extends RowSorter.SortKey> sortKeys = LogTable.this.getRowSorter().getSortKeys();
@@ -61,28 +59,20 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
         }catch(Exception e){
             sortOrder = SortOrder.ASCENDING;
         }
-        if(sortColumn != -1 && sortOrder != null){
+        if(sortColumn > 0){ //TODO Fix bug with renderer throwing null pointer when
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
 
-        DefaultListSelectionModel model = new DefaultListSelectionModel(){
-            @Override
-            public void addSelectionInterval(int start, int end) {
-                super.addSelectionInterval(start, end);
-                LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(start));
-                if (logEntry.requestResponse != null && !getModel().getCurrentlyDisplayedItem().equals(logEntry.requestResponse)) {
-                    if (logEntry.requestResponse.getRequest() != null)
-                        LoggerPlusPlus.instance.getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
-                    if (logEntry.requestResponse.getResponse() != null)
-                        LoggerPlusPlus.instance.getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
-                    else
-                        LoggerPlusPlus.instance.getResponseViewer().setMessage(new byte[0], false);
-                    getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
-                }
+        this.getSelectionModel().addListSelectionListener(e -> {
+            if(e.getValueIsAdjusting()) return;
+            RequestViewerController controller = LoggerPlusPlus.instance.getRequestViewerController();
+            LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(e.getFirstIndex()));
+            if (logEntry.requestResponse != null) {
+                controller.setDisplayedEntity(logEntry.requestResponse);
             }
-        };
+        });
+        this.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        this.setSelectionModel(model);
         registerListeners();
     }
 
@@ -95,18 +85,21 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
     {
-        Component c = null;
-        try {
-            c = super.prepareRenderer(renderer, row, column);
-        }catch (NullPointerException e){
-            c = super.prepareRenderer(renderer, row, column);
-        }
         LogEntry entry = null;
+        Integer modelRow = null;
         try{
-            entry = this.getModel().getRow(convertRowIndexToModel(row));
-        }catch (Exception ignored){}
+            modelRow = convertRowIndexToModel(row);
+            entry = this.getModel().getRow(modelRow);
+        }catch (NullPointerException ignored){
+            //The NPE here should hopefully be fixed. Log anyway just in case...
+            LoggerPlusPlus.instance.logError("NullPointerException caused by view->model index conversion.");
+        }
 
-        if(entry == null) return c;
+        if(entry == null){
+            return new JLabel("Error, view the logs for info.");
+        }
+
+        Component c = super.prepareRenderer(renderer, row, column);
 
         if(this.getSelectedRow() == row){
             c.setBackground(this.getSelectionBackground());
@@ -179,31 +172,8 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
     }
 
     public void setFilter(LogFilter filter){
-        try {
-            ((TableRowSorter) this.getRowSorter()).setRowFilter(filter);
-        }catch (NullPointerException ignored){
-            ignored.printStackTrace();
-        }
+        ((DefaultRowSorter) this.getRowSorter()).setRowFilter(filter);
         this.getRowSorter().allRowsChanged();
-    }
-
-    @Override
-    public void changeSelection(int row, int col, boolean toggle, boolean extend)
-    {
-        // show the log entry for the selected row
-        if(this.getModel().getData().size()>=row){
-            LogEntry logEntry = this.getModel().getData().get(this.convertRowIndexToModel(row));
-            if(logEntry.requestResponse != null) {
-                    if(logEntry.requestResponse.getRequest() != null)
-                        LoggerPlusPlus.instance.getRequestViewer().setMessage(logEntry.requestResponse.getRequest(), true);
-                    if (logEntry.requestResponse.getResponse() != null)
-                        LoggerPlusPlus.instance.getResponseViewer().setMessage(logEntry.requestResponse.getResponse(), false);
-                    else
-                        LoggerPlusPlus.instance.getResponseViewer().setMessage(new byte[0], false);
-                this.getModel().setCurrentlyDisplayedItem(logEntry.requestResponse);
-            }
-            super.changeSelection(row, col, toggle, extend);
-        }
     }
 
     // to save the new grepTable changes
