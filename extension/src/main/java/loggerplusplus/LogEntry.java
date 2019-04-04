@@ -95,8 +95,8 @@ public class LogEntry
 		this(null);
 		this.isImported = isImported;
 		if(isImported) {
-			this.requestTime = "NA";
-			this.responseTime = "NA";
+			this.requestTime = "";
+			this.responseTime = "";
 			this.requestResponseDelay = -1;
 		}
 	}
@@ -289,8 +289,7 @@ public class LogEntry
 
 		this.comment = requestResponse.getComment();
 
-		Pattern titlePattern = Pattern.compile("(?<=<title>)(.)+(?=</title>)");
-		Matcher titleMatcher = titlePattern.matcher(strFullResponse);
+		Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
 		if(titleMatcher.find()){
 			this.title = titleMatcher.group(1);
 		}
@@ -576,12 +575,9 @@ public class LogEntry
 		cookieJarStatus(String value) {
 			this.value = value;
 		}
-		public String getValue() {
-			return value;
-		}
 		@Override
 		public String toString() {
-			return getValue();
+			return this.value;
 		}
 	}
 
