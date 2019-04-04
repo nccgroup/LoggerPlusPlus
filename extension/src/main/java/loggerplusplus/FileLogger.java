@@ -196,11 +196,20 @@ public class FileLogger implements LogEntryListener{
 
     @Override
     public void onRequestAdded(int modelIndex, final LogEntry logEntry, boolean hasResponse) {
-
+        if(!hasResponse) return;
+        Thread saveThread = new Thread(){
+            @Override
+            public void run() {
+                synchronized (autoSaveWriter){
+                    autoLogItem(logEntry, autoLogIncludeRequests, autoLogIncludeResponses);
+                }
+            }
+        };
+        saveThread.start();
     }
 
     @Override
-    public void onResponseUpdated(final LogEntry existingEntry) {
+    public void onResponseUpdated(int modelRow, final LogEntry existingEntry) {
         Thread saveThread = new Thread(){
             @Override
             public void run() {
