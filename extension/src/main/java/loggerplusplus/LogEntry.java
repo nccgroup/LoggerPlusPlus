@@ -26,8 +26,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static loggerplusplus.userinterface.LogTableColumn.ColumnIdentifier.*;
-
 //
 // class to hold details of each log entry
 //
@@ -84,25 +82,31 @@ public class LogEntry
 	public String responseHeaders;
 	public String requestHeaders;
 
-	// Defining necessary parameters from the caller
+	private boolean requestProcessed;
+	private boolean responseProcessed;
 
-	public LogEntry()
-	{
+	protected LogEntry(Date arrivalTime){
 		this.uuid = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
-		this.comment = "";
-		this.requestDateTime = new Date();
-		this.requestTime = LogManager.sdf.format(this.requestDateTime);
+		this.setReqestTime(arrivalTime);
 	}
 
-	public LogEntry(boolean isImported){
-		this();
+	protected LogEntry(boolean isImported){
+		this(null);
 		this.isImported = isImported;
 		if(isImported) {
 			this.requestTime = "NA";
 			this.responseTime = "NA";
 			this.requestResponseDelay = -1;
 		}
+	}
+
+	public static LogEntry createEntry(Date arrivalTime){
+		return new LogEntry(arrivalTime);
+	}
+
+	public static LogEntry createImportedEntry(){
+		return new LogEntry(true);
 	}
 
 	public void processRequest(int tool, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
@@ -236,6 +240,8 @@ public class LogEntry
 //
 //			}
 //		}
+
+		this.requestProcessed = true;
 	}
 
 	public void processResponse(IHttpRequestResponse requestResponse) {
@@ -245,8 +251,8 @@ public class LogEntry
 		if(!isImported) {
 			this.responseTime = LogManager.sdf.format(responseDateTime);
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
-			this.requestDateTime = null;
-			this.responseDateTime = null;
+			this.requestDateTime = null; //Save a bit of ram!
+			this.responseDateTime = null; //Here too!
 		}
 
 		//Finalise request,response by saving to temp file and clearing from memory.
@@ -339,10 +345,17 @@ public class LogEntry
 //			this.requestResponse = null;
 //		}
 
+		this.responseProcessed = true;
 		this.complete = true;
 	}
 
-	public void setResponseDateTime(Date responseTime) {
+	public void setReqestTime(Date requestTime){
+		if(requestTime == null) return;
+		this.requestDateTime = requestTime;
+		this.requestTime = LogManager.sdf.format(this.requestDateTime);
+	}
+
+	public void setResponseTime(Date responseTime) {
 		this.responseDateTime = responseTime;
 	}
 
@@ -595,26 +608,7 @@ public class LogEntry
 
 	@Override
 	public String toString() {
-		return this.url.toString();
-	}
-
-	public static class PendingRequestEntry extends LogEntry {
-		private int logRow;
-		private UUID reference;
-		public PendingRequestEntry() {
-			super();
-		}
-
-		public PendingRequestEntry(UUID reference){
-			this.reference = reference;
-		}
-
-		public int getLogRow() {
-			return logRow;
-		}
-
-		public void setLogRow(int logRow) {
-			this.logRow = logRow;
-		}
+		return super.toString();
+		//return this.url.toString();
 	}
 }

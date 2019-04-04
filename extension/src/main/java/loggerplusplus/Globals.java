@@ -2,6 +2,7 @@ package loggerplusplus;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static loggerplusplus.userinterface.LogTableColumn.ColumnIdentifier.*;
 
@@ -111,4 +112,6 @@ public class Globals {
             + "{'id':" + RESPONSE + ",'index':" + (colModelIndex++) + ",'name':'Response','defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'type':'string','readonly':true,'order':48,'visible':false,'description':'Full Response Body','isRegEx':false,'regExString':'','regExCaseSensitive':false},"
             + "{'id':" + RESPONSEHEADERS + ",'index':" + (colModelIndex++) + ",'name':'ResponseHeaders','defaultVisibleName':'Response Headers','visibleName':'Response Headers','preferredWidth':150,'type':'string','readonly':true,'order':49,'visible':false,'description':'Comma Delimited Response Headers','isRegEx':false,'regExString':'','regExCaseSensitive':false}"
             + "]";
+
+    public static final Pattern UUID_COMMENT_PATTERN = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
 }

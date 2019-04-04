@@ -182,7 +182,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     }
 
     @Override
-    public void onResponseUpdated(LogEntry existingEntry) {
+    public void onResponseUpdated(int modelRow, LogEntry existingEntry) {
         if(!this.isEnabled) return;
         addToPending(existingEntry);
     }

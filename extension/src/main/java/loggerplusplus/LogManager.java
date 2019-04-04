@@ -10,8 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static loggerplusplus.Globals.*;
 import static loggerplusplus.LoggerPlusPlus.callbacks;
@@ -21,15 +19,14 @@ import static loggerplusplus.LoggerPlusPlus.preferences;
  * Created by corey on 07/09/17.
  */
 public class LogManager implements IHttpListener, IProxyListener {
-    static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    private static final String randIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
-    private static final Pattern uuidPattern = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
+    public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
 
     private final ArrayList<LogEntry> logEntries;
     private AtomicInteger pendingImport;
 
-    private HashMap<Integer, LogEntry.PendingRequestEntry> pendingProxyRequests;
-    private HashMap<UUID, LogEntry.PendingRequestEntry> pendingToolRequests;
+    private HashMap<Integer, LogEntryAwaitingResponse> pendingProxyRequests;
+    private HashMap<UUID, LogEntryAwaitingResponse> pendingToolRequests;
     private ArrayList<LogEntryListener> logEntryListeners;
     private ExecutorService executorService;
     //Stats
@@ -46,29 +43,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         pendingToolRequests = new HashMap<>();
         LoggerPlusPlus.callbacks.getProxyHistory();
 
-        executorService = new ThreadPoolExecutor(0, 2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue()){
-            @Override
-            protected void afterExecute(Runnable r, Throwable t) {
-                super.afterExecute(r, t);
-                if (t == null && r instanceof Future<?>) {
-                    try {
-                        Future<?> future = (Future<?>) r;
-                        if (future.isDone()) {
-                            future.get();
-                        }
-                    } catch (CancellationException ce) {
-                        t = ce;
-                    } catch (ExecutionException ee) {
-                        t = ee.getCause();
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                if (t != null) {
-                    t.printStackTrace();
-                }
-            }
-        };
+        executorService = Executors.newCachedThreadPool();
 
         //Create incomplete request cleanup thread so map doesn't get too big.
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -78,7 +53,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 long timeNow = new Date().getTime();
                 Set<Integer> keys = new HashSet<>(pendingProxyRequests.keySet());
                 synchronized (pendingProxyRequests){
-                    for (Integer reference : keys) {
+                    for (Integer reference : keys) { //Remove expired proxy requests from map
                         long entryTime = pendingProxyRequests.get(reference).requestDateTime.getTime();
                         long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
@@ -88,7 +63,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 }
                 Set<UUID> toolKeys = new HashSet<>(pendingToolRequests.keySet());
                 synchronized (pendingToolRequests){
-                    for (UUID reference : toolKeys) {
+                    for (UUID reference : toolKeys) { //Remove expired requests from other tools from map
                         long entryTime = pendingToolRequests.get(reference).requestDateTime.getTime();
                         long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
@@ -101,184 +76,217 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
 
-
+    /**
+     * Process messages from all tools but proxy.
+     * Adds to queue for later processing.
+     * @param toolFlag
+     * @param messageIsRequest
+     * @param requestResponse
+     */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
-        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return;
-        if(requestResponse == null || !(Boolean) preferences.getSetting(PREF_ENABLED)) return;
-        Date nowDate = new Date();
+        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
+        if(requestResponse == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        Date arrivalTime = new Date();
 
         if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE)){
             //Submit normally, we're not tracking requests and responses separately.
-            if(!messageIsRequest) {
-                processHttpMessage(new LogEntry(), toolFlag, false, requestResponse);
+            if(!messageIsRequest) { //But only add entries with responses.
+                logRequestWithResponse(arrivalTime, toolFlag, requestResponse, false);
             }
             return;
         }
 
-        final LogEntry logEntry;
+        final LogEntryAwaitingResponse logEntry;
         if(messageIsRequest){
-            UUID uuid = UUID.randomUUID();
-            logEntry = new LogEntry.PendingRequestEntry(uuid);
-            String originalComment = requestResponse.getComment() != null ? requestResponse.getComment() : "";
-            requestResponse.setComment(originalComment + "$LPP:" + randIdentifier + ":" + uuid + "$");
-            synchronized (pendingToolRequests){
-                pendingToolRequests.put(uuid, (LogEntry.PendingRequestEntry) logEntry);
-            }
-            processHttpMessage(logEntry, toolFlag, true, requestResponse);
+            logEntry = logRequestAwaitingResponse(arrivalTime, toolFlag, requestResponse);
         }else{
             //Pull the uuid we stored in the comment
-            if(requestResponse.getComment() != null) {
-                Matcher matcher = uuidPattern.matcher(requestResponse.getComment());
-                if (matcher.find() && matcher.group(1).equals(randIdentifier)) {
-                    UUID uuid = UUID.fromString(matcher.group(2));
-                    synchronized (pendingToolRequests) {
-                        logEntry = pendingToolRequests.remove(uuid);
-                    }
-                    if (logEntry != null) {
-                        requestResponse.setComment(matcher.replaceAll(""));
-                        logEntry.setResponseDateTime(nowDate);
-                        processHttpMessage(logEntry, toolFlag, false, requestResponse);
-                    }
-                } else {
-                    //No longer in the map. Perhaps got cleaned out? Drop the response...
+            UUID uuid = LogManagerHelper.extractUUIDFromRequestResponse(instanceIdentifier, requestResponse);
+            if(uuid != null){
+                logEntry = retrievePendingToolEntry(uuid);
+                if (logEntry != null) {
+                    updateRequestWithResponse(arrivalTime, logEntry, requestResponse);
+                }else{
+                    handleExpiredResponse(requestResponse);
                 }
-            }else{
-                //No longer in the map. Perhaps got cleaned out? Drop the response...
             }
         }
     }
 
-    //Wrapper to allow a custom LogEntry to be passed as a parameter
-    //Custom LogEntry used when importing proxy history.
-    //messageIsRequest is removed as not needed.
-    public void processHttpMessage(final LogEntry logEntry, final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse){
-        executorService.submit(() -> {
-            try {
-                if (toolFlag != IBurpExtenderCallbacks.TOOL_PROXY || logEntry.isImported) {
-                    IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
-                    URL uUrl = analyzedReq.getUrl();
-                    if (!isValidTool(toolFlag) || !shouldLog(uUrl)) {
-                        return;
-                    }
-                    if (!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE) || logEntry.isImported) { //If we're not tracking req/resp separate
-                        IHttpRequestResponsePersisted savedReqResp = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
-                        logEntry.processRequest(toolFlag, savedReqResp, uUrl, analyzedReq, null);
-                        if (requestResponse.getResponse() != null) logEntry.processResponse(savedReqResp);
-                        addNewRequest(logEntry, true);
-                    } else {
-                        if (messageIsRequest) {
-                            logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
-                            addNewRequest(logEntry, false);
-                        } else {
-                            updatePendingRequest((LogEntry.PendingRequestEntry) logEntry, requestResponse);
-                        }
-                    }
-                }
-            }finally {
-                if (logEntry.isImported) {
-//                    pendingImport.getAndDecrement();
-                }
-            }
-        });
-    }
-
-
+    /**
+     * Process messages received from the proxy tool
+     * @param messageIsRequest
+     * @param proxyMessage
+     */
     @Override
     public void processProxyMessage(final boolean messageIsRequest, final IInterceptedProxyMessage proxyMessage) {
         //REQUEST AND RESPONSE SEPARATE
-        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED)) return;
-        Date nowDate = new Date();
+        final int toolFlag = LoggerPlusPlus.callbacks.TOOL_PROXY;
+        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        Date arrivalTime = new Date();
 
-        final LogEntry.PendingRequestEntry logEntry;
+        final LogEntryAwaitingResponse logEntry;
         if(messageIsRequest){
-            logEntry = new LogEntry.PendingRequestEntry();
-            synchronized (pendingProxyRequests) {
-                pendingProxyRequests.put(proxyMessage.getMessageReference(), logEntry);
-            }
+            logEntry = logRequestAwaitingResponse(arrivalTime, proxyMessage.getMessageReference(),
+                                                    toolFlag, proxyMessage.getMessageInfo());
         }else{
-            synchronized (pendingProxyRequests) {
-                logEntry = pendingProxyRequests.remove(proxyMessage.getMessageReference());
-            }
+            logEntry = retrievePendingProxyEntry(proxyMessage.getMessageReference());
             if(logEntry == null){
-                lateResponses++;
-                if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.17){
-                    MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
-                    //Reset late responses to prevent message being displayed again so soon.
-                    lateResponses = 0;
-                }
-                return;
+                handleExpiredResponse(proxyMessage.getMessageInfo());
+            }else {
+                updateRequestWithResponse(arrivalTime, logEntry, proxyMessage.getMessageInfo());
             }
-            logEntry.setResponseDateTime(nowDate);
         }
+    }
 
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                IHttpRequestResponse requestResponse = proxyMessage.getMessageInfo();
+    private LogEntry logRequestWithResponse(final Date arrivalTime, final int toolFlag,
+                                            final IHttpRequestResponse requestResponse, final boolean isImported){
+        final LogEntry logEntry;
+        logEntry = isImported ? LogEntry.createImportedEntry() : LogEntry.createEntry(arrivalTime);
+
+        executorService.submit(() -> {
+            //Do this in the runnable because it can be slow for big responses, slowing the main thread.
+            try {
                 IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
                 URL uUrl = analyzedReq.getUrl();
-                int toolFlag = LoggerPlusPlus.callbacks.TOOL_PROXY;
-                if (isValidTool(toolFlag) && shouldLog(uUrl)){
-                    if(messageIsRequest){
-                        //New Proxy Request
-                        //We need to change messageInfo when we get a response so do not save to buffers
-                        logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, proxyMessage);
-                        addNewRequest(logEntry, false); //Request added without response
-                    }else{
-                        //Existing Proxy Request, update existing
-                        updatePendingRequest(logEntry, requestResponse);
-                    }
-                }
+                if (!shouldLog(uUrl)) return; //Do not log out of scope items.
+
+                logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
+                if (requestResponse.getResponse() != null) logEntry.processResponse(requestResponse);
+                addNewRequest(logEntry, true);
+            }finally {
+                if(isImported) pendingImport.getAndDecrement();
             }
         });
+
+        return logEntry;
+    }
+
+    private LogEntryAwaitingResponse logRequestAwaitingResponse(final Date arrivalTime,
+                                                                final int toolFlag,
+                                                                final IHttpRequestResponse requestResponse){
+        return logRequestAwaitingResponse(arrivalTime, -1, toolFlag, requestResponse);
+    }
+
+    private LogEntryAwaitingResponse logRequestAwaitingResponse(final Date arrivalTime,
+                                                                final int proxyReference,
+                                                                final int toolFlag,
+                                                                final IHttpRequestResponse requestResponse){
+        final LogEntryAwaitingResponse logEntry = new LogEntryAwaitingResponse(arrivalTime);
+        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY){
+            storePendingProxyEntry(proxyReference, logEntry);
+        }else {
+            LogManagerHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getReference(), requestResponse);
+            storePendingToolEntry(logEntry);
+        }
+
+        executorService.submit(() -> {
+            //Do this in the runnable because it can be slow for big responses, slowing the main thread.
+            IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(requestResponse);
+            URL uUrl = analyzedReq.getUrl();
+            if (!shouldLog(uUrl)) return; //Do not log out of scope items.
+
+            logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
+            addNewRequest(logEntry, false);
+        });
+        return logEntry;
+    }
+
+    private void updateRequestWithResponse(final Date arrivalTime, final LogEntryAwaitingResponse logEntry,
+                                           final IHttpRequestResponse requestResponse){
+        executorService.submit(() -> {
+            logEntry.setResponseTime(arrivalTime);
+            logEntry.processResponse(requestResponse);
+
+            //TODO Move color filter checks into separate class
+            HashMap<UUID, ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+            for (ColorFilter colorFilter : colorFilters.values()) {
+                logEntry.testColorFilter(colorFilter, true);
+            }
+
+            for (LogEntryListener logEntryListener : logEntryListeners) {
+                logEntryListener.onResponseUpdated(logEntry.getModelIndex(), logEntry);
+            }
+        });
+    }
+
+    private void handleExpiredResponse(IHttpRequestResponse requestResponse){
+        lateResponses++;
+        if(totalRequests > 100 && ((float)lateResponses)/totalRequests > 0.17){
+            MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
+            //Reset late responses to prevent message being displayed again so soon.
+            lateResponses = 0;
+        }
     }
 
     private void addNewRequest(LogEntry logEntry, boolean hasResponse){
         //After handling request / response logEntries generation.
-        //Add to grepTable / modify existing entry.
-        HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-        for (ColorFilter colorFilter : colorFilters.values()) {
-            logEntry.testColorFilter(colorFilter, false);
-        }
 
+        int modelIndex;
         synchronized (logEntries) {
+            int removedEntries = 0;
             while (logEntries.size() >= getMaximumEntries()) {
                 final LogEntry removed = logEntries.remove(0);
+                removedEntries++;
                 for (LogEntryListener listener : logEntryListeners) {
                     listener.onRequestRemoved(0, removed);
                 }
             }
-        }
-        int modelIndex;
-        synchronized (logEntries) {
+
+            if(removedEntries > 0) {
+                //Update model indices of entries pending their responses
+                for (LogEntryAwaitingResponse entry : this.pendingProxyRequests.values()) {
+                    entry.setModelIndex(entry.getModelIndex() - removedEntries);
+                }
+                for (LogEntryAwaitingResponse entry : this.pendingToolRequests.values()) {
+                    entry.setModelIndex(entry.getModelIndex() - removedEntries);
+                }
+            }
+
             logEntries.add(logEntry);
             modelIndex = logEntries.size()-1;
+
+            //If we haven't got its response yet, store its model index for table row update later!
+            if(logEntry instanceof LogEntryAwaitingResponse){
+                ((LogEntryAwaitingResponse) logEntry).setModelIndex(modelIndex);
+            }
         }
+
+        //Add to grepTable / modify existing entry.
+        HashMap<UUID,ColorFilter> colorFilters =
+                (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+        for (ColorFilter colorFilter : colorFilters.values()) {
+            logEntry.testColorFilter(colorFilter, false);
+        }
+
         for (LogEntryListener listener : logEntryListeners) {
             listener.onRequestAdded(modelIndex, logEntry, hasResponse);
         }
         totalRequests++;
-        if(logEntry instanceof LogEntry.PendingRequestEntry){
-            ((LogEntry.PendingRequestEntry) logEntry).setLogRow(totalRequests-1);
+    }
+
+    private void storePendingProxyEntry(int messageID, LogEntryAwaitingResponse logEntry) {
+        synchronized (pendingProxyRequests){
+            pendingProxyRequests.put(messageID, logEntry);
         }
     }
 
-    private void updatePendingRequest(LogEntry.PendingRequestEntry pendingRequest, IHttpRequestResponse messageInfo) {
-        //Fill in gaps of request with response
-        if(messageInfo == null) {
-            LoggerPlusPlus.callbacks.printError("Warning: Response received with null messageInfo.");
-            return;
+    private void storePendingToolEntry(LogEntryAwaitingResponse logEntry) {
+        synchronized (pendingToolRequests){
+            pendingToolRequests.put(((LogEntryAwaitingResponse) logEntry).getReference(), logEntry);
         }
-        pendingRequest.processResponse(messageInfo);
+    }
 
-
-        HashMap<UUID, ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-        for (ColorFilter colorFilter : colorFilters.values()) {
-            pendingRequest.testColorFilter(colorFilter, true);
+    private LogEntryAwaitingResponse retrievePendingToolEntry(UUID uuid){
+        synchronized (pendingToolRequests) {
+            return pendingToolRequests.remove(uuid);
         }
-        for (LogEntryListener logEntryListener : logEntryListeners) {
-            logEntryListener.onResponseUpdated(pendingRequest);
+    }
+
+    private LogEntryAwaitingResponse retrievePendingProxyEntry(int messageId){
+        synchronized (pendingProxyRequests) {
+            return pendingProxyRequests.remove(messageId);
         }
     }
 
@@ -334,27 +342,30 @@ public class LogManager implements IHttpListener, IProxyListener {
 
     public void importExisting(IHttpRequestResponse requestResponse) {
         int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
-        LogEntry logEntry = new LogEntry(true);
         pendingImport.getAndIncrement();
-        processHttpMessage(logEntry, toolFlag, false, requestResponse);
+        logRequestWithResponse(null, toolFlag, requestResponse, true);
     }
 
     public void importProxyHistory(boolean askConfirmation){
         int result = JOptionPane.OK_OPTION;
         int historySize = callbacks.getProxyHistory().length;
-        if(askConfirmation)
-            result = MoreHelp.askConfirmMessage("Burp Proxy Import",
-                    "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
-                    "\nLarge imports may take a few minutes to process." +
-                    "\nNote: History will be truncated to the maximum entries configured in the options.", new String[]{"Import", "Cancel"});
+        int maxEntries = (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+        if(askConfirmation) {
+            String message = "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
+                    "\nLarge imports may take a few minutes to process.";
+            if(historySize > maxEntries) {
+                message += "\nNote: History will be truncated to " + maxEntries + " entries.";
+            }
 
+            result = MoreHelp.askConfirmMessage("Burp Proxy Import",
+                    message, new String[]{"Import", "Cancel"});
+        }
         if(result == JOptionPane.OK_OPTION) {
             importFuture = executorService.submit(() -> {
                 LoggerPlusPlus.instance.getLogManager().reset();
                 LogViewPanel logViewPanel = LoggerPlusPlus.instance.getLogViewPanel();
                 IHttpRequestResponse[] history = callbacks.getProxyHistory();
 
-                int maxEntries = (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
                 int startIndex = Math.max(0, history.length-maxEntries);
                 int importCount = historySize - startIndex;
                 logViewPanel.showImportProgress(importCount);
@@ -362,11 +373,11 @@ public class LogManager implements IHttpListener, IProxyListener {
                 for (int index = startIndex; index < history.length; index++) {
                     importExisting(history[index]);
                 }
-                while(pendingImport.get() != 0 && !Thread.currentThread().isInterrupted()){
+                int pending;
+                while((pending = pendingImport.get()) != 0 && !Thread.currentThread().isInterrupted()){
                     try {
                         Thread.sleep(500);
-                        int pending = pendingImport.get();
-                        System.out.println("Pending Import: " + pending);
+                        LoggerPlusPlus.instance.logOutput("Importing logs, " + pending + " entries remaining.");
                         logViewPanel.setProgressValue(importCount - pending);
                     } catch (InterruptedException e) {}
                 }
