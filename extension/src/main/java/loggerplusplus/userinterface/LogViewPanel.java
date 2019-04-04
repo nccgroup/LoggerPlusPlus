@@ -89,7 +89,7 @@ public class LogViewPanel extends JPanel {
         FilterPanel(){
             this.setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
-            this.filterField = new HistoryField(15, "filterHistory");
+            this.filterField = new HistoryField(15, Globals.PREF_FILTER_HISTORY);
             this.filterField.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyReleased(KeyEvent e) {
