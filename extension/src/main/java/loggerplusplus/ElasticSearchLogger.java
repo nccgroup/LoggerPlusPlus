@@ -20,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -34,6 +33,7 @@ public class ElasticSearchLogger implements LogEntryListener{
     private String clusterName;
     private boolean isEnabled;
     private String indexName;
+    private boolean includeReqResp;
 
     private final ScheduledExecutorService executorService;
     private ScheduledFuture indexTask;
@@ -60,6 +60,7 @@ public class ElasticSearchLogger implements LogEntryListener{
 
             createIndices();
             pendingEntries = new ArrayList<>();
+            includeReqResp = (boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INCLUDE_REQ_RESP);
             int delay = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_DELAY);
             indexTask = executorService.scheduleAtFixedRate(new Runnable() {
                 @Override
@@ -111,14 +112,17 @@ public class ElasticSearchLogger implements LogEntryListener{
                                 .field("path", logEntry.relativeURL)
                                 .field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime)
                                 .field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime)
+                                .field("responsedelay", logEntry.requestResponseDelay)
                                 .field("status", logEntry.status)
                                 .field("title", logEntry.title)
                                 .field("newcookies", logEntry.newCookies)
                                 .field("sentcookies", logEntry.sentCookies)
                                 .field("referrer", logEntry.referrerURL)
                                 .field("requestcontenttype", logEntry.requestContentType)
-//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
+                                .field("requestlength", logEntry.requestLength)
+                                .field("responselength", logEntry.responseLength)
+                                .field("requestbody", this.includeReqResp ?  new String(logEntry.requestResponse.getRequest()) : "")
+                                .field("responsebody", this.includeReqResp ?  new String(logEntry.requestResponse.getResponse()) : "")
                             .endObject()
                     );
             return requestBuilder.request();
