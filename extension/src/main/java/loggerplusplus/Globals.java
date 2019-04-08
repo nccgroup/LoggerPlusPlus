@@ -48,6 +48,7 @@ public class Globals {
     public static final String PREF_ELASTIC_CLUSTER_NAME = "esClusterName";
     public static final String PREF_ELASTIC_INDEX = "esIndex";
     public static final String PREF_ELASTIC_DELAY = "esDelay";
+    public static final String PREF_ELASTIC_INCLUDE_REQ_RESP = "esIncludeReqResp";
     public static final String PREF_LOG_OTHER_LIVE = "otherToolLiveLogging";
     public static final String PREF_FILTER_HISTORY = "filterHistory";
     public static final String PREF_AUTO_SAVE = "autoSave";
