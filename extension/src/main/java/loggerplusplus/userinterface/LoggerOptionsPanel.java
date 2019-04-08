@@ -142,7 +142,8 @@ public class LoggerOptionsPanel extends JScrollPane{
         ((SpinnerNumberModel) elasticDelay.getModel()).setMaximum(99999);
         ((SpinnerNumberModel) elasticDelay.getModel()).setMinimum(10);
         ((SpinnerNumberModel) elasticDelay.getModel()).setStepSize(10);
-        
+        elasticPanel.addSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, "Include Request and Response: ");
+
         PanelBuilder.ComponentGroup otherPanel = panelBuilder.createComponentGroup("Other");
         JSpinner spnRespTimeout = (JSpinner) otherPanel.addSetting(PREF_RESPONSE_TIMEOUT, "Response Timeout (ms): ");
         ((SpinnerNumberModel) spnRespTimeout.getModel()).setMinimum(10);
