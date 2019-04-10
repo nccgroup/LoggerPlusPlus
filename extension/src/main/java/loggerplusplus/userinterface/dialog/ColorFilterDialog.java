@@ -3,7 +3,7 @@ package loggerplusplus.userinterface.dialog;
 import loggerplusplus.Globals;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 
@@ -24,17 +24,17 @@ import java.util.UUID;
 public class ColorFilterDialog extends JFrame {
     private static ColorFilterDialog instance;
     private Map<UUID, ColorFilter> filters;
-    private ArrayList<FilterListener> filterListeners;
+    private ArrayList<ColorFilterListener> colorFilterListeners;
     private Map<UUID, ColorFilter> originalFilters;
     private final ColorFilterTable filterTable;
 
-    public ColorFilterDialog(ArrayList<FilterListener> listeners){
+    public ColorFilterDialog(ArrayList<ColorFilterListener> listeners){
         if(instance != null) instance.dispose();
         instance = this;
         this.filters = (Map<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
         this.originalFilters = new HashMap<UUID, ColorFilter>(filters);
-        this.filterListeners = listeners;
-        this.filterTable = new ColorFilterTable(filters, filterListeners);
+        this.colorFilterListeners = listeners;
+        this.filterTable = new ColorFilterTable(filters, colorFilterListeners);
         buildDialog();
         pack();
     }
@@ -135,7 +135,7 @@ public class ColorFilterDialog extends JFrame {
                 filters.get(uid).setModified(false);
             }
         }
-        for (FilterListener listener : filterListeners) {
+        for (ColorFilterListener listener : colorFilterListeners) {
             for (UUID uid : newFilters) {
                 listener.onFilterAdd(filters.get(uid));
             }

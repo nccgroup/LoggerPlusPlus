@@ -320,6 +320,10 @@ public class LogManager implements IHttpListener, IProxyListener {
         }
         this.lateResponses = 0;
         this.totalRequests = 0;
+
+        for (LogEntryListener logEntryListener : logEntryListeners) {
+            logEntryListener.onLogsCleared();
+        }
     }
 
     public void addLogListener(LogEntryListener listener) {

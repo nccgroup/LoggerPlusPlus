@@ -7,7 +7,7 @@ import java.io.*;
 /**
  * Created by corey on 21/08/17.
  */
-public class FileLogger implements LogEntryListener{
+public class FileLogger implements LogEntryListener {
     private FileWriter autoSaveWriter;
     private File autoSaveFile;
     private final ExcelExporter exp;
@@ -226,6 +226,10 @@ public class FileLogger implements LogEntryListener{
 
     }
 
+    @Override
+    public void onLogsCleared() {
+
+    }
 
     // source: http://book.javanb.com/swing-hacks/swinghacks-chp-3-sect-6.html
     public class ExcelExporter {

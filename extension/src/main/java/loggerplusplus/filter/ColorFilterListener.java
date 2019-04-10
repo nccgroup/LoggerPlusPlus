@@ -3,7 +3,7 @@ package loggerplusplus.filter;
 /**
  * Created by corey on 20/07/17.
  */
-public interface FilterListener {
+public interface ColorFilterListener {
 
     void onFilterChange(ColorFilter filter);
     void onFilterAdd(ColorFilter filter);

@@ -25,25 +25,23 @@ public class LogEntryMenu extends JPopupMenu {
         final LogEntry entry = logTable.getModel().getRow(modelRow);
         final String columnName = ((LogTableColumn) logTable.getColumnModel().getModelColumn(modelColumn)).getName();
         final Object columnValue = logTable.getModel().getValueAt(modelRow, modelColumn);
-        final String columnValueString = columnValue == null ? "" : columnValue.toString();
+        final boolean valueIsNumeric = columnValue instanceof Number;
+        final String columnValueString = columnValue instanceof Number ?
+                columnValue.toString() : "\"" + columnValue + "\"";
+
         final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
         String title = entry.getValueByKey(URL).toString();
         if(title.length() > 50) title = title.substring(0, 47) + "...";
-        this.add(new JMenuItem(new AbstractAction(title) {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-
-            }
-        }));
+        this.add(new JMenuItem(title));
         this.add(new JPopupMenu.Separator());
+
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                String value = "\"" + columnValueString + "\"";
                 try {
-                    LogFilter filter = new LogFilter(columnName + "==" + value);
-                    LoggerPlusPlus.instance.setFilter(filter);
+                    LogFilter filter = new LogFilter(columnName + "==" + columnValueString);
+                    LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                 } catch (ParseException e) {
                     return;
                 }
@@ -56,10 +54,9 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    String value = "\"" + columnValueString + "\"";
                     try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && " + columnName + " == " + value);
-                        LoggerPlusPlus.instance.setFilter(filter);
+                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && " + columnName + " == " + columnValueString);
+                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                     } catch (ParseException e) {
                         return;
                     }
@@ -68,10 +65,9 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    String value = "\"" + columnValueString + "\"";
                     try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || " + columnName + " == " + value);
-                        LoggerPlusPlus.instance.setFilter(filter);
+                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || " + columnName + " == " + columnValueString);
+                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                     } catch (ParseException e) {
                         return;
                     }
@@ -87,10 +83,10 @@ public class LogEntryMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new LogFilter(columnName + " == \"" + columnValueString + "\""));
+                    colorFilter.setFilter(new LogFilter(columnName + " == " + columnValueString));
                     HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUid(), colorFilter);
-                    ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners());
+                    ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners());
                     colorFilterDialog.setVisible(true);
                 } catch (ParseException e1) {
                     return;
@@ -184,6 +180,5 @@ public class LogEntryMenu extends JPopupMenu {
             }
         });
         this.add(removeItem);
-
     }
 }

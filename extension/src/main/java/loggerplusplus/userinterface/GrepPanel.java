@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import loggerplusplus.Globals;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LoggerPlusPlus;
@@ -49,7 +50,7 @@ public class GrepPanel extends JPanel{
         gbc.ipadx = 10;
         gbc.weightx = 1;
         regexPanel.add(new JLabel(" Regex:"), gbc);
-        field = new HistoryField(15, "grepHistory");
+        field = new HistoryField(LoggerPlusPlus.preferences, Globals.PREF_GREP_HISTORY, 15);
         gbc.gridx++;
         gbc.weightx = 999;
         regexPanel.add(field, gbc);

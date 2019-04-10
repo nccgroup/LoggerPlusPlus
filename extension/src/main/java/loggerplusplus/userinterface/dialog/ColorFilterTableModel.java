@@ -1,7 +1,7 @@
 package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 
@@ -19,11 +19,11 @@ public class ColorFilterTableModel extends AbstractTableModel {
 
     private final Map<Short, UUID> rowUUIDs = new HashMap<Short, UUID>();
     private final Map<UUID, ColorFilter> filters;
-    private final ArrayList<FilterListener> filterListeners;
+    private final ArrayList<ColorFilterListener> colorFilterListeners;
     private final String[] columnNames = {"Title", "LogFilter", "Foreground Color", "Background Color", "Enabled", ""};
     private final JButton removeButton = new JButton("Remove");
 
-    ColorFilterTableModel(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
+    ColorFilterTableModel(Map<UUID, ColorFilter> filters, ArrayList<ColorFilterListener> colorFilterListeners){
         this.filters = filters;
         //Sort existing filters by their priority before adding to table.
         List<ColorFilter> sorted = new ArrayList<ColorFilter>(filters.values());
@@ -32,7 +32,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
             rowUUIDs.put((short) rowUUIDs.size(), filter.getUid());
         }
 
-        this.filterListeners = filterListeners;
+        this.colorFilterListeners = colorFilterListeners;
     }
 
     @Override
@@ -111,8 +111,8 @@ public class ColorFilterTableModel extends AbstractTableModel {
             default:
                 return;
         }
-        for (FilterListener filterListener : this.filterListeners) {
-            filterListener.onFilterChange(filter);
+        for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
+            colorFilterListener.onFilterChange(filter);
         }
     }
 
@@ -150,8 +150,8 @@ public class ColorFilterTableModel extends AbstractTableModel {
                 ColorFilter removedFilter = this.filters.remove(rowUUIDs.get((short) row));
                 this.fireTableRowsDeleted(row, row);
                 rowUUIDs.remove((short) row);
-                for (FilterListener filterListener : this.filterListeners) {
-                    filterListener.onFilterRemove(removedFilter);
+                for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
+                    colorFilterListener.onFilterRemove(removedFilter);
                 }
                 for (int i = row + 1; i <= rowUUIDs.size(); i++) {
                     rowUUIDs.put((short) (i - 1), rowUUIDs.get((short) i));
@@ -174,7 +174,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
 
     public void removeAll() {
         this.filters.clear();
-        for(FilterListener listener : filterListeners){
+        for(ColorFilterListener listener : colorFilterListeners){
             listener.onFilterRemoveAll();
         }
         this.fireTableDataChanged();

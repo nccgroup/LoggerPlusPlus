@@ -76,7 +76,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     LogFilter filter = new LogFilter(context +  " == /" + matchPattern + "/");
-                    LoggerPlusPlus.instance.setFilter(filter);
+                    LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                 } catch (ParseException e) {
                     return;
                 }
@@ -93,7 +93,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     try {
                         LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && "
                                 + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.instance.setFilter(filter);
+                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                     } catch (ParseException e) {
                         return;
                     }
@@ -105,7 +105,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     try {
                         LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || "
                                 + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.instance.setFilter(filter);
+                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
                     } catch (ParseException e) {
                         return;
                     }
@@ -124,7 +124,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                     colorFilter.setFilter(new LogFilter(context + " == /" + matchPattern + "/"));
                     HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUid(), colorFilter);
-                    new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners()).setVisible(true);
+                    new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners()).setVisible(true);
                 } catch (ParseException e) {
                     return;
                 }

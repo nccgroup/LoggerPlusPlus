@@ -2,9 +2,7 @@ package loggerplusplus;
 
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.*;
-import loggerplusplus.filter.FilterListener;
-import loggerplusplus.filter.LogFilter;
-import loggerplusplus.filter.parser.ParseException;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.userinterface.*;
 
 import javax.swing.*;
@@ -24,8 +22,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     public static Preferences preferences;
 
     private static IContextMenuFactory contextMenuFactory;
-    private ArrayList<FilterListener> filterListeners;
+    private ArrayList<ColorFilterListener> colorFilterListeners;
     private LogManager logManager;
+    private FilterController filterController;
     private ElasticSearchLogger elasticSearchLogger;
 
     //UX
@@ -60,6 +59,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
         LoggerPlusPlus.preferences = new LoggerPreferenceFactory(LoggerPlusPlus.gsonProvider, this, callbacks).buildPreferences();
+        filterController = new FilterController(preferences);
         logManager = new LogManager();
 
         Double lastVersion = (Double) preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
@@ -74,7 +74,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
 
         callbacks.setExtensionName("Logger++");
-        filterListeners = new ArrayList<>();
+        colorFilterListeners = new ArrayList<>();
         elasticSearchLogger = new ElasticSearchLogger(logManager);
 
         if(!callbacks.isExtensionBapp() && (boolean) preferences.getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
@@ -93,12 +93,13 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 //UI
                 JPanel logOuterPanel = new JPanel(new GridBagLayout());
                 logViewPanel = new LogViewPanel(logManager);
+                filterController.addFilterListener(logViewPanel.getLogTable());
                 GridBagConstraints gbc = new GridBagConstraints();
                 gbc.weighty = 0;
                 gbc.weightx = 1;
                 gbc.gridy = 0;
                 gbc.fill = GridBagConstraints.BOTH;
-                logOuterPanel.add(logViewPanel.getFilterPanel(), gbc);
+                logOuterPanel.add(new MainControlsPanel(filterController), gbc);
 
                 requestViewerController = new RequestViewerController(callbacks, false, false);
                 reqRespPanel = new VariableViewPanel(preferences, Globals.PREF_MESSAGE_VIEW_LAYOUT,
@@ -241,50 +242,13 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
     }
 
-    public void setFilter(String filterString){
-        if (filterString == null || filterString.length() == 0) {
-            setFilter((LogFilter) null);
-        } else {
-            try {
-                LogFilter filter = new LogFilter(filterString);
-                setFilter(filter);
-            } catch (ParseException e) {
-                logViewPanel.getLogTable().setFilter(null);
-                formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
-            }
-        }
-    }
-
-    public void setFilter(LogFilter filter){
-        HistoryField filterComboField = logViewPanel.getFilterPanel().getFilterField();
-        Color foregroundColor = null;
-        Color backgroundColor;
-        String filterString;
-        if (filter == null) {
-            logViewPanel.getLogTable().setFilter(null);
-            filterString = "";
-            backgroundColor = null;
-        } else {
-            logViewPanel.getLogTable().setFilter(filter);
-            filterString = filter.toString();
-            ((HistoryField.HistoryComboModel) filterComboField.getModel()).addToHistory(filterString);
-            foregroundColor = Color.BLACK;
-            backgroundColor = new Color(76,255, 155);
-        }
-        formatFilter(filterString, foregroundColor, backgroundColor);
-    }
-
-    public void formatFilter(String string, Color foregroundColor, Color backgroundColor){
-        if(string != logViewPanel.getFilterPanel().getFilterField().getSelectedItem()) {
-            logViewPanel.getFilterPanel().getFilterField().setSelectedItem(string);
-        }
-        logViewPanel.getFilterPanel().getFilterField().setForegroundColor(foregroundColor);
-        logViewPanel.getFilterPanel().getFilterField().setBackgroundColor(backgroundColor);
-    }
-
     public void reset(){
         this.logManager.reset();
         this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
+    }
+
+    public FilterController getFilterController() {
+        return filterController;
     }
 
     public Preferences getPreferences() {
@@ -315,12 +279,12 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return logViewPanel.getScrollPane();
     }
 
-    public ArrayList<FilterListener> getFilterListeners() {
-        return filterListeners;
+    public ArrayList<ColorFilterListener> getColorFilterListeners() {
+        return colorFilterListeners;
     }
 
-    public void addFilterListener(FilterListener listener) {
-        filterListeners.add(listener);
+    public void addFilterListener(ColorFilterListener listener) {
+        colorFilterListeners.add(listener);
     }
 
     public RequestViewerController getRequestViewerController(){
@@ -341,10 +305,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     public LogManager getLogManager() {
         return logManager;
-    }
-
-    public static IContextMenuFactory getContextMenuFactory() {
-        return contextMenuFactory;
     }
 
     public void setEsEnabled(boolean esEnabled) throws Exception {
