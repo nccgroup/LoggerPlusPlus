@@ -81,12 +81,12 @@ public class SavedFiltersTableModel extends AbstractTableModel {
     public void onClick(int row, int col) {
         if(savedFilters == null || row < 0 || row >= savedFilters.size() || savedFilters.get(row) == null) return;
         if(col == 2){
-            LoggerPlusPlus.instance.setFilter(savedFilters.get(row).getFilter());
+            LoggerPlusPlus.instance.getFilterController().setFilter(savedFilters.get(row).getFilter());
             LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
             return;
         }
         if(col == 3){
-            ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getFilterListeners());
+            ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners());
             SavedFilter savedFilter = savedFilters.get(row);
             try {
                 dialog.addColorFilter(savedFilter.getName(), savedFilter.getFilter());

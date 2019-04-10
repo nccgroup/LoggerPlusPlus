@@ -53,6 +53,7 @@ public class Globals {
     public static final String PREF_FILTER_HISTORY = "filterHistory";
     public static final String PREF_AUTO_SAVE = "autoSave";
     public static final String PREF_AUTO_SCROLL = "autoScroll";
+    public static final String PREF_GREP_HISTORY = "grepHistory";
 
     public static final String[] VERSION_CHANGE_SETTINGS_TO_RESET = new String[]{
             PREF_LOG_TABLE_SETTINGS

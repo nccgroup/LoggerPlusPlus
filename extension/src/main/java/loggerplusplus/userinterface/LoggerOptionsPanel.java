@@ -18,7 +18,7 @@ import loggerplusplus.FileLogger;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.MoreHelp;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.filter.SavedFilter;
 
 import javax.swing.*;
@@ -190,9 +190,9 @@ public class LoggerOptionsPanel extends JScrollPane{
             HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
             Map<UUID, ColorFilter> cloneMap = new HashMap<>(colorFilters);
             cloneMap.putAll(colorFilterMap);
-            for (FilterListener filterListener : LoggerPlusPlus.instance.getFilterListeners()) {
+            for (ColorFilterListener colorFilterListener : LoggerPlusPlus.instance.getColorFilterListeners()) {
                 for (ColorFilter colorFilter : colorFilterMap.values()) {
-                    filterListener.onFilterAdd(colorFilter);
+                    colorFilterListener.onFilterAdd(colorFilter);
                 }
             }
             LoggerPlusPlus.preferences.setSetting(PREF_COLOR_FILTERS, cloneMap);

@@ -6,7 +6,7 @@ package loggerplusplus.userinterface;
 
 import loggerplusplus.*;
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
 
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class LogTable extends JTable implements FilterListener, LogEntryListener
+public class LogTable extends JTable implements FilterListener, ColorFilterListener, LogEntryListener
 {
 
     public LogTable(LogTableModel tableModel, LogTableColumnModel logTableColumnModel)
@@ -265,8 +265,26 @@ public class LogTable extends JTable implements FilterListener, LogEntryListener
 
     @Override
     public void onRequestRemoved(int index, LogEntry logEntry) {
-//        getModel().fireTableRowsDeleted(index, index);
+        getModel().fireTableRowsDeleted(index, index);
+    }
+
+    @Override
+    public void onLogsCleared() {
         getModel().fireTableDataChanged();
     }
 
+    @Override
+    public void onFilterSet(LogFilter filter) {
+        this.setFilter(filter);
+    }
+
+    @Override
+    public void onFilterError(String invalidFilter) {
+        this.setFilter(null);
+    }
+
+    @Override
+    public void onFilterCleared() {
+        this.setFilter(null);
+    }
 }

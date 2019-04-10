@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class ElasticSearchLogger implements LogEntryListener{
+public class ElasticSearchLogger implements LogEntryListener {
     IndicesAdminClient adminClient;
     Client client;
     RestHighLevelClient httpClient;
@@ -193,6 +193,11 @@ public class ElasticSearchLogger implements LogEntryListener{
 
     @Override
     public void onRequestRemoved(int index, LogEntry logEntry) {
+
+    }
+
+    @Override
+    public void onLogsCleared() {
 
     }
 }

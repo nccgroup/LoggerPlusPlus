@@ -1,7 +1,7 @@
 package loggerplusplus.userinterface.dialog;
 
 import loggerplusplus.filter.ColorFilter;
-import loggerplusplus.filter.FilterListener;
+import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.userinterface.ColorEditor;
 import loggerplusplus.userinterface.renderer.ButtonRenderer;
 import loggerplusplus.userinterface.renderer.ColorRenderer;
@@ -19,12 +19,12 @@ import java.util.UUID;
  * Created by corey on 19/07/17.
  */
 public class ColorFilterTable extends JTable {
-    private final ArrayList<FilterListener> filterListeners;
+    private final ArrayList<ColorFilterListener> colorFilterListeners;
 
 
-    ColorFilterTable(Map<UUID, ColorFilter> filters, ArrayList<FilterListener> filterListeners){
-        this.filterListeners = filterListeners;
-        this.setModel(new ColorFilterTableModel(filters, filterListeners));
+    ColorFilterTable(Map<UUID, ColorFilter> filters, ArrayList<ColorFilterListener> colorFilterListeners){
+        this.colorFilterListeners = colorFilterListeners;
+        this.setModel(new ColorFilterTableModel(filters, colorFilterListeners));
         this.setFillsViewportHeight(true);
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         this.setAutoCreateRowSorter(false);
@@ -72,8 +72,8 @@ public class ColorFilterTable extends JTable {
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()-1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()-1, this.getSelectedRow()-1);
             ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
-            for (FilterListener filterListener : this.filterListeners) {
-                filterListener.onFilterChange(filter);
+            for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
+                colorFilterListener.onFilterChange(filter);
             }
         }
     }
@@ -82,8 +82,8 @@ public class ColorFilterTable extends JTable {
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
             ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
-            for (FilterListener filterListener : this.filterListeners) {
-                filterListener.onFilterChange(filter);
+            for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
+                colorFilterListener.onFilterChange(filter);
             }
         }
     }
