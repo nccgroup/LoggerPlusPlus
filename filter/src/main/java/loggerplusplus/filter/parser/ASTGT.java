@@ -8,9 +8,9 @@ class ASTGT extends SimpleNode {
     super(id);
   }
 
-  public ASTGT(SyntaxChecker p, int id) {
+  public ASTGT(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=cf7e43e21e7dc203093579eca76af503 (do not edit this line) */
+/* JavaCC - OriginalChecksum=1f27ab2b191ba9a8e4f7a82fb6da65d6 (do not edit this line) */

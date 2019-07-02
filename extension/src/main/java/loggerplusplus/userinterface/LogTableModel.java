@@ -9,6 +9,7 @@ import loggerplusplus.LogManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
@@ -50,14 +51,14 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public void setValueAt(Object value, int rowModelIndex, int columnModelIndex) {
         LogEntry logEntry = entries.get(rowModelIndex);
-//        logEntry.comment = (String) value;
         fireTableCellUpdated(rowModelIndex, columnModelIndex);
     }
 
     @Override
     public Class<?> getColumnClass(int columnModelIndex) {
-        Object val = getValueAt(0, columnModelIndex);
-        return val == null ? String.class : val.getClass();
+        return Object.class;
+//        Object val = getValueAt(0, columnModelIndex);
+//        return val == null ? String.class : val.getClass();
 //        String type = columnModel.getColumn(columnModelIndex).getType();
 //        switch (type.toUpperCase()){
 //            case "INTEGER":
@@ -85,7 +86,11 @@ public class LogTableModel extends AbstractTableModel {
             return rowIndex+1;
         }
 
-        return entries.get(rowIndex).getValueByKey(column.getIdentifier());
+        Object value = entries.get(rowIndex).getValueByKey(column.getIdentifier());
+        if(value instanceof Date){
+            return LogManager.sdf.format(value);
+        }
+        return value;
     }
 
     public List<LogEntry> getData() {

@@ -8,6 +8,7 @@ import loggerplusplus.*;
 import loggerplusplus.filter.ColorFilter;
 import loggerplusplus.filter.ColorFilterListener;
 import loggerplusplus.filter.LogFilter;
+import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.renderer.BooleanRenderer;
 
 import javax.swing.*;
@@ -279,8 +280,10 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
     }
 
     @Override
-    public void onFilterError(String invalidFilter) {
+    public void onFilterError(String invalidFilter, ParseException exception) {
         this.setFilter(null);
+        JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getUiComponent(),
+                exception.getMessage(), "Filter Error", JOptionPane.WARNING_MESSAGE);
     }
 
     @Override

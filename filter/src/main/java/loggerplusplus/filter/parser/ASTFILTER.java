@@ -4,13 +4,16 @@ package loggerplusplus.filter.parser;
 
 public
 class ASTFILTER extends SimpleNode {
+
+  protected boolean inverse=false;
+
   public ASTFILTER(int id) {
     super(id);
   }
 
-  public ASTFILTER(SyntaxChecker p, int id) {
+  public ASTFILTER(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=679248ef7d63490ed2a6966b2ddc9f82 (do not edit this line) */
+/* JavaCC - OriginalChecksum=3f1b515efbec8642bf19564a1fc77f03 (do not edit this line) */

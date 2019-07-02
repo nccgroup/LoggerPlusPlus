@@ -10,7 +10,6 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -74,12 +73,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                try {
-                    LogFilter filter = new LogFilter(context +  " == /" + matchPattern + "/");
-                    LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                } catch (ParseException e) {
-                    return;
-                }
+                LoggerPlusPlus.instance.getFilterController().setFilter(context +  " == /" + matchPattern + "/");
             }
         });
 
@@ -90,25 +84,15 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && "
-                                + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                    } catch (ParseException e) {
-                        return;
-                    }
+                    LoggerPlusPlus.instance.getFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
+                            + context + " == /" + matchPattern + "/");
                 }
             });
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || "
-                                + context + " == /" + matchPattern + "/");
-                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                    } catch (ParseException e) {
-                        return;
-                    }
+                    LoggerPlusPlus.instance.getFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
+                            + context + " == /" + matchPattern + "/");
                 }
             });
             addToCurrentFilter.add(andFilter);

@@ -8,9 +8,9 @@ class ASTREGEX extends SimpleNode {
     super(id);
   }
 
-  public ASTREGEX(SyntaxChecker p, int id) {
+  public ASTREGEX(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=eb91770eb75786ddb75155d534fa8218 (do not edit this line) */
+/* JavaCC - OriginalChecksum=b4baef76a4eba047a898ee1342e48f23 (do not edit this line) */

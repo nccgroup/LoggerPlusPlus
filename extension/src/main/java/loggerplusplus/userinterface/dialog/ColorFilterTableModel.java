@@ -8,7 +8,6 @@ import loggerplusplus.filter.parser.ParseException;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.io.IOException;
 import java.util.*;
 import java.util.List;
 

@@ -8,9 +8,9 @@ class ASTNUMBER extends SimpleNode {
     super(id);
   }
 
-  public ASTNUMBER(SyntaxChecker p, int id) {
+  public ASTNUMBER(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=672ae768004bb5cc322fee7ec718de25 (do not edit this line) */
+/* JavaCC - OriginalChecksum=9cde88736f15da527ab48d0011e39e78 (do not edit this line) */

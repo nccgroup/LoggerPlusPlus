@@ -9,7 +9,6 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -39,12 +38,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                try {
-                    LogFilter filter = new LogFilter(columnName + "==" + columnValueString);
-                    LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                } catch (ParseException e) {
-                    return;
-                }
+                LoggerPlusPlus.instance.getFilterController().setFilter(columnName + "==" + columnValueString);
             }
         });
         this.add(useAsFilter);
@@ -54,23 +48,13 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " && " + columnName + " == " + columnValueString);
-                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                    } catch (ParseException e) {
-                        return;
-                    }
+                    LoggerPlusPlus.instance.getFilterController().setFilter(logTable.getCurrentFilter().toString() + " && " + columnName + " == " + columnValueString);
                 }
             });
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    try {
-                        LogFilter filter = new LogFilter(logTable.getCurrentFilter().toString() + " || " + columnName + " == " + columnValueString);
-                        LoggerPlusPlus.instance.getFilterController().setFilter(filter);
-                    } catch (ParseException e) {
-                        return;
-                    }
+                    LoggerPlusPlus.instance.getFilterController().setFilter(logTable.getCurrentFilter().toString() + " || " + columnName + " == " + columnValueString);
                 }
             });
             addToCurrentFilter.add(andFilter);

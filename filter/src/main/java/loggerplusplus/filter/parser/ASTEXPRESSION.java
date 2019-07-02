@@ -8,9 +8,9 @@ class ASTEXPRESSION extends SimpleNode {
     super(id);
   }
 
-  public ASTEXPRESSION(SyntaxChecker p, int id) {
+  public ASTEXPRESSION(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=4f2e4b78f698b073cb76c5bee6fd8621 (do not edit this line) */
+/* JavaCC - OriginalChecksum=797dd0147a79c4b85ffa8269c55cb732 (do not edit this line) */

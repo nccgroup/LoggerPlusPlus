@@ -8,9 +8,9 @@ class ASTBOOLEAN extends SimpleNode {
     super(id);
   }
 
-  public ASTBOOLEAN(SyntaxChecker p, int id) {
+  public ASTBOOLEAN(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=8c118a781ce6029bac2cc843e12e0654 (do not edit this line) */
+/* JavaCC - OriginalChecksum=f34c525f4cf78c27d0330c562f055c87 (do not edit this line) */

@@ -8,9 +8,9 @@ class ASTAND extends SimpleNode {
     super(id);
   }
 
-  public ASTAND(SyntaxChecker p, int id) {
+  public ASTAND(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=2ffa9d0532f8c497e64bfb58316b8ed8 (do not edit this line) */
+/* JavaCC - OriginalChecksum=56884230bced6f572179d2f2f9033f07 (do not edit this line) */

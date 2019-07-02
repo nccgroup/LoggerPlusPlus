@@ -81,7 +81,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
     public void onClick(int row, int col) {
         if(savedFilters == null || row < 0 || row >= savedFilters.size() || savedFilters.get(row) == null) return;
         if(col == 2){
-            LoggerPlusPlus.instance.getFilterController().setFilter(savedFilters.get(row).getFilter());
+            LoggerPlusPlus.instance.getFilterController().setFilter(savedFilters.get(row).getFilterString());
             LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
             return;
         }

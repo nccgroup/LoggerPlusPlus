@@ -8,9 +8,9 @@ class ASTXOR extends SimpleNode {
     super(id);
   }
 
-  public ASTXOR(SyntaxChecker p, int id) {
+  public ASTXOR(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=3c5aa44d92d041a6637638de6dc92430 (do not edit this line) */
+/* JavaCC - OriginalChecksum=f9680c5f9e9b81d1f29a3ca712b5ead5 (do not edit this line) */
