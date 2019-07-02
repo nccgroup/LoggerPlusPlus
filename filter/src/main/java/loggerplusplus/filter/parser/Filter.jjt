@@ -1,20 +1,22 @@
 options {
     MULTI=true;
     STATIC=false;
-//    LOOKAHEAD=3;
+    LOOKAHEAD=3;
+//    DEBUG_PARSER = true;
 }
 
-PARSER_BEGIN(SyntaxChecker)
+PARSER_BEGIN(FilterParser)
 package loggerplusplus.filter.parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.regex.Pattern;
+import java.util.HashMap;
 
-public class SyntaxChecker {
+public class FilterParser {
 
-    public SyntaxChecker(String s){
+    public FilterParser(String s){
         this(new StringReader(s));
     }
 
@@ -32,14 +34,15 @@ public class SyntaxChecker {
     }
 
     public static SimpleNode parseFilter(String string) throws IOException, ParseException {
-        SyntaxChecker syntaxChecker = new SyntaxChecker(string);
-        return syntaxChecker.Filter();
+        FilterParser FilterParser = new FilterParser(string);
+        SimpleNode node = FilterParser.Root();
+        return node;
     }
 }
 
-PARSER_END(SyntaxChecker)
+PARSER_END(FilterParser)
 
-SKIP:  { " " | "\t" | "\n" | "\r" }
+SKIP:  { " " }
 TOKEN [IGNORE_CASE]: {
     <EQ: "=" | "==" >
     | <NEQ: "!=" >
@@ -57,119 +60,139 @@ TOKEN [IGNORE_CASE]: {
     | <DIGIT: ["0"-"9"] >
     | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
     | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
-    | <IDENTIFIER: (["a"-"z","A"-"Z"])+>
-    | <LPAREN: "(">
-    | <RPAREN: ")">
-    | <INVERSE: "!">
+    | <LPAREN: "(" >
+    | <RPAREN: ")" >
+    | <INVERSE: "!" | "NOT" >
+    | <CONTAINS: "CONTAINS" >
+    | <IN: "IN" >
+    | <BOOLEANIDENTIFIER: "COMPLETE" | "PARAMS" | "ISSSL" | "HASQUERYSTRINGPARAM" | "HASBODYPARAM"
+                            | "HASCOOKIEPARAM" | "HASSETCOOKIES" >
+    | <STRINGIDENTIFIER: (["a"-"z","A"-"Z"])+ >
+    | <NUMERICIDENTIFIER: "RESPONSELENGTH" | "STATUS" | "RTT" | "TARGETPORT" | "REQUESTLENGTH" >
+}
+
+SimpleNode Root() #ROOT :
+{}
+{
+    Filter() <EOF>
+    {
+        return jjtThis;
+    }
 }
 
 SimpleNode Filter() #FILTER :
-{}
+{Token inverse = null;}
 {
-    Expression() <EOF>
-    {return jjtThis;}
-}
-
-void Expression() #EXPRESSION :
-{}
-{
-    (Inverse() (<LPAREN> Expression() <RPAREN>
-                 | Identifier())
-    | (<LPAREN> Expression() <RPAREN> | Comparison())
+    ( //Recursive to handle brackets nicely optional invertor
+        [inverse=<INVERSE>] <LPAREN> Filter() <RPAREN>
+        | Expression()
     )
-    ((And() | Or() | Xor()) ((<LPAREN> Expression() <RPAREN> | Comparison())))*
+
+    ((And() | Or() | Xor()) Filter())*
+
+    {
+        jjtThis.inverse = inverse != null;
+        return jjtThis;
+    }
 }
 
-void Brackets() #void :
+void Expression() #EXPRESSION:
+{
+    ASTIDENTIFIER leftIdentifier = null, rightIdentifier = null;
+}
+{
+    (Boolean() | BooleanIdentifier()) BooleanOperator() (Boolean() | BooleanIdentifier())
+
+
+//    Identifier() (BooleanComparison() | NumericalComparison() | StringComparison()) //Identifier OP Value
+//    | Identifier() (Eq() | Neq() | Xor() | Lt() | Leq() | Gt() | Geq()) Identifier()//Identifier - Identifier Comparison - ALL OPS
+//    | (Number() | String() | Regex()) (Eq() | Neq()) Identifier()                   //Standard EQ/NEQ Ops - Value OP Identifier
+//    | Number() (Lt() | Leq() | Gt() | Geq()) Identifier()                           //Number Specific Ops - Number OP Identifier
+//    | Boolean() Xor() Identifier()                                                  //Boolean Specific Op - Boolean OP Identifier
+}
+
+void BooleanComparison():
 {}
 {
-    <LPAREN> Expression() <RPAREN>
+    (Eq() | Neq() | Xor())
 }
 
-void Comparison() #COMPARISON:
+void NumericalComparison():
 {}
 {
-    (
-        Boolean() (Eq() | Neq() | Xor()) (Identifier() | Boolean())
-        | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
-        | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
-        | Identifier() (
-            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean())
-            | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
-        )
-    )
+    (Eq() | Neq() | Lt() | Gt() | Leq() | Geq())
 }
 
-
-//SimpleNode Filter() #FILTER :
-//{}
-//{
-//    (
-//        (LParen() Filter() RParen())
-//        |
-//        Expr()
-//    )
-//    ((And() | Or() | Xor()) Filter())*
-//    {return jjtThis;}
-//}
-//
-//void Expr() #EXPR:
-//{}
-//{
-//    (
-//        Boolean() ((Eq() | Neq() | Xor()) (Identifier() | Boolean() | Filter()))?
-//        | Number() (Lt() | Gt() | Leq() | Geq() | Eq() | Neq()) (Number() | Identifier())
-//        | (String() | Regex()) (Eq() | Neq()) (String() | Regex() | Identifier())
-//        | Identifier() (
-//            (Eq() | Neq() | Xor()) (String() | Identifier() | Regex() | Number() | Boolean() | Filter())
-//            | (Lt() | Gt() | Leq() | Geq()) (Identifier() | Number())
-//        )?
-//    )
-//}
-
-String Inverse() #INVERSE:
-{Token t;}
+void StringComparison():
+{}
 {
-    t=<INVERSE> {jjtThis.value = t.image;}
-    {return (String) jjtThis.value;}
+    (Eq() | Neq())
 }
 
 Float Number() #NUMBER :
 {Token t;}
 {
-    t=<NUMBER> {jjtThis.value = Float.parseFloat(t.image);}
-    {return (Float) jjtThis.value;}
+    t=<NUMBER>
+    {jjtThis.value = Float.parseFloat(t.image); return (Float) jjtThis.value;}
 }
 
 String String() #STRING :
 {Token t;}
 {
     ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )
-    {jjtThis.value = t.image.substring(1,t.image.length()-1);}
-    {return (String) jjtThis.value;}
+
+    {
+        jjtThis.value = t.image.substring(1,t.image.length()-1);
+        return org.apache.commons.text.StringEscapeUtils.unescapeJava((String) jjtThis.value);
+    }
 }
+
 Pattern Regex() #REGEX :
 {Token t;}
 {
-    (
-    t=<REGEXLITERAL>
-    |
-    t=<REGEX>
-    ){jjtThis.value = Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);}
-    {return (Pattern) jjtThis.value;}
+    ( t=<REGEXLITERAL> | t=<REGEX> )
+    {
+        return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);
+    }
 }
-String Identifier() #IDENTIFIER :
-{Token t;}
+
+SimpleNode BooleanIdentifier() #BOOLEANIDENTIFIER :
+{Token t, inverse=null;}
 {
-    t=<IDENTIFIER> {jjtThis.value = t.image;}
-    {return (String) jjtThis.value;}
+    [inverse=<INVERSE>]
+    t=<IDENTIFIER>
+    {
+        jjtThis.data.put("inverse", inverse != null);
+        return jjtThis;
+    }
 }
 
 Boolean Boolean() #BOOLEAN :
-{Token t;}
+{Token t, inverse=null;}
 {
-    t=<BOOLEAN> {jjtThis.value = Boolean.parseBoolean(t.image);}
-    {return (Boolean) jjtThis.value;}
+    [inverse=<INVERSE>]
+    t=<BOOLEAN>
+    {
+        jjtThis.value = (inverse != null ^ Boolean.parseBoolean(t.image));
+        return (Boolean) jjtThis.value;
+    }
+}
+
+void BooleanOperator() :
+{}{
+    <EQ> | <NEQ> | <XOR>
+}
+
+void Contains() #CONTAINS :
+{}
+{
+    <CONTAINS>
+}
+
+void In() #IN :
+{}
+{
+    <IN>
 }
 
 void Eq() #EQ :

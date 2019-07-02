@@ -8,9 +8,9 @@ class ASTLEQ extends SimpleNode {
     super(id);
   }
 
-  public ASTLEQ(SyntaxChecker p, int id) {
+  public ASTLEQ(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=f8d1dea3b05cd7899bc8361f993581c0 (do not edit this line) */
+/* JavaCC - OriginalChecksum=22c1e5157038a0ddfee8ec1edc3f9a51 (do not edit this line) */

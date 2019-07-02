@@ -2,6 +2,8 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=false,TRACK_TOKENS=false,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package loggerplusplus.filter.parser;
 
+import java.util.HashMap;
+
 public
 class SimpleNode implements Node {
 
@@ -9,13 +11,15 @@ class SimpleNode implements Node {
   protected Node[] children;
   protected int id;
   protected Object value;
-  protected SyntaxChecker parser;
+  protected FilterParser parser;
+  protected HashMap<String, Object> data;
 
   public SimpleNode(int i) {
     id = i;
+    data = new HashMap<>();
   }
 
-  public SimpleNode(SyntaxChecker p, int i) {
+  public SimpleNode(FilterParser p, int i) {
     this(i);
     parser = p;
   }
@@ -58,7 +62,7 @@ class SimpleNode implements Node {
      you need to do. */
 
   public String toString() {
-    return SyntaxCheckerTreeConstants.jjtNodeName[id];
+    return FilterParserTreeConstants.jjtNodeName[id];
   }
   public String toString(String prefix) { return prefix + toString(); }
 
@@ -82,4 +86,4 @@ class SimpleNode implements Node {
   }
 }
 
-/* JavaCC - OriginalChecksum=1ade3d66ef3269193f9ebcbff1e39b23 (do not edit this line) */
+/* JavaCC - OriginalChecksum=c47d0434b2875e460db56cee70736737 (do not edit this line) */

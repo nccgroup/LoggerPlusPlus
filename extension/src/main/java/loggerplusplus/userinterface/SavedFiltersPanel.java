@@ -8,7 +8,6 @@ import loggerplusplus.userinterface.renderer.ButtonRenderer;
 import loggerplusplus.userinterface.renderer.FilterRenderer;
 
 import javax.swing.*;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;

@@ -13,7 +13,8 @@ import javax.swing.table.TableModel;
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 public class LogFilter extends RowFilter<TableModel, Integer> {
@@ -25,9 +26,9 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     public LogFilter(String filterString) throws ParseException {
         this.originalString = filterString;
         try {
-            root = SyntaxChecker.parseFilter(filterString);
+            root = FilterParser.parseFilter(filterString);
         }catch (TokenMgrError | Exception e){
-            throw new ParseException("Could not parse the filter.");
+            throw new ParseException("Could not parse the filter. Please view the help section for filter syntax.");
         }
 
         //Find identifiers, check valid
@@ -36,21 +37,26 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     }
 
     private void checkIdentifiers(SimpleNode simpleNode) throws ParseException {
-        for (int i = 0; i < simpleNode.jjtGetNumChildren(); i++) {
-            SimpleNode node = (SimpleNode) simpleNode.jjtGetChild(i);
-            if(node instanceof ASTIDENTIFIER){
-                try {
-                    LogTableColumn.ColumnIdentifier type = LogTableColumn.ColumnIdentifier.valueOf(((String) node.jjtGetValue()).toUpperCase());
-                    node.jjtSetValue(type);
-                }catch (IllegalArgumentException e){
-                    ASTSTRING stringNode = new ASTSTRING(node.getId());
-                    stringNode.jjtSetValue(node.jjtGetValue());
-                    simpleNode.jjtAddChild(stringNode, i);
-                }
-            }else{
-                checkIdentifiers(node);
-            }
-        }
+//        for (int i = 0; i < simpleNode.jjtGetNumChildren(); i++) {
+//            SimpleNode node = (SimpleNode) simpleNode.jjtGetChild(i);
+//            if(node instanceof ASTIDENTIFIER){
+//                try {
+//                    LogTableColumn.ColumnIdentifier type = LogTableColumn.ColumnIdentifier.valueOf(((String) node.jjtGetValue()).toUpperCase());
+//                    node.jjtSetValue(type);
+//                    if(type == LogTableColumn.ColumnIdentifier.NUMBER){
+//                        throw new ParseException("Due to numerical identifiers being generated dynamically " +
+//                                "it is not possible to use these values as part of filters at this time.\n");
+//                        //TODO Enable Date comparison
+//                    }
+//                }catch (IllegalArgumentException e){
+//                    ASTSTRING stringNode = new ASTSTRING(node.getId());
+//                    stringNode.jjtSetValue(node.jjtGetValue());
+//                    simpleNode.jjtAddChild(stringNode, i);
+//                }
+//            }else{
+//                checkIdentifiers(node);
+//            }
+//        }
     }
 
     private void simplify(SimpleNode node){
@@ -93,115 +99,139 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     }
 
     private boolean evaluate(SimpleNode node, LogEntry entry) throws ParseException {
-        if(node instanceof ASTCOMPARISON){
-            return evaluateComparison(node, entry);
-        }else if(node instanceof ASTEXPRESSION | node instanceof ASTFILTER){
-            boolean currentResult = evaluate((SimpleNode) node.jjtGetChild(0), entry);
-            SimpleNode comparison = null;
-            for(int i=1; i<node.jjtGetNumChildren(); i++){
-                if(i % 2 == 0){
-                    boolean nodeResult = evaluate((SimpleNode) node.jjtGetChild(i), entry);
-                    if(comparison instanceof ASTXOR) {
-                        currentResult = nodeResult ^ currentResult;
-                    }else if(comparison instanceof ASTAND){
-                        currentResult = nodeResult && currentResult;
-                    }else if(comparison instanceof ASTOR){
-                        currentResult = nodeResult || currentResult;
-                    }
-                    continue;
-                }else{
-                    comparison = (SimpleNode) node.jjtGetChild(i);
-                }
-            }
-            return currentResult;
-        }
-        return false;
+        return true;
+//        if(node instanceof ASTCOMPARISON){
+//            return evaluateComparison(node, entry);
+//        }else if(node instanceof ASTFILTER){
+//            boolean currentResult = evaluate((SimpleNode) node.jjtGetChild(0), entry);
+//            SimpleNode comparison = null;
+//            for(int i=1; i<node.jjtGetNumChildren(); i++){
+//                if(i % 2 == 0){
+//                    boolean nodeResult = evaluate((SimpleNode) node.jjtGetChild(i), entry);
+//                    if(comparison instanceof ASTXOR) {
+//                        currentResult = nodeResult ^ currentResult;
+//                    }else if(comparison instanceof ASTAND){
+//                        currentResult = nodeResult && currentResult;
+//                    }else if(comparison instanceof ASTOR){
+//                        currentResult = nodeResult || currentResult;
+//                    }
+//                    continue;
+//                }else{
+//                    comparison = (SimpleNode) node.jjtGetChild(i);
+//                }
+//            }
+//            return currentResult;
+//        }
+//        return false;
     }
 
     private boolean evaluateComparison(SimpleNode node, LogEntry entry) throws ParseException {
-        if(node instanceof ASTCOMPARISON){
-            SimpleNode leftNode, rightNode;
-            Object left, right;
+        return true;
+//        if(node instanceof ASTCOMPARISON){
+//            SimpleNode leftNode, rightNode;
+//            Object left, right;
+//
+//            leftNode = (SimpleNode) node.jjtGetChild(0);
+//            rightNode = (SimpleNode) node.jjtGetChild(2);
+//            if(leftNode instanceof ASTIDENTIFIER){
+//                left = getEntryValue((LogTableColumn.ColumnIdentifier) (leftNode).jjtGetValue(), entry);
+//            }else{
+//                left = leftNode.jjtGetValue();
+//                if(left instanceof String) left = StringEscapeUtils.unescapeJava((String) left);
+//            }
+//
+//            if(rightNode instanceof ASTIDENTIFIER){
+//                right = getEntryValue((LogTableColumn.ColumnIdentifier) (rightNode).jjtGetValue(), entry);
+//            }else{
+//                right = rightNode.jjtGetValue();
+//                if(right instanceof String) right = StringEscapeUtils.unescapeJava((String) right);
+//            }
+//
+//            SimpleNode operator = ((SimpleNode) node.jjtGetChild(1));
+//
+//            if(left instanceof String){
+//                if(right instanceof String){
+//                    return StringUtils.equalsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
+//                }else if(right instanceof Pattern){
+//                    return ((Pattern) right).matcher((String) left).find() ^ (operator instanceof ASTNEQ);
+//                }else if(right instanceof Number){
+//                    Float leftVal;
+//                    try {
+//                        leftVal = Float.parseFloat((String) left);
+//                    }catch (NumberFormatException e){
+//                        return false;
+////                        throw new ParseException("Could not compare string \"" + left + "\" to number \"" + right +"\".");
+//                    }
+//
+//                    return compareNumericalValues(operator, leftVal, (Number) right
+//                    );
+//                }else if(right instanceof Date){
+//                    long leftDateLong;
+//                    long rightValLong;
+//                    try {
+//                        leftDateLong = new SimpleDateFormat().parse((String) left).getTime();
+//                        rightValLong = ((Date) right).getTime() - (((Date) right).getTime() % 1000);
+//                        return compareNumericalValues(operator, leftDateLong, rightValLong);
+//                    }catch (Exception e){
+//                        return false;
+//                    }
+//                }
+//            }else if(left instanceof Pattern){
+//                if(right instanceof String){
+//                    return ((Pattern) left).matcher((String) right).find() ^ (operator instanceof ASTNEQ);
+//                }else{
+//                    return((Pattern) left).matcher(String.valueOf(right)).find() ^ (operator instanceof ASTNEQ);
+//                }
+//            }else if(left instanceof Number){
+//                Float leftVal, rightVal;
+//                if(right instanceof String || right instanceof Number){
+//                    try{
+//                        leftVal = Float.parseFloat(String.valueOf(left));
+//                    }catch (NumberFormatException e){
+//                        return false;
+////                        throw new ParseException("Could not compare \"" + left + "\" to \"" + right +"\".");
+//                    }
+//                    try{
+//                        rightVal = Float.parseFloat(String.valueOf(right));
+//                    }catch (NumberFormatException e){
+//                        return false;
+////                        throw new ParseException("Could not compare \"" + left + "\" to \"" + right +"\".");
+//                    }
+//
+//                    return compareNumericalValues(operator, leftVal, rightVal);
+//                }else{
+//                    throw new ParseException("Could not compare float \"" + left + "\" to " + right.getClass().getSimpleName() + " \"" + right +"\".");
+//                }
+//            }else if(left instanceof Boolean) {
+//                Boolean rightVal = Boolean.parseBoolean(String.valueOf(right));
+//                return rightVal.equals(left) ^ (operator instanceof ASTNEQ);
+//            }else if(left instanceof Date) {
+//                long rightValLong;
+//                long leftValLong = ((Date) left).getTime() - (((Date) left).getTime() % 1000);
+//                try{
+//                    rightValLong = new SimpleDateFormat().parse((String) right).getTime();
+//                    return compareNumericalValues(operator, leftValLong, rightValLong);
+//                }catch (Exception e){
+//                    return false;
+//                }
+//            }else{
+//                String stringLeft = left == null ? "" : String.valueOf(left);
+//                String stringRight = right == null ? "" : String.valueOf(right);
+//                return stringLeft.equals(stringRight);
+//            }
+//
+//        }
+//        return false;
+    }
 
-            leftNode = (SimpleNode) node.jjtGetChild(0);
-            rightNode = (SimpleNode) node.jjtGetChild(2);
-            if(leftNode instanceof ASTIDENTIFIER){
-                left = getEntryValue((LogTableColumn.ColumnIdentifier) (leftNode).jjtGetValue(), entry);
-            }else{
-                left = leftNode.jjtGetValue();
-                if(left instanceof String) left = StringEscapeUtils.unescapeJava((String) left);
-            }
-
-            if(rightNode instanceof ASTIDENTIFIER){
-                right = getEntryValue((LogTableColumn.ColumnIdentifier) (rightNode).jjtGetValue(), entry);
-            }else{
-                right = rightNode.jjtGetValue();
-                if(right instanceof String) right = StringEscapeUtils.unescapeJava((String) right);
-            }
-
-            SimpleNode operator = ((SimpleNode) node.jjtGetChild(1));
-
-            if(left instanceof String){
-                if(right instanceof String){
-                    return StringUtils.equalsIgnoreCase((String) left, (String) right) ^ (operator instanceof ASTNEQ);
-                }else if(right instanceof Pattern){
-                    return ((Pattern) right).matcher((String) left).find() ^ (operator instanceof ASTNEQ);
-                }else if(right instanceof Number){
-                    Float leftVal;
-                    try {
-                        leftVal = Float.parseFloat((String) left);
-                    }catch (NumberFormatException e){
-                        throw new ParseException("Could not compare string \"" + left + "\" to number \"" + right +"\".");
-                    }
-                    if(operator instanceof ASTLEQ) return leftVal <= (Float) right;
-                    if(operator instanceof ASTGEQ) return leftVal >= (Float) right;
-                    if(operator instanceof ASTLT) return leftVal < (Float) right;
-                    if(operator instanceof ASTGT) return leftVal > (Float) right;
-                    if(operator instanceof ASTEQ) return leftVal.equals(right);
-                    if(operator instanceof ASTNEQ) return !leftVal.equals(right);
-                    return false;
-                }
-            }else if(left instanceof Pattern){
-                if(right instanceof String){
-                    return ((Pattern) left).matcher((String) right).find() ^ (operator instanceof ASTNEQ);
-                }else{
-                    return((Pattern) left).matcher(String.valueOf(right)).find() ^ (operator instanceof ASTNEQ);
-                }
-            }else if(left instanceof Number){
-                Float leftVal, rightVal;
-                if(right instanceof String || right instanceof Number){
-                    try{
-                        leftVal = Float.parseFloat(String.valueOf(left));
-                    }catch (NumberFormatException e){
-                        throw new ParseException("Could not compare \"" + left + "\" to \"" + right +"\".");
-                    }
-                    try{
-                        rightVal = Float.parseFloat(String.valueOf(right));
-                    }catch (NumberFormatException e){
-                        throw new ParseException("Could not compare \"" + left + "\" to \"" + right +"\".");
-                    }
-
-                    if(operator instanceof ASTLEQ) return leftVal <= rightVal;
-                    if(operator instanceof ASTGEQ) return leftVal >= rightVal;
-                    if(operator instanceof ASTLT) return leftVal < rightVal;
-                    if(operator instanceof ASTGT) return leftVal > rightVal;
-                    if(operator instanceof ASTEQ) return leftVal.equals(rightVal);
-                    if(operator instanceof ASTNEQ) return !leftVal.equals(rightVal);
-                    return false;
-                }else{
-                    throw new ParseException("Could not compare float \"" + left + "\" to " + right.getClass().getSimpleName() + " \"" + right +"\".");
-                }
-            }else if(left instanceof Boolean) {
-                Boolean rightVal = Boolean.parseBoolean(String.valueOf(right));
-                return rightVal.equals(left)  ^ (operator instanceof ASTNEQ);
-            }else{
-                String stringLeft = left == null ? "" : String.valueOf(left);
-                String stringRight = right == null ? "" : String.valueOf(right);
-                return stringLeft.equals(stringRight);
-            }
-
-        }
-        return false;
+    private boolean compareNumericalValues(SimpleNode operator, Number leftVal, Number rightVal){
+        return true;
+//        int result = Long.compare(leftVal.longValue(), rightVal.longValue());
+//        if(result == 0) result = Double.compare(leftVal.doubleValue(), rightVal.doubleValue());
+//
+//        return (result == -1 && (operator instanceof ASTLEQ || operator instanceof ASTLT || operator instanceof ASTNEQ))
+//                || (result == 0 && (operator instanceof ASTEQ || operator instanceof ASTLEQ || operator instanceof ASTGEQ))
+//                || (result == 1 && (operator instanceof ASTGEQ || operator instanceof ASTGT || operator instanceof ASTNEQ));
     }
 
     private Object getEntryValue(LogTableColumn.ColumnIdentifier identifier, LogEntry entry){
@@ -219,29 +249,30 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     }
 
     private String toString(SimpleNode node){
-        if(node.jjtGetNumChildren() == 0){
-            if(node instanceof ASTSTRING){
-                return "\"" + String.valueOf(node.jjtGetValue()) + "\"";
-            }
-            if(node instanceof ASTREGEX){
-                return "/" + String.valueOf(node.jjtGetValue()) + "/";
-            }
-            if(node instanceof ASTNUMBER){
-                return numberFormat.format(node.jjtGetValue());
-            }
-            return String.valueOf(node.jjtGetValue());
-        }else{
-            StringBuilder sb = new StringBuilder();
-            if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append("(");
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                sb.append(toString((SimpleNode) node.jjtGetChild(i)));
-                if(i != node.jjtGetNumChildren()-1 && !(node.jjtGetChild(i) instanceof ASTINVERSE)){
-                    sb.append(" ");
-                }
-            }
-            if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append(")");
-            return sb.toString();
-        }
+        return node.toString();
+//        if(node.jjtGetNumChildren() == 0){
+//            if(node instanceof ASTSTRING){
+//                return "\"" + String.valueOf(node.jjtGetValue()) + "\"";
+//            }
+//            if(node instanceof ASTREGEX){
+//                return "/" + String.valueOf(node.jjtGetValue()) + "/";
+//            }
+//            if(node instanceof ASTNUMBER){
+//                return numberFormat.format(node.jjtGetValue());
+//            }
+//            return String.valueOf(node.jjtGetValue());
+//        }else{
+//            StringBuilder sb = new StringBuilder();
+//            if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append("(");
+//            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+//                sb.append(toString((SimpleNode) node.jjtGetChild(i)));
+//                if(i != node.jjtGetNumChildren()-1 && !(node.jjtGetChild(i) instanceof ASTINVERSE)){
+//                    sb.append(" ");
+//                }
+//            }
+//            if(node instanceof ASTEXPRESSION && node.jjtGetParent() != root) sb.append(")");
+//            return sb.toString();
+//        }
     }
 
     @Override

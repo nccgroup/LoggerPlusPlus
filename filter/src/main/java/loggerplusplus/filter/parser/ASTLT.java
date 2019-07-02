@@ -8,9 +8,9 @@ class ASTLT extends SimpleNode {
     super(id);
   }
 
-  public ASTLT(SyntaxChecker p, int id) {
+  public ASTLT(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=952c83e35f2f5040fbfa12184fc14915 (do not edit this line) */
+/* JavaCC - OriginalChecksum=5546f8b8738deca530cf2cc74f5b8a12 (do not edit this line) */

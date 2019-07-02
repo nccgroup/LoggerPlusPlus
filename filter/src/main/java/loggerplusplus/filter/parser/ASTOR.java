@@ -8,9 +8,9 @@ class ASTOR extends SimpleNode {
     super(id);
   }
 
-  public ASTOR(SyntaxChecker p, int id) {
+  public ASTOR(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=9c510a1434dab8e142363e4a8ebbf18e (do not edit this line) */
+/* JavaCC - OriginalChecksum=9a1f99bb54c1fee66e9a3d090f26ea66 (do not edit this line) */

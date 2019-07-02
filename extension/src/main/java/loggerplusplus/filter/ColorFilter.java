@@ -3,7 +3,6 @@ package loggerplusplus.filter;
 import loggerplusplus.filter.parser.ParseException;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.UUID;
 
 /**

@@ -8,9 +8,9 @@ class ASTSTRING extends SimpleNode {
     super(id);
   }
 
-  public ASTSTRING(SyntaxChecker p, int id) {
+  public ASTSTRING(FilterParser p, int id) {
     super(p, id);
   }
 
 }
-/* JavaCC - OriginalChecksum=21d3e9139bbe82ea54ef2459b9808e7d (do not edit this line) */
+/* JavaCC - OriginalChecksum=2aac8b937eeb25e73eb7cfdc99930d91 (do not edit this line) */

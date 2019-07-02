@@ -3,6 +3,7 @@ package loggerplusplus;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import loggerplusplus.filter.LogFilter;
+import loggerplusplus.filter.parser.ParseException;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -13,6 +14,7 @@ public class FilterController {
 
     private final HistoryField filterField;
     private final ArrayList<FilterListener> filterListeners;
+    private String currentFilterString;
 
     public FilterController(Preferences preferences){
         this.filterListeners = new ArrayList<>();
@@ -51,13 +53,14 @@ public class FilterController {
     public void setFilter(String filterString){
         if (filterString == null || filterString.length() == 0) {
             setFilter((LogFilter) null);
-        } else {
+        }else if(!filterString.equals(currentFilterString)){
+            currentFilterString = filterString;
             try {
                 LogFilter filter = new LogFilter(filterString);
                 setFilter(filter);
             } catch (ParseException e) {
                 for (FilterListener filterListener : filterListeners) {
-                    filterListener.onFilterError(filterString);
+                    filterListener.onFilterError(filterString, e);
                 }
                 formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
             }
@@ -72,12 +75,11 @@ public class FilterController {
         formatFilter("", null, null);
     }
 
-    public void setFilter(LogFilter filter){
+    private void setFilter(LogFilter filter){
         if (filter == null) {
             clearFilter();
         } else {
             String filterString = filter.toString();
-
             ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(filterString);
             formatFilter(filterString, Color.BLACK, new Color(76,255, 155));
 

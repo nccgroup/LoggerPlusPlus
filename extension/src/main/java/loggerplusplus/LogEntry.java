@@ -45,7 +45,6 @@ public class LogEntry
 	public Short status=-1;
 	public boolean hasBodyParam=false;
 	public boolean hasCookieParam=false;
-	public String targetIP=""; // Burp Suite API does not give it to me!
 	public String title="";
 	public String newCookies="";
 	public String sentCookies="";
@@ -251,8 +250,6 @@ public class LogEntry
 		if(!isImported) {
 			this.responseTime = LogManager.sdf.format(responseDateTime);
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
-			this.requestDateTime = null; //Save a bit of ram!
-			this.responseDateTime = null; //Here too!
 		}
 
 		//Finalise request,response by saving to temp file and clearing from memory.
@@ -481,8 +478,10 @@ public class LogEntry
 					return this.targetPort;
 				case METHOD:
 					return this.method;
+				case REQUESTTIME:
+					return this.requestDateTime;
 				case RESPONSETIME:
-					return this.responseTime;
+					return this.responseDateTime;
 				case COMMENT:
 					return this.comment;
 				case REQUESTCONTENTTYPE:
@@ -511,8 +510,6 @@ public class LogEntry
 					return this.title;
 				case ISSSL:
 					return this.isSSL;
-				case TARGETIP:
-					return this.targetIP;
 				case NEWCOOKIES:
 					return this.newCookies;
 				case LISTENERINTERFACE:
@@ -549,8 +546,6 @@ public class LogEntry
 					return new String(requestResponse.getRequest()).substring(requestResponse.getRequest().length - requestLength);
 				case RESPONSE: //response
 					return new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
-				case REQUESTTIME: //requestTime
-					return requestTime;
 				case RTT:
 					return requestResponseDelay;
 				case REQUESTHEADERS:
