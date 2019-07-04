@@ -1,5 +1,3 @@
-include 'extension', 'filter'
-
 rootProject.name = 'LoggerPlusPlus'
 
 //if(file("../BurpExtenderUtilities").exists()){
