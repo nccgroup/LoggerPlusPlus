@@ -1,13 +1,24 @@
 apply plugin: 'java'
 
+sourceCompatibility = 1.8
+
 repositories {
     mavenCentral()
+    maven {
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
-    compile project(':filter')
-    compile project(':extension')
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
+    compile 'org.swinglabs:swingx:1.6.1'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:-SNAPSHOT'
+    compile 'com.google.code.gson:gson:2.8.2'
+    compile 'org.apache.commons:commons-text:1.1'
+    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.5.2'
+    compile 'org.apache.httpcomponents:httpclient:4.5.6'
+    compile 'org.apache.commons:commons-text:1.6'
+    testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 
 task fatJar(type: Jar) {

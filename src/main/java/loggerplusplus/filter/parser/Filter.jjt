@@ -1,0 +1,235 @@
+options {
+    MULTI=true;
+    STATIC=false;
+    VISITOR=true;
+    NODE_DEFAULT_VOID=true;
+    DEBUG_PARSER = true;
+}
+
+PARSER_BEGIN(FilterParser)
+package loggerplusplus.filter.parser;
+import loggerplusplus.filter.Operator;
+import loggerplusplus.filter.BooleanOperator;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.util.regex.Pattern;
+import java.util.HashMap;
+
+public class FilterParser {
+
+    public FilterParser(String s){
+        this(new StringReader(s));
+    }
+
+    public static void main(String[] args) throws IOException {
+        String str;
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        while(!(str = in.readLine()).equalsIgnoreCase("END")) {
+            try {
+                SimpleNode root = parseFilter(str);
+                root.dump("");
+            } catch (Throwable e) {
+                System.out.println("Syntax check failed: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static SimpleNode parseFilter(String string) throws IOException, ParseException {
+        FilterParser FilterParser = new FilterParser(string);
+        SimpleNode node = FilterParser.Filter();
+        return node;
+    }
+}
+
+PARSER_END(FilterParser)
+
+SKIP:  { " " }
+TOKEN [IGNORE_CASE]: {
+    <EQ: "=" | "==" >
+    | <NEQ: "!=" >
+    | <GT: ">" >
+    | <LT: "<" >
+    | <GEQ: ">=" >
+    | <LEQ: "<=" >
+    | <OR: "|" | "||" | "OR" >
+    | <AND: "&" | "&&" | "AND" >
+    | <XOR: "^" | "XOR">
+    | <BOOLEAN: "TRUE" | "FALSE">
+    | <SINGLEQUOTEDSTRING: "'" ("\\" ~[] | ~["\'", "\\"])* "'" >
+    | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])* "\"" >
+    | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
+    | <DIGIT: ["0"-"9"] >
+    | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
+    | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
+    | <LPAREN: "(" >
+    | <RPAREN: ")" >
+    | <INVERSE: "!" | "NOT" >
+//    | <CONTAINS: "CONTAINS" >
+//    | <IN: "IN" >
+    | <IDENTIFIER: (["a"-"z","A"-"Z"])+ >
+}
+
+
+
+ASTExpression Filter() #Expression :
+{
+ Boolean inverse=false;
+ loggerplusplus.filter.BooleanOperator op = null;
+}
+{
+    ([inverse=Inverse()] <LPAREN> Expression() [(op=And() Expression())+ | (op=Or() Expression())+ | (op=Xor() Expression())+] <RPAREN>
+    | Expression() [(op=And() Expression())+ | (op=Or() Expression())+ | (op=Xor() Expression())+])
+
+    <EOF>
+    {
+        jjtThis.op = op;
+        jjtThis.inverse = inverse;
+        return jjtThis;
+    }
+}
+
+ASTExpression Expression() #Expression :
+{
+ Boolean inverse = null;
+ loggerplusplus.filter.BooleanOperator op = null;
+}
+{
+    //Recursive to handle brackets nicely - optional invertor
+    ([inverse=Inverse()] <LPAREN> (Comparison() | Expression()) [(op=And() Expression())+ | (op=Or() Expression())+ | (op=Xor() Expression())+] <RPAREN>
+    | Comparison())
+
+    {
+        jjtThis.op = op;
+        jjtThis.inverse = inverse != null;
+        return jjtThis;
+    }
+}
+
+
+//Comparisons always made up of 3 nodes. Value Operation Value
+ASTComparison Comparison() #Comparison:
+{
+ Operator op;
+ Object left, right;
+ Boolean value;
+}
+{
+    left = Value() op = Operator() right = Value()
+    {
+        jjtThis.left = left;
+        jjtThis.right = right;
+        jjtThis.operator = op;
+        return jjtThis;
+    }
+}
+
+ASTSimpleBoolean SimpleBoolean() #SimpleBoolean :
+{Object value;}
+{
+    value = Identifier() | value = Boolean()
+    {
+        jjtThis.value = value;
+        return jjtThis;
+    }
+}
+
+Object Value() #void:
+{Object v;}
+{
+    (v = Identifier() | v = Number() | v = Boolean() | v = String() | v = Regex())
+    {return v;}
+}
+
+
+//IDENTIFIERS
+String Identifier() #void:
+{Token t;}
+{
+    t=<IDENTIFIER>
+    { return t.image; }
+}
+
+//END IDENTIFIERS
+
+
+//TYPES
+
+Float Number() #void :
+{Token t;}
+{
+    t=<NUMBER>
+    {return Float.parseFloat(t.image);}
+}
+
+String String() #void :
+{Token t;}
+{
+    ( t=<SINGLEQUOTEDSTRING> | t=<DOUBLEQUOTEDSTRING> )
+
+    {
+        String s = t.image.substring(1,t.image.length()-1);
+        return org.apache.commons.text.StringEscapeUtils.unescapeJava(s);
+    }
+}
+
+Pattern Regex() #void :
+{Token t;}
+{
+    ( t=<REGEXLITERAL> | t=<REGEX> )
+    {
+        return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);
+    }
+}
+
+Boolean Boolean() #void :
+{Token t, inverse=null;}
+{
+    [inverse=<INVERSE>]
+    t=<BOOLEAN>
+    {
+        return (inverse != null ^ Boolean.parseBoolean(t.image));
+    }
+}
+
+//END TYPES
+
+
+//BASIC OPERATORS
+
+Operator Operator() #void :
+{}
+{
+      <EQ>  {return Operator.EQUAL;}
+    | <NEQ> {return Operator.NOT_EQUAL;}
+    | <GT>  {return Operator.GREATER_THAN;}
+    | <LT>  {return Operator.LESS_THAN;}
+    | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
+    | <LEQ> {return Operator.LESS_THAN_EQUAL;}
+}
+
+boolean Inverse() #void :
+{}
+{
+    <INVERSE> {return true;}
+}
+
+BooleanOperator And() #void :
+{}
+{
+    <AND> {return BooleanOperator.AND;}
+}
+
+BooleanOperator Or() #void :
+{}
+{
+    <OR> {return BooleanOperator.OR;}
+}
+
+BooleanOperator Xor() #void :
+{}
+{
+    <XOR> {return BooleanOperator.XOR;}
+}
