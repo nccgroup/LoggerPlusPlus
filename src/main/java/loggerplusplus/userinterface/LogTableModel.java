@@ -56,9 +56,9 @@ public class LogTableModel extends AbstractTableModel {
 
     @Override
     public Class<?> getColumnClass(int columnModelIndex) {
-        return Object.class;
-//        Object val = getValueAt(0, columnModelIndex);
-//        return val == null ? String.class : val.getClass();
+//        return Object.class;
+        Object val = getValueAt(0, columnModelIndex);
+        return val == null ? String.class : val.getClass();
 //        String type = columnModel.getColumn(columnModelIndex).getType();
 //        switch (type.toUpperCase()){
 //            case "INTEGER":

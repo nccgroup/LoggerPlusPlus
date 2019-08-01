@@ -3,9 +3,9 @@ package loggerplusplus.filter.parser;
 
 public interface FilterParserVisitor
 {
-  public Object visit(SimpleNode node, Object data);
-  public Object visit(ASTExpression node, Object data);
-  public Object visit(ASTComparison node, Object data);
-  public Object visit(ASTSimpleBoolean node, Object data);
+  public Object visit(SimpleNode node, VisitorData data);
+  public Object visit(ASTExpression node, VisitorData data);
+  public Object visit(ASTComparison node, VisitorData data);
+  public Object visit(ASTIdentifier node, VisitorData data);
 }
-/* JavaCC - OriginalChecksum=b4361faf03d0d12895b971df12379dbb (do not edit this line) */
+/* JavaCC - OriginalChecksum=3551aa09f5ff0db40d3356a486295ac0 (do not edit this line) */

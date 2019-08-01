@@ -2,21 +2,21 @@
 package loggerplusplus.filter.parser;
 
 public class FilterParserDefaultVisitor implements FilterParserVisitor{
-  public Object defaultVisit(SimpleNode node, Object data){
+  public Object defaultVisit(SimpleNode node, VisitorData data){
     node.childrenAccept(this, data);
     return data;
   }
-  public Object visit(SimpleNode node, Object data){
+  public Object visit(SimpleNode node, VisitorData data){
     return defaultVisit(node, data);
   }
-  public Object visit(ASTExpression node, Object data){
+  public Object visit(ASTExpression node, VisitorData data){
     return defaultVisit(node, data);
   }
-  public Object visit(ASTComparison node, Object data){
+  public Object visit(ASTComparison node, VisitorData data){
     return defaultVisit(node, data);
   }
-  public Object visit(ASTSimpleBoolean node, Object data){
+  public Object visit(ASTIdentifier node, VisitorData data){
     return defaultVisit(node, data);
   }
 }
-/* JavaCC - OriginalChecksum=0619b803ceb5f5e767fcd30c14008037 (do not edit this line) */
+/* JavaCC - OriginalChecksum=c021a1798ae6184947ae69fb89f482a0 (do not edit this line) */

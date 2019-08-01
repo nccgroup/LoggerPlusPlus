@@ -69,14 +69,14 @@ public class LoggerOptionsPanel extends JScrollPane{
         JCheckBox logScanner = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_SCANNER, "Scanner");
         JCheckBox logRepeater = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_REPEATER, "Repeater");
         JCheckBox logSequencer = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_SEQUENCER, "Sequencer");
-        JCheckBox logProxy = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_PROXY, "ProxyFieldProvider");
+        JCheckBox logProxy = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_PROXY, "Proxy");
         JCheckBox logTarget = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_TARGET_TAB, "Target");
         JCheckBox logExtender = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_EXTENDER, "Extender");
 
         strutConstraints = logFromPanel.generateNextConstraints();
         strutConstraints.weighty = strutConstraints.weightx = 0;
         logFromPanel.addComponent((JComponent) Box.createVerticalStrut(10), strutConstraints);
-        logFromPanel.addPreferenceComponent(PREF_LOG_OTHER_LIVE, "Log Non-ProxyFieldProvider Tools Live");
+        logFromPanel.addPreferenceComponent(PREF_LOG_OTHER_LIVE, "Log Non-Proxy Tools Live");
 
         {   //Disable check boxes if global logging is enabled.
             boolean globalDisabled = !logAllTools.isSelected();
@@ -104,7 +104,7 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         ComponentGroup importGroup = panelBuilder.createComponentGroup("Import");
         importGroup.addPreferenceComponent(PREF_AUTO_IMPORT_PROXY_HISTORY, "Import proxy history on startup");
-        importGroup.addButton("Import Burp ProxyFieldProvider History", actionEvent -> {
+        importGroup.addButton("Import Burp Proxy History", actionEvent -> {
             LoggerPlusPlus.instance.getLogManager().importProxyHistory(true);
         });
 

@@ -1,5 +1,6 @@
 package loggerplusplus.userinterface;
 
+import com.google.gson.stream.JsonWriter;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LogEntryField;
 import loggerplusplus.LoggerPlusPlus;
@@ -10,6 +11,8 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -34,6 +37,14 @@ public class LogEntryMenu extends JPopupMenu {
         this.add(new JMenuItem(title));
         this.add(new JPopupMenu.Separator());
 
+
+        JMenuItem toJson = new JMenuItem(new AbstractAction("To JSON") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(LoggerPlusPlus.gsonProvider.getGson().toJson(entry, LogEntry.class));
+            }
+        });
+        this.add(toJson);
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
             @Override
