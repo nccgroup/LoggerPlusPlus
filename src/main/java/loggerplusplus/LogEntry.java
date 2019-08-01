@@ -24,7 +24,6 @@ import javax.swing.table.TableColumn;
 import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 //
 // class to hold details of each log entry
@@ -35,8 +34,9 @@ public class LogEntry
 
 	public boolean isImported;
 	public UUID uuid;
-	public IHttpRequestResponse requestResponse;
+	public transient IHttpRequestResponse requestResponse;
 	public int tool;
+	public String toolName;
 	public String host="";
 	public String method="";
 	public URL url;
@@ -64,7 +64,7 @@ public class LogEntry
 	public int responseLength=-1;
 	public String responseContentType="";
 	public boolean complete = false;
-	public cookieJarStatus usesCookieJar = cookieJarStatus.NO;
+	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	// public User Relatedpublic 
 	public String comment="";
 	// public RegEx Variablespublic 
@@ -83,6 +83,10 @@ public class LogEntry
 
 	private boolean requestProcessed;
 	private boolean responseProcessed;
+
+	public LogEntry(){
+
+	}
 
 	protected LogEntry(Date arrivalTime){
 		this.uuid = UUID.randomUUID();
@@ -108,17 +112,16 @@ public class LogEntry
 		return new LogEntry(true);
 	}
 
-	public void processRequest(int tool, IHttpRequestResponse requestResponse, URL url, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
+	public void processRequest(int tool, IHttpRequestResponse requestResponse, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
-		String strFullRequest = new String(requestResponse.getRequest());
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
-		LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 
 		this.tool = tool;
+		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
-		this.url = url;
-		this.relativeURL = url.getPath();
+		this.url = tempAnalyzedReq.getUrl();
+		this.relativeURL = this.url.getPath();
 		this.host = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
@@ -126,7 +129,7 @@ public class LogEntry
 		this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
-			String tempPath = url.getPath().replaceAll("\\\\", "/");
+			String tempPath = this.url.getPath().replaceAll("\\\\", "/");
 			tempPath = tempPath.substring(tempPath.lastIndexOf("/"));
 			int tempPathDotLocation = tempPath.lastIndexOf(".");
 			if(tempPathDotLocation>=0)
@@ -178,9 +181,9 @@ public class LogEntry
 							}
 						}
 						if(oneNotMatched && anyParamMatched){
-							this.usesCookieJar=cookieJarStatus.PARTIALLY;
+							this.usesCookieJar= CookieJarStatus.PARTIALLY;
 						}else if(!oneNotMatched && anyParamMatched){
-							this.usesCookieJar=cookieJarStatus.YES;
+							this.usesCookieJar= CookieJarStatus.YES;
 						}
 					}
 				}else if(headerItem[0].equals("referer")){
@@ -264,7 +267,6 @@ public class LogEntry
 		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
 		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
 
-		LogTable logTable = LoggerPlusPlus.instance.getLogTable();
 		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
 		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
 		this.status= tempAnalyzedResp.getStatusCode();
@@ -454,74 +456,74 @@ public class LogEntry
 		try{
 			switch(columnName)
 			{
-//				case TOOL:
-//					return LoggerPlusPlus.callbacks.getToolName(tool);
-//				case URL:
-//					return this.url;
-//				case PATH:
-//					return this.relativeURL;
-//				case QUERY:
-//					return this.url.getQuery();
-//				case STATUS:
-//					return this.status;
-//				case PROTOCOL:
-//					return this.protocol;
-//				case HOSTNAME:
-//					return this.host;
-//				case HOST:
-//					return this.protocol+"://"+this.host;
-//				case MIMETYPE:
-//					return this.responseMimeType;
-//				case RESPONSELENGTH:
-//					return this.responseLength;
-//				case TARGETPORT:
-//					return this.targetPort;
-//				case METHOD:
-//					return this.method;
-//				case REQUESTTIME:
-//					return this.requestDateTime;
-//				case RESPONSETIME:
-//					return this.responseDateTime;
-//				case COMMENT:
-//					return this.comment;
-//				case REQUESTCONTENTTYPE:
-//					return this.requestContentType;
-//				case URLEXTENSION:
-//					return this.urlExtension;
-//				case REFERRER:
-//					return this.referrerURL;
-//				case HASQUERYSTRINGPARAM:
-//					return this.url.getQuery() != null;
-//				case HASBODYPARAM:
-//					return this.hasBodyParam;
-//				case HASCOOKIEPARAM:
-//					return this.hasCookieParam;
-//				case REQUESTLENGTH:
-//					return this.requestLength;
-//				case RESPONSECONTENTTYPE:
-//					return this.responseContentType;
-//				case INFERREDTYPE:
-//					return this.responseInferredMimeType;
-//				case HASSETCOOKIES:
-//					return this.hasSetCookies;
-//				case PARAMS:
-//					return this.params;
-//				case TITLE:
-//					return this.title;
-//				case ISSSL:
-//					return this.isSSL;
-//				case NEWCOOKIES:
-//					return this.newCookies;
-//				case LISTENERINTERFACE:
-//					return this.listenerInterface;
-//				case CLIENTIP:
-//					return this.clientIP;
-//				case COMPLETE:
-//					return this.complete;
-//				case SENTCOOKIES:
-//					return this.sentCookies;
-//				case USESCOOKIEJAR:
-//					return this.usesCookieJar.toString();
+				case TOOL:
+					return toolName;
+				case URL:
+					return this.url;
+				case PATH:
+					return this.relativeURL;
+				case QUERY:
+					return this.url.getQuery();
+				case STATUS:
+					return this.status;
+				case PROTOCOL:
+					return this.protocol;
+				case HOSTNAME:
+					return this.host;
+				case HOST:
+					return this.protocol+"://"+this.host;
+				case MIME_TYPE:
+					return this.responseMimeType;
+				case RESPONSE_LENGTH:
+					return this.responseLength;
+				case PORT:
+					return this.targetPort;
+				case METHOD:
+					return this.method;
+				case REQUEST_TIME:
+					return this.requestDateTime;
+				case RESPONSE_TIME:
+					return this.responseDateTime;
+				case COMMENT:
+					return this.comment;
+				case REQUEST_CONTENT_TYPE:
+					return this.requestContentType;
+				case EXTENSION:
+					return this.urlExtension;
+				case REFERRER:
+					return this.referrerURL;
+				case HASGETPARAM:
+					return this.url.getQuery() != null;
+				case HASPOSTPARAM:
+					return this.hasBodyParam;
+				case HASCOOKIEPARAM:
+					return this.hasCookieParam;
+				case REQUEST_LENGTH:
+					return this.requestLength;
+				case RESPONSE_CONTENT_TYPE:
+					return this.responseContentType;
+				case INFERRED_TYPE:
+					return this.responseInferredMimeType;
+				case HAS_SET_COOKIES:
+					return this.hasSetCookies;
+				case HASPARAMS:
+					return this.params;
+				case TITLE:
+					return this.title;
+				case ISSSL:
+					return this.isSSL;
+				case NEW_COOKIES:
+					return this.newCookies;
+				case LISTENER_INTERFACE:
+					return this.listenerInterface;
+				case CLIENT_IP:
+					return this.clientIP;
+				case COMPLETE:
+					return this.complete;
+				case SENTCOOKIES:
+					return this.sentCookies;
+				case USES_COOKIE_JAR:
+					return this.usesCookieJar.toString();
 //				case REGEX1REQ:
 //					return this.regexAllReq[0];
 //				case REGEX2REQ:
@@ -542,15 +544,15 @@ public class LogEntry
 //					return this.regexAllResp[3];
 //				case REGEX5RESP:
 //					return this.regexAllResp[4];
-//				case REQUEST: //request
-//					return new String(requestResponse.getRequest()).substring(requestResponse.getRequest().length - requestLength);
-//				case RESPONSE: //response
-//					return new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
-//				case RTT:
-//					return requestResponseDelay;
-//				case REQUESTHEADERS:
-//					return requestHeaders != null ? requestHeaders : "";
-//				case RESPONSEHEADERS:
+				case REQUEST_BODY: //request
+					return new String(requestResponse.getRequest()).substring(requestResponse.getRequest().length - requestLength);
+				case RESPONSE_BODY: //response
+					return new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
+				case RTT:
+					return requestResponseDelay;
+				case REQUEST_HEADERS:
+					return requestHeaders != null ? requestHeaders : "";
+				case RESPONSE_HEADERS:
 //					return responseHeaders != null ? responseHeaders : "";
 				default:
 					return "";
@@ -562,12 +564,12 @@ public class LogEntry
 
 	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
 
-	public enum cookieJarStatus {
+	public enum CookieJarStatus {
 		YES("Yes"),
 		NO("No"),
 		PARTIALLY("Partially");
 		private String value;
-		cookieJarStatus(String value) {
+		CookieJarStatus(String value) {
 			this.value = value;
 		}
 		@Override

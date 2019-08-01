@@ -36,6 +36,6 @@ interface Node {
   public int getId();
 
   /** Accept the visitor. **/
-  public Object jjtAccept(FilterParserVisitor visitor, Object data);
+  public Object jjtAccept(FilterParserVisitor visitor, VisitorData data);
 }
-/* JavaCC - OriginalChecksum=68cca7ada3f455628e35ced903de5912 (do not edit this line) */
+/* JavaCC - OriginalChecksum=14b049954a3cc3bef39f1a1a74457d0b (do not edit this line) */

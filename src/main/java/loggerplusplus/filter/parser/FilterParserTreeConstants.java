@@ -4,16 +4,16 @@ package loggerplusplus.filter.parser;
 public interface FilterParserTreeConstants
 {
   public int JJTEXPRESSION = 0;
-  public int JJTCOMPARISON = 1;
-  public int JJTSIMPLEBOOLEAN = 2;
-  public int JJTVOID = 3;
+  public int JJTVOID = 1;
+  public int JJTCOMPARISON = 2;
+  public int JJTIDENTIFIER = 3;
 
 
   public String[] jjtNodeName = {
     "Expression",
-    "Comparison",
-    "SimpleBoolean",
     "void",
+    "Comparison",
+    "Identifier",
   };
 }
-/* JavaCC - OriginalChecksum=80dce593c357ee41f5a3544e07dfcbf0 (do not edit this line) */
+/* JavaCC - OriginalChecksum=c0dee8aab826bfb6706b784e3701efc6 (do not edit this line) */

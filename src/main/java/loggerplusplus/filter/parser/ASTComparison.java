@@ -9,7 +9,6 @@ class ASTComparison extends SimpleNode {
 
   Object left, right;
   Operator operator;
-  Boolean value;
 
   public ASTComparison(int id) {
     super(id);
@@ -21,15 +20,14 @@ class ASTComparison extends SimpleNode {
 
 
   /** Accept the visitor. **/
-  public Object jjtAccept(FilterParserVisitor visitor, Object data) {
+  public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
 
-    return
-    visitor.visit(this, data);
+    return visitor.visit(this, data);
   }
 
   @Override
   public String toString() {
-    return super.toString() + ": " + left + " " + operator + " " + right;
+    return super.toString() + ": (" + left + ") " + operator + " (" + right + ")";
   }
 
 

@@ -85,7 +85,7 @@ public class LogManager implements IHttpListener, IProxyListener {
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
-        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //ProxyFieldProvider messages handled by proxy method
+        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
         if(requestResponse == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
@@ -152,7 +152,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 URL uUrl = analyzedReq.getUrl();
                 if (!shouldLog(uUrl)) return; //Do not log out of scope items.
 
-                logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
+                logEntry.processRequest(toolFlag, requestResponse, analyzedReq, null);
                 if (requestResponse.getResponse() != null) logEntry.processResponse(requestResponse);
                 addNewRequest(logEntry, true);
             }finally {
@@ -187,7 +187,7 @@ public class LogManager implements IHttpListener, IProxyListener {
             URL uUrl = analyzedReq.getUrl();
             if (!shouldLog(uUrl)) return; //Do not log out of scope items.
 
-            logEntry.processRequest(toolFlag, requestResponse, uUrl, analyzedReq, null);
+            logEntry.processRequest(toolFlag, requestResponse, analyzedReq, null);
             addNewRequest(logEntry, false);
         });
         return logEntry;
@@ -200,7 +200,7 @@ public class LogManager implements IHttpListener, IProxyListener {
             logEntry.processResponse(requestResponse);
 
             //TODO Move color filter checks into separate class
-            HashMap<UUID, ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+            HashMap<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
             for (ColorFilter colorFilter : colorFilters.values()) {
                 logEntry.testColorFilter(colorFilter, true);
             }
@@ -254,8 +254,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         }
 
         //Add to grepTable / modify existing entry.
-        HashMap<UUID,ColorFilter> colorFilters =
-                (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+        HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
         for (ColorFilter colorFilter : colorFilters.values()) {
             logEntry.testColorFilter(colorFilter, false);
         }
@@ -361,7 +360,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 message += "\nNote: History will be truncated to " + maxEntries + " entries.";
             }
 
-            result = MoreHelp.askConfirmMessage("Burp ProxyFieldProvider Import",
+            result = MoreHelp.askConfirmMessage("Burp Proxy Import",
                     message, new String[]{"Import", "Cancel"});
         }
         if(result == JOptionPane.OK_OPTION) {

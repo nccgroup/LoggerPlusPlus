@@ -20,15 +20,11 @@ class ASTExpression extends SimpleNode {
 
   @Override
   public String toString() {
-    if(op != null){
-      return super.toString() + ": " + op + ", Inverse=" + inverse;
-    }else {
-      return super.toString();
-    }
+    return String.format("%s, [%d children, Inverse:%b, Join Op:%s]", super.toString(), this.jjtGetNumChildren(), inverse, op);
   }
 
   /** Accept the visitor. **/
-  public Object jjtAccept(FilterParserVisitor visitor, Object data) {
+  public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
 
     return
     visitor.visit(this, data);

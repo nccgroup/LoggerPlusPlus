@@ -67,7 +67,7 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
         this.getSelectionModel().addListSelectionListener(e -> {
             if(e.getValueIsAdjusting()) return;
             RequestViewerController controller = LoggerPlusPlus.instance.getRequestViewerController();
-            LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(e.getFirstIndex()));
+            LogEntry logEntry = getModel().getData().get(getSelectedRow());
             if (logEntry.requestResponse != null) {
                 controller.setDisplayedEntity(logEntry.requestResponse);
             }

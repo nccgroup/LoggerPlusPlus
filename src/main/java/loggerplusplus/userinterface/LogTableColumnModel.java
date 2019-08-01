@@ -34,8 +34,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     }
 
     private void setup(){
-        ArrayList<LogTableColumn> columnList = (ArrayList<LogTableColumn>)
-                LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
+        ArrayList<LogTableColumn> columnList = LoggerPlusPlus.preferences.getSetting(PREF_LOG_TABLE_SETTINGS);
 
         // Sorting based on order number
         Collections.sort(columnList);
