@@ -20,7 +20,21 @@ class ASTExpression extends SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("%s, [%d children, Inverse:%b, Join Op:%s]", super.toString(), this.jjtGetNumChildren(), inverse, op);
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < this.children.length; i++) {
+          String childString = this.children[i].toString();
+          if(this.children[i] instanceof ASTExpression && !((ASTExpression) this.children[i]).inverse)
+              sb.append("(" + childString + ")");
+          else
+              sb.append(childString);
+
+          if(i != this.children.length-1){
+              sb.append(" " + op.getLabel() + " ");
+          }
+      }
+
+      if(inverse) return "!(" + sb.toString() + ")";
+      else return sb.toString();
   }
 
   /** Accept the visitor. **/

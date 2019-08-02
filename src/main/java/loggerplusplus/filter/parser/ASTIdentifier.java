@@ -23,7 +23,7 @@ class ASTIdentifier extends SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("%s [%s.%s, Type:%s, Inverse:%b, Field:%s", super.toString(), group, field, type != null ? type.getTypeName() : "null", inverse, logEntryField);
+    return logEntryField.getFullLabel(field);
   }
 
   /** Accept the visitor. **/
