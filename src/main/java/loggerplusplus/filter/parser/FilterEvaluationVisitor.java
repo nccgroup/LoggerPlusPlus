@@ -109,11 +109,16 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
       }else if(right instanceof Pattern) {
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
         return m.find() ^ op == Operator.NOT_EQUAL;
+      }else if(left instanceof String || right instanceof String){
+        switch (op){
+          case EQUAL: return String.valueOf(left).equalsIgnoreCase(String.valueOf(right));
+          case NOT_EQUAL: return !String.valueOf(left).equalsIgnoreCase(String.valueOf(right));
+          case CONTAINS: return (String.valueOf(left).toLowerCase()).contains(String.valueOf(right).toLowerCase());
+        }
       }else{
         switch (op){
           case EQUAL: return left.equals(right);
           case NOT_EQUAL: return !left.equals(right);
-          case CONTAINS: return ((String) left).contains(String.valueOf(right));
         }
       }
 

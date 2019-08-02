@@ -83,9 +83,11 @@ public class FilterController {
             ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(filterString);
             formatFilter(filterString, Color.BLACK, new Color(76,255, 155));
 
-            for (FilterListener filterListener : filterListeners) {
-                filterListener.onFilterSet(filter);
-            }
+            new Thread(()->{
+                for (FilterListener filterListener : filterListeners) {
+                    filterListener.onFilterSet(filter);
+                }
+            }).start();
         }
     }
 

@@ -40,8 +40,8 @@ public enum LogEntryField {
     EXTENSION(Group.REQUEST, String.class, "EXTENSION"),
     REFERRER(Group.REQUEST, String.class, "REFERRER"),
     HASPARAMS(Group.REQUEST, Boolean.class, "HASPARAMS"),
-    HASGETPARAM(Group.REQUEST, Boolean.class, "HASGETPARAM", "HASQUERYSTRING", "QUERYSTRING"),
-    HASPOSTPARAM(Group.REQUEST, Boolean.class, "HASPOSTPARAM", "HASPAYLOAD", "PAYLOAD"),
+    HASGETPARAM(Group.REQUEST, Boolean.class, "HASQUERYSTRING", "HASGETPARAM", "QUERYSTRING"),
+    HASPOSTPARAM(Group.REQUEST, Boolean.class, "HASPAYLOAD", "HASPOSTPARAM", "PAYLOAD"),
     HASCOOKIEPARAM(Group.REQUEST, Boolean.class, "HASCOOKIEPARAM"),
     SENTCOOKIES(Group.REQUEST, Boolean.class, "SENTCOOKIES"),
 
@@ -113,6 +113,10 @@ public enum LogEntryField {
 
     public String[] getLabels() {
         return labels;
+    }
+
+    public String getFullLabel(String label){
+        return this.group.label + "." + label.toUpperCase();
     }
 
     public static LogEntryField getByLabel(Group group, String searchLabel){

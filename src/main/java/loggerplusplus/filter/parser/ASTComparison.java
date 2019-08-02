@@ -4,6 +4,8 @@ package loggerplusplus.filter.parser;
 
 import loggerplusplus.filter.Operator;
 
+import java.util.regex.Pattern;
+
 public
 class ASTComparison extends SimpleNode {
 
@@ -27,9 +29,17 @@ class ASTComparison extends SimpleNode {
 
   @Override
   public String toString() {
-    return super.toString() + ": (" + left + ") " + operator + " (" + right + ")";
+    return String.format("%s %s %s", convertObjectToString(left), operator.getLabel(), convertObjectToString(right));
   }
 
+  private String convertObjectToString(Object obj){
+    if(obj instanceof Pattern){
+      return "/" + String.valueOf(obj) + "/";
+    }else if(obj instanceof String){
+      return "\"" + obj + "\"";
+    }
+    return String.valueOf(obj);
+  }
 
 }
 /* JavaCC - OriginalChecksum=bdaeeba5ee349a11518169d312e524e0 (do not edit this line) */

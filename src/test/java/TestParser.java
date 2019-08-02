@@ -23,6 +23,7 @@ public class TestParser {
         while(!(str = in.readLine()).equalsIgnoreCase("END")) {
             try {
                 ASTExpression root = FilterParser.parseFilter(str);
+                System.out.println("Filter: " + root.toString());
                 Boolean visitorData = new FilterEvaluationVisitor().visit(root, logEntry);
                 System.out.println("Result: " + visitorData);
             } catch (Throwable e) {

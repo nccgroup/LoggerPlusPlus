@@ -16,12 +16,10 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
 
     private final ASTExpression filter;
     private final FilterEvaluationVisitor visitor;
-    private final String filterString;
 
     public LogFilter(String filterString) throws ParseException {
         try {
             filter = FilterParser.parseFilter(filterString);
-            this.filterString = filterString;
             visitor = new FilterEvaluationVisitor();
         }catch (IOException e){
             throw new ParseException("Could not read input string.");
@@ -34,7 +32,7 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
 
     @Override
     public String toString() {
-        return filterString;
+        return filter.toString();
     }
 
     @Override

@@ -59,7 +59,7 @@ TOKEN [IGNORE_CASE]: {
     | <RPAREN: ")" >
     | <INVERSE: "!" | "NOT" >
     | <DOT: "." >
-    | <IDENTIFIER: (["a"-"z","A"-"Z"])+ >
+    | <IDENTIFIER: (["a"-"z","A"-"Z","_"])+ >
 }
 
 
@@ -76,8 +76,9 @@ ASTExpression Filter()             :
 {/*@bgen(jjtree) Expression */
     try {
 /*@egen*/
-    (LOOKAHEAD(2) [inverse=Inverse()] <LPAREN> ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+] <RPAREN>
-    | ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+])
+//    (LOOKAHEAD(2) [inverse=Inverse()] <LPAREN> ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+] <RPAREN>
+//    | ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+])
+    ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+]
 
     <EOF>/*@bgen(jjtree)*/
     {
