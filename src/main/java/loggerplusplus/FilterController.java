@@ -142,9 +142,11 @@ public class FilterController {
     }
 
     public void formatFilter(String string, Color foregroundColor, Color backgroundColor){
-        ((JTextField) filterField.getEditor().getEditorComponent()).setText(string);
-        filterField.setForegroundColor(foregroundColor);
-        filterField.setBackgroundColor(backgroundColor);
+        SwingUtilities.invokeLater(() -> {
+            ((JTextField) filterField.getEditor().getEditorComponent()).setText(string);
+            filterField.setForegroundColor(foregroundColor);
+            filterField.setBackgroundColor(backgroundColor);
+        });
     }
 
     public HistoryField getFilterField(){
