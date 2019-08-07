@@ -166,7 +166,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			column.order = object.get("order").getAsInt();
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();
 			column.visibleName = object.get("visibleName").getAsString();
-			column.width = object.get("preferredWidth").getAsInt();
+			column.setWidth(object.get("preferredWidth").getAsInt());
 			column.type = object.get("type").getAsString();
 			column.readOnly = object.get("readonly").getAsBoolean();
 			column.visible = object.get("visible").getAsBoolean();
