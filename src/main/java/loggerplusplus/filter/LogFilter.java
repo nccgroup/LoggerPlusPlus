@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.HashSet;
+import java.util.Set;
 
 public class LogFilter extends RowFilter<TableModel, Integer> {
 
@@ -37,10 +39,10 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
 
     @Override
     public boolean include(Entry entry) {
-        int identifier = (int) entry.getIdentifier();
+        int index = (int) entry.getIdentifier();
         TableModel tableModel = (TableModel) entry.getModel();
         if(tableModel instanceof LogTableModel){
-            LogEntry logEntry = ((LogTableModel) tableModel).getRow(identifier);
+            LogEntry logEntry = ((LogTableModel) tableModel).getRow(index);
             return this.matches(logEntry);
         }
         return false;

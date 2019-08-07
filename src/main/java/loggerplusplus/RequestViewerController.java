@@ -18,16 +18,16 @@ public class RequestViewerController implements IMessageEditorController {
     }
 
     public void setDisplayedEntity(IHttpRequestResponse requestResponse) {
-        if(requestResponse.equals(currentItem)) return;
+        if(requestResponse != null && requestResponse.equals(currentItem)) return;
 
         this.currentItem = requestResponse;
-        if (requestResponse.getRequest() != null) {
+        if (requestResponse != null && requestResponse.getRequest() != null) {
             requestEditor.setMessage(requestResponse.getRequest(), true);
         }else{
             requestEditor.setMessage(new byte[0], false);
         }
 
-        if (requestResponse.getResponse() != null) {
+        if (requestResponse != null && requestResponse.getResponse() != null) {
             responseEditor.setMessage(requestResponse.getResponse(), false);
         }else {
             responseEditor.setMessage(new byte[0], false);

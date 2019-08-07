@@ -1,19 +1,16 @@
 package loggerplusplus.filter.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class VisitorData {
 
-    private Object data;
     private ArrayList<String> errors = new ArrayList<>();
     private boolean success = true;
+    private HashMap<String, Object> data = new HashMap<>();
 
     VisitorData(){
 
-    }
-
-    VisitorData(Object data){
-        this.data = data;
     }
 
     public void addError(String error){
@@ -42,7 +39,11 @@ public class VisitorData {
         return sb.toString();
     }
 
-    public Object getData() {
+    public HashMap<String, Object> getData() {
         return data;
+    }
+
+    public void setData(String key, Object value){
+        this.data.put(key, value);
     }
 }
