@@ -19,9 +19,6 @@ public class TableHeaderMenu extends JPopupMenu{
 
 	private final LogTable logTable;
 	private final LogTableColumn columnObj;
-	private final int	ITEM_PLAIN	=	0;	// Item types
-	private final int	ITEM_CHECK	=	1;
-	private final int	ITEM_RADIO	=	2;
 
 	public TableHeaderMenu(LogTable logTable, LogTableColumn columnObj)
 	{
@@ -35,7 +32,7 @@ public class TableHeaderMenu extends JPopupMenu{
 		boolean isRegex=columnObj.isRegEx();
 
 		JPopupMenu menu = new JPopupMenu("Popup");
-		JMenuItem item = new JMenuItem(columnObj.getVisibleName() + " (" + columnObj.getName() + ")");
+		JMenuItem item = new JMenuItem(columnObj.getVisibleName() + " (" + columnObj.getIdentifier().getFullLabel() + ")");
 
 		item.setEnabled(false);
 		menu.add(item);

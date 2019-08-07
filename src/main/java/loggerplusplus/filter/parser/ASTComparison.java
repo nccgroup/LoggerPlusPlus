@@ -3,8 +3,11 @@
 package loggerplusplus.filter.parser;
 
 import loggerplusplus.filter.Operator;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public
 class ASTComparison extends SimpleNode {
@@ -37,6 +40,15 @@ class ASTComparison extends SimpleNode {
       return "/" + String.valueOf(obj) + "/";
     }else if(obj instanceof String){
       return "\"" + obj + "\"";
+    }else if(obj instanceof Set){
+      StringBuilder sb = new StringBuilder();
+      sb.append("[");
+      sb.append(((Set) obj).stream().map(item -> {
+        if(item instanceof String) return "\"" + item + "\"";
+        else return item;
+      }).collect(Collectors.joining(", ")));
+      sb.append("]");
+      return sb.toString();
     }
     return String.valueOf(obj);
   }

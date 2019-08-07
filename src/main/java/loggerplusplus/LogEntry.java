@@ -31,7 +31,6 @@ import java.util.regex.Matcher;
 //TODO Better column to value mapping.
 public class LogEntry
 {
-
 	public boolean isImported;
 	public UUID uuid;
 	public transient IHttpRequestResponse requestResponse;

@@ -1,5 +1,7 @@
 package loggerplusplus.userinterface;
 
+import com.coreyd97.BurpExtenderUtilities.Alignment;
+import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import loggerplusplus.FilterController;
 import loggerplusplus.Globals;
 import loggerplusplus.LogManager;
@@ -17,7 +19,8 @@ public class LogViewPanel extends JPanel {
 
     final LogTable logTable;
     final JScrollPane logTableScrollPane;
-    JProgressBar progressBar;
+    final JProgressBar progressBar;
+    JComponent importPanel;
 
     public LogViewPanel(LogManager logManager){
         this.setLayout(new GridLayout());
@@ -52,12 +55,25 @@ public class LogViewPanel extends JPanel {
         });
 
         this.add(this.logTableScrollPane);
+
+        PanelBuilder panelBuilder = new PanelBuilder(LoggerPlusPlus.preferences);
+        progressBar = new JProgressBar();
+        try {
+            importPanel = panelBuilder.build(new JComponent[][]{
+                    new JComponent[]{new JLabel("Importing: ")},
+                    new JComponent[]{progressBar}
+            }, Alignment.CENTER, 1.0, 1.0);
+        }catch (Exception e){
+            importPanel = new JLabel("Importing entries, please wait...");
+        }
     }
 
     public void showImportProgress(int entries){
-        progressBar = new JProgressBar(0, entries);
+        progressBar.setMaximum(entries);
         this.remove(logTableScrollPane);
-        this.add(progressBar);
+        this.add(importPanel);
+        this.revalidate();
+        this.repaint();
     }
 
     public void setProgressValue(int progressValue){
@@ -66,8 +82,10 @@ public class LogViewPanel extends JPanel {
     }
 
     public void showLogTable(){
-        this.remove(progressBar);
+        this.remove(importPanel);
         this.add(logTableScrollPane);
+        this.revalidate();
+        this.repaint();
     }
 
     public LogTable getLogTable() {

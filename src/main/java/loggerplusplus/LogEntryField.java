@@ -1,10 +1,9 @@
 package loggerplusplus;
 
-import java.lang.reflect.Type;
+import java.util.Date;
 import java.util.HashMap;
 
 public enum LogEntryField {
-
 
     //Proxy
     NUMBER(Group.PROXY, Integer.class, "Number"),
@@ -19,8 +18,8 @@ public enum LogEntryField {
     RESPONSE_HEADERS(Group.RESPONSE, String.class, "Headers"),
     REQUEST_BODY(Group.REQUEST, String.class, "Body"),
     RESPONSE_BODY(Group.RESPONSE, String.class, "Body"),
-    REQUEST_TIME(Group.REQUEST, Integer.class, "Time"),
-    RESPONSE_TIME(Group.RESPONSE, Integer.class, "Time"),
+    REQUEST_TIME(Group.REQUEST, Date.class, "Time"),
+    RESPONSE_TIME(Group.RESPONSE, Date.class, "Time"),
     REQUEST_LENGTH(Group.REQUEST, Integer.class, "Length"),
     RESPONSE_LENGTH(Group.RESPONSE, Integer.class, "Length"),
 
@@ -30,41 +29,45 @@ public enum LogEntryField {
     URL(Group.REQUEST, String.class, "URL"),
     METHOD(Group.REQUEST, String.class, "Method"),
     PATH(Group.REQUEST, String.class, "Path"),
-    QUERY(Group.REQUEST, String.class, "QUERY"),
-    PROTOCOL(Group.REQUEST, String.class, "PROTOCOL"),
-    ISSSL(Group.REQUEST, Boolean.class, "ISSSL"),
-    HOSTNAME(Group.REQUEST, String.class, "HOSTNAME"),
-    HOST(Group.REQUEST, String.class, "HOST"),
-    PORT(Group.REQUEST, Short.class, "PORT"),
-    REQUEST_CONTENT_TYPE(Group.REQUEST, String.class, "CONTENTTYPE", "CONTENT_TYPE"),
-    EXTENSION(Group.REQUEST, String.class, "EXTENSION"),
-    REFERRER(Group.REQUEST, String.class, "REFERRER"),
-    HASPARAMS(Group.REQUEST, Boolean.class, "HASPARAMS"),
-    HASGETPARAM(Group.REQUEST, Boolean.class, "HASQUERYSTRING", "HASGETPARAM", "QUERYSTRING"),
-    HASPOSTPARAM(Group.REQUEST, Boolean.class, "HASPAYLOAD", "HASPOSTPARAM", "PAYLOAD"),
-    HASCOOKIEPARAM(Group.REQUEST, Boolean.class, "HASCOOKIEPARAM"),
-    SENTCOOKIES(Group.REQUEST, Boolean.class, "SENTCOOKIES"),
+    QUERY(Group.REQUEST, String.class, "Query"),
+    PROTOCOL(Group.REQUEST, String.class, "Protocol"),
+    ISSSL(Group.REQUEST, Boolean.class, "IsSSL"),
+    HOSTNAME(Group.REQUEST, String.class, "Hostname"),
+    HOST(Group.REQUEST, String.class, "Host"),
+    PORT(Group.REQUEST, Short.class, "Port"),
+    REQUEST_CONTENT_TYPE(Group.REQUEST, String.class, "ContentType", "Content_Type"),
+    EXTENSION(Group.REQUEST, String.class, "Extension"),
+    REFERRER(Group.REQUEST, String.class, "Referrer"),
+    HASPARAMS(Group.REQUEST, Boolean.class, "HasParams"),
+    HASGETPARAM(Group.REQUEST, Boolean.class, "HasGetParam", "HasQueryString", "QueryString"),
+    HASPOSTPARAM(Group.REQUEST, Boolean.class, "HasPostParam", "HasPayload", "Payload"),
+    HASCOOKIEPARAM(Group.REQUEST, Boolean.class, "HasSentCookies"),
+    SENTCOOKIES(Group.REQUEST, Boolean.class, "CookieString", "SentCookies"),
 
 
     //Response
-    STATUS(Group.RESPONSE, Short.class, "STATUS"),
-    RTT(Group.RESPONSE, Integer.class, "RTT"),
-    TITLE(Group.RESPONSE, String.class, "TITLE"),
-    RESPONSE_CONTENT_TYPE(Group.RESPONSE, String.class, "CONTENTTYPE", "CONTENT_TYPE"),
-    MIME_TYPE(Group.RESPONSE, String.class, "MIME_TYPE", "MIMETYPE"),
-    INFERRED_TYPE(Group.RESPONSE, String.class, "INFERRED_TYPE", "INFERREDTYPE"),
-    HAS_SET_COOKIES(Group.RESPONSE, Boolean.class, "HAS_SET_COOKIES", "SETCOOKIES", "HASSETCOOKIES"),
-    NEW_COOKIES(Group.RESPONSE, String.class, "NEW_COOKIES", "NEWCOOKIES");
+    STATUS(Group.RESPONSE, Short.class, "Status"),
+    RTT(Group.RESPONSE, Integer.class, "RTT", "TimeTaken"),
+    TITLE(Group.RESPONSE, String.class, "Title"),
+    RESPONSE_CONTENT_TYPE(Group.RESPONSE, String.class, "ContentType", "Content_Type"),
+    MIME_TYPE(Group.RESPONSE, String.class, "MimeType", "Mime_Type"),
+    INFERRED_TYPE(Group.RESPONSE, String.class, "InferredType", "Inferred_Type"),
+    HAS_SET_COOKIES(Group.RESPONSE, Boolean.class, "HasSetCookies", "Has_Set_Cookies"),
+    NEW_COOKIES(Group.RESPONSE, String.class, "NewCookies", "New_Cookies");
 
-    private static final HashMap<Group, HashMap<String, LogEntryField>> groupFieldMap = new HashMap<>();
+    private static final HashMap<Group, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
+    private static final HashMap<Group, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();
+
     static {
         for (Group group : Group.values()) {
-            groupFieldMap.put(group, new HashMap<>());
+            completeGroupFieldMap.put(group, new HashMap<>());
+            shortGroupFieldMap.put(group, new HashMap<>());
         }
 
         for (LogEntryField field : LogEntryField.values()) {
+            shortGroupFieldMap.get(field.group).put(field.labels[0].toUpperCase(), field);
             for (String label : field.labels) {
-                groupFieldMap.get(field.group).put(label.toUpperCase(), field);
+                completeGroupFieldMap.get(field.group).put(label.toUpperCase(), field);
             }
         }
     }
@@ -85,6 +88,10 @@ public enum LogEntryField {
 
         Group(String label){
             this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
         }
 
         public static Group findByLabel(String label){
@@ -116,16 +123,19 @@ public enum LogEntryField {
     }
 
     public String getFullLabel(String label){
-        return this.group.label + "." + label.toUpperCase();
+        return this.group.getLabel() + "." + label;
+    }
+
+    public String getFullLabel(){
+        return this.group.getLabel() + "." + labels[0];
     }
 
     public static LogEntryField getByLabel(Group group, String searchLabel){
-        HashMap<String, LogEntryField> groupFields = groupFieldMap.get(group);
+        HashMap<String, LogEntryField> groupFields = completeGroupFieldMap.get(group);
         return groupFields != null ? groupFields.get(searchLabel.toUpperCase()) : null;
     }
 
     public static HashMap<String, LogEntryField> getFieldsInGroup(Group group){
-        return groupFieldMap.get(group);
+        return completeGroupFieldMap.get(group);
     }
-
 }

@@ -31,29 +31,37 @@ public interface FilterParserConstants {
   /** RegularExpression Id. */
   int CONTAINS = 11;
   /** RegularExpression Id. */
-  int BOOLEAN = 12;
+  int IN = 12;
   /** RegularExpression Id. */
-  int SINGLEQUOTEDSTRING = 13;
+  int BOOLEAN = 13;
   /** RegularExpression Id. */
-  int DOUBLEQUOTEDSTRING = 14;
+  int SINGLEQUOTEDSTRING = 14;
   /** RegularExpression Id. */
-  int NUMBER = 15;
+  int DOUBLEQUOTEDSTRING = 15;
   /** RegularExpression Id. */
-  int DIGIT = 16;
+  int NUMBER = 16;
   /** RegularExpression Id. */
-  int REGEXLITERAL = 17;
+  int DIGIT = 17;
   /** RegularExpression Id. */
-  int REGEX = 18;
+  int REGEXLITERAL = 18;
   /** RegularExpression Id. */
-  int LPAREN = 19;
+  int REGEX = 19;
   /** RegularExpression Id. */
-  int RPAREN = 20;
+  int LPAREN = 20;
   /** RegularExpression Id. */
-  int INVERSE = 21;
+  int RPAREN = 21;
   /** RegularExpression Id. */
-  int DOT = 22;
+  int INVERSE = 22;
   /** RegularExpression Id. */
-  int IDENTIFIER = 23;
+  int DOT = 23;
+  /** RegularExpression Id. */
+  int IDENTIFIER = 24;
+  /** RegularExpression Id. */
+  int ARRAY_START = 25;
+  /** RegularExpression Id. */
+  int ARRAY_END = 26;
+  /** RegularExpression Id. */
+  int ARRAY_SEPARATOR = 27;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -72,6 +80,7 @@ public interface FilterParserConstants {
     "<AND>",
     "<XOR>",
     "\"CONTAINS\"",
+    "\"IN\"",
     "<BOOLEAN>",
     "<SINGLEQUOTEDSTRING>",
     "<DOUBLEQUOTEDSTRING>",
@@ -84,6 +93,9 @@ public interface FilterParserConstants {
     "<INVERSE>",
     "\".\"",
     "<IDENTIFIER>",
+    "\"[\"",
+    "\"]\"",
+    "\",\"",
   };
 
 }

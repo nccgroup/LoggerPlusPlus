@@ -3,11 +3,13 @@ package loggerplusplus.filter.parser;
 
 import loggerplusplus.LogEntryField;
 import loggerplusplus.filter.Operator;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.regex.Pattern;
 
-public class FilterParserIdentifierTypeCheckVisitor implements FilterParserVisitor{
+public class SanityCheckVisitor implements FilterParserVisitor{
   public VisitorData defaultVisit(SimpleNode node, VisitorData data){
     node.childrenAccept(this, data);
 //    System.out.println("Evaluating Node: " + node);
@@ -32,12 +34,14 @@ public class FilterParserIdentifierTypeCheckVisitor implements FilterParserVisit
     rightType = (node.right instanceof ASTIdentifier) ? ((ASTIdentifier) node.right).type : node.right.getClass();
     if(leftType == null || rightType == null) return visitorData;
 
-    if((node.operator == Operator.LESS_THAN || node.operator == Operator.LESS_THAN_EQUAL
-            || node.operator == Operator.GREATER_THAN || node.operator == Operator.GREATER_THAN_EQUAL)
-            && (!Number.class.isAssignableFrom(leftType) || !Number.class.isAssignableFrom(rightType))){
-
-      visitorData.addError(String.format("Operator %s cannot be used to compare values of type %s and %s.",
-              node.operator, leftType.getTypeName(), rightType.getTypeName()));
+    if(node.operator == Operator.LESS_THAN || node.operator == Operator.LESS_THAN_EQUAL
+            || node.operator == Operator.GREATER_THAN || node.operator == Operator.GREATER_THAN_EQUAL){
+        boolean valid = (Date.class.isAssignableFrom(leftType) || Date.class.isAssignableFrom(rightType))
+                        || (Number.class.isAssignableFrom(leftType) && Number.class.isAssignableFrom(rightType));
+        if(!valid){
+            visitorData.addError(String.format("Operator %s cannot be used to compare values of type %s and %s.",
+                    node.operator, leftType.getTypeName(), rightType.getTypeName()));
+        }
     }else if(node.left instanceof Pattern){
       visitorData.addError("The left operand of a comparison cannot be a pattern.");
     }else if(node.right instanceof Pattern && !String.class.isAssignableFrom(leftType)){
@@ -57,12 +61,14 @@ public class FilterParserIdentifierTypeCheckVisitor implements FilterParserVisit
     }else {
       LogEntryField field = LogEntryField.getByLabel(fieldGroup, node.field);
       if(field == null){
-        visitorData.addError(String.format("\"%s\" is not field in group \"%s\". Valid fields are: %s",
-                node.field, node.group, LogEntryField.getFieldsInGroup(fieldGroup).keySet()));
+        visitorData.addError(String.format("\"%s\" is not field in group \"%s\". Valid fields are: \n%s",
+                node.field, node.group, StringUtils.join(LogEntryField.getFieldsInGroup(fieldGroup).keySet(), ", \n")));
       }else{
         if(node.inverse && field.getType() != Boolean.class){
           visitorData.addError(String.format("Field \"%s\" with type \"%s\" cannot be inverted.",
                   node.field, field.getType().getTypeName()));
+        }else if(field == LogEntryField.NUMBER){
+          visitorData.addError("Number field cannot be used within filters.");
         }
         node.type = field.getType();
         node.logEntryField = field;

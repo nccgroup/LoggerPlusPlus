@@ -67,9 +67,14 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
         this.getSelectionModel().addListSelectionListener(e -> {
             if(e.getValueIsAdjusting()) return;
             RequestViewerController controller = LoggerPlusPlus.instance.getRequestViewerController();
-            LogEntry logEntry = getModel().getData().get(getSelectedRow());
-            if (logEntry.requestResponse != null) {
-                controller.setDisplayedEntity(logEntry.requestResponse);
+            int selectedRow = getSelectedRow();
+            if(selectedRow == -1){
+                controller.setDisplayedEntity(null);
+            }else {
+                LogEntry logEntry = getModel().getData().get(getSelectedRow());
+                if (logEntry.requestResponse != null) {
+                    controller.setDisplayedEntity(logEntry.requestResponse);
+                }
             }
         });
         this.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -282,8 +287,6 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
     @Override
     public void onFilterError(String invalidFilter, ParseException exception) {
         this.setFilter(null);
-        JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getUiComponent(),
-                exception.getMessage(), "Filter Error", JOptionPane.WARNING_MESSAGE);
     }
 
     @Override

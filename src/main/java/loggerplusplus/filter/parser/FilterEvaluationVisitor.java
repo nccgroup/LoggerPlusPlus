@@ -2,21 +2,32 @@
 package loggerplusplus.filter.parser;
 
 import loggerplusplus.LogEntry;
+import loggerplusplus.LogEntryField;
+import loggerplusplus.LogManager;
 import loggerplusplus.filter.BooleanOperator;
 import loggerplusplus.filter.Operator;
+import org.apache.commons.lang3.time.DateUtils;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FilterEvaluationVisitor implements FilterParserVisitor{
+
+  private static final String LOG_ENTRY = "logEntry";
 
   public Boolean visit(SimpleNode node, VisitorData data){
     return false;
   }
 
   public Boolean visit(ASTExpression node, LogEntry logEntry){
-    return visit(node, new VisitorData(logEntry));
+    VisitorData visitorData = new VisitorData();
+    visitorData.setData(LOG_ENTRY, logEntry);
+    return visit(node, visitorData);
   }
 
   public Boolean visit(ASTExpression node, VisitorData visitorData){
@@ -76,10 +87,8 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
    * @return The value of the LogEntry for the identifier.
    */
   public Object visit(ASTIdentifier node, VisitorData visitorData){
-//    System.out.println("Evaluating Node: " + node);
-    Object result = ((LogEntry) visitorData.getData()).getValueByKey(node.logEntryField);
+    Object result = ((LogEntry) visitorData.getData().get(LOG_ENTRY)).getValueByKey(node.logEntryField);
     if(node.inverse) return !((Boolean) result);
-//    System.out.println("Retrieved Value: " + result);
     return result;
   }
 
@@ -93,6 +102,8 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
   }
 
   private boolean compare(Operator op, Object left, Object right){
+    if(left == null) left = "";
+    if(right == null) right = "";
     try{
       if(Number.class.isAssignableFrom(left.getClass()) && Number.class.isAssignableFrom(right.getClass())) {
         //Numerical Comparison
@@ -109,7 +120,28 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
       }else if(right instanceof Pattern) {
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
         return m.find() ^ op == Operator.NOT_EQUAL;
-      }else if(left instanceof String || right instanceof String){
+      }else if (left instanceof Date) {
+        try {
+          Date rightDate = DateUtils.truncate(LogManager.sdf.parse(String.valueOf(right)), Calendar.SECOND);
+          switch (op){
+            case EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) == 0;
+            case NOT_EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) != 0;
+            case GREATER_THAN: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) > 0;
+            case LESS_THAN: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) < 0;
+            case GREATER_THAN_EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) >= 0;
+            case LESS_THAN_EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) <= 0;
+          }
+        }catch (Exception e){
+          return false;
+        }
+      }else if(op == Operator.IN){
+          if(!(right instanceof Set)) return false;
+          String leftString = String.valueOf(left);
+          for (Object item : ((Set) right)) {
+              if(leftString.equalsIgnoreCase(String.valueOf(item))) return true;
+          }
+          return false;
+      }else if(left instanceof String || right instanceof String){ //String comparison last.
         switch (op){
           case EQUAL: return String.valueOf(left).equalsIgnoreCase(String.valueOf(right));
           case NOT_EQUAL: return !String.valueOf(left).equalsIgnoreCase(String.valueOf(right));

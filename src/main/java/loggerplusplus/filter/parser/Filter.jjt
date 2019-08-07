@@ -18,13 +18,19 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.regex.Pattern;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.math.BigDecimal;
 
 public class FilterParser {
     public static ASTExpression parseFilter(String string) throws IOException, ParseException {
         FilterParser FilterParser = new FilterParser(new StringReader(string));
-        ASTExpression node = FilterParser.Filter();
-        VisitorData result = new FilterParserIdentifierTypeCheckVisitor().visit(node);
+        ASTExpression node;
+        try{
+            node = FilterParser.Filter();
+        }catch(Exception e){
+            throw new ParseException(e.getMessage());
+        }
+        VisitorData result = new SanityCheckVisitor().visit(node);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
     }
@@ -44,6 +50,7 @@ TOKEN [IGNORE_CASE]: {
     | <AND: "&" | "&&" | "AND" >
     | <XOR: "^" | "XOR" >
     | <CONTAINS: "CONTAINS" >
+    | <IN: "IN" >
     | <BOOLEAN: "TRUE" | "FALSE">
     | <SINGLEQUOTEDSTRING: "'" ("\\" ~[] | ~["\'", "\\"])* "'" >
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])* "\"" >
@@ -56,6 +63,9 @@ TOKEN [IGNORE_CASE]: {
     | <INVERSE: "!" | "NOT" >
     | <DOT: "." >
     | <IDENTIFIER: (["a"-"z","A"-"Z","_"])+ >
+    | <ARRAY_START: "[" >
+    | <ARRAY_END: "]" >
+    | <ARRAY_SEPARATOR: ",">
 }
 
 
@@ -116,12 +126,17 @@ ASTComparison Comparison() #Comparison:
         jjtThis.left = left;
     }
 
-    (op = Operator() right = Value()
+    (op = Operator() right = Value() //Basic Operators With Right Value
         {
             jjtThis.right = right;
             jjtThis.operator = op;
         }
-    | //OR EMPTY
+    | op = InOperator() right = Array()
+        {
+            jjtThis.right = right;
+            jjtThis.operator = op;
+        }
+    | //NO OPERATOR OR RIGHT VALUE (EQ TRUE)
         {
             jjtThis.operator = Operator.EQUAL;
             jjtThis.right = true;
@@ -139,6 +154,21 @@ Object Value() #void:
     {return v;}
 }
 
+HashSet Array() #void:
+{
+    HashSet<Object> items = new HashSet();
+    Object i;
+}{
+    <ARRAY_START>
+    (
+        LOOKAHEAD(2) i=String() {items.add(i);} (<ARRAY_SEPARATOR> i=String() {items.add(i);})* //String array
+    |
+        LOOKAHEAD(2) i=Number() {items.add(i);} (<ARRAY_SEPARATOR> i=Number() {items.add(i);})* //Number array
+    )
+    <ARRAY_END>
+
+    { return items; }
+}
 
 //IDENTIFIERS
 ASTIdentifier Identifier() #Identifier:
@@ -212,6 +242,12 @@ Operator Operator() #void :
     | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
     | <LEQ> {return Operator.LESS_THAN_EQUAL;}
     | <CONTAINS> {return Operator.CONTAINS;}
+}
+
+Operator InOperator() #void :
+{}
+{
+    <IN> {return Operator.IN;}
 }
 
 boolean Inverse() #void :
