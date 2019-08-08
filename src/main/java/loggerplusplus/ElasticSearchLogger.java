@@ -49,10 +49,10 @@ public class ElasticSearchLogger implements LogEntryListener {
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
         if(isEnabled){
-            this.address = InetAddress.getByName((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
-            this.port = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT);
-            this.clusterName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_CLUSTER_NAME);
-            this.indexName = (String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
+            this.address = InetAddress.getByName(LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
+            this.port = LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_PORT);
+            this.clusterName = LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_CLUSTER_NAME);
+            this.indexName = LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
             Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
 
             httpClient = new RestHighLevelClient(RestClient.builder(
@@ -60,14 +60,9 @@ public class ElasticSearchLogger implements LogEntryListener {
 
             createIndices();
             pendingEntries = new ArrayList<>();
-            includeReqResp = (boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INCLUDE_REQ_RESP);
-            int delay = (int) LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_DELAY);
-            indexTask = executorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    indexPendingEntries();
-                }
-            }, delay, delay, TimeUnit.SECONDS);
+            includeReqResp = LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_INCLUDE_REQ_RESP);
+            int delay = LoggerPlusPlus.preferences.getSetting(Globals.PREF_ELASTIC_DELAY);
+            indexTask = executorService.scheduleAtFixedRate(() -> indexPendingEntries(), delay, delay, TimeUnit.SECONDS);
         }else{
             if(this.indexTask != null){
                 indexTask.cancel(true);
