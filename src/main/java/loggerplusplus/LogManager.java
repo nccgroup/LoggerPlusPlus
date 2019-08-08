@@ -53,26 +53,34 @@ public class LogManager implements IHttpListener, IProxyListener {
                 long timeNow = new Date().getTime();
                 Set<Integer> keys = new HashSet<>(pendingProxyRequests.keySet());
                 synchronized (pendingProxyRequests){
+                    int removed = 0;
                     for (Integer reference : keys) { //Remove expired proxy requests from map
                         long entryTime = pendingProxyRequests.get(reference).requestDateTime.getTime();
                         long responseTimeout = LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
                             pendingProxyRequests.remove(reference);
+                            removed++;
                         }
                     }
+                    if(removed > 0)
+                        LoggerPlusPlus.instance.logOutput("Cleaned Up " + removed + " proxy requests without a response after 120 seconds.");
                 }
                 Set<UUID> toolKeys = new HashSet<>(pendingToolRequests.keySet());
                 synchronized (pendingToolRequests){
+                    int removed = 0;
                     for (UUID reference : toolKeys) { //Remove expired requests from other tools from map
                         long entryTime = pendingToolRequests.get(reference).requestDateTime.getTime();
                         long responseTimeout = LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
                             pendingToolRequests.remove(reference);
+                            removed++;
                         }
                     }
+                    if(removed > 0)
+                        LoggerPlusPlus.instance.logOutput("Cleaned Up " + removed + " requests from other tools without a response after 120 seconds.");
                 }
             }
-        },30000, 30000, TimeUnit.MILLISECONDS);
+        },120000, 120000, TimeUnit.MILLISECONDS);
     }
 
 

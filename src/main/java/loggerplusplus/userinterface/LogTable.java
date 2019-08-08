@@ -53,10 +53,10 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
             }
         });
 
-        Integer sortColumn = (Integer) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_COLUMN);
+        Integer sortColumn = LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_COLUMN);
         SortOrder sortOrder;
         try{
-            sortOrder = SortOrder.valueOf((String) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_ORDER));
+            sortOrder = SortOrder.valueOf(LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_ORDER));
         }catch(Exception e){
             sortOrder = SortOrder.ASCENDING;
         }
@@ -113,7 +113,7 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
         }else {
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
-                Map<UUID, ColorFilter> colorFilters = (Map<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
+                Map<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
                 for (UUID uid : entry.getMatchingColorFilters()) {
                     if(colorFilter == null || colorFilter.getPriority() > colorFilters.get(uid).getPriority()){
                         colorFilter = colorFilters.get(uid);
@@ -155,13 +155,15 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
             private void onMouseEvent(MouseEvent e){
                 if ( SwingUtilities.isRightMouseButton( e )){
                     Point p = e.getPoint();
-                    final int viewCol = columnAtPoint(p);
-                    final int row = convertRowIndexToModel(rowAtPoint(p));
+                    int rowAtPoint = rowAtPoint(p);
+                    if(rowAtPoint > -1){
+                        setRowSelectionInterval(rowAtPoint, rowAtPoint);
+                    }
+
+                    final int row = convertRowIndexToModel(rowAtPoint);
                     final int modelCol = convertColumnIndexToModel(columnAtPoint(p));
 
                     if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
-                        int viewRow = convertRowIndexToView(row);
-                        LogTable.this.setRowSelectionInterval(viewRow, viewRow);
                         new LogEntryMenu(LogTable.this, row, modelCol).show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
@@ -206,7 +208,10 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
                 for (int i = 0; i< getModel().getData().size(); i++) {
                     boolean colorResult = getModel().getRow(i).testColorFilter(filter, filter.shouldRetest());
                     if(colorResult || filter.isModified()){
-                        getModel().fireTableRowsUpdated(i, i);
+                        int finalI = i;
+                        SwingUtilities.invokeLater(() -> {
+                            getModel().fireTableRowsUpdated(finalI, finalI);
+                        });
                     }
                 }
             }
@@ -222,7 +227,10 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
             public void run() {
                 for (int i = 0; i< getModel().getData().size(); i++) {
                     boolean colorResult = getModel().getRow(i).testColorFilter(filter, false);
-                    if(colorResult) getModel().fireTableRowsUpdated(i, i);
+                    int finalI = i;
+                    SwingUtilities.invokeLater(() -> {
+                        if(colorResult) getModel().fireTableRowsUpdated(finalI, finalI);
+                    });
                 }
             }
         });
@@ -237,7 +245,10 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
             public void run() {
                 for (int i = 0; i< getModel().getData().size(); i++) {
                     boolean wasPresent = getModel().getRow(i).matchingColorFilters.remove(filter.getUid());
-                    if(wasPresent) getModel().fireTableRowsUpdated(i, i);
+                    int finalI = i;
+                    SwingUtilities.invokeLater(() -> {
+                        if(wasPresent) getModel().fireTableRowsUpdated(finalI, finalI);
+                    });
                 }
             }
         });
@@ -250,28 +261,27 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
     @Override
     public void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
         try {
-            synchronized (this) {
+            SwingUtilities.invokeLater(() -> {
                 getModel().fireTableRowsInserted(modelIndex, modelIndex);
-            }
+
+                if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
+                    JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
+                    scrollBar.setValue(scrollBar.getMaximum()+50);
+                }
+            });
         }catch (Exception e){
             //TODO Fix out of bounds exception here.
-        }
-
-        if((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
-            JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
-            scrollBar.setValue(scrollBar.getMaximum()+50);
         }
     }
 
     @Override
     public void onResponseUpdated(int modelRow, LogEntry existingEntry) {
-        if(modelRow == -1 || existingEntry == null) return;
-        getModel().fireTableRowsUpdated(modelRow, modelRow);
+        SwingUtilities.invokeLater(() -> getModel().fireTableRowsUpdated(modelRow, modelRow));
     }
 
     @Override
     public void onRequestRemoved(int index, LogEntry logEntry) {
-        getModel().fireTableRowsDeleted(index, index);
+        SwingUtilities.invokeLater(() -> getModel().fireTableRowsDeleted(index, index));
     }
 
     @Override
