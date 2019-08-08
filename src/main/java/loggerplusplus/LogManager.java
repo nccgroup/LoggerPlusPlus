@@ -55,7 +55,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingProxyRequests){
                     for (Integer reference : keys) { //Remove expired proxy requests from map
                         long entryTime = pendingProxyRequests.get(reference).requestDateTime.getTime();
-                        long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
+                        long responseTimeout = LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
                             pendingProxyRequests.remove(reference);
                         }
@@ -65,7 +65,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 synchronized (pendingToolRequests){
                     for (UUID reference : toolKeys) { //Remove expired requests from other tools from map
                         long entryTime = pendingToolRequests.get(reference).requestDateTime.getTime();
-                        long responseTimeout = (long) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
+                        long responseTimeout = LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT);
                         if(timeNow - entryTime > responseTimeout){
                             pendingToolRequests.remove(reference);
                         }
@@ -130,6 +130,9 @@ public class LogManager implements IHttpListener, IProxyListener {
         if(messageIsRequest){
             logEntry = logRequestAwaitingResponse(arrivalTime, proxyMessage.getMessageReference(),
                                                     toolFlag, proxyMessage.getMessageInfo());
+            //Tag our proxy specific info now.
+            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
+            logEntry.listenerInterface = proxyMessage.getListenerInterface();
         }else{
             logEntry = retrievePendingProxyEntry(proxyMessage.getMessageReference());
             if(logEntry == null){
@@ -273,7 +276,7 @@ public class LogManager implements IHttpListener, IProxyListener {
 
     private void storePendingToolEntry(LogEntryAwaitingResponse logEntry) {
         synchronized (pendingToolRequests){
-            pendingToolRequests.put(((LogEntryAwaitingResponse) logEntry).getReference(), logEntry);
+            pendingToolRequests.put(logEntry.getReference(), logEntry);
         }
     }
 
@@ -352,7 +355,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void importProxyHistory(boolean askConfirmation){
         int result = JOptionPane.OK_OPTION;
         int historySize = callbacks.getProxyHistory().length;
-        int maxEntries = (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+        int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
         if(askConfirmation) {
             String message = "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
                     "\nLarge imports may take a few minutes to process.";
