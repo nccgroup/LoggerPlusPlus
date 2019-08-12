@@ -62,7 +62,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         filterController = new FilterController(preferences);
         logManager = new LogManager();
 
-        Double lastVersion = (Double) preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
+        Double lastVersion = preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
         preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
         if(lastVersion > Globals.VERSION){
             //If we had a newer version previously.
@@ -171,7 +171,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
-                if((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
+                if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
                     Thread importThread = new Thread(() -> {
                         logManager.importProxyHistory(false);
                     });
@@ -189,13 +189,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         if(uiPopOutPanel.isPoppedOut()) uiPopOutPanel.getPopoutFrame().dispose();
         if(uiReqRespPopOut.isPoppedOut()) uiReqRespPopOut.getPopoutFrame().dispose();
 
-        //Stop importing...
-        this.getLogManager().getExecutorService().shutdownNow();
-        Future importFuture = this.getLogManager().getImportFuture();
-        if(!importFuture.isDone()){
-            importFuture.cancel(true);
-        }
-
+        //Stop LogManager executors and pending tasks.
+        logManager.shutdown();
     }
 
     @Override

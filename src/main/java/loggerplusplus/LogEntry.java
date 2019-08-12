@@ -31,8 +31,9 @@ import java.util.regex.Matcher;
 //TODO Better column to value mapping.
 public class LogEntry
 {
+	public boolean isCompleteEntry;
 	public boolean isImported;
-	public UUID uuid;
+	public UUID identifier;
 	public transient IHttpRequestResponse requestResponse;
 	public int tool;
 	public String toolName;
@@ -64,9 +65,7 @@ public class LogEntry
 	public String responseContentType="";
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
-	// public User Relatedpublic 
 	public String comment="";
-	// public RegEx Variablespublic 
 	public String[] regexAllReq = {"","","","",""};
 	public String[] regexAllResp = {"","","","",""};
 
@@ -84,41 +83,41 @@ public class LogEntry
 	private boolean responseProcessed;
 
 	public LogEntry(){
-
-	}
-
-	protected LogEntry(Date arrivalTime){
-		this.uuid = UUID.randomUUID();
+		this.identifier = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
-		this.setReqestTime(arrivalTime);
 	}
 
-	protected LogEntry(boolean isImported){
-		this(null);
-		this.isImported = isImported;
-		if(isImported) {
+	public LogEntry(int tool, boolean isCompleteEntry, Date arrivalTime, IHttpRequestResponse requestResponse){
+		this();
+		this.tool = tool;
+		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
+
+		this.isCompleteEntry = isCompleteEntry;
+		if(isCompleteEntry) {
+		    //We cannot determine the request times for complete entries.
+            //If we are supplied with an arrival time, use that for the response.
 			this.requestTime = "";
-			this.responseTime = "";
+			if(arrivalTime == null) {
+                this.responseTime = "";
+            }else {
+                setResponseTime(arrivalTime);
+            }
 			this.requestResponseDelay = -1;
+		}else{
+			this.setReqestTime(arrivalTime);
 		}
+
+		this.requestResponse = requestResponse;
 	}
 
-	public static LogEntry createEntry(Date arrivalTime){
-		return new LogEntry(arrivalTime);
-	}
+	public void processRequest(IRequestInfo tempAnalyzedReq){
+	    if(this.requestResponse == null)
+	        throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
 
-	public static LogEntry createImportedEntry(){
-		return new LogEntry(true);
-	}
-
-	public void processRequest(int tool, IHttpRequestResponse requestResponse, IRequestInfo tempAnalyzedReq, IInterceptedProxyMessage message){
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
 
-		this.tool = tool;
-		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
-		this.requestResponse = requestResponse;
 		this.url = tempAnalyzedReq.getUrl();
 		this.relativeURL = this.url.getPath();
 		this.host = tempRequestResponseHttpService.getHost();
@@ -138,12 +137,7 @@ public class LogEntry
 		}
 
 		this.comment = requestResponse.getComment();
-
-		if(message!=null){
-			this.listenerInterface=message.getListenerInterface();
-			this.clientIP=message.getClientIpAddress().toString();
-		}
-		requestBodyOffset = tempAnalyzedReq.getBodyOffset();
+		this.requestBodyOffset = tempAnalyzedReq.getBodyOffset();
 		this.requestLength = requestResponse.getRequest().length - requestBodyOffset;
 		this.hasBodyParam = requestLength > 0;
 		this.params = this.url.getQuery() != null || this.hasBodyParam;
@@ -245,20 +239,24 @@ public class LogEntry
 		this.requestProcessed = true;
 	}
 
-	public void processResponse(IHttpRequestResponse requestResponse) {
+	public void addResponse(Date arrivalTime, IHttpRequestResponse requestResponse){
+	    this.responseDateTime = arrivalTime;
+	    this.requestResponse = requestResponse;
+    }
+
+	public void processResponse() {
+        if(this.requestResponse == null)
+            throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
+        else if(this.requestResponse.getResponse() == null)
+            throw new IllegalStateException("Cannot analyse the response of an incomplete IHttpRequestResponse.");
+
 		if(this.responseDateTime == null){
+		    //If it didn't have an arrival time set, assume it was right now.
 			this.responseDateTime = new Date();
 		}
-		if(!isImported) {
+		if(!isCompleteEntry) { //If the request and response didn't arrive at the same time.
 			this.responseTime = LogManager.sdf.format(responseDateTime);
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
-		}
-
-		//Finalise request,response by saving to temp file and clearing from memory.
-		if (requestResponse instanceof IHttpRequestResponsePersisted){
-			this.requestResponse = requestResponse;
-		}else {
-			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
 		}
 
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(requestResponse.getResponse());
@@ -347,13 +345,13 @@ public class LogEntry
 	}
 
 	public void setReqestTime(Date requestTime){
-		if(requestTime == null) return;
 		this.requestDateTime = requestTime;
 		this.requestTime = LogManager.sdf.format(this.requestDateTime);
 	}
 
 	public void setResponseTime(Date responseTime) {
-		this.responseDateTime = responseTime;
+	    this.responseDateTime = responseTime;
+	    this.responseTime = LogManager.sdf.format(this.responseDateTime);
 	}
 
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
@@ -562,6 +560,10 @@ public class LogEntry
 	}
 
 	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
+
+	public UUID getIdentifier() {
+		return this.identifier;
+	}
 
 	public enum CookieJarStatus {
 		YES("Yes"),

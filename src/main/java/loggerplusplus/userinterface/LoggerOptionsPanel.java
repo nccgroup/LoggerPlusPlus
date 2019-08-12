@@ -56,22 +56,22 @@ public class LoggerOptionsPanel extends JScrollPane{
             JToggleButton thisButton = (JToggleButton) actionEvent.getSource();
             toggleEnabledButton(thisButton.isSelected());
         });
-        tglbtnIsEnabled.setSelected((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED));
+        tglbtnIsEnabled.setSelected(LoggerPlusPlus.preferences.getSetting(PREF_ENABLED));
 
         ComponentGroup logFromPanel = panelBuilder.createComponentGroup("Log From");
         logFromPanel.addPreferenceComponent(PREF_RESTRICT_TO_SCOPE, "In scope items only");
         GridBagConstraints strutConstraints = logFromPanel.generateNextConstraints();
         strutConstraints.weighty = strutConstraints.weightx = 0;
         logFromPanel.addComponent((JComponent) Box.createVerticalStrut(10), strutConstraints);
-        JCheckBox logAllTools = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_GLOBAL, "All Tools");
-        JCheckBox logSpider = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_SPIDER, "Spider");
-        JCheckBox logIntruder = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_INTRUDER, "Intruder");
-        JCheckBox logScanner = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_SCANNER, "Scanner");
-        JCheckBox logRepeater = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_REPEATER, "Repeater");
-        JCheckBox logSequencer = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_SEQUENCER, "Sequencer");
-        JCheckBox logProxy = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_PROXY, "Proxy");
-        JCheckBox logTarget = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_TARGET_TAB, "Target");
-        JCheckBox logExtender = (JCheckBox) logFromPanel.addPreferenceComponent(PREF_LOG_EXTENDER, "Extender");
+        JCheckBox logAllTools = logFromPanel.addPreferenceComponent(PREF_LOG_GLOBAL, "All Tools");
+        JCheckBox logSpider = logFromPanel.addPreferenceComponent(PREF_LOG_SPIDER, "Spider");
+        JCheckBox logIntruder = logFromPanel.addPreferenceComponent(PREF_LOG_INTRUDER, "Intruder");
+        JCheckBox logScanner = logFromPanel.addPreferenceComponent(PREF_LOG_SCANNER, "Scanner");
+        JCheckBox logRepeater = logFromPanel.addPreferenceComponent(PREF_LOG_REPEATER, "Repeater");
+        JCheckBox logSequencer = logFromPanel.addPreferenceComponent(PREF_LOG_SEQUENCER, "Sequencer");
+        JCheckBox logProxy = logFromPanel.addPreferenceComponent(PREF_LOG_PROXY, "Proxy");
+        JCheckBox logTarget = logFromPanel.addPreferenceComponent(PREF_LOG_TARGET_TAB, "Target");
+        JCheckBox logExtender = logFromPanel.addPreferenceComponent(PREF_LOG_EXTENDER, "Extender");
 
         strutConstraints = logFromPanel.generateNextConstraints();
         strutConstraints.weighty = strutConstraints.weightx = 0;
@@ -133,31 +133,31 @@ public class LoggerOptionsPanel extends JScrollPane{
         elasticPanel.addComponent(separator);
 
         elasticPanel.addPreferenceComponent(PREF_ELASTIC_ADDRESS, "Address: ");
-        JSpinner elasticPort = (JSpinner) elasticPanel.addPreferenceComponent(PREF_ELASTIC_PORT, "Port: ");
+        JSpinner elasticPort = elasticPanel.addPreferenceComponent(PREF_ELASTIC_PORT, "Port: ");
         ((SpinnerNumberModel) elasticPort.getModel()).setMaximum(65535);
         ((SpinnerNumberModel) elasticPort.getModel()).setMinimum(0);
         elasticPort.setEditor(new JSpinner.NumberEditor(elasticPort,"#"));
 
         elasticPanel.addPreferenceComponent(PREF_ELASTIC_CLUSTER_NAME, "Cluster Name: ");
         elasticPanel.addPreferenceComponent(PREF_ELASTIC_INDEX, "Index: ");
-        JSpinner elasticDelay = (JSpinner) elasticPanel.addPreferenceComponent(PREF_ELASTIC_DELAY, "Upload Delay (Seconds): ");
+        JSpinner elasticDelay = elasticPanel.addPreferenceComponent(PREF_ELASTIC_DELAY, "Upload Delay (Seconds): ");
         ((SpinnerNumberModel) elasticDelay.getModel()).setMaximum(99999);
         ((SpinnerNumberModel) elasticDelay.getModel()).setMinimum(10);
         ((SpinnerNumberModel) elasticDelay.getModel()).setStepSize(10);
         elasticPanel.addPreferenceComponent(PREF_ELASTIC_INCLUDE_REQ_RESP, "Include Request and Response: ");
 
         ComponentGroup otherPanel = panelBuilder.createComponentGroup("Other");
-        JSpinner spnRespTimeout = (JSpinner) otherPanel.addPreferenceComponent(PREF_RESPONSE_TIMEOUT, "Response Timeout (ms): ");
+        JSpinner spnRespTimeout = otherPanel.addPreferenceComponent(PREF_RESPONSE_TIMEOUT, "Response Timeout (Seconds): ");
         ((SpinnerNumberModel) spnRespTimeout.getModel()).setMinimum(10);
         ((SpinnerNumberModel) spnRespTimeout.getModel()).setMaximum(600);
         ((SpinnerNumberModel) spnRespTimeout.getModel()).setStepSize(10);
 
-        JSpinner spnMaxEntries = (JSpinner) otherPanel.addPreferenceComponent(PREF_MAXIMUM_ENTRIES, "Maximum Log Entries: ");
+        JSpinner spnMaxEntries = otherPanel.addPreferenceComponent(PREF_MAXIMUM_ENTRIES, "Maximum Log Entries: ");
         ((SpinnerNumberModel) spnMaxEntries.getModel()).setMinimum(10);
         ((SpinnerNumberModel) spnMaxEntries.getModel()).setMaximum(Integer.MAX_VALUE);
         ((SpinnerNumberModel) spnMaxEntries.getModel()).setStepSize(10);
 
-        JSpinner spnSearchThreads = (JSpinner) otherPanel.addPreferenceComponent(PREF_SEARCH_THREADS, "Search Threads: ");
+        JSpinner spnSearchThreads = otherPanel.addPreferenceComponent(PREF_SEARCH_THREADS, "Search Threads: ");
         ((SpinnerNumberModel) spnSearchThreads.getModel()).setMinimum(1);
         ((SpinnerNumberModel) spnSearchThreads.getModel()).setMaximum(50);
         ((SpinnerNumberModel) spnSearchThreads.getModel()).setStepSize(1);
@@ -171,7 +171,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             String json = MoreHelp.showLargeInputDialog("Import Saved Filters", null);
             ArrayList<SavedFilter> importedFilters = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
                     new TypeToken<ArrayList<SavedFilter>>(){}.getType());
-            ArrayList<SavedFilter> savedFilters = (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
+            ArrayList<SavedFilter> savedFilters = LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
             ArrayList<SavedFilter> savedFiltersClone = new ArrayList<>(savedFilters);
             for (SavedFilter importedFilter : importedFilters) {
                 if(!savedFiltersClone.contains(importedFilter)) savedFiltersClone.add(importedFilter);
@@ -179,7 +179,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             LoggerPlusPlus.preferences.setSetting(PREF_SAVED_FILTERS, savedFiltersClone);
         });
         savedFilterSharing.addButton("Export Saved Filters", actionEvent -> {
-            ArrayList<SavedFilter> savedFilters = (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
+            ArrayList<SavedFilter> savedFilters = LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
             String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(savedFilters);
             MoreHelp.showLargeOutputDialog("Export Saved Filters", jsonOutput);
         });
@@ -189,7 +189,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
             Map<UUID, ColorFilter> colorFilterMap = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
                     new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
-            HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+            HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
             Map<UUID, ColorFilter> cloneMap = new HashMap<>(colorFilters);
             cloneMap.putAll(colorFilterMap);
             for (ColorFilterListener colorFilterListener : LoggerPlusPlus.instance.getColorFilterListeners()) {
@@ -200,7 +200,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             LoggerPlusPlus.preferences.setSetting(PREF_COLOR_FILTERS, cloneMap);
         });
         colorFilterSharing.addButton("Export Color Filters", actionEvent -> {
-            HashMap<UUID,ColorFilter> colorFilters = (HashMap<UUID, ColorFilter>) LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+            HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
             String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(colorFilters);
             MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
         });
