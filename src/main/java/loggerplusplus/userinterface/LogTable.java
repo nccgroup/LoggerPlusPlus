@@ -71,7 +71,8 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
             if(selectedRow == -1){
                 controller.setDisplayedEntity(null);
             }else {
-                LogEntry logEntry = getModel().getData().get(getSelectedRow());
+                // Use a relative instead of an absolute index (This prevents an issue when a filter is set)
+                LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(selectedRow));
                 if (logEntry.requestResponse != null) {
                     controller.setDisplayedEntity(logEntry.requestResponse);
                 }
