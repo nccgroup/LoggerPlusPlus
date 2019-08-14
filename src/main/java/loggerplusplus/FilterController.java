@@ -2,7 +2,6 @@ package loggerplusplus;
 
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import jdk.nashorn.internal.scripts.JO;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.parser.ParseException;
 
@@ -14,7 +13,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 public class FilterController {
 
@@ -52,9 +50,8 @@ public class FilterController {
             }
         });
 
-        filterField.addActionListener(actionEvent -> {
-            if(!actionEvent.getActionCommand().equals("comboBoxEdited"))
-                setFilter((String) filterField.getSelectedItem());
+        filterField.addItemListener(e -> {
+            setFilter((String) filterField.getSelectedItem());
         });
 
         return filterField;
@@ -92,7 +89,7 @@ public class FilterController {
         this.filterListeners.remove(filterListener);
     }
 
-    public void setFilter(String filterString){
+    public void setFilter(final String filterString){
          new Thread(() -> {
             if (filterString == null || filterString.length() == 0) {
                 setFilter((LogFilter) null);
