@@ -98,7 +98,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
     }
 
     public void addRow() throws ParseException {
-        this.savedFilters.add(new SavedFilter("Unnamed Filter", "tool == proxy"));
+        this.savedFilters.add(new SavedFilter("Example Filter", "Request.Body CONTAINS \"Example\""));
         this.fireTableRowsInserted(this.savedFilters.size()-1, this.savedFilters.size()-1);
         saveFilters();
     }
