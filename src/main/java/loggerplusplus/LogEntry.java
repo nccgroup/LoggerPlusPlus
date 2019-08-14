@@ -602,7 +602,7 @@ public class LogEntry
 
 	@Override
 	public String toString() {
-		return super.toString();
-		//return this.url.toString();
+//		return super.toString();
+		return this.url.toString();
 	}
 }

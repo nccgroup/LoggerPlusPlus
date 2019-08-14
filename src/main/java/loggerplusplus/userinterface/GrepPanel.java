@@ -196,14 +196,14 @@ public class GrepPanel extends JPanel{
                 return;
             }
             int patternGroups = activePattern.matcher("").groupCount();
-            String[] grepColumns = new String[patternGroups == 1 ? 3 : patternGroups + 3];
-            String[] uniqueColumns = new String[patternGroups == 1 ? 2 : patternGroups + 2];
+            String[] grepColumns = new String[patternGroups == 0 ? 3 : patternGroups + 3];
+            String[] uniqueColumns = new String[patternGroups == 0 ? 2 : patternGroups + 2];
             grepColumns[0] = "Entry";
             grepColumns[1] = "Matches";
-            grepColumns[2] = "All Groups";
-            uniqueColumns[0] = "All Groups";
+            grepColumns[2] = "Complete Match";
+            uniqueColumns[0] = "Complete Match";
             uniqueColumns[uniqueColumns.length - 1] = "Count";
-            for (int i = 1; i < patternGroups || (patternGroups != 1 && i == patternGroups); i++) {
+            for (int i = 1; i < patternGroups || (patternGroups != 0 && i == patternGroups); i++) {
                 grepColumns[i + 2] = "Group " + i + " Value";
                 uniqueColumns[i] = "Group " + i + " Value";
             }

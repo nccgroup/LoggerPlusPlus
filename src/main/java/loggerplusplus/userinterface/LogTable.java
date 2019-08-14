@@ -270,6 +270,7 @@ public class LogTable extends JTable implements FilterListener, ColorFilterListe
                 }
             });
         }catch (Exception e){
+            e.printStackTrace();
             //TODO Fix out of bounds exception here.
         }
     }
