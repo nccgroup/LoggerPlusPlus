@@ -222,7 +222,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         ComponentGroup notesPanel = panelBuilder.createComponentGroup("Notes");
         notesPanel.addComponent(new JLabel("Note 0: Right click on columns' headers to change settings."));
         notesPanel.addComponent(new JLabel("Note 1: Extensive logging  may affect Burp Suite performance."));
-        notesPanel.addComponent(new JLabel("Note 2: Automatic logging does not save requests and responses. Only table contents. "));
+        notesPanel.addComponent(new JLabel("Note 2: Automatic logging does not saveFilters requests and responses. Only table contents. "));
         notesPanel.addComponent(new JLabel("Note 3: Full request/response logging available in 'Project Options > Misc > Logging'"));
         notesPanel.addComponent(new JLabel("Note 4: Updating the extension will reset the log table settings."));
 

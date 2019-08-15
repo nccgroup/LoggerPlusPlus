@@ -26,24 +26,8 @@ public class LoggerMenu extends javax.swing.JMenu {
         });
         this.add(colorFilters);
 
-        popoutMainMenuItem = new JMenuItem(new AbstractAction("Pop Out Main Panel") {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getMainPopOutPanel().toggle();
-            }
-        });
-        this.add(popoutMainMenuItem);
-
-        popoutReqRespMenuItem = new JMenuItem(new AbstractAction("Pop Out Request/Response Panel") {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getReqRespPopOutPanel().toggle();
-            }
-        });
-        this.add(popoutReqRespMenuItem);
-
         JMenu viewMenu = new JMenu("View");
-        VariableViewPanel.View currentView = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_LAYOUT);
+        VariableViewPanel.View currentView = LoggerPlusPlus.preferences.getSetting(Globals.PREF_LAYOUT);
         ButtonGroup bGroup = new ButtonGroup();
         JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
@@ -75,7 +59,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(viewMenu);
 
         viewMenu = new JMenu("Request/Response View");
-        VariableViewPanel.View currentReqRespView = (VariableViewPanel.View) LoggerPlusPlus.preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
+        VariableViewPanel.View currentReqRespView = LoggerPlusPlus.preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
         bGroup = new ButtonGroup();
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
@@ -108,10 +92,10 @@ public class LoggerMenu extends javax.swing.JMenu {
 
         JCheckBoxMenuItem debugOption = new JCheckBoxMenuItem("Debug");
         if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG) != null) {
-            debugOption.setSelected((boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG));
+            debugOption.setSelected(LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG));
         }
         debugOption.addActionListener((e) -> {
-            Boolean currentSetting = (Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG);
+            Boolean currentSetting = LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG);
             if(currentSetting == null) {
                 LoggerPlusPlus.preferences.setSetting(Globals.PREF_IS_DEBUG, true);
             }else{
@@ -119,13 +103,5 @@ public class LoggerMenu extends javax.swing.JMenu {
             }
         });
         this.add(debugOption);
-    }
-
-    public JMenuItem getPopoutMainMenuItem() {
-        return popoutMainMenuItem;
-    }
-
-    public JMenuItem getPopoutReqRespMenuItem() {
-        return popoutReqRespMenuItem;
     }
 }

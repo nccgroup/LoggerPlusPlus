@@ -1,7 +1,6 @@
 package loggerplusplus.userinterface;
 
-import loggerplusplus.Globals;
-import loggerplusplus.LoggerPlusPlus;
+import loggerplusplus.FilterLibraryController;
 import loggerplusplus.filter.SavedFilter;
 import loggerplusplus.filter.parser.ParseException;
 import loggerplusplus.userinterface.renderer.ButtonRenderer;
@@ -11,22 +10,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 /**
  * Created by corey on 27/08/17.
  */
-public class SavedFiltersPanel extends JPanel {
-    ArrayList<SavedFilter> library;
+public class FilterLibraryPanel extends JPanel {
 
-    public SavedFiltersPanel(){
+    private final FilterLibraryController libraryController;
+
+    public FilterLibraryPanel(FilterLibraryController libraryController){
         super(new BorderLayout());
-        ArrayList<SavedFilter> storedSavedFilters =
-                (ArrayList<SavedFilter>) LoggerPlusPlus.preferences.getSetting(Globals.PREF_SAVED_FILTERS);
 
-        library = new ArrayList<>(storedSavedFilters);
+        this.libraryController = libraryController;
 
-        JTable libraryTable = new JTable(new SavedFiltersTableModel(library));
+        JTable libraryTable = new JTable(new FilterLibraryTableModel(this.libraryController));
         libraryTable.setRowHeight(25);
         libraryTable.setFillsViewportHeight(true);
         libraryTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -43,7 +40,7 @@ public class SavedFiltersPanel extends JPanel {
                 if(SwingUtilities.isLeftMouseButton(mouseEvent)) {
                     int col = libraryTable.columnAtPoint(mouseEvent.getPoint());
                     int row = libraryTable.rowAtPoint(mouseEvent.getPoint());
-                    ((SavedFiltersTableModel) libraryTable.getModel()).onClick(row, col);
+                    ((FilterLibraryTableModel) libraryTable.getModel()).onClick(row, col);
                 }
             }
         });
@@ -52,7 +49,7 @@ public class SavedFiltersPanel extends JPanel {
         JButton addFilterButton = new JButton("Add Filter");
         addFilterButton.addActionListener(actionEvent -> {
             try {
-                ((SavedFiltersTableModel) libraryTable.getModel()).addRow();
+                libraryController.addFilter(new SavedFilter("Unnamed Filter", "Response.Status == 200"));
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -61,7 +58,7 @@ public class SavedFiltersPanel extends JPanel {
         removeSelectedButton.addActionListener(actionEvent -> {
             int selectedRow = libraryTable.getSelectedRow();
             if(selectedRow == -1) return;
-            else ((SavedFiltersTableModel) libraryTable.getModel()).removeRowAtIndex(selectedRow);
+            libraryController.removeFilter(selectedRow);
         });
         controlPanel.add(addFilterButton);
         controlPanel.add(removeSelectedButton);

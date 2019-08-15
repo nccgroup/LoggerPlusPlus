@@ -1,6 +1,6 @@
 package loggerplusplus.userinterface;
 
-import loggerplusplus.FilterController;
+import loggerplusplus.LogFilterController;
 import loggerplusplus.LoggerPlusPlus;
 import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
@@ -11,12 +11,12 @@ import java.awt.event.ActionListener;
 
 public class MainControlsPanel extends JPanel {
     
-    private final FilterController filterController;
+    private final LogFilterController logFilterController;
 
-    public MainControlsPanel(FilterController filterController){
+    public MainControlsPanel(LogFilterController logFilterController){
         super(new GridBagLayout());
 
-        this.filterController = filterController;
+        this.logFilterController = logFilterController;
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 0;
@@ -27,7 +27,7 @@ public class MainControlsPanel extends JPanel {
 
         gbc.gridx = 1;
         gbc.weightx = 99.0;
-        this.add(filterController.getFilterField(), gbc);
+        this.add(logFilterController.getFilterField(), gbc);
 
         final JButton colorFilterButton = new JButton("Colorize");
         colorFilterButton.addActionListener(new ActionListener() {

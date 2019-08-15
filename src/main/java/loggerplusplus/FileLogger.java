@@ -106,7 +106,7 @@ public class FileLogger implements LogEntryListener {
         String ext = null;
 
         try {
-            ext = fileName.substring(fileName.lastIndexOf("."), fileName.length());
+            ext = fileName.substring(fileName.lastIndexOf("."));
         } catch (StringIndexOutOfBoundsException e) {
             ext = null;
         }
@@ -265,11 +265,11 @@ public class FileLogger implements LogEntryListener {
                     autoSaveWriter.write("\n");
                     autoSaveWriter.flush();
                 } catch (Exception e) {
-                    MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
+                    MoreHelp.showMessage("Could not saveFilters log. Automatic logging will be disabled.");
                     setAutoSave(false);
                 }
             }else{
-                MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
+                MoreHelp.showMessage("Could not saveFilters log. Automatic logging will be disabled.");
                 setAutoSave(false);
             }
         }

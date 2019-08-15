@@ -14,14 +14,14 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class FilterController {
+public class LogFilterController {
 
     private final HistoryField filterField;
     private final JPopupMenu fieldMenu;
     private final ArrayList<FilterListener> filterListeners;
     private String currentFilterString;
 
-    public FilterController(Preferences preferences){
+    public LogFilterController(Preferences preferences){
         this.filterListeners = new ArrayList<>();
         this.filterField = buildFilterField(preferences);
         this.fieldMenu = buildFieldMenu();

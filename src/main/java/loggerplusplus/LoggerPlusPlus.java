@@ -10,7 +10,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.concurrent.Future;
 
 /**
  * Created by corey on 07/09/17.
@@ -21,10 +20,10 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     public static IGsonProvider gsonProvider;
     public static Preferences preferences;
 
-    private static IContextMenuFactory contextMenuFactory;
     private ArrayList<ColorFilterListener> colorFilterListeners;
     private LogManager logManager;
-    private FilterController filterController;
+    private LogFilterController logFilterController;
+    private FilterLibraryController libraryController;
     private ElasticSearchLogger elasticSearchLogger;
 
     //UX
@@ -56,10 +55,11 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         //Burp Specific
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
-        LoggerPlusPlus.contextMenuFactory = new LoggerContextMenuFactory();
         LoggerPlusPlus.gsonProvider = new DefaultGsonProvider();
         LoggerPlusPlus.preferences = new LoggerPreferenceFactory(LoggerPlusPlus.gsonProvider, this, callbacks).buildPreferences();
-        filterController = new FilterController(preferences);
+
+        logFilterController = new LogFilterController(preferences);
+        libraryController = new FilterLibraryController(preferences);
         logManager = new LogManager();
 
         Double lastVersion = preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
@@ -93,13 +93,13 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 //UI
                 JPanel logOuterPanel = new JPanel(new GridBagLayout());
                 logViewPanel = new LogViewPanel(logManager);
-                filterController.addFilterListener(logViewPanel.getLogTable());
+                logFilterController.addFilterListener(logViewPanel.getLogTable());
                 GridBagConstraints gbc = new GridBagConstraints();
                 gbc.weighty = 0;
                 gbc.weightx = 1;
                 gbc.gridy = 0;
                 gbc.fill = GridBagConstraints.BOTH;
-                logOuterPanel.add(new MainControlsPanel(filterController), gbc);
+                logOuterPanel.add(new MainControlsPanel(logFilterController), gbc);
 
                 requestViewerController = new RequestViewerController(callbacks, false, false);
                 reqRespPanel = new VariableViewPanel(preferences, Globals.PREF_MESSAGE_VIEW_LAYOUT,
@@ -112,13 +112,11 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                     public void popOut() {
                         LoggerPlusPlus.this.logSplitPanel.setView(VariableViewPanel.View.VERTICAL);
                         super.popOut();
-                        LoggerPlusPlus.this.getMenu().getPopoutReqRespMenuItem().setText("Pop In Request/Response Panel");
                     }
 
                     @Override
                     public void popIn() {
                         super.popIn();
-                        LoggerPlusPlus.this.getMenu().getPopoutReqRespMenuItem().setText("Pop Out Request/Response Panel");
                     }
                 };
 
@@ -133,21 +131,9 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 grepPanel = new GrepPanel();
                 optionsJPanel = new LoggerOptionsPanel();
                 tabbedWrapper = new JTabbedPane();
-                uiPopOutPanel = new PopOutPanel(tabbedWrapper, "Logger++"){
-                    @Override
-                    public void popOut() {
-                        super.popOut();
-                        LoggerPlusPlus.this.getMenu().getPopoutMainMenuItem().setText("Pop In Main Panel");
-                    }
-
-                    @Override
-                    public void popIn() {
-                        super.popIn();
-                        LoggerPlusPlus.this.getMenu().getPopoutMainMenuItem().setText("Pop Out Main Panel");
-                    }
-                };
+                uiPopOutPanel = new PopOutPanel(tabbedWrapper, "Logger++");
                 tabbedWrapper.addTab("View Logs", null, logOuterPanel, null);
-                tabbedWrapper.addTab("Filter Library", null, new SavedFiltersPanel(), null);
+                tabbedWrapper.addTab("Filter Library", null, libraryController.getUIComponent(), null);
                 tabbedWrapper.addTab("Grep Values", null, grepPanel, null);
                 tabbedWrapper.addTab("Options", null, optionsJPanel, null);
                 tabbedWrapper.addTab("About", null, new AboutPanel(), null);
@@ -161,6 +147,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 try{
                     JMenuBar menuBar = rootFrame.getJMenuBar();
                     loggerMenu = new LoggerMenu();
+                    loggerMenu.add(uiPopOutPanel.getPopoutMenuItem(), 1);
+                    loggerMenu.add(uiReqRespPopOut.getPopoutMenuItem(), 2);
                     menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
                 }catch (NullPointerException nPException){
                     loggerMenu = null;
@@ -168,7 +156,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
                 LoggerPlusPlus.callbacks.registerHttpListener(logManager);
                 LoggerPlusPlus.callbacks.registerProxyListener(logManager);
-                LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
+                LoggerPlusPlus.callbacks.registerContextMenuFactory(new LoggerContextMenuFactory());
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
                 if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
@@ -242,8 +230,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
     }
 
-    public FilterController getFilterController() {
-        return filterController;
+    public LogFilterController getLogFilterController() {
+        return logFilterController;
     }
 
     public Preferences getPreferences() {

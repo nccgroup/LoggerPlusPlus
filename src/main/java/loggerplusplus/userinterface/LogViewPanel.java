@@ -2,11 +2,9 @@ package loggerplusplus.userinterface;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
-import loggerplusplus.FilterController;
 import loggerplusplus.Globals;
 import loggerplusplus.LogManager;
 import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.*;

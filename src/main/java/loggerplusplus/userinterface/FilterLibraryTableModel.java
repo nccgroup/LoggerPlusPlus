@@ -1,8 +1,6 @@
 package loggerplusplus.userinterface;
 
-import loggerplusplus.Globals;
-import loggerplusplus.LoggerPlusPlus;
-import loggerplusplus.MoreHelp;
+import loggerplusplus.*;
 import loggerplusplus.filter.LogFilter;
 import loggerplusplus.filter.SavedFilter;
 import loggerplusplus.filter.parser.ParseException;
@@ -10,24 +8,24 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
 
-public class SavedFiltersTableModel extends AbstractTableModel {
+public class FilterLibraryTableModel extends AbstractTableModel implements FilterLibraryListener {
 
+    private final FilterLibraryController controller;
     JButton btnApplyFilter;
     JButton btnSetColorFilter;
-    ArrayList<SavedFilter> savedFilters;
     private final String[] columnNames = {"Title", "LogFilter", "", ""};
 
-    public SavedFiltersTableModel(ArrayList<SavedFilter> savedFilters){
-        this.savedFilters = savedFilters;
+    public FilterLibraryTableModel(FilterLibraryController controller){
+        this.controller = controller;
+        this.controller.addListener(this);
         btnApplyFilter = new JButton("Set as LogFilter");
         btnSetColorFilter = new JButton("Use as Color LogFilter");
     }
 
     @Override
     public int getRowCount() {
-        return savedFilters == null ? 0 : savedFilters.size();
+        return controller.getSavedFilters().size();
     }
 
     @Override
@@ -37,11 +35,11 @@ public class SavedFiltersTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int row, int column) {
-        if(savedFilters == null || row >= savedFilters.size()) return null;
+        if(row >= controller.getSavedFilters().size()) return null;
+        SavedFilter savedFilter = controller.getSavedFilters().get(row);
         switch (column){
-            case 0: return savedFilters.get(row).getName();
+            case 0: return savedFilter.getName();
             case 1: {
-                SavedFilter savedFilter = savedFilters.get(row);
                 if(savedFilter.getFilter() == null) return savedFilter.getFilterString();
                 else return savedFilter.getFilter();
             }
@@ -63,7 +61,7 @@ public class SavedFiltersTableModel extends AbstractTableModel {
 
     @Override
     public void setValueAt(Object value, int row, int column) {
-        SavedFilter savedFilter = this.savedFilters.get(row);
+        SavedFilter savedFilter = controller.getSavedFilters().get(row);
         if(savedFilter == null) return;
         if(column == 0) savedFilter.setName((String) value);
         if(column == 1){
@@ -75,19 +73,19 @@ public class SavedFiltersTableModel extends AbstractTableModel {
                 savedFilter.setFilter(null);
             }
         }
-        saveFilters();
+        controller.saveFilters();
     }
 
     public void onClick(int row, int col) {
-        if(savedFilters == null || row < 0 || row >= savedFilters.size() || savedFilters.get(row) == null) return;
+        if(row < 0 || row >= controller.getSavedFilters().size()) return;
+        SavedFilter savedFilter = controller.getSavedFilters().get(row);
         if(col == 2){
-            LoggerPlusPlus.instance.getFilterController().setFilter(savedFilters.get(row).getFilterString());
+            LoggerPlusPlus.instance.getLogFilterController().setFilter(savedFilter.getFilterString());
             LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
             return;
         }
         if(col == 3){
             ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners());
-            SavedFilter savedFilter = savedFilters.get(row);
             try {
                 dialog.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
                 dialog.setVisible(true);
@@ -97,19 +95,27 @@ public class SavedFiltersTableModel extends AbstractTableModel {
         }
     }
 
-    public void addRow() throws ParseException {
-        this.savedFilters.add(new SavedFilter("Example Filter", "Request.Body CONTAINS \"Example\""));
-        this.fireTableRowsInserted(this.savedFilters.size()-1, this.savedFilters.size()-1);
-        saveFilters();
+    @Override
+    public void onFilterAdded(SavedFilter savedFilter) {
+        int rows = getRowCount();
+        SwingUtilities.invokeLater(() -> {
+            this.fireTableRowsInserted(rows-1, rows-1);
+        });
     }
 
-    public void removeRowAtIndex(int index){
-        this.savedFilters.remove(index);
-        this.fireTableRowsDeleted(index, index);
-        saveFilters();
+    @Override
+    public void onFilterModified(SavedFilter savedFilter) {
+        SwingUtilities.invokeLater(() -> {
+            int index = controller.getSavedFilters().indexOf(savedFilter);
+            if (index > 0) this.fireTableRowsUpdated(index, index);
+        });
     }
 
-    private void saveFilters(){
-        LoggerPlusPlus.preferences.setSetting(Globals.PREF_SAVED_FILTERS, this.savedFilters);
+    @Override
+    public void onFilterRemoved(SavedFilter savedFilter) {
+        SwingUtilities.invokeLater(() -> {
+            int index = controller.getSavedFilters().indexOf(savedFilter);
+            if (index > 0) this.fireTableRowsDeleted(index, index);
+        });
     }
 }

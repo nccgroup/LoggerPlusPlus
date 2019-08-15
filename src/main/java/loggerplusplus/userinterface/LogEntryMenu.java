@@ -1,6 +1,5 @@
 package loggerplusplus.userinterface;
 
-import com.google.gson.stream.JsonWriter;
 import loggerplusplus.LogEntry;
 import loggerplusplus.LogEntryField;
 import loggerplusplus.LoggerPlusPlus;
@@ -11,8 +10,6 @@ import loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -47,7 +44,7 @@ public class LogEntryMenu extends JPopupMenu {
             JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getFilterController().setFilter(columnName + "==" + columnValueString);
+                    LoggerPlusPlus.instance.getLogFilterController().setFilter(columnName + "==" + columnValueString);
                 }
             });
             this.add(useAsFilter);
@@ -57,13 +54,13 @@ public class LogEntryMenu extends JPopupMenu {
                 JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        LoggerPlusPlus.instance.getFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") && " + columnName + " == " + columnValueString);
+                        LoggerPlusPlus.instance.getLogFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") && " + columnName + " == " + columnValueString);
                     }
                 });
                 JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        LoggerPlusPlus.instance.getFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") || " + columnName + " == " + columnValueString);
+                        LoggerPlusPlus.instance.getLogFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") || " + columnName + " == " + columnValueString);
                     }
                 });
                 addToCurrentFilter.add(andFilter);
