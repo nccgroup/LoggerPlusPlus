@@ -1,31 +1,34 @@
 package loggerplusplus;
 
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.apache.http.HttpHost;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+public class ElasticSearchLogger implements LogEntryListener {
 
-public class ElasticSearchLogger implements LogEntryListener{
-    IndicesAdminClient adminClient;
-    Client client;
+    RestHighLevelClient connector;
     ArrayList<LogEntry> pendingEntries;
     private InetAddress address;
     private short port;
@@ -36,6 +39,40 @@ public class ElasticSearchLogger implements LogEntryListener{
 
     private final ScheduledExecutorService executorService;
     private ScheduledFuture indexTask;
+
+    private void StartClient(){
+
+        /*
+                The TransportClient is deprecated in favour of the Java High Level REST Client
+                and will be removed in Elasticsearch 8.0. The migration guide describes all
+                the steps needed to migrate.
+             */
+
+        //  https://www.elastic.co/guide/en/elasticsearch/client/java-api/7.3/transport-client.html
+
+        try {
+            this.connector = new RestHighLevelClient(
+                    RestClient.builder(
+                            new HttpHost(
+                                    Objects.requireNonNull("vmhost.fake"),
+                                    Objects.requireNonNull(9200),
+                                    "http")
+                    )
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return;
+    }
+
+    private void StopClient(){
+        try {
+            this.connector.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return;
+    }
 
 
     public ElasticSearchLogger(LogManager logManager, LoggerPreferences prefs){
@@ -49,120 +86,103 @@ public class ElasticSearchLogger implements LogEntryListener{
 
     public void setEnabled(boolean isEnabled) throws UnknownHostException {
         if(isEnabled){
+
             this.address = InetAddress.getByName(prefs.getEsAddress());
             this.port = prefs.getEsPort();
             this.clusterName = prefs.getEsClusterName();
             this.indexName = prefs.getEsIndex();
-            Settings settings = Settings.builder().put("cluster.name", this.clusterName).build();
-            client = new PreBuiltTransportClient(settings)
-                .addTransportAddress(new TransportAddress(this.address, this.port));
-            adminClient = client.admin().indices();
+
             createIndices();
+
             pendingEntries = new ArrayList<>();
+
             indexTask = executorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     indexPendingEntries();
                 }
             }, prefs.getEsDelay(), prefs.getEsDelay(), TimeUnit.SECONDS);
+
         }else{
             if(this.indexTask != null){
                 indexTask.cancel(true);
             }
             this.pendingEntries = null;
-            this.client = null;
-            this.adminClient = null;
         }
         this.isEnabled = isEnabled;
     }
 
     private void createIndices(){
-//            XContentBuilder builder = jsonBuilder().startObject()
-//                    .startObject("requestresponse")
-//                        .startObject("properties")
-//                            .startObject("protocol")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("method")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("host")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("path")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("requesttime")
-//                            .field("type", "date")
-//                            .field("store", "true")
-//                            .field("format", "yyyy/MM/dd HH:mm:ss")
-//                            .endObject()
-//                            .startObject("responsetime")
-//                            .field("type", "date")
-//                            .field("store", "true")
-//                            .field("format", "yyyy/MM/dd HH:mm:ss")
-//                            .endObject()
-//                            .startObject("status")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("title")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("newcookies")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("sentcookies")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("referrer")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                            .startObject("requestcontenttype")
-//                            .field("type", "text")
-//                            .field("store", "true")
-//                            .endObject()
-//                        .endObject()
-//                    .endObject().endObject();
-        boolean exists = adminClient.prepareExists(this.indexName).get().isExists();
-        if(!exists) {
-            CreateIndexRequestBuilder response = adminClient.prepareCreate(this.indexName);
-            response.get();
+
+        StartClient();
+
+        GetIndexRequest request = new GetIndexRequest(this.indexName);
+        boolean exists = false;
+
+        try {
+            exists = this.connector.indices().exists(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-//            .addMapping("requestresponse", builder).get();
+
+        if(!exists) {
+            try {
+                CreateIndexRequest createRequest = new CreateIndexRequest(this.indexName);
+                CreateIndexResponse createIndexResponse = this.connector.indices().create(createRequest, RequestOptions.DEFAULT);
+
+                if(createIndexResponse.isAcknowledged()){
+                    System.out.println("Index: " + this.indexName + " was created.");
+                } else {
+                    System.out.println("ERROR: Index " + this.indexName + " could not be created!");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        StopClient();
     }
 
     public IndexRequest buildIndexRequest(LogEntry logEntry){
         try{
-            IndexRequestBuilder requestBuilder = client.prepareIndex(this.indexName, "requestresponse")
-                    .setSource(
-                            jsonBuilder().startObject()
-                                .field("protocol", logEntry.protocol)
-                                .field("method", logEntry.method)
-                                .field("host", logEntry.host)
-                                .field("path", logEntry.relativeURL)
-                                .field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime)
-                                .field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime)
-                                .field("status", logEntry.status)
-                                .field("title", logEntry.title)
-                                .field("newcookies", logEntry.newCookies)
-                                .field("sentcookies", logEntry.sentCookies)
-                                .field("referrer", logEntry.referrerURL)
-                                .field("requestcontenttype", logEntry.requestContentType)
-//                                .field("requestbody", new String(logEntry.requestResponse.getRequest()))
-//                                .field("responsebody", new String(logEntry.requestResponse.getResponse()))
-                            .endObject()
-                    );
-            return requestBuilder.request();
-        } catch (IOException e) {
+            try {
+
+                if(logEntry.responseMimeType == "HTML" || prefs.elasticAllMimetypes()) {
+                    XContentBuilder builder = XContentFactory.jsonBuilder();
+                    builder.startObject();
+                    {
+                        builder.field("protocol", logEntry.protocol);
+                        builder.field("method", logEntry.method);
+                        builder.field("host", logEntry.host);
+                        builder.field("path", logEntry.relativeURL);
+                        builder.field("requesttime", logEntry.requestTime.equals("NA") ? null : logEntry.requestTime);
+                        builder.field("responsetime", logEntry.responseTime.equals("NA") ? null : logEntry.responseTime);
+                        builder.field("status", logEntry.status);
+                        builder.field("title", logEntry.title);
+                        builder.field("newcookies", logEntry.newCookies);
+                        builder.field("sentcookies", logEntry.sentCookies);
+                        builder.field("referrer", logEntry.referrerURL);
+                        builder.field("requestcontenttype", logEntry.requestContentType);
+                        if (prefs.elasticSendRequest()){
+                            builder.field("requestbody", new String(logEntry.requestResponse.getRequest()));
+                        }
+                        if (prefs.elasticSendResponse()){
+                            builder.field("responsebody", new String(logEntry.requestResponse.getResponse()));
+                        }
+                    }
+                    builder.endObject();
+                    IndexRequest indexRequest = new IndexRequest(this.indexName)
+                            .source(builder);
+
+                    return indexRequest;
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -176,9 +196,35 @@ public class ElasticSearchLogger implements LogEntryListener{
     }
 
     private void indexPendingEntries(){
-        if(!this.isEnabled || this.pendingEntries.size() == 0) return;
+        if(!this.isEnabled || this.pendingEntries.size() == 0){
+            return;
+        }
 
-        BulkRequestBuilder bulkBuilder = client.prepareBulk();
+        StartClient();
+
+        ActionListener<BulkResponse> listener = new ActionListener<BulkResponse>() {
+            @Override
+            public void onResponse(BulkResponse bulkResponse) {
+                System.out.println("Bulk data was sent.");
+                if (bulkResponse.hasFailures()) {
+                    for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
+                        System.out.println("Error in bulk response: " + bulkItemResponse.getFailureMessage());
+                    }
+                }
+                StopClient();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                StopClient();
+            }
+        };
+
+        BulkRequest bulkRequest = new BulkRequest();
+
+        System.out.println("Bulk Request Created");
+
         ArrayList<LogEntry> entriesInBulk;
         synchronized (pendingEntries){
             entriesInBulk = (ArrayList<LogEntry>) pendingEntries.clone();
@@ -188,17 +234,14 @@ public class ElasticSearchLogger implements LogEntryListener{
         for (LogEntry logEntry : entriesInBulk) {
             IndexRequest request = buildIndexRequest(logEntry);
             if(request != null) {
-                bulkBuilder.add(request);
-            }else{
-                //Could not build index request. Ignore it?
+                bulkRequest.add(request);
+            } else {
+                // ignore, buildIndexRequest() function has returned an error, stack trace in console...
             }
         }
 
-        BulkResponse resp = bulkBuilder.get();
-        if(resp.hasFailures()){
-            for (BulkItemResponse bulkItemResponse : resp.getItems()) {
-                System.err.println(bulkItemResponse.getFailureMessage());
-            }
+        if (bulkRequest.numberOfActions() > 0){
+            this.connector.bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
         }
     }
 

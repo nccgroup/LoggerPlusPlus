@@ -59,6 +59,10 @@ public class LoggerOptionsPanel extends JScrollPane{
     private final JCheckBox chkExtender = new JCheckBox("Extender");
     private final JCheckBox chkTarget = new JCheckBox("Target");
 
+    private JCheckBox chkElasticSendRequest = new JCheckBox("Send full request text");
+    private JCheckBox chkElasticSendResponse = new JCheckBox("Send full response (slow)");
+    private JCheckBox chkElasticAllMimeTypes = new JCheckBox("Send ALL MIME types (snail pace)");
+
     private final JPanel elasticPanel;
     private final JToggleButton esEnabled = new JToggleButton("Disabled");
     private final JSpinner esPortSpinner = new JSpinner(new SpinnerNumberModel(9100, 0, 65535, 1));
@@ -198,6 +202,12 @@ public class LoggerOptionsPanel extends JScrollPane{
         elasticPanel.add(esIndexName, gbc);
         gbc.gridy = 5;
         elasticPanel.add(esRefreshTime, gbc);
+        gbc.gridy = 6;
+        elasticPanel.add(chkElasticSendRequest, gbc);
+        gbc.gridy = 7;
+        elasticPanel.add(chkElasticSendResponse, gbc);
+        gbc.gridy = 8;
+        elasticPanel.add(chkElasticAllMimeTypes, gbc);
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 1;
@@ -218,6 +228,8 @@ public class LoggerOptionsPanel extends JScrollPane{
         gbc.gridwidth = 1;
         gbc.gridx = 2;
         elasticPanel.add(esSecondsHint, gbc);
+        gbc.gridwidth = 1;
+        gbc.gridx = 2;
 
 
 
@@ -422,6 +434,24 @@ public class LoggerOptionsPanel extends JScrollPane{
                 chkProxy.setEnabled(!chkAllTools.isSelected());
                 chkTarget.setEnabled(!chkAllTools.isSelected());
                 chkExtender.setEnabled(!chkAllTools.isSelected());
+            }
+        });
+
+        chkElasticAllMimeTypes.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                loggerPreferences.setEnabledElasticAllMimeTypes(chkElasticAllMimeTypes.isSelected());
+            }
+        });
+
+        chkElasticSendRequest.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                loggerPreferences.setEnabledElasticSendRequest(chkElasticSendRequest.isSelected());
+            }
+        });
+
+        chkElasticSendResponse.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                loggerPreferences.setEnabledElasticSendResponse(chkElasticSendResponse.isSelected());
             }
         });
 
@@ -705,6 +735,7 @@ public class LoggerOptionsPanel extends JScrollPane{
             public void run() {
                 if(isSelected) {
                     esEnabled.setText("Starting...");
+                    LoggerPlusPlus.getCallbacks().printOutput("Starting Elasticsearch logging...");
                 }
                 try {
                     LoggerPlusPlus.getInstance().setEsEnabled(isSelected);
@@ -760,6 +791,9 @@ public class LoggerOptionsPanel extends JScrollPane{
         this.esClusterField.setText(loggerPreferences.getEsClusterName());
         this.esIndexField.setText(loggerPreferences.getEsIndex());
         this.esUploadDelay.setValue(loggerPreferences.getEsDelay());
+
+        chkElasticSendRequest.setSelected(loggerPreferences.elasticSendRequest());
+        chkElasticSendResponse.setSelected(loggerPreferences.elasticSendResponse());
 
         if (!loggerPreferences.canSaveCSV()) {
             btnSaveLogs.setEnabled(false);

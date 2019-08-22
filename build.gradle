@@ -1,16 +1,27 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+}
 
 repositories {
     mavenCentral()
 }
 
+version '1.0-SNAPSHOT'
+
 dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     compile 'org.swinglabs:swingx:1.6.1'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.apache.commons:commons-text:1.1'
-    compile 'org.elasticsearch.client:transport:6.0.0'
-    testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
+    // https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '7.3.0'
+    // testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
+    // https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-client
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: '7.3.0'
+    // https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-high-level-client
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '7.3.0'
+
 }
 
 task fatJar(type: Jar) {

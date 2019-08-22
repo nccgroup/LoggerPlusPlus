@@ -54,6 +54,11 @@ public class LoggerPreferences {
 	private boolean isEnabled4Sequencer;
 	private boolean isEnabled4Extender;
 	private boolean isEnabled4TargetTab;
+
+	private boolean elasticSendRequest;
+	private boolean elasticSendResponse;
+	private boolean elasticAllMimetypes;
+
 	private String tableDetailsJSONString;
 	private boolean autoSave;
 	private ArrayList<SavedFilter> savedFilters;
@@ -216,6 +221,33 @@ public class LoggerPreferences {
 	public synchronized  void setEnabled4TargetTab(boolean isEnabled4TargetTab) {
 		LoggerPlusPlus.getCallbacks().saveExtensionSetting("logtargettab", String.valueOf(isEnabled4TargetTab));
 		this.isEnabled4TargetTab = isEnabled4TargetTab;
+	}
+
+	public synchronized boolean elasticSendRequest() {
+		return elasticSendRequest;
+	}
+
+	public synchronized  void setEnabledElasticSendRequest(boolean elasticSendRequest) {
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("elasticSendRequest", String.valueOf(elasticSendRequest));
+		this.elasticSendRequest = elasticSendRequest;
+	}
+
+	public synchronized boolean elasticSendResponse() {
+		return elasticSendResponse;
+	}
+
+	public synchronized  void setEnabledElasticAllMimeTypes(boolean elasticAllMimetypes) {
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("elasticAllMimetypes", String.valueOf(elasticAllMimetypes));
+		this.elasticAllMimetypes = elasticAllMimetypes;
+	}
+
+	public synchronized boolean elasticAllMimetypes() {
+		return elasticSendResponse;
+	}
+
+	public synchronized  void setEnabledElasticSendResponse(boolean elasticSendResponse) {
+		LoggerPlusPlus.getCallbacks().saveExtensionSetting("elasticSendResponse", String.valueOf(elasticSendResponse));
+		this.elasticSendResponse = elasticSendResponse;
 	}
 
 	public Map<UUID, ColorFilter> getColorFilters() { return colorFilters; }

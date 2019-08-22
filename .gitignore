@@ -2,6 +2,9 @@
 bin/
 Util/
 gradle/
+out/
+build/
+classes/
 libs/burpsuite_pro.jar
 BurpLogger++.iml
 TODO
