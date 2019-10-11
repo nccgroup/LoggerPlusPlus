@@ -1,15 +1,12 @@
-import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
-import loggerplusplus.LogEntry;
-import loggerplusplus.filter.parser.ASTExpression;
-import loggerplusplus.filter.parser.FilterEvaluationVisitor;
-import loggerplusplus.filter.parser.FilterParser;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
+import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
+import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.util.Date;
 
 public class TestParser {
 
