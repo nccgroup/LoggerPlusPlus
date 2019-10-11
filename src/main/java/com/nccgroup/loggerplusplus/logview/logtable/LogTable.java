@@ -189,7 +189,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
 
     public void setFilter(LogFilter filter){
         ((DefaultRowSorter) this.getRowSorter()).setRowFilter(filter);
-        this.repaint();
+        ((JScrollPane) this.getParent().getParent()).getVerticalScrollBar().setValue(0);
     }
 
     // to saveFilters the new grepTable changes
