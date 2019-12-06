@@ -8,10 +8,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -35,9 +32,8 @@ public class LogFilterController {
             @Override
             public void keyPressed(KeyEvent e) {
                 if(e.getKeyChar() == KeyEvent.VK_ENTER){
+                    //Update only when pressing enter after typing
                     setFilter((String) filterField.getSelectedItem());
-                }else{
-                    super.keyReleased(e);
                 }
             }
         });
@@ -51,8 +47,12 @@ public class LogFilterController {
             }
         });
 
-        filterField.addItemListener(e -> {
-            setFilter((String) filterField.getSelectedItem());
+        //Update when clicking an item in the list, but not when using arrow keys to move
+        filterField.addActionListener(e -> {
+            //Only update from clicking the mouse
+            if((e.getModifiers() & (ActionEvent.MOUSE_EVENT_MASK | ActionEvent.FOCUS_EVENT_MASK)) != 0) {
+                setFilter((String) filterField.getSelectedItem());
+            }
         });
 
         return filterField;

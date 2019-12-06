@@ -20,13 +20,11 @@ import java.util.regex.Pattern;
 public class GrepResultsTable extends JXTreeTable implements GrepperListener {
 
     private final GrepperController controller;
-    private final Preferences preferences;
     private final GrepTableModel tableModel;
 
-    public GrepResultsTable(GrepperController controller, Preferences preferences){
+    public GrepResultsTable(GrepperController controller){
         super();
         this.controller = controller;
-        this.preferences = preferences;
         this.tableModel = new GrepTableModel();
 
         this.setTreeTableModel(this.tableModel);

@@ -57,7 +57,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
             this.controller.reset();
         });
 
-        this.grepResultsTable = new GrepResultsTable(controller, preferences);
+        this.grepResultsTable = new GrepResultsTable(controller);
         this.uniqueTable = new UniquePatternMatchTable(controller);
 
         this.resultsPane = new JTabbedPane();
