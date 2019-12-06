@@ -59,14 +59,10 @@ public class LogViewPanel extends JPanel {
 
         PanelBuilder panelBuilder = new PanelBuilder(LoggerPlusPlus.preferences);
         progressBar = new JProgressBar();
-        try {
-            importPanel = panelBuilder.build(new JComponent[][]{
-                    new JComponent[]{new JLabel("Importing: ")},
-                    new JComponent[]{progressBar}
-            }, Alignment.CENTER, 1.0, 1.0);
-        }catch (Exception e){
-            importPanel = new JLabel("Importing entries, please wait...");
-        }
+        importPanel = panelBuilder.build(new JComponent[][]{
+                new JComponent[]{new JLabel("Importing: ")},
+                new JComponent[]{progressBar}
+        }, Alignment.CENTER, 1.0, 1.0);
     }
 
     public void showImportProgress(int entries){

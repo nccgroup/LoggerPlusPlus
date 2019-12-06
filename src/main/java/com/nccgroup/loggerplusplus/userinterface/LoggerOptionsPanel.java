@@ -226,23 +226,16 @@ public class LoggerOptionsPanel extends JScrollPane{
         notesPanel.addComponent(new JLabel("Note 3: Full request/response logging available in 'Project Options > Misc > Logging'"));
         notesPanel.addComponent(new JLabel("Note 4: Updating the extension will reset the log table settings."));
 
-        JComponent mainComponent;
-
-        try {
-            mainComponent = panelBuilder.build(new JPanel[][]{
-                    new JPanel[]{statusPanel, statusPanel},
-                    new JPanel[]{logFromPanel, importGroup},
-                    new JPanel[]{logFromPanel, exportGroup},
-                    new JPanel[]{elasticPanel, elasticPanel},
-                    new JPanel[]{otherPanel, otherPanel},
-                    new JPanel[]{colorFilterSharing, savedFilterSharing},
-                    new JPanel[]{resetPanel, resetPanel},
-                    new JPanel[]{notesPanel, notesPanel},
-            }, Alignment.TOPMIDDLE, 1, 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            mainComponent = new JLabel("Could not buildPreferences the options panel!");
-        }
+        JComponent mainComponent = panelBuilder.build(new JPanel[][]{
+                new JPanel[]{statusPanel, statusPanel},
+                new JPanel[]{logFromPanel, importGroup},
+                new JPanel[]{logFromPanel, exportGroup},
+                new JPanel[]{elasticPanel, elasticPanel},
+                new JPanel[]{otherPanel, otherPanel},
+                new JPanel[]{colorFilterSharing, savedFilterSharing},
+                new JPanel[]{resetPanel, resetPanel},
+                new JPanel[]{notesPanel, notesPanel},
+        }, Alignment.TOPMIDDLE, 1, 1);
 
         this.setViewportView(mainComponent);
     }
