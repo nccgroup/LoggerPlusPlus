@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 public class SanityCheckVisitor implements FilterParserVisitor{
   public VisitorData defaultVisit(SimpleNode node, VisitorData data){
     node.childrenAccept(this, data);
-//    System.out.println("Evaluating Node: " + node);
     return data;
   }
   public VisitorData visit(SimpleNode node, VisitorData data){
@@ -53,6 +52,13 @@ public class SanityCheckVisitor implements FilterParserVisitor{
     return visitorData;
   }
 
+  /**
+   * Validate the identifier and resolve the field by group and label
+   * Do some simple sanity checks on types and usage.
+   * @param node
+   * @param visitorData
+   * @return
+   */
   public VisitorData visit(ASTIdentifier node, VisitorData visitorData){
     LogEntryField.Group fieldGroup = LogEntryField.Group.findByLabel(node.group);
     if(fieldGroup == null){

@@ -451,7 +451,8 @@ public class LogEntry
 		try{
 			switch(columnName)
 			{
-				case TOOL:
+				case PROXY_TOOL:
+				case REQUEST_TOOL:
 					return toolName;
 				case URL:
 					return this.url;
@@ -517,7 +518,8 @@ public class LogEntry
 					return this.complete;
 				case SENTCOOKIES:
 					return this.sentCookies;
-				case USES_COOKIE_JAR:
+				case REQUEST_USES_COOKIE_JAR:
+				case USES_COOKIE_JAR_PROXY:
 					return this.usesCookieJar.toString();
 //				case REGEX1REQ:
 //					return this.regexAllReq[0];
@@ -600,7 +602,6 @@ public class LogEntry
 
 	@Override
 	public String toString() {
-//		return super.toString();
 		return this.url.toString();
 	}
 }

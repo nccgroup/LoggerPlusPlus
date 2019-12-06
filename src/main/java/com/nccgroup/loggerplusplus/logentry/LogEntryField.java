@@ -7,10 +7,10 @@ public enum LogEntryField {
 
     //Proxy
     NUMBER(Group.PROXY, Integer.class, "Number"),
-    TOOL(Group.PROXY, String.class, "Tool"),
+    PROXY_TOOL(Group.PROXY, String.class, "Tool"),
     LISTENER_INTERFACE(Group.PROXY, String.class, "ListenInterface", "Interface"),
     CLIENT_IP(Group.PROXY, String.class, "ClientIP", "ClientAddress"),
-    USES_COOKIE_JAR(Group.PROXY, String.class, "UsesCookieJar", "CookieJar"),
+    USES_COOKIE_JAR_PROXY(Group.PROXY, String.class, "UsesCookieJar", "CookieJar"),
     COMMENT(Group.PROXY, String.class, "Comment"),
 
     //Request + Response
@@ -25,20 +25,22 @@ public enum LogEntryField {
 
 
     //Request
-    COMPLETE(Group.REQUEST, Boolean.class, "Complete"),
+    REQUEST_TOOL(Group.REQUEST, String.class, "Tool"), //Alias for proxy.tool
+    COMPLETE(Group.REQUEST, Boolean.class, "Complete", "isComplete"),
     URL(Group.REQUEST, String.class, "URL"),
     METHOD(Group.REQUEST, String.class, "Method"),
     PATH(Group.REQUEST, String.class, "Path"),
     QUERY(Group.REQUEST, String.class, "Query"),
     PROTOCOL(Group.REQUEST, String.class, "Protocol"),
-    ISSSL(Group.REQUEST, Boolean.class, "IsSSL"),
+    ISSSL(Group.REQUEST, Boolean.class, "IsSSL", "ssl"),
+    REQUEST_USES_COOKIE_JAR(Group.REQUEST, String.class, "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
     HOSTNAME(Group.REQUEST, String.class, "Hostname"),
     HOST(Group.REQUEST, String.class, "Host"),
     PORT(Group.REQUEST, Short.class, "Port"),
     REQUEST_CONTENT_TYPE(Group.REQUEST, String.class, "ContentType", "Content_Type"),
     EXTENSION(Group.REQUEST, String.class, "Extension"),
     REFERRER(Group.REQUEST, String.class, "Referrer"),
-    HASPARAMS(Group.REQUEST, Boolean.class, "HasParams"),
+    HASPARAMS(Group.REQUEST, Boolean.class, "HasParams", "Has_Params"),
     HASGETPARAM(Group.REQUEST, Boolean.class, "HasGetParam", "HasQueryString", "QueryString"),
     HASPOSTPARAM(Group.REQUEST, Boolean.class, "HasPostParam", "HasPayload", "Payload"),
     HASCOOKIEPARAM(Group.REQUEST, Boolean.class, "HasSentCookies"),
