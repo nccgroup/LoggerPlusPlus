@@ -87,12 +87,8 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         }
         if(col == 3){
             ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners());
-            try {
-                dialog.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
-                dialog.setVisible(true);
-            } catch (ParseException e) {
-                MoreHelp.showMessage("Could not apply Color LogFilter.");
-            }
+            dialog.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
+            dialog.setVisible(true);
         }
     }
 

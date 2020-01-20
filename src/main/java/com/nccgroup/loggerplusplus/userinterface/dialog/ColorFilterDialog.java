@@ -110,7 +110,7 @@ public class ColorFilterDialog extends JFrame {
     }
 
 
-    public void addColorFilter(String title, LogFilter filter) throws ParseException {
+    public void addColorFilter(String title, LogFilter filter) {
         ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filter));
     }
 
