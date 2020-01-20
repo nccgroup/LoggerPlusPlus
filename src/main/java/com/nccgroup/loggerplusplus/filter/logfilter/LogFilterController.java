@@ -128,7 +128,6 @@ public class LogFilterController {
             clearFilter();
         } else {
             String filterString = filter.toString();
-            ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(filterString);
             formatFilter(filterString, Color.BLACK, new Color(76,255, 155));
 
             new Thread(()->{
@@ -141,7 +140,12 @@ public class LogFilterController {
 
     public void formatFilter(String string, Color foregroundColor, Color backgroundColor){
         SwingUtilities.invokeLater(() -> {
-            ((JTextField) filterField.getEditor().getEditorComponent()).setText(string);
+            if(!string.equalsIgnoreCase("")) {
+                ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(string);
+                filterField.setSelectedItem(string);
+            }else{
+                filterField.setSelectedItem(null);
+            }
             filterField.setForegroundColor(foregroundColor);
             filterField.setBackgroundColor(backgroundColor);
         });
