@@ -33,7 +33,7 @@ public class LogFilterController {
             public void keyPressed(KeyEvent e) {
                 if(e.getKeyChar() == KeyEvent.VK_ENTER){
                     //Update only when pressing enter after typing
-                    setFilter((String) filterField.getSelectedItem());
+                    setFilter((String) filterField.getEditor().getItem());
                 }
             }
         });
