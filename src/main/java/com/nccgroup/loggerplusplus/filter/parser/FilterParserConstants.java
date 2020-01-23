@@ -43,27 +43,29 @@ public interface FilterParserConstants {
   /** RegularExpression Id. */
   int DIGIT = 17;
   /** RegularExpression Id. */
-  int REGEXLITERAL = 18;
+  int REGEXLITERAL_IN_FORWARD_SLASHES = 18;
   /** RegularExpression Id. */
-  int REGEX = 19;
+  int REGEX_IN_FORWARD_SLASHES = 19;
   /** RegularExpression Id. */
-  int LPAREN = 20;
+  int MATCHES = 20;
   /** RegularExpression Id. */
-  int RPAREN = 21;
+  int LPAREN = 21;
   /** RegularExpression Id. */
-  int INVERSE = 22;
+  int RPAREN = 22;
   /** RegularExpression Id. */
-  int DOT = 23;
+  int INVERSE = 23;
   /** RegularExpression Id. */
-  int IDENTIFIER = 24;
+  int DOT = 24;
   /** RegularExpression Id. */
-  int ARRAY_START = 25;
+  int IDENTIFIER = 25;
   /** RegularExpression Id. */
-  int ARRAY_END = 26;
+  int ARRAY_START = 26;
   /** RegularExpression Id. */
-  int ARRAY_SEPARATOR = 27;
+  int ARRAY_END = 27;
   /** RegularExpression Id. */
-  int ALIAS_SYMBOL = 28;
+  int ARRAY_SEPARATOR = 28;
+  /** RegularExpression Id. */
+  int ALIAS_SYMBOL = 29;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -88,8 +90,9 @@ public interface FilterParserConstants {
     "<DOUBLEQUOTEDSTRING>",
     "<NUMBER>",
     "<DIGIT>",
-    "<REGEXLITERAL>",
-    "<REGEX>",
+    "<REGEXLITERAL_IN_FORWARD_SLASHES>",
+    "<REGEX_IN_FORWARD_SLASHES>",
+    "\"MATCHES\"",
     "\"(\"",
     "\")\"",
     "<INVERSE>",

@@ -122,14 +122,14 @@ public class AboutPanel extends JPanel {
 		gbc.gridy++;
 		msgpane.add(btnOpenExtensionHome, gbc);
 
-		JButton btnSubmitFilterIdea = new JButton("Submit a filter idea!");
-		btnSubmitFilterIdea.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				openWebpage("http://twitter.com/home?status=%40CoreyD97%20L%2B%2B%20Filter%20Idea%3A%20");
-			}
-		});
-		gbc.gridy++;
-		msgpane.add(btnSubmitFilterIdea, gbc);
+//		JButton btnSubmitFilterIdea = new JButton("Submit a filter idea!");
+//		btnSubmitFilterIdea.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent arg0) {
+//				openWebpage("http://twitter.com/home?status=%40CoreyD97%20L%2B%2B%20Filter%20Idea%3A%20");
+//			}
+//		});
+//		gbc.gridy++;
+//		msgpane.add(btnSubmitFilterIdea, gbc);
 
 		JButton btnReportAnIssue = new JButton("Report a bug/feature!");
 		btnReportAnIssue.addActionListener(new ActionListener() {

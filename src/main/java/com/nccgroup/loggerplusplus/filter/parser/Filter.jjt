@@ -63,8 +63,9 @@ TOKEN [IGNORE_CASE]: {
     | <DOUBLEQUOTEDSTRING: "\"" ("\\" ~[] | ~["\"", "\\"])* "\"" >
     | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
     | <DIGIT: ["0"-"9"] >
-    | <REGEXLITERAL: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
-    | <REGEX: "/" ("\\" ~[] | ~["/", "\\"])* "/" >
+    | <REGEXLITERAL_IN_FORWARD_SLASHES: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
+    | <REGEX_IN_FORWARD_SLASHES: "/" ("\\" ~[] | ~["/", "\\"])+ "/" >
+    | <MATCHES: "MATCHES" >
     | <LPAREN: "(" >
     | <RPAREN: ")" >
     | <INVERSE: "!" | "NOT" >
@@ -144,6 +145,11 @@ ASTComparison Comparison() #Comparison:
             jjtThis.right = right;
             jjtThis.operator = op;
         }
+    | op = MatchesOperator() (right = RegexInString() | right = RegexInForwardSlashes())
+        {
+            jjtThis.right = right;
+            jjtThis.operator = op;
+        }
     | //NO OPERATOR OR RIGHT VALUE (EQ TRUE)
         {
             jjtThis.operator = Operator.EQUAL;
@@ -170,7 +176,7 @@ Object Value() #void:
     Object v;
 }
 {
-    (LOOKAHEAD(2) v = Identifier() | v = Number() | v = Boolean() | v = String() | v = Regex())
+    (LOOKAHEAD(2) v = Identifier() | v = Number() | v = Boolean() | LOOKAHEAD(2) v = String() | v = RegexInForwardSlashes() | v = RegexInString())
     {return v;}
 }
 
@@ -228,10 +234,19 @@ String String() #void :
     }
 }
 
-Pattern Regex() #void :
+Pattern RegexInString() #void :
 {Token t;}
 {
-    ( t=<REGEXLITERAL> | t=<REGEX> )
+    ( t=<DOUBLEQUOTEDSTRING> | t=<SINGLEQUOTEDSTRING> )
+    {
+        return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);
+    }
+}
+
+Pattern RegexInForwardSlashes() #void :
+{Token t;}
+{
+    ( t=<REGEXLITERAL_IN_FORWARD_SLASHES> | t=<REGEX_IN_FORWARD_SLASHES> )
     {
         return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);
     }
@@ -262,6 +277,12 @@ Operator Operator() #void :
     | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
     | <LEQ> {return Operator.LESS_THAN_EQUAL;}
     | <CONTAINS> {return Operator.CONTAINS;}
+}
+
+Operator MatchesOperator() #void :
+{}
+{
+    <MATCHES> {return Operator.MATCHES;}
 }
 
 Operator InOperator() #void :

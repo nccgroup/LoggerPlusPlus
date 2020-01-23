@@ -38,13 +38,13 @@ public class SanityCheckVisitor implements FilterParserVisitor{
     if(leftType == null || rightType == null) return visitorData;
 
     if(node.operator == Operator.LESS_THAN || node.operator == Operator.LESS_THAN_EQUAL
-            || node.operator == Operator.GREATER_THAN || node.operator == Operator.GREATER_THAN_EQUAL){
-        boolean valid = (Date.class.isAssignableFrom(leftType) || Date.class.isAssignableFrom(rightType))
-                        || (Number.class.isAssignableFrom(leftType) && Number.class.isAssignableFrom(rightType));
-        if(!valid){
-            visitorData.addError(String.format("Operator %s cannot be used to compare groups of type %s and %s.",
-                    node.operator, leftType.getTypeName(), rightType.getTypeName()));
-        }
+            || node.operator == Operator.GREATER_THAN || node.operator == Operator.GREATER_THAN_EQUAL) {
+      boolean valid = (Date.class.isAssignableFrom(leftType) || Date.class.isAssignableFrom(rightType))
+              || (Number.class.isAssignableFrom(leftType) && Number.class.isAssignableFrom(rightType));
+      if (!valid) {
+        visitorData.addError(String.format("Operator %s cannot be used to compare groups of type %s and %s.",
+                node.operator, leftType.getTypeName(), rightType.getTypeName()));
+      }
     }else if(node.left instanceof Pattern){
       visitorData.addError("The left operand of a comparison cannot be a pattern.");
     }else if(node.right instanceof Pattern && !String.class.isAssignableFrom(leftType)){
@@ -87,7 +87,6 @@ public class SanityCheckVisitor implements FilterParserVisitor{
     return visitorData;
   }
 
-  private static String RECURSION_CHECK = "RECURSION_CHECK";
   @Override
   public VisitorData visit(ASTAlias node, VisitorData data) {
     return data;

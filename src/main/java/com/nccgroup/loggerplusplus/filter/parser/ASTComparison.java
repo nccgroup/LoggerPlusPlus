@@ -36,7 +36,8 @@ class ASTComparison extends SimpleNode {
 
   private String convertObjectToString(Object obj){
     if(obj instanceof Pattern){
-      return "/" + String.valueOf(obj) + "/";
+      if(operator == Operator.MATCHES) return "\"" + String.valueOf(obj) + "\"";
+      else return "/" + String.valueOf(obj) + "/";
     }else if(obj instanceof String){
       return "\"" + obj + "\"";
     }else if(obj instanceof Set){

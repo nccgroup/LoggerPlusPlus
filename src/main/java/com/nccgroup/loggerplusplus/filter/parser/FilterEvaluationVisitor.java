@@ -125,14 +125,23 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
         //Numerical Comparison
         BigDecimal leftBigDecimal = new BigDecimal(String.valueOf(left));
         BigDecimal rightBigDecimal = new BigDecimal(String.valueOf(right));
-        switch (op){
-          case EQUAL: return leftBigDecimal.compareTo(rightBigDecimal) == 0;
-          case NOT_EQUAL: return leftBigDecimal.compareTo(rightBigDecimal) != 0;
-          case GREATER_THAN: return leftBigDecimal.compareTo(rightBigDecimal) > 0;
-          case LESS_THAN: return leftBigDecimal.compareTo(rightBigDecimal) < 0;
-          case GREATER_THAN_EQUAL: return leftBigDecimal.compareTo(rightBigDecimal) >= 0;
-          case LESS_THAN_EQUAL: return leftBigDecimal.compareTo(rightBigDecimal) <= 0;
+        switch (op) {
+          case EQUAL:
+            return leftBigDecimal.compareTo(rightBigDecimal) == 0;
+          case NOT_EQUAL:
+            return leftBigDecimal.compareTo(rightBigDecimal) != 0;
+          case GREATER_THAN:
+            return leftBigDecimal.compareTo(rightBigDecimal) > 0;
+          case LESS_THAN:
+            return leftBigDecimal.compareTo(rightBigDecimal) < 0;
+          case GREATER_THAN_EQUAL:
+            return leftBigDecimal.compareTo(rightBigDecimal) >= 0;
+          case LESS_THAN_EQUAL:
+            return leftBigDecimal.compareTo(rightBigDecimal) <= 0;
         }
+      }else if(op == Operator.MATCHES){
+        Matcher m = ((Pattern) right).matcher(String.valueOf(left));
+        return m.find();
       }else if(right instanceof Pattern) {
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
         return m.find() ^ op == Operator.NOT_EQUAL;
