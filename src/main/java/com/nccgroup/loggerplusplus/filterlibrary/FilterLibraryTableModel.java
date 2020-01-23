@@ -88,8 +88,8 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
             return;
         }
         if(col == 3){
+            LoggerPlusPlus.instance.getLibraryController().addColorFilter(savedFilter.getName(), savedFilter.getFilter());
             ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
-            dialog.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
             dialog.setVisible(true);
         }
     }

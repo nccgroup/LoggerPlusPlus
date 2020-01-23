@@ -94,7 +94,6 @@ public class ColorFilterDialog extends JFrame {
         btnClose.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-//                applyChanges();
                 ColorFilterDialog.this.dispatchEvent(new WindowEvent(ColorFilterDialog.this, WindowEvent.WINDOW_CLOSING));
             }
         });
@@ -105,44 +104,4 @@ public class ColorFilterDialog extends JFrame {
         content.add(buttonPanel, gbcFooter);
 
     }
-
-
-    public void addColorFilter(String title, LogFilter filter) {
-        ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter(title, filter));
-    }
-
-//    private void applyChanges(){
-//        //
-//        ArrayList<UUID> newFilters = new ArrayList<UUID>(filters.keySet());
-//        newFilters.removeAll(originalFilters.keySet());
-//
-//        ArrayList<UUID> modifiedFilters = new ArrayList<UUID>(filters.keySet());
-//        modifiedFilters.removeAll(newFilters);
-//
-//        ArrayList<UUID> removedFilters = new ArrayList<UUID>(originalFilters.keySet());
-//        removedFilters.removeAll(filters.keySet());
-//
-//        ArrayList<UUID> tempFilters = new ArrayList<>(modifiedFilters);
-//        for (int i=0; i<tempFilters.size(); i++) {
-//            UUID uid = tempFilters.get(i);
-//            if (!filters.get(uid).isModified()) {
-//                modifiedFilters.remove(uid);
-//            } else {
-//                filters.get(uid).setModified(false);
-//            }
-//        }
-//        for (ColorFilterListener listener : colorFilterListeners) {
-//            for (UUID uid : newFilters) {
-//                listener.onFilterAdd(filters.get(uid));
-//            }
-//            for (UUID uid : modifiedFilters) {
-//                listener.onFilterChange(filters.get(uid));
-//            }
-//            for (UUID uid : removedFilters){
-//                listener.onFilterRemove(originalFilters.get(uid));
-//            }
-//        }
-//        LoggerPlusPlus.preferences.setSetting(Globals.PREF_COLOR_FILTERS, filters);
-//    }
-
 }
