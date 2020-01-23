@@ -21,7 +21,7 @@ public class TestParser {
             try {
                 ASTExpression root = FilterParser.parseFilter(str);
                 System.out.println("Filter: " + root.toString());
-                Boolean visitorData = new FilterEvaluationVisitor().visit(root, logEntry);
+                Boolean visitorData = new FilterEvaluationVisitor(null).visit(root, logEntry);
                 System.out.println("Result: " + visitorData);
             } catch (Throwable e) {
                 System.out.println("Syntax check failed: " + e.getMessage());

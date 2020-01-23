@@ -276,6 +276,10 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return logViewPanel.getScrollPane();
     }
 
+    public FilterLibraryController getLibraryController() {
+        return libraryController;
+    }
+
     public ArrayList<ColorFilterListener> getColorFilterListeners() {
         return colorFilterListeners;
     }

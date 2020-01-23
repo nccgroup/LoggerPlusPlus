@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.filter.logfilter;
 
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -97,7 +98,7 @@ public class LogFilterController {
             }else if(!filterString.equals(currentFilterString)){
                 currentFilterString = filterString;
                 try {
-                    LogFilter filter = new LogFilter(filterString);
+                    LogFilter filter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);
                     setFilter(filter);
                 } catch (ParseException e) {
                     for (LogFilterListener logFilterListener : logFilterListeners) {

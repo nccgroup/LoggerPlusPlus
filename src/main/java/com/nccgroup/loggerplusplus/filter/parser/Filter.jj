@@ -10,9 +10,10 @@
 }
 
 PARSER_BEGIN(FilterParser)
-package loggerplusplus.filter.parser;
-import loggerplusplus.filter.Operator;
-import loggerplusplus.filter.BooleanOperator;
+package com.nccgroup.loggerplusplus.filter.parser;
+import com.nccgroup.loggerplusplus.filter.Operator;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,6 +27,7 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
   protected JJTFilterParserState jjtree = new JJTFilterParserState();
 
 /*@egen*/
+
     public static ASTExpression parseFilter(String string) throws IOException, ParseException {
         FilterParser FilterParser = new FilterParser(new StringReader(string));
         ASTExpression node;
@@ -37,6 +39,11 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
         VisitorData result = new SanityCheckVisitor().visit(node);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
+    }
+
+    public static void checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
+        VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
+        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
     }
 }
 
@@ -66,12 +73,11 @@ TOKEN [IGNORE_CASE]: {
     | <RPAREN: ")" >
     | <INVERSE: "!" | "NOT" >
     | <DOT: "." >
-    | <IDENTIFIER: (["a"-"z","A"-"Z","_"])+ >
+    | <IDENTIFIER: (["a"-"z","A"-"Z","_","0"-"9"])+ >
     | <ARRAY_START: "[" >
     | <ARRAY_END: "]" >
     | <ARRAY_SEPARATOR: ",">
     | <ALIAS_SYMBOL: "#">
-    | <ALIAS_IDENTIFIER: (["a"-"z","A"-"Z","_","0"-"9"])+ >
 }
 
 
@@ -83,7 +89,7 @@ ASTExpression Filter()             :
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
  Boolean inverse=false;
- loggerplusplus.filter.BooleanOperator op = null;
+ BooleanOperator op = null;
 }
 {/*@bgen(jjtree) Expression */
     try {
@@ -132,7 +138,7 @@ ASTExpression Expression()             :
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
  Boolean inverse = null;
- loggerplusplus.filter.BooleanOperator op = null;
+ BooleanOperator op = null;
 }
 {/*@bgen(jjtree) Expression */
     try {
@@ -176,7 +182,7 @@ ASTExpression Expression()             :
 void ExpressionInner()       :
 {}
 {
-    (LOOKAHEAD(3) Comparison() | Expression())
+    (LOOKAHEAD(3) Comparison() | Alias() | Expression())
 }
 
 
@@ -255,7 +261,7 @@ ASTAlias Alias()       :
 {/*@bgen(jjtree) Alias */
     try {
 /*@egen*/
-    <ALIAS_SYMBOL> identifier=<ALIAS_IDENTIFIER>/*@bgen(jjtree)*/
+    <ALIAS_SYMBOL> identifier=<IDENTIFIER>/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;

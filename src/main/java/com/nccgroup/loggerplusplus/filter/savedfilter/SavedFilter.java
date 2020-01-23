@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.filter.savedfilter;
 
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 /**
  * Created by corey on 19/07/17.
@@ -11,9 +12,9 @@ public class SavedFilter {
     private LogFilter filter;
     private String filterString;
 
-    public SavedFilter(String name, String filterString) throws ParseException {
-        this.name = name;
-        this.setFilter(new LogFilter(filterString));
+    public SavedFilter(FilterLibraryController filterLibraryController, String name, String filterString) throws ParseException {
+        this.name = name.replaceAll("[^a-zA-Z0-9]", "_");
+        this.setFilter(new LogFilter(filterLibraryController, filterString));
     }
 
     public LogFilter getFilter() {
@@ -31,6 +32,7 @@ public class SavedFilter {
     }
 
     public void setName(String name) {
+        name = name.replaceAll("[^a-zA-Z0-9]", "_");
         this.name = name;
     }
 

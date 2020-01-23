@@ -1,7 +1,9 @@
 package com.nccgroup.loggerplusplus.filter.colorfilter;
 
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 import java.awt.*;
 import java.util.UUID;
@@ -33,8 +35,8 @@ public class ColorFilter implements Comparable<ColorFilter>{
         this.setFilter(filter);
     }
 
-    public ColorFilter(String title, String filterString) throws ParseException {
-        this(title, new LogFilter(filterString));
+    public ColorFilter(FilterLibraryController filterLibraryController, String title, String filterString) throws ParseException {
+        this(title, new LogFilter(filterLibraryController, filterString));
     }
 
     public ColorFilter(String title, LogFilter filter, Color foreground, Color background){

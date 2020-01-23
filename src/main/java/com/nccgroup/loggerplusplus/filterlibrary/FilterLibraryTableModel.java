@@ -5,7 +5,6 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -64,14 +63,17 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
     public void setValueAt(Object value, int row, int column) {
         SavedFilter savedFilter = controller.getSavedFilters().get(row);
         if(savedFilter == null) return;
-        if(column == 0) savedFilter.setName((String) value);
+        if(column == 0) {
+            savedFilter.setName((String) value);
+        }
         if(column == 1){
             try{
-                savedFilter.setFilter(new LogFilter((String) value));
+                savedFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(), (String) value));
             }catch (ParseException e){
                 //Not a valid filter...
                 savedFilter.setFilterString((String) value);
                 savedFilter.setFilter(null);
+                JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(btnApplyFilter), e.getMessage(), "Filter Exception", JOptionPane.ERROR_MESSAGE);
             }
         }
         controller.saveFilters();

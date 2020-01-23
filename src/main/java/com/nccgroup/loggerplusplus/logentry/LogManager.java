@@ -226,7 +226,6 @@ public class LogManager implements IHttpListener, IProxyListener {
     private void updateRequestWithResponse(UUID entryIdentifier, Date arrivalTime, IHttpRequestResponse requestResponse){
         if(pendingRequests.containsKey(entryIdentifier)){
             //The entry has not been processed yet! We can add its response data before its processed.
-//            System.out.println("Sneaking in response before its processed.");
 
             //We must remove it from the pendingRequests list to prevent memory leaks.
             final LogEntry logEntry = pendingRequests.remove(entryIdentifier);
@@ -239,7 +238,6 @@ public class LogManager implements IHttpListener, IProxyListener {
             //Do nothing now, there's already a runnable submitted to process it in the queue.
 
         }else if(requestsAwaitingResponse.containsKey(entryIdentifier)){
-//            System.out.println("Too late. Creating update task.");
 
             //The entry has already been processed, we must update it with the response.
             //Remove it from the table to prevent a memory leak.
@@ -249,7 +247,6 @@ public class LogManager implements IHttpListener, IProxyListener {
             Runnable process = createEntryUpdateRunnable(arrivalTime, entryPendingResponse, requestResponse);
             executorService.submit(process);
         }else{
-//            System.out.println("Unknown UID. Potentially cleaned up? :(");
             //Unknown UUID. Potentially for a request which was cleaned up already.
             handleExpiredResponse(requestResponse);
         }

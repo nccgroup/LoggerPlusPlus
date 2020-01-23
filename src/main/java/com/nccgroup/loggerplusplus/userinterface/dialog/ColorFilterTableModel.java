@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.userinterface.dialog;
 
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
@@ -92,7 +93,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
             case 1: {
                 filter.setFilterString((String) value);
                 try {
-                    filter.setFilter(new LogFilter((String) value));
+                    filter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(), (String) value));
                 } catch (ParseException e) {
                     filter.setFilter(null);
                 }

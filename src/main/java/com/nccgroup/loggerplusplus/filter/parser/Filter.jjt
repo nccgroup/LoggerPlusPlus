@@ -9,9 +9,10 @@ options {
 }
 
 PARSER_BEGIN(FilterParser)
-package loggerplusplus.filter.parser;
-import loggerplusplus.filter.Operator;
-import loggerplusplus.filter.BooleanOperator;
+package com.nccgroup.loggerplusplus.filter.parser;
+import com.nccgroup.loggerplusplus.filter.Operator;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 import java.math.BigDecimal;
 
 public class FilterParser {
+
     public static ASTExpression parseFilter(String string) throws IOException, ParseException {
         FilterParser FilterParser = new FilterParser(new StringReader(string));
         ASTExpression node;
@@ -33,6 +35,11 @@ public class FilterParser {
         VisitorData result = new SanityCheckVisitor().visit(node);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
+    }
+
+    public static void checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
+        VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
+        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
     }
 }
 
@@ -62,12 +69,11 @@ TOKEN [IGNORE_CASE]: {
     | <RPAREN: ")" >
     | <INVERSE: "!" | "NOT" >
     | <DOT: "." >
-    | <IDENTIFIER: (["a"-"z","A"-"Z","_"])+ >
+    | <IDENTIFIER: (["a"-"z","A"-"Z","_","0"-"9"])+ >
     | <ARRAY_START: "[" >
     | <ARRAY_END: "]" >
     | <ARRAY_SEPARATOR: ",">
     | <ALIAS_SYMBOL: "#">
-    | <ALIAS_IDENTIFIER: (["a"-"z","A"-"Z","_","0"-"9"])+ >
 }
 
 
@@ -75,7 +81,7 @@ TOKEN [IGNORE_CASE]: {
 ASTExpression Filter() #Expression :
 {
  Boolean inverse=false;
- loggerplusplus.filter.BooleanOperator op = null;
+ BooleanOperator op = null;
 }
 {
 //    (LOOKAHEAD(2) [inverse=Inverse()] <LPAREN> ExpressionInner() [(op=And() ExpressionInner())+ | (op=Or() ExpressionInner())+ | (op=Xor() ExpressionInner())+] <RPAREN>
@@ -93,7 +99,7 @@ ASTExpression Filter() #Expression :
 ASTExpression Expression() #Expression :
 {
  Boolean inverse = null;
- loggerplusplus.filter.BooleanOperator op = null;
+ BooleanOperator op = null;
 }
 {
     //Recursive to handle brackets nicely - optional invertor
@@ -110,7 +116,7 @@ ASTExpression Expression() #Expression :
 void ExpressionInner() #void :
 {}
 {
-    (LOOKAHEAD(3) Comparison() | Expression())
+    (LOOKAHEAD(3) Comparison() | Alias() | Expression())
 }
 
 
@@ -152,7 +158,7 @@ ASTAlias Alias() #Alias:
     Token identifier;
 }
 {
-    <ALIAS_SYMBOL> identifier=<ALIAS_IDENTIFIER>
+    <ALIAS_SYMBOL> identifier=<IDENTIFIER>
     {
         jjtThis.identifier = identifier.image;
         return jjtThis;
