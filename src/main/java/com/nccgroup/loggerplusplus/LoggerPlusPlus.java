@@ -280,14 +280,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return libraryController;
     }
 
-    public ArrayList<ColorFilterListener> getColorFilterListeners() {
-        return colorFilterListeners;
-    }
-
-    public void addFilterListener(ColorFilterListener listener) {
-        colorFilterListeners.add(listener);
-    }
-
     public RequestViewerController getRequestViewerController(){
         return requestViewerController;
     }

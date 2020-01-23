@@ -22,9 +22,10 @@ public class LogViewPanel extends JPanel {
     final JScrollPane logTableScrollPane;
     final JProgressBar progressBar;
     JComponent importPanel;
+    JComponent filteringPanel;
 
     public LogViewPanel(LogManager logManager){
-        this.setLayout(new GridLayout());
+        this.setLayout(new BorderLayout());
 
         LogTableColumnModel columnModel = new LogTableColumnModel();
         LogTableModel tableModel = new LogTableModel(logManager, columnModel);
@@ -55,7 +56,7 @@ public class LogViewPanel extends JPanel {
             public void mouseExited(MouseEvent mouseEvent) {}
         });
 
-        this.add(this.logTableScrollPane);
+        this.add(this.logTableScrollPane, BorderLayout.CENTER);
 
         PanelBuilder panelBuilder = new PanelBuilder(LoggerPlusPlus.preferences);
         progressBar = new JProgressBar();
@@ -63,12 +64,33 @@ public class LogViewPanel extends JPanel {
                 new JComponent[]{new JLabel("Importing: ")},
                 new JComponent[]{progressBar}
         }, Alignment.CENTER, 1.0, 1.0);
+        filteringPanel = panelBuilder.build(new JComponent[][]{
+                new JComponent[]{new JLabel("Filtering results...")}
+        }, Alignment.CENTER, 1.0, 1.0);
+
+        logTable.addFilterStatusListener(new LogTableFilterStatusListener() {
+            @Override
+            public void onFilteringStart() {
+                LogViewPanel.this.removeAll();
+                LogViewPanel.this.add(filteringPanel, BorderLayout.CENTER);
+                LogViewPanel.this.revalidate();
+                LogViewPanel.this.repaint();
+            }
+
+            @Override
+            public void onFilteringFinish() {
+                LogViewPanel.this.removeAll();
+                LogViewPanel.this.add(logTableScrollPane, BorderLayout.CENTER);
+                LogViewPanel.this.revalidate();
+                LogViewPanel.this.repaint();
+            }
+        });
     }
 
     public void showImportProgress(int entries){
         progressBar.setMaximum(entries);
-        this.remove(logTableScrollPane);
-        this.add(importPanel);
+        this.removeAll();
+        this.add(importPanel, BorderLayout.CENTER);
         this.revalidate();
         this.repaint();
     }
@@ -79,8 +101,8 @@ public class LogViewPanel extends JPanel {
     }
 
     public void showLogTable(){
-        this.remove(importPanel);
-        this.add(logTableScrollPane);
+        this.removeAll();
+        this.add(logTableScrollPane, BorderLayout.CENTER);
         this.revalidate();
         this.repaint();
     }

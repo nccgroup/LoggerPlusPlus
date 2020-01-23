@@ -18,7 +18,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         JMenuItem colorFilters = new JMenuItem(new AbstractAction("Color Filters") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners()).setVisible(true);
+                new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
             }
         });
         this.add(colorFilters);

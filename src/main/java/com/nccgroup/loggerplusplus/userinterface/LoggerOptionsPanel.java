@@ -189,15 +189,9 @@ public class LoggerOptionsPanel extends JScrollPane{
             String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
             Map<UUID, ColorFilter> colorFilterMap = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
                     new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
-            HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-            Map<UUID, ColorFilter> cloneMap = new HashMap<>(colorFilters);
-            cloneMap.putAll(colorFilterMap);
-            for (ColorFilterListener colorFilterListener : LoggerPlusPlus.instance.getColorFilterListeners()) {
-                for (ColorFilter colorFilter : colorFilterMap.values()) {
-                    colorFilterListener.onFilterAdd(colorFilter);
-                }
+            for (ColorFilter colorFilter : colorFilterMap.values()) {
+                LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
             }
-            LoggerPlusPlus.preferences.setSetting(PREF_COLOR_FILTERS, cloneMap);
         });
         colorFilterSharing.addButton("Export Color Filters", actionEvent -> {
             HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);

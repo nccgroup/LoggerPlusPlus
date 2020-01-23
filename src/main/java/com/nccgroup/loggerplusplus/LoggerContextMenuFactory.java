@@ -107,7 +107,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                             context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
                     HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUUID(), colorFilter);
-                    new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners()).setVisible(true);
+                    new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
                 } catch (ParseException e) {
                     return;
                 }

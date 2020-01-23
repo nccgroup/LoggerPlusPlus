@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.userinterface.dialog;
 
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.userinterface.renderer.ButtonRenderer;
 import com.nccgroup.loggerplusplus.userinterface.renderer.ColorRenderer;
 import com.nccgroup.loggerplusplus.userinterface.renderer.FilterRenderer;
@@ -19,12 +20,11 @@ import java.util.UUID;
  * Created by corey on 19/07/17.
  */
 public class ColorFilterTable extends JTable {
-    private final ArrayList<ColorFilterListener> colorFilterListeners;
+    private final FilterLibraryController filterLibraryController;
 
-
-    ColorFilterTable(Map<UUID, ColorFilter> filters, ArrayList<ColorFilterListener> colorFilterListeners){
-        this.colorFilterListeners = colorFilterListeners;
-        this.setModel(new ColorFilterTableModel(filters, colorFilterListeners));
+    ColorFilterTable(FilterLibraryController filterLibraryController){
+        this.filterLibraryController = filterLibraryController;
+        this.setModel(new ColorFilterTableModel(filterLibraryController));
         this.setFillsViewportHeight(true);
         this.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         this.setAutoCreateRowSorter(false);
@@ -72,9 +72,7 @@ public class ColorFilterTable extends JTable {
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()-1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()-1, this.getSelectedRow()-1);
             ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
-            for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
-                colorFilterListener.onFilterChange(filter);
-            }
+            filterLibraryController.updateColorFilter(filter);
         }
     }
     public void moveSelectedDown() {
@@ -82,9 +80,7 @@ public class ColorFilterTable extends JTable {
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
             ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
-            for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
-                colorFilterListener.onFilterChange(filter);
-            }
+            filterLibraryController.updateColorFilter(filter);
         }
     }
 }

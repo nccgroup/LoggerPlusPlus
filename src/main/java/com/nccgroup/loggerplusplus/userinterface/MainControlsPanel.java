@@ -30,7 +30,7 @@ public class MainControlsPanel extends JPanel {
         this.add(logFilterController.getFilterField(), gbc);
 
         final JButton colorFilterButton = new JButton("Colorize");
-        colorFilterButton.addActionListener(actionEvent -> new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners()).setVisible(true));
+        colorFilterButton.addActionListener(actionEvent -> new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true));
 
         gbc.gridx = 3;
         gbc.weightx = 0;

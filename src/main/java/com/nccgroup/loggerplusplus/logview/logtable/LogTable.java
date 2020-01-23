@@ -4,6 +4,7 @@ package com.nccgroup.loggerplusplus.logview.logtable;
 // extend JTable to handle cell selection and column move/resize
 //
 
+import com.nccgroup.loggerplusplus.logview.LogTableFilterStatusListener;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.RequestViewerController;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
@@ -25,17 +26,18 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class LogTable extends JTable implements LogFilterListener, ColorFilterListener, LogEntryListener
 {
 
+    private ArrayList<LogTableFilterStatusListener> filterStatusListeners;
+
     public LogTable(LogTableModel tableModel, LogTableColumnModel logTableColumnModel)
     {
         super(tableModel, logTableColumnModel);
+        filterStatusListeners = new ArrayList<>();
         this.setTableHeader(new TableHeader(getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
@@ -178,7 +180,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
             }
         });
 
-        LoggerPlusPlus.instance.addFilterListener(this);
+        LoggerPlusPlus.instance.getLibraryController().addColorFilterListener(this);
         LoggerPlusPlus.instance.getLogManager().addLogListener(this);
     }
 
@@ -188,7 +190,13 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     }
 
     public void setFilter(LogFilter filter){
+        synchronized (this.filterStatusListeners) {
+            this.filterStatusListeners.forEach(listener -> listener.onFilteringStart());
+        }
         ((DefaultRowSorter) this.getRowSorter()).setRowFilter(filter);
+        synchronized (this.filterStatusListeners) {
+            this.filterStatusListeners.forEach(listener -> listener.onFilteringFinish());
+        }
         ((JScrollPane) this.getParent().getParent()).getVerticalScrollBar().setValue(0);
     }
 
@@ -311,5 +319,13 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     @Override
     public void onFilterCleared() {
         this.setFilter(null);
+    }
+
+    public void addFilterStatusListener(LogTableFilterStatusListener listener){
+        this.filterStatusListeners.add(listener);
+    }
+
+    public void removeFilterStatusListener(LogTableFilterStatusListener listener){
+        this.filterStatusListeners.remove(listener);
     }
 }

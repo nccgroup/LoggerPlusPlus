@@ -199,7 +199,7 @@ public class LogManager implements IHttpListener, IProxyListener {
 
                     if (logEntry.requestResponse.getResponse() == null) {
                         //We're waiting on the response, move the entry from pending to the waitingForResponse list
-                        LoggerPlusPlus.instance.logOutput("Processing without response.");
+//                        LoggerPlusPlus.instance.logOutput("Processing without response.");
                         EntryPendingResponse entryPendingResponse = moveEntryToPendingResponse(logEntry);
                         int modelIndex = addNewRequest(logEntry, false);
                         entryPendingResponse.setModelIndex(modelIndex);
@@ -440,7 +440,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 while((pending = pendingImport.get()) != 0 && !Thread.currentThread().isInterrupted()){
                     try {
                         Thread.sleep(500);
-                        LoggerPlusPlus.instance.logOutput("Importing logs, " + pending + " entries remaining.");
+//                        LoggerPlusPlus.instance.logOutput("Importing logs, " + pending + " entries remaining.");
                         logViewPanel.setProgressValue(importCount - pending);
                     } catch (InterruptedException e) {}
                 }

@@ -78,7 +78,7 @@ public class LogEntryMenu extends JPopupMenu {
                                 columnName + " == " + columnValueString));
                         HashMap<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                         colorFilters.put(colorFilter.getUUID(), colorFilter);
-                        ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getColorFilterListeners());
+                        ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
                         colorFilterDialog.setVisible(true);
                     } catch (ParseException e1) {
                         return;

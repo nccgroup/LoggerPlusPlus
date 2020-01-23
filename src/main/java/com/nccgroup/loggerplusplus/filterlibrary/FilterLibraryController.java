@@ -103,7 +103,7 @@ public class FilterLibraryController {
 
     public void removeColorFilter(ColorFilter colorFilter){
         synchronized (this.colorFilters){
-            this.colorFilters.remove(colorFilter);
+            this.colorFilters.remove(colorFilter.getUUID());
         }
         for (ColorFilterListener listener : this.colorFilterListeners) {
             try{
