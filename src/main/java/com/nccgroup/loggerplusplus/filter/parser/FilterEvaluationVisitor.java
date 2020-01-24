@@ -141,7 +141,7 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
         }
       }else if(op == Operator.MATCHES){
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
-        return m.find();
+        return m.matches();
       }else if(right instanceof Pattern) {
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
         return m.find() ^ op == Operator.NOT_EQUAL;

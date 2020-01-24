@@ -96,7 +96,7 @@ public class LogFilterController {
          SwingUtilities.invokeLater(() -> {
             if (filterString == null || filterString.length() == 0 || filterString.matches(" +")) {
                 setFilter((LogFilter) null);
-            }else if(!filterString.equals(currentFilterString)){
+            }else{
                 currentFilterString = filterString;
                 try {
                     LogFilter filter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);

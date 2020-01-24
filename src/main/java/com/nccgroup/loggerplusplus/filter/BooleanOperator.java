@@ -1,7 +1,7 @@
 package com.nccgroup.loggerplusplus.filter;
 
 public enum BooleanOperator {
-    AND("&&"), OR("||"), XOR("^");
+    AND("AND"), OR("OR"), XOR("XOR");
 
     private final String label;
 
