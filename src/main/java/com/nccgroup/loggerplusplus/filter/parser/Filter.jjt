@@ -125,7 +125,7 @@ void Statement() #void :
 {
 }
 {
-    Comparison() | Alias()
+    Alias() | Comparison()
 }
 
 BooleanOperator ExpressionCompounding() #void :
@@ -150,39 +150,72 @@ BooleanOperator ExpressionCompounding() #void :
 //To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
 void Comparison() #Comparison:
 {
- Operator op;
- Object left, right;
+ Operator op = Operator.EQUAL;
+ Object left, right = true;
  Boolean value;
 }
 {
-    left = Value()
-    {
-        jjtThis.left = left;
-    }
+    (LOOKAHEAD(3) left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
 
     //TODO Identifier type checking here
 
-    (op = Operator() right = Value() //Basic Operators With Right Value
+    (
+        op = EqualityOperator() (
+            right = Value()
+        |
+            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+        )
+    |
+        op = NumericOperator() (
+            right = Number()
+        |
+            right = Identifier()
+            {
+                if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
+                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType().getTypeName()));
+                }
+            }
+        |
+            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+        )
+    |
+        op = ContainsOperator() (
+            right = String()
+        |
+            right = Number()
+        |
+            right = Identifier()
+        |
+            {throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
+        )
+
+    |
+        op = InOperator() (
+            right = Array()
+        |
+            {throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
+        )
+    | op = MatchesOperator() (
+                                 right = RegexInString()
+                             |
+                                 right = RegexInForwardSlashes()
+                             |
+                                {throw new ParseException("The matches operator must have a pattern as its right hand value."); }
+                             )
+    | //NO OPERATOR OR RIGHT VALUE Default to EQ TRUE
         {
-            jjtThis.right = right;
-            jjtThis.operator = op;
-        }
-    | op = InOperator() right = Array()
-        {
-            jjtThis.right = right;
-            jjtThis.operator = op;
-        }
-    | op = MatchesOperator() (right = RegexInString() | right = RegexInForwardSlashes())
-        {
-            jjtThis.right = right;
-            jjtThis.operator = op;
-        }
-    | //NO OPERATOR OR RIGHT VALUE (EQ TRUE)
-        {
-            jjtThis.operator = Operator.EQUAL;
-            jjtThis.right = true;
+            if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
+                //If left isn't a boolean value or field with boolean type
+                throw new ParseException(left + " cannot be evaluated as a boolean.");
+            }
         }
     )
+
+    {
+        jjtThis.left = left;
+        jjtThis.right = right;
+        jjtThis.operator = op;
+    }
 }
 
 void Alias() #Alias:
@@ -321,16 +354,26 @@ Boolean Boolean() #void :
 
 //BASIC OPERATORS
 
-Operator Operator() #void :
+Operator EqualityOperator() #void :
 {}
 {
       <EQ>  {return Operator.EQUAL;}
     | <NEQ> {return Operator.NOT_EQUAL;}
-    | <GT>  {return Operator.GREATER_THAN;}
+}
+
+Operator NumericOperator() #void :
+{}
+{
+    <GT>  {return Operator.GREATER_THAN;}
     | <LT>  {return Operator.LESS_THAN;}
     | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
     | <LEQ> {return Operator.LESS_THAN_EQUAL;}
-    | <CONTAINS> {return Operator.CONTAINS;}
+}
+
+Operator ContainsOperator() #void :
+{}
+{
+    <CONTAINS> {return Operator.CONTAINS;}
 }
 
 Operator MatchesOperator() #void :

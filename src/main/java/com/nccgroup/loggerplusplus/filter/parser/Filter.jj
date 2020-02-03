@@ -160,7 +160,7 @@ void Statement()       :
 {
 }
 {
-    Comparison() | Alias()
+    Alias() | Comparison()
 }
 
 BooleanOperator ExpressionCompounding()       :
@@ -189,61 +189,79 @@ void Comparison()            :
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
- Operator op;
- Object left, right;
+ Operator op = Operator.EQUAL;
+ Object left, right = true;
  Boolean value;
 }
 {/*@bgen(jjtree) Comparison */
     try {
 /*@egen*/
-    left = Value()
-    {
-        jjtn000.left = left;
-    }
+    (LOOKAHEAD(3) left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
 
     //TODO Identifier type checking here
 
-    (op = Operator() right = Value()/*@bgen(jjtree)*/
+    (
+        op = EqualityOperator() (
+            right = Value()
+        |
+            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+        )
+    |
+        op = NumericOperator() (
+            right = Number()
+        |
+            right = Identifier()
+            {
+                if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
+                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType().getTypeName()));
+                }
+            }
+        |
+            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+        )
+    |
+        op = ContainsOperator() (
+            right = String()
+        |
+            right = Number()
+        |
+            right = Identifier()
+        |
+            {throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
+        )
+
+    |
+        op = InOperator() (
+            right = Array()
+        |
+            {throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
+        )
+    | op = MatchesOperator() (
+                                 right = RegexInString()
+                             |
+                                 right = RegexInForwardSlashes()
+                             |
+                                {throw new ParseException("The matches operator must have a pattern as its right hand value."); }
+                             )
+    | //NO OPERATOR OR RIGHT VALUE Default to EQ TRUE
         {
-          jjtree.closeNodeScope(jjtn000, true);
-          jjtc000 = false;
-        }
-/*@egen*/ //Basic Operators With Right Value
-        {
-            jjtn000.right = right;
-            jjtn000.operator = op;
-        }
-    | op = InOperator() right = Array()/*@bgen(jjtree)*/
-        {
-          jjtree.closeNodeScope(jjtn000, true);
-          jjtc000 = false;
-        }
-/*@egen*/
-        {
-            jjtn000.right = right;
-            jjtn000.operator = op;
-        }
-    | op = MatchesOperator() (right = RegexInString() | right = RegexInForwardSlashes())/*@bgen(jjtree)*/
-        {
-          jjtree.closeNodeScope(jjtn000, true);
-          jjtc000 = false;
-        }
-/*@egen*/
-        {
-            jjtn000.right = right;
-            jjtn000.operator = op;
-        }
-    |/*@bgen(jjtree)*/
-        {
-          jjtree.closeNodeScope(jjtn000, true);
-          jjtc000 = false;
-        }
-/*@egen*/ //NO OPERATOR OR RIGHT VALUE (EQ TRUE)
-        {
-            jjtn000.operator = Operator.EQUAL;
-            jjtn000.right = true;
+            if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
+                //If left isn't a boolean value or field with boolean type
+                throw new ParseException(left + " cannot be evaluated as a boolean.");
+            }
         }
     )/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+
+    {
+        jjtn000.left = left;
+        jjtn000.right = right;
+        jjtn000.operator = op;
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -419,16 +437,26 @@ Boolean Boolean()       :
 
 //BASIC OPERATORS
 
-Operator Operator()       :
+Operator EqualityOperator()       :
 {}
 {
       <EQ>  {return Operator.EQUAL;}
     | <NEQ> {return Operator.NOT_EQUAL;}
-    | <GT>  {return Operator.GREATER_THAN;}
+}
+
+Operator NumericOperator()       :
+{}
+{
+    <GT>  {return Operator.GREATER_THAN;}
     | <LT>  {return Operator.LESS_THAN;}
     | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
     | <LEQ> {return Operator.LESS_THAN_EQUAL;}
-    | <CONTAINS> {return Operator.CONTAINS;}
+}
+
+Operator ContainsOperator()       :
+{}
+{
+    <CONTAINS> {return Operator.CONTAINS;}
 }
 
 Operator MatchesOperator()       :

@@ -3,6 +3,7 @@
 package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.Operator;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -31,7 +32,9 @@ class ASTComparison extends SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("ASTComparison[left=%s, op=%s, right=%s]", left, operator, right);
+    Class<?> leftClass = left instanceof LogEntryField ? ((LogEntryField) left).getType() : left.getClass();
+    Class<?> rightClass = right instanceof LogEntryField ? ((LogEntryField) right).getType() : right.getClass();
+    return String.format("ASTComparison[left=%s (%s), op=%s, right=%s (%s)]", left, leftClass, operator, right, rightClass);
   }
 
   @Override
