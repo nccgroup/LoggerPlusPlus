@@ -342,20 +342,20 @@ Object Value()      :
 Set Array()      :
 {
     Set<Object> items = new LinkedHashSet();
-    Object i;
+    Object initial, subsequent;
 }{
     <ARRAY_START>
+    (initial=String() | initial=Number()) {items.add(initial);}
     (
-        LOOKAHEAD(2) i=String() {items.add(i);}
-        (
-            <ARRAY_SEPARATOR> i=String() {items.add(i);}
-        )* //String array
-    |
-        LOOKAHEAD(2) i=Number() {items.add(i);}
-        (
-            <ARRAY_SEPARATOR> i=Number() {items.add(i);}
-        )* //Number array
-    )
+        <ARRAY_SEPARATOR>
+        (subsequent=String() | subsequent=Number())
+        {
+            if(!initial.getClass().isAssignableFrom(subsequent.getClass())){
+                throw new ParseException("Array elements must all be of the same type.");
+            }
+            items.add(subsequent);
+        }
+    )* //String array
     <ARRAY_END>
 
     { return items; }
