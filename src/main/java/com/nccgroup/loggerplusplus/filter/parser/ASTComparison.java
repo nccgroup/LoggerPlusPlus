@@ -53,7 +53,7 @@ class ASTComparison extends SimpleNode {
       sb.append("[");
       sb.append(((Set) obj).stream().map(item -> {
         if(item instanceof String) return "\"" + item + "\"";
-        else return item;
+        else return String.valueOf(item);
       }).collect(Collectors.joining(", ")));
       sb.append("]");
       return sb.toString();

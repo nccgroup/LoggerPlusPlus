@@ -7,7 +7,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
@@ -105,7 +106,16 @@ if (jjtc000) {
 }
 
   final public void ExpressionInner() throws ParseException {
-    Statement();
+    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+    case LPAREN:
+    case INVERSE:{
+      WrappedCompoundExpression();
+      break;
+      }
+    default:
+      jj_la1[2] = jj_gen;
+      Statement();
+    }
 }
 
   final public void Statement() throws ParseException {
@@ -115,7 +125,7 @@ if (jjtc000) {
       break;
       }
     default:
-      jj_la1[2] = jj_gen;
+      jj_la1[3] = jj_gen;
       Comparison();
     }
 }
@@ -136,7 +146,7 @@ if (jjtc000) {
       break;
       }
     default:
-      jj_la1[3] = jj_gen;
+      jj_la1[4] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -151,7 +161,7 @@ if (jjtc000) {
         break;
         }
       default:
-        jj_la1[4] = jj_gen;
+        jj_la1[5] = jj_gen;
         break label_1;
       }
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -168,7 +178,7 @@ if (jjtc000) {
         break;
         }
       default:
-        jj_la1[5] = jj_gen;
+        jj_la1[6] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -210,7 +220,7 @@ if (jjtc000) {
           break;
           }
         default:
-          jj_la1[6] = jj_gen;
+          jj_la1[7] = jj_gen;
 {if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         }
         break;
@@ -236,7 +246,7 @@ if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
           break;
           }
         default:
-          jj_la1[7] = jj_gen;
+          jj_la1[8] = jj_gen;
 {if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         }
         break;
@@ -258,7 +268,7 @@ if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
           break;
           }
         default:
-          jj_la1[8] = jj_gen;
+          jj_la1[9] = jj_gen;
 {if (true) throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
         }
         break;
@@ -271,7 +281,7 @@ if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
           break;
           }
         default:
-          jj_la1[9] = jj_gen;
+          jj_la1[10] = jj_gen;
 {if (true) throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
         }
         break;
@@ -290,13 +300,13 @@ if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
           break;
           }
         default:
-          jj_la1[10] = jj_gen;
+          jj_la1[11] = jj_gen;
 {if (true) throw new ParseException("The matches operator must have a pattern as its right hand value.");}
         }
         break;
         }
       default:
-        jj_la1[11] = jj_gen;
+        jj_la1[12] = jj_gen;
 if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
                 //If left isn't a boolean value or field with boolean type
                 {if (true) throw new ParseException(left + " cannot be evaluated as a boolean.");}
@@ -360,7 +370,7 @@ if (jjtc000) {
         break;
         }
       default:
-        jj_la1[12] = jj_gen;
+        jj_la1[13] = jj_gen;
         if (jj_2_3(2)) {
           v = String();
         } else {
@@ -376,7 +386,7 @@ if (jjtc000) {
             break;
             }
           default:
-            jj_la1[13] = jj_gen;
+            jj_la1[14] = jj_gen;
             jj_consume_token(-1);
             throw new ParseException();
           }
@@ -387,7 +397,7 @@ if (jjtc000) {
     throw new Error("Missing return statement in function");
 }
 
-  final public HashSet Array() throws ParseException {HashSet<Object> items = new HashSet();
+  final public Set Array() throws ParseException {Set<Object> items = new LinkedHashSet();
     Object i;
     jj_consume_token(ARRAY_START);
     if (jj_2_4(2)) {
@@ -401,7 +411,7 @@ items.add(i);
           break;
           }
         default:
-          jj_la1[14] = jj_gen;
+          jj_la1[15] = jj_gen;
           break label_2;
         }
         jj_consume_token(ARRAY_SEPARATOR);
@@ -419,7 +429,7 @@ items.add(i);
           break;
           }
         default:
-          jj_la1[15] = jj_gen;
+          jj_la1[16] = jj_gen;
           break label_3;
         }
         jj_consume_token(ARRAY_SEPARATOR);
@@ -476,7 +486,7 @@ BigDecimal Number() throws ParseException {Token t;
       break;
       }
     default:
-      jj_la1[16] = jj_gen;
+      jj_la1[17] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -496,7 +506,7 @@ String s = t.image.substring(1,t.image.length()-1);
       break;
       }
     default:
-      jj_la1[17] = jj_gen;
+      jj_la1[18] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -515,7 +525,7 @@ String s = t.image.substring(1,t.image.length()-1);
       break;
       }
     default:
-      jj_la1[18] = jj_gen;
+      jj_la1[19] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -530,7 +540,7 @@ String s = t.image.substring(1,t.image.length()-1);
       break;
       }
     default:
-      jj_la1[19] = jj_gen;
+      jj_la1[20] = jj_gen;
       ;
     }
     t = jj_consume_token(BOOLEAN);
@@ -556,7 +566,7 @@ Operator EqualityOperator() throws ParseException {
       break;
       }
     default:
-      jj_la1[20] = jj_gen;
+      jj_la1[21] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -586,7 +596,7 @@ Operator EqualityOperator() throws ParseException {
       break;
       }
     default:
-      jj_la1[21] = jj_gen;
+      jj_la1[22] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -675,12 +685,6 @@ Operator EqualityOperator() throws ParseException {
     finally { jj_save(4, xla); }
   }
 
-  private boolean jj_3_2()
- {
-    if (jj_3R_4()) return true;
-    return false;
-  }
-
   private boolean jj_3_4()
  {
     if (jj_3R_5()) return true;
@@ -752,6 +756,12 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
+  private boolean jj_3_2()
+ {
+    if (jj_3R_4()) return true;
+    return false;
+  }
+
   /** Generated Token Manager. */
   public FilterParserTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -763,13 +773,13 @@ Operator EqualityOperator() throws ParseException {
   private Token jj_scanpos, jj_lastpos;
   private int jj_la;
   private int jj_gen;
-  final private int[] jj_la1 = new int[22];
+  final private int[] jj_la1 = new int[23];
   static private int[] jj_la1_0;
   static {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x700,0x800000,0x20000000,0x700,0x700,0x700,0x28de000,0x2010000,0x201c000,0x4000000,0xcc000,0x1018fc,0x812000,0xcc000,0x10000000,0x10000000,0xc000,0xc000,0xc0000,0x800000,0xc,0xf0,};
+	   jj_la1_0 = new int[] {0x700,0x800000,0xa00000,0x20000000,0x700,0x700,0x700,0x28de000,0x2010000,0x201c000,0x4000000,0xcc000,0x1018fc,0x812000,0xcc000,0x10000000,0x10000000,0xc000,0xc000,0xc0000,0x800000,0xc,0xf0,};
 	}
   final private JJCalls[] jj_2_rtns = new JJCalls[5];
   private boolean jj_rescan = false;
@@ -786,7 +796,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -802,7 +812,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -813,7 +823,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -833,7 +843,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -843,7 +853,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -854,7 +864,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -985,7 +995,7 @@ Operator EqualityOperator() throws ParseException {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 22; i++) {
+	 for (int i = 0; i < 23; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
