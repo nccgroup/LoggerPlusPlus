@@ -248,8 +248,8 @@ public class LogEntry
         else if(this.requestResponse.getResponse() == null)
             throw new IllegalStateException("Cannot analyse the response of an incomplete IHttpRequestResponse.");
 
-		if(this.responseDateTime == null){
-		    //If it didn't have an arrival time set, assume it was right now.
+		if(this.responseDateTime == null && !isCompleteEntry){
+			//If it didn't have an arrival time set, assume it was right now.
 			this.responseDateTime = new Date();
 		}
 		if(!isCompleteEntry) { //If the request and response didn't arrive at the same time.

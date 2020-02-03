@@ -161,7 +161,7 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			LogTableColumn column = null;
 			JsonObject object = jsonElement.getAsJsonObject();
             column = new LogTableColumn();
-            column.identifier = LogEntryField.valueOf(object.get("id").getAsString());
+            column.identifier = LogEntryField.getByFullyQualifiedName(object.get("id").getAsString());
 			column.name = object.get("name").getAsString();
 			column.order = object.get("order").getAsInt();
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();

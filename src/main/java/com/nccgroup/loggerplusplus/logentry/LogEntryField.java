@@ -116,6 +116,12 @@ public enum LogEntryField {
         return completeGroupFieldMap.get(fieldGroup);
     }
 
+    public static LogEntryField getByFullyQualifiedName(String fqn){
+        String[] split = fqn.split("\\.");
+        FieldGroup group = FieldGroup.findByLabel(split[0]);
+        return getByLabel(group, split[1]);
+    }
+
     @Override
     public String toString() {
         //TODO Better output for alternatives in error messages

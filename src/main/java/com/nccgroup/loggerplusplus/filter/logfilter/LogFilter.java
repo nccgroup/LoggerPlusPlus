@@ -36,7 +36,7 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
 
     @Override
     public String toString() {
-        return filter.toString();
+        return filter.getFilterString();
     }
 
     @Override
