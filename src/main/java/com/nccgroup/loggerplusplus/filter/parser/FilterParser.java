@@ -187,7 +187,6 @@ if (jjtc000) {
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);Operator op = Operator.EQUAL;
  Object left, right = true;
- Boolean value;
     try {
       if (jj_2_1(3)) {
         left = Identifier();
@@ -212,7 +211,7 @@ if (jjtc000) {
           }
         default:
           jj_la1[6] = jj_gen;
-{if (true) throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+{if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         }
         break;
         }
@@ -221,6 +220,9 @@ if (jjtc000) {
       case GEQ:
       case LEQ:{
         op = NumericOperator();
+if(!Number.class.isAssignableFrom(((LogEntryField) left).getType())){
+                {if (true) throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));}
+            }
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
         case NUMBER:{
           right = Number();
@@ -229,13 +231,13 @@ if (jjtc000) {
         case IDENTIFIER:{
           right = Identifier();
 if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
-                    {if (true) throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType().getTypeName()));}
+                    {if (true) throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));}
                 }
           break;
           }
         default:
           jj_la1[7] = jj_gen;
-{if (true) throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+{if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         }
         break;
         }
@@ -673,34 +675,6 @@ Operator EqualityOperator() throws ParseException {
     finally { jj_save(4, xla); }
   }
 
-  private boolean jj_3R_6()
- {
-    if (jj_scan_token(ARRAY_SEPARATOR)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_5()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_scan_token(14)) {
-    jj_scanpos = xsp;
-    if (jj_scan_token(15)) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3_5()
- {
-    if (jj_3R_7()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_8()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
   private boolean jj_3_2()
  {
     if (jj_3R_4()) return true;
@@ -738,15 +712,43 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3_1()
- {
-    if (jj_3R_4()) return true;
-    return false;
-  }
-
   private boolean jj_3_3()
  {
     if (jj_3R_5()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_6()
+ {
+    if (jj_scan_token(ARRAY_SEPARATOR)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_5()
+ {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_scan_token(14)) {
+    jj_scanpos = xsp;
+    if (jj_scan_token(15)) return true;
+    }
+    return false;
+  }
+
+  private boolean jj_3_5()
+ {
+    if (jj_3R_7()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_8()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
+  private boolean jj_3_1()
+ {
+    if (jj_3R_4()) return true;
     return false;
   }
 

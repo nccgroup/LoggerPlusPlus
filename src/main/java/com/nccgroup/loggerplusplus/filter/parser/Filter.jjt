@@ -152,7 +152,6 @@ void Comparison() #Comparison:
 {
  Operator op = Operator.EQUAL;
  Object left, right = true;
- Boolean value;
 }
 {
     (LOOKAHEAD(3) left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
@@ -163,20 +162,26 @@ void Comparison() #Comparison:
         op = EqualityOperator() (
             right = Value()
         |
-            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+            {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         )
     |
-        op = NumericOperator() (
+        op = NumericOperator()
+        {
+            if(!Number.class.isAssignableFrom(((LogEntryField) left).getType())){
+                throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));
+            }
+        }
+        (
             right = Number()
         |
             right = Identifier()
             {
                 if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
-                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType().getTypeName()));
+                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));
                 }
             }
         |
-            {throw new ParseException("Missing right hand value for comparison \"" + op + "\"");}
+            {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
         )
     |
         op = ContainsOperator() (
