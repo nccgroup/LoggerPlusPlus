@@ -31,23 +31,11 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   public VisitorData visit(SimpleNode node){
     return visit(node, new VisitorData());
   }
-
   public VisitorData visit(ASTExpression node, VisitorData data){
     return defaultVisit(node, data);
   }
   public VisitorData visit(ASTComparison node, VisitorData visitorData){
     defaultVisit(node, visitorData);
-    return visitorData;
-  }
-
-  /**
-   * Validate the identifier and resolve the field by group and label
-   * Do some simple sanity checks on types and usage.
-   * @param node
-   * @param visitorData
-   * @return
-   */
-  public VisitorData visit(ASTIdentifier node, VisitorData visitorData){
     return visitorData;
   }
 

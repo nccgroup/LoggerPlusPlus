@@ -2,8 +2,7 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=true,TRACK_TOKENS=false,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package com.nccgroup.loggerplusplus.filter.parser;
 
-public
-class SimpleNode implements Node {
+public abstract class SimpleNode implements Node {
 
   protected Node parent;
   protected Node[] children;

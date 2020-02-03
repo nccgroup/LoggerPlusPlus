@@ -35,6 +35,8 @@ interface Node {
 
   public int getId();
 
+  public String getFilterString();
+
   /** Accept the visitor. **/
   public Object jjtAccept(FilterParserVisitor visitor, VisitorData data);
 }

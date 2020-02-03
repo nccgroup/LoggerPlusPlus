@@ -3,6 +3,7 @@ package com.nccgroup.loggerplusplus.filter.logfilter;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -64,9 +65,9 @@ public class LogFilterController {
         JTextField editor = (JTextField) filterField.getEditor().getEditorComponent();
 
         JPopupMenu autoComplete = new JPopupMenu();
-        HashMap<LogEntryField.Group, JMenu> groupMenus = new HashMap<>();
-        for (LogEntryField.Group group : LogEntryField.Group.values()) {
-            groupMenus.put(group, new JMenu(group.getLabel()));
+        HashMap<FieldGroup, JMenu> groupMenus = new HashMap<>();
+        for (FieldGroup fieldGroup : FieldGroup.values()) {
+            groupMenus.put(fieldGroup, new JMenu(fieldGroup.getLabel()));
         }
 
         for (LogEntryField field : LogEntryField.values()) {
@@ -74,7 +75,7 @@ public class LogFilterController {
             fieldItem.addActionListener((e) -> {
                 editor.setText(editor.getText() + field.getFullLabel());
             });
-            groupMenus.get(field.getGroup()).add(fieldItem);
+            groupMenus.get(field.getFieldGroup()).add(fieldItem);
         }
 
         for (JMenu menu : groupMenus.values()) {

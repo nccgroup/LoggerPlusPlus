@@ -31,6 +31,11 @@ class ASTComparison extends SimpleNode {
 
   @Override
   public String toString() {
+    return String.format("ASTComparison[left=%s, op=%s, right=%s]", left, operator, right);
+  }
+
+  @Override
+  public String getFilterString() {
     return String.format("%s %s %s", convertObjectToString(left), operator.getLabel(), convertObjectToString(right));
   }
 

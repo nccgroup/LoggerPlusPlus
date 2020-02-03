@@ -18,8 +18,5 @@ public class FilterParserDefaultVisitor implements FilterParserVisitor{
   public Object visit(ASTAlias node, VisitorData data){
     return defaultVisit(node, data);
   }
-  public Object visit(ASTIdentifier node, VisitorData data){
-    return defaultVisit(node, data);
-  }
 }
-/* JavaCC - OriginalChecksum=2f1dd0264ac58788ac358d4ff1fad3e8 (do not edit this line) */
+/* JavaCC - OriginalChecksum=06ac44fa53bd2978a8b7d3aa6de4fced (do not edit this line) */

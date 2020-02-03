@@ -7,41 +7,46 @@ import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 public
 class ASTExpression extends SimpleNode {
 
-  boolean inverse = false;
-  BooleanOperator op;
+    boolean inverse = false;
+    BooleanOperator op;
 
-  public ASTExpression(int id) {
-    super(id);
-  }
+    public ASTExpression(int id) {
+        super(id);
+    }
 
-  public ASTExpression(FilterParser p, int id) {
-    super(p, id);
-  }
+    public ASTExpression(FilterParser p, int id) {
+        super(p, id);
+    }
 
-  @Override
-  public String toString() {
-      StringBuilder sb = new StringBuilder();
-      for (int i = 0; i < this.children.length; i++) {
-          String childString = this.children[i].toString();
-          if(this.children[i] instanceof ASTExpression && !((ASTExpression) this.children[i]).inverse)
-              sb.append("(" + childString + ")");
-          else
-              sb.append(childString);
+    @Override
+    public String getFilterString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < this.children.length; i++) {
+            String childString = this.children[i].getFilterString();
+            if (this.children[i] instanceof ASTExpression && !((ASTExpression) this.children[i]).inverse)
+                sb.append("(" + childString + ")");
+            else
+                sb.append(childString);
 
-          if(i != this.children.length-1){
-              sb.append(" " + op.getLabel() + " ");
-          }
-      }
+            if (i != this.children.length - 1) {
+                sb.append(" " + op.getLabel() + " ");
+            }
+        }
 
-      if(inverse) return "!(" + sb.toString() + ")";
-      else return sb.toString();
-  }
+        if (inverse) return "!(" + sb.toString() + ")";
+        else return sb.toString();
+    }
 
-  /** Accept the visitor. **/
-  public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
+    @Override
+    public String toString() {
+        return String.format("ASTExpression[inverse=%s, op=%s]", inverse, op);
+    }
 
-    return
-    visitor.visit(this, data);
-  }
+    /**
+     * Accept the visitor.
+     **/
+    public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
+        return visitor.visit(this, data);
+    }
 }
 /* JavaCC - OriginalChecksum=f3e2fc4905864ee71fff41d667f32963 (do not edit this line) */

@@ -1,122 +1,97 @@
 package com.nccgroup.loggerplusplus.logentry;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 
 public enum LogEntryField {
 
     //Proxy
-    NUMBER(Group.PROXY, Integer.class, "Number"),
-    PROXY_TOOL(Group.PROXY, String.class, "Tool"),
-    LISTENER_INTERFACE(Group.PROXY, String.class, "ListenInterface", "Interface"),
-    CLIENT_IP(Group.PROXY, String.class, "ClientIP", "ClientAddress"),
-    USES_COOKIE_JAR_PROXY(Group.PROXY, String.class, "UsesCookieJar", "CookieJar"),
-    COMMENT(Group.PROXY, String.class, "Comment"),
+    NUMBER(FieldGroup.PROXY, Integer.class, "Number"),
+    PROXY_TOOL(FieldGroup.PROXY, String.class, "Tool"),
+    LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "ListenInterface", "Interface"),
+    CLIENT_IP(FieldGroup.PROXY, String.class, "ClientIP", "ClientAddress"),
+    USES_COOKIE_JAR_PROXY(FieldGroup.PROXY, String.class, "UsesCookieJar", "CookieJar"),
+    COMMENT(FieldGroup.PROXY, String.class, "Comment"),
 
     //Request + Response
-    REQUEST_HEADERS(Group.REQUEST, String.class, "Headers"),
-    RESPONSE_HEADERS(Group.RESPONSE, String.class, "Headers"),
-    REQUEST_BODY(Group.REQUEST, String.class, "Body"),
-    RESPONSE_BODY(Group.RESPONSE, String.class, "Body"),
-    REQUEST_TIME(Group.REQUEST, Date.class, "Time"),
-    RESPONSE_TIME(Group.RESPONSE, Date.class, "Time"),
-    REQUEST_LENGTH(Group.REQUEST, Integer.class, "Length"),
-    RESPONSE_LENGTH(Group.RESPONSE, Integer.class, "Length"),
+    REQUEST_HEADERS(FieldGroup.REQUEST, String.class, "Headers"),
+    RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "Headers"),
+    REQUEST_BODY(FieldGroup.REQUEST, String.class, "Body"),
+    RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "Body"),
+    REQUEST_TIME(FieldGroup.REQUEST, Date.class, "Time"),
+    RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Time"),
+    REQUEST_LENGTH(FieldGroup.REQUEST, Integer.class, "Length"),
+    RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "Length"),
 
 
     //Request
-    REQUEST_TOOL(Group.REQUEST, String.class, "Tool"), //Alias for proxy.tool
-    COMPLETE(Group.REQUEST, Boolean.class, "Complete", "isComplete"),
-    URL(Group.REQUEST, String.class, "URL"),
-    METHOD(Group.REQUEST, String.class, "Method"),
-    PATH(Group.REQUEST, String.class, "Path"),
-    QUERY(Group.REQUEST, String.class, "Query"),
-    PROTOCOL(Group.REQUEST, String.class, "Protocol"),
-    ISSSL(Group.REQUEST, Boolean.class, "IsSSL", "ssl"),
-    REQUEST_USES_COOKIE_JAR(Group.REQUEST, String.class, "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
-    HOSTNAME(Group.REQUEST, String.class, "Hostname"),
-    HOST(Group.REQUEST, String.class, "Host"),
-    PORT(Group.REQUEST, Short.class, "Port"),
-    REQUEST_CONTENT_TYPE(Group.REQUEST, String.class, "ContentType", "Content_Type"),
-    EXTENSION(Group.REQUEST, String.class, "Extension"),
-    REFERRER(Group.REQUEST, String.class, "Referrer"),
-    HASPARAMS(Group.REQUEST, Boolean.class, "HasParams", "Has_Params"),
-    HASGETPARAM(Group.REQUEST, Boolean.class, "HasGetParam", "HasQueryString", "QueryString"),
-    HASPOSTPARAM(Group.REQUEST, Boolean.class, "HasPostParam", "HasPayload", "Payload"),
-    HASCOOKIEPARAM(Group.REQUEST, Boolean.class, "HasSentCookies"),
-    SENTCOOKIES(Group.REQUEST, Boolean.class, "CookieString", "SentCookies"),
+    REQUEST_TOOL(FieldGroup.REQUEST, String.class, "Tool"), //Alias for proxy.tool
+    COMPLETE(FieldGroup.REQUEST, Boolean.class, "Complete", "isComplete"),
+    URL(FieldGroup.REQUEST, String.class, "URL"),
+    METHOD(FieldGroup.REQUEST, String.class, "Method"),
+    PATH(FieldGroup.REQUEST, String.class, "Path"),
+    QUERY(FieldGroup.REQUEST, String.class, "Query"),
+    PROTOCOL(FieldGroup.REQUEST, String.class, "Protocol"),
+    ISSSL(FieldGroup.REQUEST, Boolean.class, "IsSSL", "ssl"),
+    REQUEST_USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
+    HOSTNAME(FieldGroup.REQUEST, String.class, "Hostname"),
+    HOST(FieldGroup.REQUEST, String.class, "Host"),
+    PORT(FieldGroup.REQUEST, Short.class, "Port"),
+    REQUEST_CONTENT_TYPE(FieldGroup.REQUEST, String.class, "ContentType", "Content_Type"),
+    EXTENSION(FieldGroup.REQUEST, String.class, "Extension"),
+    REFERRER(FieldGroup.REQUEST, String.class, "Referrer"),
+    HASPARAMS(FieldGroup.REQUEST, Boolean.class, "HasParams", "Has_Params"),
+    HASGETPARAM(FieldGroup.REQUEST, Boolean.class, "HasGetParam", "HasQueryString", "QueryString"),
+    HASPOSTPARAM(FieldGroup.REQUEST, Boolean.class, "HasPostParam", "HasPayload", "Payload"),
+    HASCOOKIEPARAM(FieldGroup.REQUEST, Boolean.class, "HasSentCookies"),
+    SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "CookieString", "SentCookies", "Cookies"),
 
 
     //Response
-    STATUS(Group.RESPONSE, Short.class, "Status"),
-    RTT(Group.RESPONSE, Integer.class, "RTT", "TimeTaken"),
-    TITLE(Group.RESPONSE, String.class, "Title"),
-    RESPONSE_CONTENT_TYPE(Group.RESPONSE, String.class, "ContentType", "Content_Type"),
-    MIME_TYPE(Group.RESPONSE, String.class, "MimeType", "Mime_Type"),
-    INFERRED_TYPE(Group.RESPONSE, String.class, "InferredType", "Inferred_Type"),
-    HAS_SET_COOKIES(Group.RESPONSE, Boolean.class, "HasSetCookies", "Has_Set_Cookies"),
-    NEW_COOKIES(Group.RESPONSE, String.class, "NewCookies", "New_Cookies");
+    STATUS(FieldGroup.RESPONSE, Short.class, "Status"),
+    RTT(FieldGroup.RESPONSE, Integer.class, "RTT", "TimeTaken"),
+    TITLE(FieldGroup.RESPONSE, String.class, "Title"),
+    RESPONSE_CONTENT_TYPE(FieldGroup.RESPONSE, String.class, "ContentType", "Content_Type"),
+    MIME_TYPE(FieldGroup.RESPONSE, String.class, "MimeType", "Mime_Type"),
+    INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "InferredType", "Inferred_Type"),
+    HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "HasSetCookies", "Has_Set_Cookies"),
+    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "NewCookies", "New_Cookies");
 
-    private static final HashMap<Group, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
-    private static final HashMap<Group, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();
+    private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
+    private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();
 
     static {
-        for (Group group : Group.values()) {
-            completeGroupFieldMap.put(group, new HashMap<>());
-            shortGroupFieldMap.put(group, new HashMap<>());
+        for (FieldGroup fieldGroup : FieldGroup.values()) {
+            completeGroupFieldMap.put(fieldGroup, new HashMap<>());
+            shortGroupFieldMap.put(fieldGroup, new HashMap<>());
         }
 
         for (LogEntryField field : LogEntryField.values()) {
-            shortGroupFieldMap.get(field.group).put(field.labels[0].toUpperCase(), field);
+            shortGroupFieldMap.get(field.fieldGroup).put(field.labels[0].toUpperCase(), field);
             for (String label : field.labels) {
-                completeGroupFieldMap.get(field.group).put(label.toUpperCase(), field);
+                completeGroupFieldMap.get(field.fieldGroup).put(label.toUpperCase(), field);
             }
         }
     }
 
 
-    public enum Group{
-        PROXY("Proxy"),
-        REQUEST("Request"),
-        RESPONSE("Response");
-        private String label;
-
-        private static final HashMap<String, Group> groupLabelMap = new HashMap<>();
-        static {
-            for (Group group : Group.values()) {
-                groupLabelMap.put(group.label.toUpperCase(), group);
-            }
-        }
-
-        Group(String label){
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public static Group findByLabel(String label){
-            return groupLabelMap.get(label.toUpperCase());
-        }
-    }
-
-    private Group group;
-    private Class type;
+    private FieldGroup fieldGroup;
+    private Class<?> type;
     private String[] labels;
 
     
-    LogEntryField(Group group, Class type, String... labels){
-        this.group = group;
+    LogEntryField(FieldGroup fieldGroup, Class<?> type, String... labels){
+        this.fieldGroup = fieldGroup;
         this.type = type;
         this.labels = labels;
     }
 
-    public Group getGroup() {
-        return group;
+    public FieldGroup getFieldGroup() {
+        return fieldGroup;
     }
 
-    public Class getType() {
+    public Class<?> getType() {
         return type;
     }
 
@@ -125,19 +100,25 @@ public enum LogEntryField {
     }
 
     public String getFullLabel(String label){
-        return this.group.getLabel() + "." + label;
+        return this.fieldGroup.getLabel() + "." + label;
     }
 
     public String getFullLabel(){
-        return this.group.getLabel() + "." + labels[0];
+        return this.fieldGroup.getLabel() + "." + labels[0];
     }
 
-    public static LogEntryField getByLabel(Group group, String searchLabel){
-        HashMap<String, LogEntryField> groupFields = completeGroupFieldMap.get(group);
+    public static LogEntryField getByLabel(FieldGroup fieldGroup, String searchLabel){
+        HashMap<String, LogEntryField> groupFields = completeGroupFieldMap.get(fieldGroup);
         return groupFields != null ? groupFields.get(searchLabel.toUpperCase()) : null;
     }
 
-    public static HashMap<String, LogEntryField> getFieldsInGroup(Group group){
-        return completeGroupFieldMap.get(group);
+    public static HashMap<String, LogEntryField> getFieldsInGroup(FieldGroup fieldGroup){
+        return completeGroupFieldMap.get(fieldGroup);
+    }
+
+    @Override
+    public String toString() {
+        //TODO Better output for alternatives in error messages
+        return getFullLabel();
     }
 }

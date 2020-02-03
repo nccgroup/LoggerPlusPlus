@@ -17,11 +17,7 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     private final ASTExpression filter;
 
     public LogFilter(String filterString) throws ParseException {
-        try {
-            filter = FilterParser.parseFilter(filterString);
-        }catch (IOException e){
-            throw new ParseException("Could not read input string.");
-        }
+        filter = FilterParser.parseFilter(filterString);
     }
 
     public LogFilter(FilterLibraryController filterLibraryController, String filterString) throws ParseException {

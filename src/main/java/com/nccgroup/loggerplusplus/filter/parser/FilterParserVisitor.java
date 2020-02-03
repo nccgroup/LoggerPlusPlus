@@ -7,6 +7,5 @@ public interface FilterParserVisitor
   public Object visit(ASTExpression node, VisitorData data);
   public Object visit(ASTComparison node, VisitorData data);
   public Object visit(ASTAlias node, VisitorData data);
-  public Object visit(ASTIdentifier node, VisitorData data);
 }
-/* JavaCC - OriginalChecksum=b5f79918fb4bdc64b5ce1222f0da1aae (do not edit this line) */
+/* JavaCC - OriginalChecksum=6fc9bf0937c416fc04e99e70768a04f7 (do not edit this line) */

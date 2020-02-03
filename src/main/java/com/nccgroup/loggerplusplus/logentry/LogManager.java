@@ -103,6 +103,7 @@ public class LogManager implements IHttpListener, IProxyListener {
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean messageIsRequest, final IHttpRequestResponse requestResponse) {
+        //TODO Use processHttpMessage to capture diff from other tools
         if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
         if(requestResponse == null || !(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
@@ -410,6 +411,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public void importProxyHistory(boolean askConfirmation){
+        //TODO Fix time bug for imported results
         int result = JOptionPane.OK_OPTION;
         int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
         int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);

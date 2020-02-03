@@ -4,6 +4,7 @@ package com.nccgroup.loggerplusplus.filter.parser;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogManager;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.filter.Operator;
@@ -73,35 +74,24 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
   }
 
   public Boolean visit(ASTComparison node, VisitorData visitorData){
-//    System.out.println("Evaluating Node: " + node);
     Object left, right;
-    Class leftType, rightType;
 
-    //Visit nodes if they're identifiers to pull their groups, otherwise the node itself is the value.
-    left = node.left instanceof ASTIdentifier ? visit((ASTIdentifier) node.left, visitorData) : node.left;
-    right = node.right instanceof ASTIdentifier ? visit((ASTIdentifier) node.right, visitorData) : node.right;
+    //Must pull the value from the entry for fields, otherwise the node itself is the value.
+    left = node.left instanceof LogEntryField ? getValueForField(visitorData, (LogEntryField) node.left) : node.left;
+    right = node.right instanceof LogEntryField ? getValueForField(visitorData, (LogEntryField) node.right) : node.right;
 
     return compare(node.operator, left, right);
   }
 
-
-  /**
-   * Process the ASTIdentifier node.
-   * @param node The node to visit.
-   * @param visitorData The visitors data.
-   * @return The value of the LogEntry for the identifier.
-   */
-  public Object visit(ASTIdentifier node, VisitorData visitorData){
-    Object result = ((LogEntry) visitorData.getData().get(LOG_ENTRY)).getValueByKey(node.logEntryField);
-    if(node.inverse) return !((Boolean) result);
-    return result;
+  private Object getValueForField(VisitorData visitorData, LogEntryField field){
+    return ((LogEntry) visitorData.getData().get(LOG_ENTRY)).getValueByKey(field);
   }
 
   @Override
   public Boolean visit(ASTAlias node, VisitorData data) {
     for (SavedFilter savedFilter : filterLibraryController.getSavedFilters()) {
       if(node.identifier.equalsIgnoreCase(savedFilter.getName())){
-        return visit((ASTExpression) savedFilter.getFilter().getAST(), data);
+        return visit(savedFilter.getFilter().getAST(), data);
       }
     }
      return false;

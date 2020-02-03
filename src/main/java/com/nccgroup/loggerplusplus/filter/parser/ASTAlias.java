@@ -17,8 +17,13 @@ class ASTAlias extends SimpleNode {
   }
 
   @Override
-  public String toString() {
+  public String getFilterString() {
     return "#" + identifier;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("ASTAlias[id=%s]", identifier);
   }
 
   /** Accept the visitor. **/
