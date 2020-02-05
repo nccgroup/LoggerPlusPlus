@@ -28,8 +28,6 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
 
 /*@egen*/
 
-
-    //TODO Better error message for AND / OR ambiguity in filters
     public static ASTExpression parseFilter(String string) throws ParseException {
         FilterParser FilterParser = new FilterParser(new StringReader(string));
         ASTExpression node;
@@ -109,7 +107,7 @@ ASTExpression Expression(boolean inverse)             :
 {/*@bgen(jjtree) Expression */
     try {
 /*@egen*/
-    ExpressionInner() [op=ExpressionCompounding()]/*@bgen(jjtree)*/
+    ExpressionInner() [LOOKAHEAD(2) op=ExpressionCompounding()]/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
@@ -148,7 +146,7 @@ void WrappedCompoundExpression()       :
     boolean inverse=false;
 }
 {
-    [inverse=Inverse()] <LPAREN> Expression(inverse) <RPAREN>
+    [inverse=Inverse()] <LPAREN> Expression(inverse) (<RPAREN> | {throw new ParseException("Unbalanced brackets.");})
 }
 
 void ExpressionInner()       :
@@ -171,7 +169,7 @@ BooleanOperator ExpressionCompounding()       :
 }
 {
     (op = And() | op = Or() | op = Xor()) ExpressionInner() //First compounding can be any operator
-    (
+    ( LOOKAHEAD(2)
         (nextOp = And() | nextOp = Or() | nextOp = Xor())
         { //Subsequent compoundings must be same operator. Otherwise, throw exception.
             if(op != nextOp) throwOperatorAmbiguityException(op,nextOp);
@@ -197,8 +195,6 @@ void Comparison()            :
     try {
 /*@egen*/
     (LOOKAHEAD(3) left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
-
-    //TODO Identifier type checking here
 
     (
         op = EqualityOperator() (
@@ -371,10 +367,10 @@ LogEntryField Identifier()      :
 {
     group=<IDENTIFIER>
     {
-    fieldGroup = FieldGroup.findByLabel(group.image);
-    if(fieldGroup == null)
-        throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are: %s", group.image, Arrays.toString(FieldGroup.values())));
-}
+        fieldGroup = FieldGroup.findByLabel(group.image);
+        if(fieldGroup == null)
+            throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are: %s", group.image, Arrays.toString(FieldGroup.values())));
+    }
     <DOT>
     identifier=<IDENTIFIER>
     {
