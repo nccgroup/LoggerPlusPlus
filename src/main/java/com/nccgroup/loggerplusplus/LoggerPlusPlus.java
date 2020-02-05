@@ -33,7 +33,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     public static IGsonProvider gsonProvider;
     public static Preferences preferences;
 
-    private ArrayList<ColorFilterListener> colorFilterListeners;
     private LogManager logManager;
     private LogFilterController logFilterController;
     private FilterLibraryController libraryController;
@@ -89,7 +88,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
 
         callbacks.setExtensionName("Logger++");
-        colorFilterListeners = new ArrayList<>();
         elasticSearchLogger = new ElasticSearchLogger(logManager);
 
         if(!callbacks.isExtensionBapp() && (boolean) preferences.getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
@@ -288,23 +286,11 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return this.tabbedWrapper;
     }
 
-    public PopOutPanel getMainPopOutPanel() {
-        return uiPopOutPanel;
-    }
-
-    public LoggerMenu getMenu() {
-        return loggerMenu;
-    }
-
     public LogManager getLogManager() {
         return logManager;
     }
 
     public void setEsEnabled(boolean esEnabled) throws Exception {
         this.elasticSearchLogger.setEnabled(esEnabled);
-    }
-
-    public PopOutPanel getReqRespPopOutPanel() {
-        return this.uiReqRespPopOut;
     }
 }
