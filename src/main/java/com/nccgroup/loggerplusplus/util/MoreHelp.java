@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.util;
 
+import burp.BurpExtender;
 import burp.IExtensionHelpers;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 
@@ -7,6 +8,7 @@ import javax.swing.*;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,7 +55,7 @@ public class MoreHelp {
 			@Override
 			public void run()
 			{
-				JOptionPane.showMessageDialog(null, strMsg);
+				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), strMsg);
 			}
 		}).start();
 		
@@ -66,7 +68,7 @@ public class MoreHelp {
 			@Override
 			public void run()
 			{
-				JOptionPane.showMessageDialog(null, strMsg, "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), strMsg, "Warning", JOptionPane.WARNING_MESSAGE);
 			}
 		}).start();
 		
@@ -74,7 +76,7 @@ public class MoreHelp {
 	
 	// Show a message to the user
 	public static String showPlainInputMessage(final String strMessage, final String strTitle, final String defaultValue){
-			String output = (String)JOptionPane.showInputDialog(null, 
+			String output = (String)JOptionPane.showInputDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()),
 						strMessage,strTitle,JOptionPane.PLAIN_MESSAGE, null, null, defaultValue); 
 			if(output==null){
 				output = defaultValue;
@@ -126,7 +128,7 @@ public class MoreHelp {
 
 				if (response != null) {
 					// splitting the message to retrieve the header and the body
-					String strFullMessage = new String(response, "UTF-8");
+					String strFullMessage = new String(response, StandardCharsets.UTF_8);
 					if (strFullMessage.contains("\r\n\r\n")) {
 						String strBody = strFullMessage.split("\r\n\r\n", 2)[1];
 						Pattern MY_PATTERN = Pattern.compile("(?im)^[\\s]*v[\\s]*(\\d+(\\.*\\d*){0,1})$");
@@ -202,7 +204,7 @@ public class MoreHelp {
 		outputArea.setLineWrap(true);
 		JScrollPane scrollPane = new JScrollPane(outputArea);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		JOptionPane.showMessageDialog(null, scrollPane, title, JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), scrollPane, title, JOptionPane.PLAIN_MESSAGE);
 	}
 
 	public static String showLargeInputDialog(String title, String message){

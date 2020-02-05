@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.filter.logfilter;
 
+import burp.BurpExtender;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -110,7 +111,7 @@ public class LogFilterController {
                             e1.printStackTrace();
                         }
                     }
-                    JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(this.filterField),
+                    JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()),
                             "<html><body style='width: 400px; overflow-wrap: break-word;'>Could not parse filter:\n" + e.getMessage(), "Parse Error", JOptionPane.ERROR_MESSAGE);
                     formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
                 }

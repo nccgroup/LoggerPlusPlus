@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
+import burp.BurpExtender;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
@@ -73,7 +74,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
                 //Not a valid filter...
                 savedFilter.setFilterString((String) value);
                 savedFilter.setFilter(null);
-                JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(btnApplyFilter), e.getMessage(), "Filter Exception", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), e.getMessage(), "Filter Exception", JOptionPane.ERROR_MESSAGE);
             }
         }
         controller.saveFilters();

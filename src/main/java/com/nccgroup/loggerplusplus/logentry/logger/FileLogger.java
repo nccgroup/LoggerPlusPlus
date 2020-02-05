@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.logentry.logger;
 
+import burp.BurpExtender;
 import com.nccgroup.loggerplusplus.*;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryListener;
@@ -63,7 +64,7 @@ public class FileLogger implements LogEntryListener {
         if (val == JFileChooser.APPROVE_OPTION) {
             csvFile = fixExtension(chooser.getSelectedFile(), "csv");
             if (csvFile == null) {
-                JOptionPane.showMessageDialog(null, "File Name Specified Not Supported",
+                JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), "File Name Specified Not Supported",
                         "File Name Error", JOptionPane.ERROR_MESSAGE);
                 return getSaveFile(filename, allowAppend);
             }
