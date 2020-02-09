@@ -74,7 +74,12 @@ public class LogFilterController {
         for (LogEntryField field : LogEntryField.values()) {
             JMenuItem fieldItem = new JMenuItem(field.getLabels()[0]);
             fieldItem.addActionListener((e) -> {
-                editor.setText(editor.getText() + field.getFullLabel());
+                int pos = editor.getCaretPosition();
+                String start = editor.getText().substring(0, pos);
+                String end = editor.getText().substring(pos);
+                String fieldLabel = field.getFullLabel();
+                editor.setText(start + fieldLabel + end);
+                editor.setCaretPosition(pos+fieldLabel.length());
             });
             groupMenus.get(field.getFieldGroup()).add(fieldItem);
         }
