@@ -4,9 +4,7 @@ package com.nccgroup.loggerplusplus.logview.logtable;
 // extend JTable to handle cell selection and column move/resize
 //
 
-import com.nccgroup.loggerplusplus.logview.LogTableFilterStatusListener;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.logview.RequestViewerController;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
@@ -15,6 +13,8 @@ import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryListener;
 import com.nccgroup.loggerplusplus.logview.LogEntryMenu;
+import com.nccgroup.loggerplusplus.logview.LogTableFilterStatusListener;
+import com.nccgroup.loggerplusplus.logview.RequestViewerController;
 import com.nccgroup.loggerplusplus.userinterface.LogTableModel;
 import com.nccgroup.loggerplusplus.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.Globals;
@@ -26,8 +26,8 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class LogTable extends JTable implements LogFilterListener, ColorFilterListener, LogEntryListener
 {
@@ -57,19 +57,14 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
                 LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, null);
             }else {
                 RowSorter.SortKey sortKey = sortKeys.get(0);
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, String.valueOf(sortKey.getSortOrder()));
+                LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_ORDER, sortKey.getSortOrder());
                 LoggerPlusPlus.preferences.setSetting(Globals.PREF_SORT_COLUMN, sortKey.getColumn());
             }
         });
 
         Integer sortColumn = LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_COLUMN);
-        SortOrder sortOrder;
-        try{
-            sortOrder = SortOrder.valueOf(LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_ORDER));
-        }catch(Exception e){
-            sortOrder = SortOrder.ASCENDING;
-        }
-        if(sortColumn > 0){ //TODO Fix bug with renderer throwing null pointer when
+        SortOrder sortOrder = LoggerPlusPlus.preferences.getSetting(Globals.PREF_SORT_ORDER);
+        if(sortColumn >= 0 && sortOrder != SortOrder.UNSORTED){
             this.getRowSorter().setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
         }
 
@@ -87,6 +82,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
                 }
             }
         });
+        //TODO Multi selection + relevant context menu changes
         this.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         registerListeners();

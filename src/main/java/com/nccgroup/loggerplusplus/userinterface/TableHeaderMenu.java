@@ -55,10 +55,9 @@ public class TableHeaderMenu extends JPopupMenu{
 								try {
 						            Pattern.compile(newValue);
 						            columnObj.getRegExData().setRegExString(newValue);
-									saveAndReloadTableSettings(); //TODO do we need it?
 						        } catch (PatternSyntaxException exception) {
-						            LoggerPlusPlus.callbacks.printError("provided regular expression was wrong. It cannot be saved.");
-						            MoreHelp.showWarningMessage("The provided regular expression string was NOT in correct format. It cannot be saved.");
+						            LoggerPlusPlus.callbacks.printError("Regular expression was invalid. It cannot be saved.");
+						            MoreHelp.showWarningMessage("The provided regular expression string was invalid. It cannot be saved.");
 						        }
 							}
 						}

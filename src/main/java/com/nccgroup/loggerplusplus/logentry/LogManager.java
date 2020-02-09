@@ -2,9 +2,9 @@ package com.nccgroup.loggerplusplus.logentry;
 
 import burp.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.logview.LogViewPanel;
+import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 
 import javax.swing.*;
@@ -49,7 +49,6 @@ public class LogManager implements IHttpListener, IProxyListener {
         requestsAwaitingResponse = new ConcurrentHashMap<>();
         LoggerPlusPlus.callbacks.getProxyHistory();
 
-        //TODO Customizable LogManager thread count.
         executorService = Executors.newFixedThreadPool(20, new NamedThreadFactory("LPP-LogManager"));
 
         //Create incomplete request cleanup thread so map doesn't get too big.
@@ -411,7 +410,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public void importProxyHistory(boolean askConfirmation){
-        //TODO Fix time bug for imported results
+        //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
         int result = JOptionPane.OK_OPTION;
         int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
         int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);

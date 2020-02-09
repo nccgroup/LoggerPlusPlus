@@ -65,6 +65,10 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
             //Darcula is not installed.
         }
 
+        if(LoggerPlusPlus.instance != null){
+            callbacks.printError("Existing Logger++ extension detected! Have you installed the Jar twice?");
+        }
+
         //Burp Specific
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
@@ -191,6 +195,12 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
         //Stop LogManager executors and pending tasks.
         logManager.shutdown();
+
+        //Null out static variables so not leftover.
+        LoggerPlusPlus.instance = null;
+        LoggerPlusPlus.preferences = null;
+        LoggerPlusPlus.callbacks = null;
+        LoggerPlusPlus.gsonProvider = null;
     }
 
     @Override
@@ -207,6 +217,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     @Override
     public void logOutput(String message) {
+        System.out.println(message);
         callbacks.printOutput(message);
         if(preferences == null) {
             Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
@@ -223,6 +234,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     @Override
     public void logError(String errorMessage) {
+        System.err.println(errorMessage);
         callbacks.printError(errorMessage);
         if(preferences == null) {
             Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);

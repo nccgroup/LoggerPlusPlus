@@ -12,6 +12,7 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.util.Globals;
 
+import javax.swing.*;
 import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
@@ -63,7 +64,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {}.getType(), defaultColorFilters);
         prefs.registerSetting(PREF_SAVED_FILTERS, new TypeToken<List<SavedFilter>>() {}.getType(), new ArrayList<SavedFilter>());
         prefs.registerSetting(PREF_SORT_COLUMN, Integer.class, -1, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_SORT_ORDER, String.class, "ASCENDING", Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_SORT_ORDER, SortOrder.class, SortOrder.UNSORTED, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60000, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 5000, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_SEARCH_THREADS, Integer.class, 5, Preferences.Visibility.GLOBAL);
