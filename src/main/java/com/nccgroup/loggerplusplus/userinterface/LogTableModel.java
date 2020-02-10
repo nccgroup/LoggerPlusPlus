@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.userinterface;
 
 import burp.IHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogManager;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
@@ -50,7 +51,10 @@ public class LogTableModel extends AbstractTableModel {
     @Override
     public void setValueAt(Object value, int rowModelIndex, int columnModelIndex) {
         LogEntry logEntry = entries.get(rowModelIndex);
-        fireTableCellUpdated(rowModelIndex, columnModelIndex);
+        if(this.columnModel.getModelColumn(columnModelIndex).getIdentifier() == LogEntryField.COMMENT){
+            logEntry.comment = (String) value;
+        }
+        fireTableCellUpdated(rowModelIndex, this.columnModel.getViewIndex(columnModelIndex));
     }
 
     @Override

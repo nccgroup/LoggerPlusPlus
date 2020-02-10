@@ -75,6 +75,9 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         }
     }
 
+    public int getViewIndex(int modelIndex){
+        return this.tableColumns.indexOf(this.allColumns.get(modelIndex));
+    }
 
     //TableModel gets the column from the model index, not the view index.
     //If we dont do this all the groups are wrong!

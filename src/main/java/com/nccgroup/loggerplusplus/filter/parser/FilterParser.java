@@ -24,8 +24,8 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, 
         }catch(Exception e){
             throw new ParseException(e.getMessage());
         }
-        VisitorData result = new SanityCheckVisitor().visit(node);
-        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
+//        VisitorData result = new SanityCheckVisitor().visit(node);
+//        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
     }
 

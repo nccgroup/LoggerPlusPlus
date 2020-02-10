@@ -1,4 +1,5 @@
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
+import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
 
