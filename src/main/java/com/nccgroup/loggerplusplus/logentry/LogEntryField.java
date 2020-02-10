@@ -5,56 +5,56 @@ import java.util.*;
 public enum LogEntryField {
 
     //Proxy
-    NUMBER(FieldGroup.PROXY, Integer.class, "", "Number"),
-    PROXY_TOOL(FieldGroup.PROXY, String.class, "", "Tool"),
-    LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "", "ListenInterface", "Interface"),
-    CLIENT_IP(FieldGroup.PROXY, String.class, "", "ClientIP", "ClientAddress"),
-    USES_COOKIE_JAR_PROXY(FieldGroup.PROXY, String.class, "", "UsesCookieJar", "CookieJar"),
-    COMMENT(FieldGroup.PROXY, String.class, "", "Comment"),
+    NUMBER(FieldGroup.PROXY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
+    PROXY_TOOL(FieldGroup.PROXY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
+    LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
+    CLIENT_IP(FieldGroup.PROXY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
+    USES_COOKIE_JAR_PROXY(FieldGroup.PROXY, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"),
+    COMMENT(FieldGroup.PROXY, String.class, "Comments set on the entry.", "Comment"),
 
     //Request + Response
-    REQUEST_HEADERS(FieldGroup.REQUEST, String.class, "", "Headers"),
-    RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "", "Headers"),
-    REQUEST_BODY(FieldGroup.REQUEST, String.class, "", "Body"),
-    RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "", "Body"),
-    REQUEST_TIME(FieldGroup.REQUEST, Date.class, "", "Time"),
-    RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "", "Time"),
-    REQUEST_LENGTH(FieldGroup.REQUEST, Integer.class, "", "Length"),
-    RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "", "Length"),
+    REQUEST_HEADERS(FieldGroup.REQUEST, String.class, "The request line and associated headers.", "Headers", "Header"),
+    RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "The status line and associated headers.", "Headers", "Header"),
+    REQUEST_BODY(FieldGroup.REQUEST, String.class, "The request body.", "Body"),
+    RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "The response body.", "Body"),
+    REQUEST_TIME(FieldGroup.REQUEST, Date.class, "Date and time of inital request (as received by L++).", "Time"),
+    RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Date and time of receiving the response (as received by L++).", "Time"),
+    REQUEST_LENGTH(FieldGroup.REQUEST, Integer.class, "The length of the received request.", "Length"),
+    RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "The length of the received response.", "Length"),
 
 
     //Request
     REQUEST_TOOL(FieldGroup.REQUEST, String.class, "The tool used to initiate the request.", "Tool"), //Alias for proxy.tool
-    COMPLETE(FieldGroup.REQUEST, Boolean.class, "", "Complete", "isComplete"),
-    URL(FieldGroup.REQUEST, String.class, "", "URL"),
-    METHOD(FieldGroup.REQUEST, String.class, "", "Method"),
-    PATH(FieldGroup.REQUEST, String.class, "", "Path"),
-    QUERY(FieldGroup.REQUEST, String.class, "", "Query"),
-    PROTOCOL(FieldGroup.REQUEST, String.class, "", "Protocol"),
-    ISSSL(FieldGroup.REQUEST, Boolean.class, "", "IsSSL", "ssl"),
-    REQUEST_USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "", "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
-    HOSTNAME(FieldGroup.REQUEST, String.class, "", "Hostname"),
-    HOST(FieldGroup.REQUEST, String.class, "", "Host"),
-    PORT(FieldGroup.REQUEST, Short.class, "", "Port"),
-    REQUEST_CONTENT_TYPE(FieldGroup.REQUEST, String.class, "", "ContentType", "Content_Type"),
-    EXTENSION(FieldGroup.REQUEST, String.class, "", "Extension"),
-    REFERRER(FieldGroup.REQUEST, String.class, "", "Referrer"),
-    HASPARAMS(FieldGroup.REQUEST, Boolean.class, "", "HasParams", "Has_Params"),
-    HASGETPARAM(FieldGroup.REQUEST, Boolean.class, "", "HasGetParam", "HasQueryString", "QueryString"),
-    HASPOSTPARAM(FieldGroup.REQUEST, Boolean.class, "", "HasPostParam", "HasPayload", "Payload"),
-    HASCOOKIEPARAM(FieldGroup.REQUEST, Boolean.class, "", "HasSentCookies"),
-    SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "", "CookieString", "SentCookies", "Cookies"),
+    COMPLETE(FieldGroup.REQUEST, Boolean.class, "Has a response been received?", "Complete", "isComplete"),
+    URL(FieldGroup.REQUEST, String.class, "The entire URL of the request.", "URL", "URI"),
+    METHOD(FieldGroup.REQUEST, String.class, "The request method used.", "Method"),
+    PATH(FieldGroup.REQUEST, String.class, "The path component of the requested URL.", "Path"),
+    QUERY(FieldGroup.REQUEST, String.class, "The query parameters of the requested URL.", "Query", "GetParams", "QueryParams"),
+    PROTOCOL(FieldGroup.REQUEST, String.class, "The protocol component of the requested URL.", "Protocol"),
+    ISSSL(FieldGroup.REQUEST, Boolean.class, "Did the request use SSL?", "IsSSL", "ssl"),
+    REQUEST_USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
+    HOSTNAME(FieldGroup.REQUEST, String.class, "The hostname component of the requested URL.", "Hostname"),
+    HOST(FieldGroup.REQUEST, String.class, "The protocol and hostname of the requested URL.", "Host"),
+    PORT(FieldGroup.REQUEST, Short.class, "The port the request was sent to.", "Port"),
+    REQUEST_CONTENT_TYPE(FieldGroup.REQUEST, String.class, "The content-type header sent to the server.", "ContentType", "Content_Type"),
+    EXTENSION(FieldGroup.REQUEST, String.class, "The URL extension used in the request.", "Extension"),
+    REFERRER(FieldGroup.REQUEST, String.class, "The referrer header value of the request.", "Referrer"),
+    HASPARAMS(FieldGroup.REQUEST, Boolean.class, "Did the request contain parameters?", "HasParams"),
+    HASGETPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain get parameters?", "HasGetParam", "HasGetParams", "HasQueryString"),
+    HASPOSTPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain post parameters?", "HasPostParam", "HasPayload", "Payload"),
+    HASCOOKIEPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain cookies?", "HasSentCookies"),
+    SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "The value of the cookies header sent to the server.", "CookieString", "SentCookies", "Cookies"),
 
 
     //Response
-    STATUS(FieldGroup.RESPONSE, Short.class, "", "Status"),
-    RTT(FieldGroup.RESPONSE, Integer.class, "", "RTT", "TimeTaken"),
-    TITLE(FieldGroup.RESPONSE, String.class, "", "Title"),
-    RESPONSE_CONTENT_TYPE(FieldGroup.RESPONSE, String.class, "", "ContentType", "Content_Type"),
-    MIME_TYPE(FieldGroup.RESPONSE, String.class, "", "MimeType", "Mime_Type"),
-    INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "", "InferredType", "Inferred_Type"),
-    HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "", "HasSetCookies", "Has_Set_Cookies"),
-    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "", "NewCookies", "New_Cookies");
+    STATUS(FieldGroup.RESPONSE, Short.class, "The status code received in the response.", "Status", "StatusCode"),
+    RTT(FieldGroup.RESPONSE, Integer.class, "The round trip time (as calculated by L++, not 100% accurate).", "RTT", "TimeTaken"),
+    TITLE(FieldGroup.RESPONSE, String.class, "The HTTP response title.", "Title"),
+    RESPONSE_CONTENT_TYPE(FieldGroup.RESPONSE, String.class, "The content-type header sent by the server.", "ContentType", "Content_Type"),
+    INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "The type inferred by the response content.", "InferredType", "Inferred_Type"),
+    MIME_TYPE(FieldGroup.RESPONSE, String.class, "The mime-type stated by the server.", "MimeType", "Mime"),
+    HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "Did the response set cookies?", "HasSetCookies", "DidSetCookies"),
+    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies");
 
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();

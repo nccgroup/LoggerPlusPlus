@@ -1,8 +1,6 @@
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
-import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
-import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;

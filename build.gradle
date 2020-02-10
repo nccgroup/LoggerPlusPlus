@@ -14,7 +14,7 @@ dependencies {
     compile 'org.swinglabs:swingx:1.6.1'
     compile 'com.github.CoreyD97:BurpExtenderUtilities:3e5df57fb8dec5d64f61206dda5f4e1e9d643558'
     compile 'com.google.code.gson:gson:2.8.2'
-    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.0'
+    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.2'
     compile 'org.apache.httpcomponents:httpclient:4.5.6'
     compile 'org.apache.commons:commons-text:1.7'
     // Test on unix system

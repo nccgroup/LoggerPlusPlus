@@ -6,7 +6,7 @@
                                         
                                     
                            
-    DEBUG_PARSER = true;
+//    DEBUG_PARSER = true;
 }
 
 PARSER_BEGIN(FilterParser)
@@ -395,8 +395,9 @@ LogEntryField Identifier()      :
         field = LogEntryField.getByLabel(fieldGroup, identifier.image);
         if(field == null){
             StringBuilder fieldMessage = new StringBuilder();
-            ArrayList<LogEntryField> fields = new ArrayList<LogEntryField>(getFieldsInGroup(FieldGroup.REQUEST));
+            ArrayList<LogEntryField> fields = new ArrayList<LogEntryField>(getFieldsInGroup(fieldGroup));
             for (int i = 0; i < fields.size(); i++) {
+                if(fields.get(i) == LogEntryField.NUMBER) continue;
                 fieldMessage.append(fields.get(i).getDescriptiveMessage());
                 if(i != fields.size()-1)
                     fieldMessage.append("\n\n");
