@@ -13,7 +13,7 @@ public class SavedFilter {
     private String filterString;
 
     public SavedFilter(FilterLibraryController filterLibraryController, String name, String filterString) throws ParseException {
-        this.name = name.replaceAll("[^a-zA-Z0-9]", "_");
+        this.name = name.replaceAll("[^a-zA-Z0-9_.]", "_");
         this.setFilter(new LogFilter(filterLibraryController, filterString));
     }
 
@@ -32,7 +32,7 @@ public class SavedFilter {
     }
 
     public void setName(String name) {
-        name = name.replaceAll("[^a-zA-Z0-9]", "_");
+        name = name.replaceAll("[^a-zA-Z0-9_.]", "_");
         this.name = name;
     }
 

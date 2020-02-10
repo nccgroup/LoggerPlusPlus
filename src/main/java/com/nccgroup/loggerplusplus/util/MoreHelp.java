@@ -5,6 +5,7 @@ import burp.IExtensionHelpers;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;

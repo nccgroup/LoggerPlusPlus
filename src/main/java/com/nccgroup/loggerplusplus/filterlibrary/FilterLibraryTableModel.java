@@ -15,7 +15,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
     private final FilterLibraryController controller;
     JButton btnApplyFilter;
     JButton btnSetColorFilter;
-    private final String[] columnNames = {"Title", "LogFilter", "", ""};
+    private final String[] columnNames = {"Alias", "LogFilter", "", ""};
 
     public FilterLibraryTableModel(FilterLibraryController controller){
         this.controller = controller;
@@ -66,6 +66,10 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         if(savedFilter == null) return;
         if(column == 0) {
             savedFilter.setName((String) value);
+            if(!((String) value).equalsIgnoreCase(savedFilter.getName())){
+                JOptionPane.showMessageDialog(BurpExtender.instance.getUiComponent(), "Alias names may only contain alphanumeric characters and the symbols period (.) and underscore (_)\n" +
+                        "Invalid characters have been replaced with an underscore.", "Alias Error", JOptionPane.WARNING_MESSAGE);
+            }
         }
         if(column == 1){
             try{
@@ -74,7 +78,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
                 //Not a valid filter...
                 savedFilter.setFilterString((String) value);
                 savedFilter.setFilter(null);
-                JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), e.getMessage(), "Filter Exception", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(BurpExtender.instance.getUiComponent(), e.getMessage(), "Filter Exception", JOptionPane.ERROR_MESSAGE);
             }
         }
         controller.saveFilters();

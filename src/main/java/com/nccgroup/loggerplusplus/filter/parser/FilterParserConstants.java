@@ -35,40 +35,54 @@ public interface FilterParserConstants {
   /** RegularExpression Id. */
   int BOOLEAN = 13;
   /** RegularExpression Id. */
-  int SINGLEQUOTEDSTRING = 14;
+  int NUMBER = 14;
   /** RegularExpression Id. */
-  int DOUBLEQUOTEDSTRING = 15;
+  int DIGIT = 15;
   /** RegularExpression Id. */
-  int NUMBER = 16;
+  int REGEXLITERAL_IN_FORWARD_SLASHES = 16;
   /** RegularExpression Id. */
-  int DIGIT = 17;
+  int REGEX_IN_FORWARD_SLASHES = 17;
   /** RegularExpression Id. */
-  int REGEXLITERAL_IN_FORWARD_SLASHES = 18;
+  int MATCHES = 18;
   /** RegularExpression Id. */
-  int REGEX_IN_FORWARD_SLASHES = 19;
+  int LPAREN = 19;
   /** RegularExpression Id. */
-  int MATCHES = 20;
+  int RPAREN = 20;
   /** RegularExpression Id. */
-  int LPAREN = 21;
+  int INVERSE = 21;
   /** RegularExpression Id. */
-  int RPAREN = 22;
+  int DOT = 22;
   /** RegularExpression Id. */
-  int INVERSE = 23;
+  int IDENTIFIER = 23;
   /** RegularExpression Id. */
-  int DOT = 24;
+  int ARRAY_START = 24;
   /** RegularExpression Id. */
-  int IDENTIFIER = 25;
+  int ARRAY_END = 25;
   /** RegularExpression Id. */
-  int ARRAY_START = 26;
+  int ARRAY_SEPARATOR = 26;
   /** RegularExpression Id. */
-  int ARRAY_END = 27;
+  int ALIAS_SYMBOL = 27;
   /** RegularExpression Id. */
-  int ARRAY_SEPARATOR = 28;
+  int OPEN_SINGLE_QUOTE_STRING = 28;
   /** RegularExpression Id. */
-  int ALIAS_SYMBOL = 29;
+  int OPEN_DOUBLE_QUOTE_STRING = 29;
+  /** RegularExpression Id. */
+  int SINGLE_STRING_BODY = 30;
+  /** RegularExpression Id. */
+  int CLOSE_SINGLE_QUOTE_STRING = 31;
+  /** RegularExpression Id. */
+  int DOUBLE_STRING_BODY = 32;
+  /** RegularExpression Id. */
+  int CLOSE_DOUBLE_QUOTE_STRING = 33;
+  /** RegularExpression Id. */
+  int UNKNOWN = 34;
 
   /** Lexical state. */
   int DEFAULT = 0;
+  /** Lexical state. */
+  int SINGLE_QUOTED_STRING = 1;
+  /** Lexical state. */
+  int DOUBLE_QUOTED_STRING = 2;
 
   /** Literal token values. */
   String[] tokenImage = {
@@ -86,8 +100,6 @@ public interface FilterParserConstants {
     "\"CONTAINS\"",
     "\"IN\"",
     "<BOOLEAN>",
-    "<SINGLEQUOTEDSTRING>",
-    "<DOUBLEQUOTEDSTRING>",
     "<NUMBER>",
     "<DIGIT>",
     "<REGEXLITERAL_IN_FORWARD_SLASHES>",
@@ -102,6 +114,13 @@ public interface FilterParserConstants {
     "\"]\"",
     "\",\"",
     "\"#\"",
+    "\"\\\'\"",
+    "\"\\\"\"",
+    "<SINGLE_STRING_BODY>",
+    "\"\\\'\"",
+    "<DOUBLE_STRING_BODY>",
+    "\"\\\"\"",
+    "<UNKNOWN>",
   };
 
 }

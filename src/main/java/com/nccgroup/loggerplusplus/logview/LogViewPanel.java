@@ -39,21 +39,13 @@ public class LogViewPanel extends JPanel {
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
         });
-        logTableScrollPane.getVerticalScrollBar().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent mouseEvent) {}
-            @Override
-            public void mousePressed(MouseEvent mouseEvent) {}
+        logTableScrollPane.getVerticalScrollBar().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 JScrollBar scrollBar = logTableScrollPane.getVerticalScrollBar();
                 LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SCROLL,
                         scrollBar.getValue() + scrollBar.getHeight() >= scrollBar.getMaximum());
             }
-            @Override
-            public void mouseEntered(MouseEvent mouseEvent) {}
-            @Override
-            public void mouseExited(MouseEvent mouseEvent) {}
         });
 
         this.add(this.logTableScrollPane, BorderLayout.CENTER);

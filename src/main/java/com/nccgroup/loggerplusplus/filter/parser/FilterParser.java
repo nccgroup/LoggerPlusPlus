@@ -3,15 +3,16 @@
 package com.nccgroup.loggerplusplus.filter.parser;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.filter.Operator;import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
-import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, FilterParserConstants {/*@bgen(jjtree)*/
   protected JJTFilterParserState jjtree = new JJTFilterParserState();
@@ -37,30 +38,35 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, 
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
 
-  final public ASTExpression Filter() throws ParseException {ASTExpression ex;
-    ex = Expression(false);
-    jj_consume_token(0);
+  final public ASTExpression Filter() throws ParseException {    try {
+ASTExpression ex;
+      ex = Expression(false);
+      jj_consume_token(0);
 {if ("" != null) return ex;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Filter");
+    }
 }
 
-  final public ASTExpression Expression(boolean inverse) throws ParseException {/*@bgen(jjtree) Expression */
+  final public ASTExpression Expression(boolean inverse) throws ParseException {    try {
+/*@bgen(jjtree) Expression */
  ASTExpression jjtn000 = new ASTExpression(JJTEXPRESSION);
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);BooleanOperator op = null;
-    try {
-      ExpressionInner();
-      if (jj_2_1(2)) {
-        op = ExpressionCompounding();
-      } else {
-        ;
-      }
+      try {
+        ExpressionInner();
+        if (jj_2_1(2)) {
+          op = ExpressionCompounding();
+        } else {
+          ;
+        }
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 jjtn000.op = op;
         jjtn000.inverse = inverse;
         {if ("" != null) return jjtn000;}
-    } catch (Throwable jjte000) {
+      } catch (Throwable jjte000) {
 if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
         jjtc000 = false;
@@ -74,244 +80,271 @@ if (jjtc000) {
         {if (true) throw (ParseException)jjte000;}
       }
       {if (true) throw (Error)jjte000;}
-    } finally {
+      } finally {
 if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
       }
-    }
+      }
     throw new Error("Missing return statement in function");
-}
-
-  final public void WrappedCompoundExpression() throws ParseException {boolean inverse=false;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case INVERSE:{
-      inverse = Inverse();
-      break;
-      }
-    default:
-      jj_la1[0] = jj_gen;
-      ;
-    }
-    jj_consume_token(LPAREN);
-    Expression(inverse);
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case RPAREN:{
-      jj_consume_token(RPAREN);
-      break;
-      }
-    default:
-      jj_la1[1] = jj_gen;
-{if (true) throw new ParseException("Unbalanced brackets.");}
+    } finally {
+      trace_return("Expression");
     }
 }
 
-  final public void ExpressionInner() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case LPAREN:
-    case INVERSE:{
-      WrappedCompoundExpression();
-      break;
-      }
-    default:
-      jj_la1[2] = jj_gen;
-      Statement();
-    }
-}
-
-  final public void Statement() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case ALIAS_SYMBOL:{
-      Alias();
-      break;
-      }
-    default:
-      jj_la1[3] = jj_gen;
-      Comparison();
-    }
-}
-
-  final public BooleanOperator ExpressionCompounding() throws ParseException {BooleanOperator op;
-    BooleanOperator nextOp;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case AND:{
-      op = And();
-      break;
-      }
-    case OR:{
-      op = Or();
-      break;
-      }
-    case XOR:{
-      op = Xor();
-      break;
-      }
-    default:
-      jj_la1[4] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
-    ExpressionInner();
-    label_1:
-    while (true) {
-      if (jj_2_2(2)) {
-        ;
-      } else {
-        break label_1;
-      }
+  final public void WrappedCompoundExpression() throws ParseException {    try {
+boolean inverse=false;
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case AND:{
-        nextOp = And();
-        break;
-        }
-      case OR:{
-        nextOp = Or();
-        break;
-        }
-      case XOR:{
-        nextOp = Xor();
+      case INVERSE:{
+        inverse = Inverse();
         break;
         }
       default:
-        jj_la1[5] = jj_gen;
+        jj_la1[0] = jj_gen;
+        ;
+      }
+      jj_consume_token(LPAREN);
+      Expression(inverse);
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case RPAREN:{
+        jj_consume_token(RPAREN);
+        break;
+        }
+      default:
+        jj_la1[1] = jj_gen;
+{if (true) throw new ParseException("Unbalanced brackets.");}
+      }
+    } finally {
+      trace_return("WrappedCompoundExpression");
+    }
+}
+
+  final public void ExpressionInner() throws ParseException {    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case LPAREN:
+      case INVERSE:{
+        WrappedCompoundExpression();
+        break;
+        }
+      default:
+        jj_la1[2] = jj_gen;
+        Statement();
+      }
+    } finally {
+      trace_return("ExpressionInner");
+    }
+}
+
+  final public void Statement() throws ParseException {    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case ALIAS_SYMBOL:{
+        Alias();
+        break;
+        }
+      default:
+        jj_la1[3] = jj_gen;
+        Comparison();
+      }
+    } finally {
+      trace_return("Statement");
+    }
+}
+
+  final public BooleanOperator ExpressionCompounding() throws ParseException {    try {
+BooleanOperator op;
+    BooleanOperator nextOp;
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case AND:{
+        op = And();
+        break;
+        }
+      case OR:{
+        op = Or();
+        break;
+        }
+      case XOR:{
+        op = Xor();
+        break;
+        }
+      default:
+        jj_la1[4] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
+      ExpressionInner();
+      label_1:
+      while (true) {
+        if (jj_2_2(2)) {
+          ;
+        } else {
+          break label_1;
+        }
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case AND:{
+          nextOp = And();
+          break;
+          }
+        case OR:{
+          nextOp = Or();
+          break;
+          }
+        case XOR:{
+          nextOp = Xor();
+          break;
+          }
+        default:
+          jj_la1[5] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
+        }
 //Subsequent compoundings must be same operator. Otherwise, throw exception.
             if(op != nextOp) throwOperatorAmbiguityException(op,nextOp);
-      ExpressionInner();
-    }
+        ExpressionInner();
+      }
 {if ("" != null) return op;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("ExpressionCompounding");
+    }
 }
 
 //Comparisons can take two forms (Value) or (value operation value).
 //To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
-  final public void Comparison() throws ParseException {/*@bgen(jjtree) Comparison */
+  final public void Comparison() throws ParseException {    try {
+/*@bgen(jjtree) Comparison */
  ASTComparison jjtn000 = new ASTComparison(JJTCOMPARISON);
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);Operator op = Operator.EQUAL;
  Object left, right = true;
-    try {
-      if (jj_2_3(3)) {
-        left = Identifier();
-      } else {
-{if (true) throw new ParseException("The left side of a comparison must be a field identifier.");}
-      }
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case EQ:
-      case NEQ:{
-        op = EqualityOperator();
+      try {
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-        case BOOLEAN:
-        case SINGLEQUOTEDSTRING:
-        case DOUBLEQUOTEDSTRING:
-        case NUMBER:
-        case REGEXLITERAL_IN_FORWARD_SLASHES:
-        case REGEX_IN_FORWARD_SLASHES:
-        case INVERSE:
         case IDENTIFIER:{
-          right = Value();
+          left = Identifier();
           break;
           }
         default:
           jj_la1[6] = jj_gen;
+{if (true) throw new ParseException("The left side of a comparison must be a field identifier.");}
+        }
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case EQ:
+        case NEQ:{
+          op = EqualityOperator();
+          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+          case BOOLEAN:
+          case NUMBER:
+          case REGEXLITERAL_IN_FORWARD_SLASHES:
+          case REGEX_IN_FORWARD_SLASHES:
+          case INVERSE:
+          case IDENTIFIER:
+          case OPEN_SINGLE_QUOTE_STRING:
+          case OPEN_DOUBLE_QUOTE_STRING:{
+            right = Value();
+            break;
+            }
+          default:
+            jj_la1[7] = jj_gen;
 {if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
-        }
-        break;
-        }
-      case GT:
-      case LT:
-      case GEQ:
-      case LEQ:{
-        op = NumericOperator();
+          }
+if(right instanceof Pattern && !String.class.isAssignableFrom(((LogEntryField) left).getType())){
+              {if (true) throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));}
+            }
+          break;
+          }
+        case GT:
+        case LT:
+        case GEQ:
+        case LEQ:{
+          op = NumericOperator();
 if(!Number.class.isAssignableFrom(((LogEntryField) left).getType())){
                 {if (true) throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));}
             }
-        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-        case NUMBER:{
-          right = Number();
-          break;
-          }
-        case IDENTIFIER:{
-          right = Identifier();
+          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+          case NUMBER:{
+            right = Number();
+            break;
+            }
+          case IDENTIFIER:{
+            right = Identifier();
 if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
                     {if (true) throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));}
                 }
-          break;
-          }
-        default:
-          jj_la1[7] = jj_gen;
+            break;
+            }
+          default:
+            jj_la1[8] = jj_gen;
 {if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
-        }
-        break;
-        }
-      case CONTAINS:{
-        op = ContainsOperator();
-        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-        case SINGLEQUOTEDSTRING:
-        case DOUBLEQUOTEDSTRING:{
-          right = String();
+          }
           break;
           }
-        case NUMBER:{
-          right = Number();
-          break;
-          }
-        case IDENTIFIER:{
-          right = Identifier();
-          break;
-          }
-        default:
-          jj_la1[8] = jj_gen;
+        case CONTAINS:{
+          op = ContainsOperator();
+          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+          case OPEN_SINGLE_QUOTE_STRING:
+          case OPEN_DOUBLE_QUOTE_STRING:{
+            right = String();
+            break;
+            }
+          case NUMBER:{
+            right = Number();
+            break;
+            }
+          case IDENTIFIER:{
+            right = Identifier();
+            break;
+            }
+          default:
+            jj_la1[9] = jj_gen;
 {if (true) throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
-        }
-        break;
-        }
-      case IN:{
-        op = InOperator();
-        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-        case ARRAY_START:{
-          right = Array();
+          }
           break;
           }
-        default:
-          jj_la1[9] = jj_gen;
+        case IN:{
+          op = InOperator();
+          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+          case ARRAY_START:{
+            right = Array();
+            break;
+            }
+          default:
+            jj_la1[10] = jj_gen;
 {if (true) throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
-        }
-        break;
-        }
-      case MATCHES:{
-        op = MatchesOperator();
-        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-        case SINGLEQUOTEDSTRING:
-        case DOUBLEQUOTEDSTRING:{
-          right = RegexInString();
+          }
           break;
           }
-        case REGEXLITERAL_IN_FORWARD_SLASHES:
-        case REGEX_IN_FORWARD_SLASHES:{
-          right = RegexInForwardSlashes();
+        case MATCHES:{
+          op = MatchesOperator();
+          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+          case OPEN_SINGLE_QUOTE_STRING:
+          case OPEN_DOUBLE_QUOTE_STRING:{
+            right = RegexInString();
+            break;
+            }
+          case REGEXLITERAL_IN_FORWARD_SLASHES:
+          case REGEX_IN_FORWARD_SLASHES:{
+            right = RegexInForwardSlashes();
+            break;
+            }
+          default:
+            jj_la1[11] = jj_gen;
+{if (true) throw new ParseException("The matches operator must have a pattern as its right hand value.");}
+          }
           break;
           }
         default:
-          jj_la1[10] = jj_gen;
-{if (true) throw new ParseException("The matches operator must have a pattern as its right hand value.");}
-        }
-        break;
-        }
-      default:
-        jj_la1[11] = jj_gen;
+          jj_la1[12] = jj_gen;
 if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
                 //If left isn't a boolean value or field with boolean type
                 {if (true) throw new ParseException(left + " cannot be evaluated as a boolean.");}
             }
-      }
+        }
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 jjtn000.left = left;
         jjtn000.right = right;
         jjtn000.operator = op;
-    } catch (Throwable jjte000) {
+      } catch (Throwable jjte000) {
 if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
         jjtc000 = false;
@@ -325,145 +358,164 @@ if (jjtc000) {
         {if (true) throw (ParseException)jjte000;}
       }
       {if (true) throw (Error)jjte000;}
-    } finally {
+      } finally {
 if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
       }
+      }
+    } finally {
+      trace_return("Comparison");
     }
 }
 
-  final public void Alias() throws ParseException {/*@bgen(jjtree) Alias */
+  final public void Alias() throws ParseException {    try {
+/*@bgen(jjtree) Alias */
     ASTAlias jjtn000 = new ASTAlias(JJTALIAS);
     boolean jjtc000 = true;
     jjtree.openNodeScope(jjtn000);Token identifier;
-    try {
-      jj_consume_token(ALIAS_SYMBOL);
-      identifier = jj_consume_token(IDENTIFIER);
+      try {
+        jj_consume_token(ALIAS_SYMBOL);
+        identifier = jj_consume_token(IDENTIFIER);
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 jjtn000.identifier = identifier.image;
-    } finally {
+      } finally {
 if (jjtc000) {
         jjtree.closeNodeScope(jjtn000, true);
       }
+      }
+    } finally {
+      trace_return("Alias");
     }
 }
 
-  final public Object Value() throws ParseException {Object v;
-    if (jj_2_4(2)) {
-      v = Identifier();
-    } else {
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case NUMBER:{
-        v = Number();
-        break;
-        }
-      case BOOLEAN:
-      case INVERSE:{
-        v = Boolean();
-        break;
-        }
-      default:
-        jj_la1[12] = jj_gen;
-        if (jj_2_5(2)) {
-          v = String();
-        } else {
-          switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-          case REGEXLITERAL_IN_FORWARD_SLASHES:
-          case REGEX_IN_FORWARD_SLASHES:{
-            v = RegexInForwardSlashes();
-            break;
-            }
-          case SINGLEQUOTEDSTRING:
-          case DOUBLEQUOTEDSTRING:{
-            v = RegexInString();
-            break;
-            }
-          default:
-            jj_la1[13] = jj_gen;
-            jj_consume_token(-1);
-            throw new ParseException();
+  final public Object Value() throws ParseException {    try {
+Object v;
+      if (jj_2_3(2)) {
+        v = Identifier();
+      } else {
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case NUMBER:{
+          v = Number();
+          break;
           }
+        case BOOLEAN:
+        case INVERSE:{
+          v = Boolean();
+          break;
+          }
+        case OPEN_SINGLE_QUOTE_STRING:
+        case OPEN_DOUBLE_QUOTE_STRING:{
+          v = String();
+          break;
+          }
+        case REGEXLITERAL_IN_FORWARD_SLASHES:
+        case REGEX_IN_FORWARD_SLASHES:{
+          v = RegexInForwardSlashes();
+          break;
+          }
+        default:
+          jj_la1[13] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
         }
       }
-    }
 {if ("" != null) return v;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Value");
+    }
 }
 
-  final public Set Array() throws ParseException {Set<Object> items = new LinkedHashSet();
+  final public Set Array() throws ParseException {    try {
+Set<Object> items = new LinkedHashSet();
     Object initial, subsequent;
-    jj_consume_token(ARRAY_START);
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case SINGLEQUOTEDSTRING:
-    case DOUBLEQUOTEDSTRING:{
-      initial = String();
-      break;
-      }
-    case NUMBER:{
-      initial = Number();
-      break;
-      }
-    default:
-      jj_la1[14] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
-items.add(initial);
-    label_2:
-    while (true) {
+      jj_consume_token(ARRAY_START);
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case ARRAY_SEPARATOR:{
-        ;
-        break;
-        }
-      default:
-        jj_la1[15] = jj_gen;
-        break label_2;
-      }
-      jj_consume_token(ARRAY_SEPARATOR);
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case SINGLEQUOTEDSTRING:
-      case DOUBLEQUOTEDSTRING:{
-        subsequent = String();
+      case OPEN_SINGLE_QUOTE_STRING:
+      case OPEN_DOUBLE_QUOTE_STRING:{
+        initial = String();
         break;
         }
       case NUMBER:{
-        subsequent = Number();
+        initial = Number();
         break;
         }
       default:
-        jj_la1[16] = jj_gen;
+        jj_la1[14] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
+items.add(initial);
+      label_2:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case ARRAY_SEPARATOR:{
+          ;
+          break;
+          }
+        default:
+          jj_la1[15] = jj_gen;
+          break label_2;
+        }
+        jj_consume_token(ARRAY_SEPARATOR);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case OPEN_SINGLE_QUOTE_STRING:
+        case OPEN_DOUBLE_QUOTE_STRING:{
+          subsequent = String();
+          break;
+          }
+        case NUMBER:{
+          subsequent = Number();
+          break;
+          }
+        default:
+          jj_la1[16] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
+        }
 if(!initial.getClass().isAssignableFrom(subsequent.getClass())){
                 {if (true) throw new ParseException("Array elements must all be of the same type.");}
             }
             items.add(subsequent);
-    }
-    jj_consume_token(ARRAY_END);
+      }
+      jj_consume_token(ARRAY_END);
 {if ("" != null) return items;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Array");
+    }
 }
 
 //IDENTIFIERS
-  final public LogEntryField Identifier() throws ParseException {Token group, identifier;
+  final public LogEntryField Identifier() throws ParseException {    try {
+Token group, identifier;
     FieldGroup fieldGroup;
     LogEntryField field;
-    group = jj_consume_token(IDENTIFIER);
+      group = jj_consume_token(IDENTIFIER);
 fieldGroup = FieldGroup.findByLabel(group.image);
         if(fieldGroup == null)
-            {if (true) throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are: %s", group.image, Arrays.toString(FieldGroup.values())));}
-    jj_consume_token(DOT);
-    identifier = jj_consume_token(IDENTIFIER);
+            {if (true) throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n%s", group.image, Arrays.toString(FieldGroup.values())));}
+      jj_consume_token(DOT);
+      identifier = jj_consume_token(IDENTIFIER);
 field = LogEntryField.getByLabel(fieldGroup, identifier.image);
-        if(field == null)
-            {if (true) throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are: %s", identifier.image, fieldGroup, LogEntryField.getFieldsInGroup(fieldGroup).values()));}
+        if(field == null){
+            StringBuilder fieldMessage = new StringBuilder();
+            ArrayList<LogEntryField> fields = new ArrayList<LogEntryField>(getFieldsInGroup(FieldGroup.REQUEST));
+            for (int i = 0; i < fields.size(); i++) {
+                fieldMessage.append(fields.get(i).getDescriptiveMessage());
+                if(i != fields.size()-1)
+                    fieldMessage.append("\n\n");
+            }
+            {if (true) throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n%s", identifier.image, fieldGroup, fieldMessage));}
+        }
         if(field == LogEntryField.NUMBER)
             {if (true) throw new ParseException("Field " + LogEntryField.NUMBER + " is ephemeral and cannot be used in filters.");}
         {if ("" != null) return field;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Identifier");
+    }
 }
 
 //END IDENTIFIERS
@@ -471,83 +523,159 @@ field = LogEntryField.getByLabel(fieldGroup, identifier.image);
 
 //TYPES
   final public 
-BigDecimal Number() throws ParseException {Token t;
-    t = jj_consume_token(NUMBER);
+BigDecimal Number() throws ParseException {    try {
+Token t;
+      t = jj_consume_token(NUMBER);
 {if ("" != null) return new BigDecimal(t.image);}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Number");
+    }
 }
 
-  final public String String() throws ParseException {Token t;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case SINGLEQUOTEDSTRING:{
-      t = jj_consume_token(SINGLEQUOTEDSTRING);
-      break;
+  final public String String() throws ParseException {    try {
+Token t = null;
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case OPEN_SINGLE_QUOTE_STRING:{
+        jj_consume_token(OPEN_SINGLE_QUOTE_STRING);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case SINGLE_STRING_BODY:{
+          t = jj_consume_token(SINGLE_STRING_BODY);
+          break;
+          }
+        default:
+          jj_la1[17] = jj_gen;
+          ;
+        }
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CLOSE_SINGLE_QUOTE_STRING:{
+          jj_consume_token(CLOSE_SINGLE_QUOTE_STRING);
+          break;
+          }
+        default:
+          jj_la1[18] = jj_gen;
+{if (true) throw new ParseException("Missing closing quote for string.");}
+        }
+        break;
+        }
+      case OPEN_DOUBLE_QUOTE_STRING:{
+        jj_consume_token(OPEN_DOUBLE_QUOTE_STRING);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case DOUBLE_STRING_BODY:{
+          t = jj_consume_token(DOUBLE_STRING_BODY);
+          break;
+          }
+        default:
+          jj_la1[19] = jj_gen;
+          ;
+        }
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CLOSE_DOUBLE_QUOTE_STRING:{
+          jj_consume_token(CLOSE_DOUBLE_QUOTE_STRING);
+          break;
+          }
+        default:
+          jj_la1[20] = jj_gen;
+{if (true) throw new ParseException("Missing closing quote for string.");}
+        }
+        break;
+        }
+      default:
+        jj_la1[21] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
-    case DOUBLEQUOTEDSTRING:{
-      t = jj_consume_token(DOUBLEQUOTEDSTRING);
-      break;
-      }
-    default:
-      jj_la1[17] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
-String s = t.image.substring(1,t.image.length()-1);
-        {if ("" != null) return org.apache.commons.text.StringEscapeUtils.unescapeJava(s);}
+if(t == null) {if ("" != null) return "";}
+        else {if ("" != null) return org.apache.commons.text.StringEscapeUtils.unescapeJava(t.image);}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("String");
+    }
 }
 
-  final public Pattern RegexInString() throws ParseException {Token t;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case DOUBLEQUOTEDSTRING:{
-      t = jj_consume_token(DOUBLEQUOTEDSTRING);
-      break;
+  final public Pattern RegexInString() throws ParseException {    try {
+Token t;
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case OPEN_SINGLE_QUOTE_STRING:{
+        jj_consume_token(OPEN_SINGLE_QUOTE_STRING);
+        t = jj_consume_token(SINGLE_STRING_BODY);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CLOSE_SINGLE_QUOTE_STRING:{
+          jj_consume_token(CLOSE_SINGLE_QUOTE_STRING);
+          break;
+          }
+        default:
+          jj_la1[22] = jj_gen;
+{if (true) throw new ParseException("Missing closing quote for regex string.");}
+        }
+        break;
+        }
+      case OPEN_DOUBLE_QUOTE_STRING:{
+        jj_consume_token(OPEN_DOUBLE_QUOTE_STRING);
+        t = jj_consume_token(DOUBLE_STRING_BODY);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CLOSE_DOUBLE_QUOTE_STRING:{
+          jj_consume_token(CLOSE_DOUBLE_QUOTE_STRING);
+          break;
+          }
+        default:
+          jj_la1[23] = jj_gen;
+{if (true) throw new ParseException("Missing closing quote for regex string.");}
+        }
+        break;
+        }
+      default:
+        jj_la1[24] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
-    case SINGLEQUOTEDSTRING:{
-      t = jj_consume_token(SINGLEQUOTEDSTRING);
-      break;
-      }
-    default:
-      jj_la1[18] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
+{if ("" != null) return Pattern.compile(t.image, Pattern.CASE_INSENSITIVE);}
+    throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("RegexInString");
     }
+}
+
+  final public Pattern RegexInForwardSlashes() throws ParseException {    try {
+Token t;
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case REGEXLITERAL_IN_FORWARD_SLASHES:{
+        t = jj_consume_token(REGEXLITERAL_IN_FORWARD_SLASHES);
+        break;
+        }
+      case REGEX_IN_FORWARD_SLASHES:{
+        t = jj_consume_token(REGEX_IN_FORWARD_SLASHES);
+        break;
+        }
+      default:
+        jj_la1[25] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
 {if ("" != null) return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("RegexInForwardSlashes");
+    }
 }
 
-  final public Pattern RegexInForwardSlashes() throws ParseException {Token t;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case REGEXLITERAL_IN_FORWARD_SLASHES:{
-      t = jj_consume_token(REGEXLITERAL_IN_FORWARD_SLASHES);
-      break;
+  final public Boolean Boolean() throws ParseException {    try {
+Token t, inverse=null;
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case INVERSE:{
+        inverse = jj_consume_token(INVERSE);
+        break;
+        }
+      default:
+        jj_la1[26] = jj_gen;
+        ;
       }
-    case REGEX_IN_FORWARD_SLASHES:{
-      t = jj_consume_token(REGEX_IN_FORWARD_SLASHES);
-      break;
-      }
-    default:
-      jj_la1[19] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
-{if ("" != null) return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);}
-    throw new Error("Missing return statement in function");
-}
-
-  final public Boolean Boolean() throws ParseException {Token t, inverse=null;
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case INVERSE:{
-      inverse = jj_consume_token(INVERSE);
-      break;
-      }
-    default:
-      jj_la1[20] = jj_gen;
-      ;
-    }
-    t = jj_consume_token(BOOLEAN);
+      t = jj_consume_token(BOOLEAN);
 {if ("" != null) return (inverse != null ^ Boolean.parseBoolean(t.image));}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Boolean");
+    }
 }
 
 //END TYPES
@@ -555,96 +683,132 @@ String s = t.image.substring(1,t.image.length()-1);
 
 //BASIC OPERATORS
   final public 
-Operator EqualityOperator() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case EQ:{
-      jj_consume_token(EQ);
+Operator EqualityOperator() throws ParseException {    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case EQ:{
+        jj_consume_token(EQ);
 {if ("" != null) return Operator.EQUAL;}
-      break;
-      }
-    case NEQ:{
-      jj_consume_token(NEQ);
+        break;
+        }
+      case NEQ:{
+        jj_consume_token(NEQ);
 {if ("" != null) return Operator.NOT_EQUAL;}
-      break;
+        break;
+        }
+      default:
+        jj_la1[27] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
-    default:
-      jj_la1[21] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("EqualityOperator");
+    }
 }
 
-  final public Operator NumericOperator() throws ParseException {
-    switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case GT:{
-      jj_consume_token(GT);
+  final public Operator NumericOperator() throws ParseException {    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case GT:{
+        jj_consume_token(GT);
 {if ("" != null) return Operator.GREATER_THAN;}
-      break;
-      }
-    case LT:{
-      jj_consume_token(LT);
+        break;
+        }
+      case LT:{
+        jj_consume_token(LT);
 {if ("" != null) return Operator.LESS_THAN;}
-      break;
-      }
-    case GEQ:{
-      jj_consume_token(GEQ);
+        break;
+        }
+      case GEQ:{
+        jj_consume_token(GEQ);
 {if ("" != null) return Operator.GREATER_THAN_EQUAL;}
-      break;
-      }
-    case LEQ:{
-      jj_consume_token(LEQ);
+        break;
+        }
+      case LEQ:{
+        jj_consume_token(LEQ);
 {if ("" != null) return Operator.LESS_THAN_EQUAL;}
-      break;
+        break;
+        }
+      default:
+        jj_la1[28] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
-    default:
-      jj_la1[22] = jj_gen;
-      jj_consume_token(-1);
-      throw new ParseException();
-    }
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("NumericOperator");
+    }
 }
 
-  final public Operator ContainsOperator() throws ParseException {
-    jj_consume_token(CONTAINS);
+  final public Operator ContainsOperator() throws ParseException {    try {
+
+      jj_consume_token(CONTAINS);
 {if ("" != null) return Operator.CONTAINS;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("ContainsOperator");
+    }
 }
 
-  final public Operator MatchesOperator() throws ParseException {
-    jj_consume_token(MATCHES);
+  final public Operator MatchesOperator() throws ParseException {    try {
+
+      jj_consume_token(MATCHES);
 {if ("" != null) return Operator.MATCHES;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("MatchesOperator");
+    }
 }
 
-  final public Operator InOperator() throws ParseException {
-    jj_consume_token(IN);
+  final public Operator InOperator() throws ParseException {    try {
+
+      jj_consume_token(IN);
 {if ("" != null) return Operator.IN;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("InOperator");
+    }
 }
 
-  final public boolean Inverse() throws ParseException {
-    jj_consume_token(INVERSE);
+  final public boolean Inverse() throws ParseException {    try {
+
+      jj_consume_token(INVERSE);
 {if ("" != null) return true;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Inverse");
+    }
 }
 
-  final public BooleanOperator And() throws ParseException {
-    jj_consume_token(AND);
+  final public BooleanOperator And() throws ParseException {    try {
+
+      jj_consume_token(AND);
 {if ("" != null) return BooleanOperator.AND;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("And");
+    }
 }
 
-  final public BooleanOperator Or() throws ParseException {
-    jj_consume_token(OR);
+  final public BooleanOperator Or() throws ParseException {    try {
+
+      jj_consume_token(OR);
 {if ("" != null) return BooleanOperator.OR;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Or");
+    }
 }
 
-  final public BooleanOperator Xor() throws ParseException {
-    jj_consume_token(XOR);
+  final public BooleanOperator Xor() throws ParseException {    try {
+
+      jj_consume_token(XOR);
 {if ("" != null) return BooleanOperator.XOR;}
     throw new Error("Missing return statement in function");
+    } finally {
+      trace_return("Xor");
+    }
 }
 
   private boolean jj_2_1(int xla)
@@ -671,20 +835,164 @@ Operator EqualityOperator() throws ParseException {
     finally { jj_save(2, xla); }
   }
 
-  private boolean jj_2_4(int xla)
+  private boolean jj_3R_13()
  {
-    jj_la = xla; jj_lastpos = jj_scanpos = token;
-    try { return (!jj_3_4()); }
-    catch(LookaheadSuccess ls) { return true; }
-    finally { jj_save(3, xla); }
+    if (jj_scan_token(OR)) return true;
+    return false;
   }
 
-  private boolean jj_2_5(int xla)
+  private boolean jj_3R_27()
  {
-    jj_la = xla; jj_lastpos = jj_scanpos = token;
-    try { return (!jj_3_5()); }
-    catch(LookaheadSuccess ls) { return true; }
-    finally { jj_save(4, xla); }
+    if (jj_3R_33()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_12()
+ {
+    if (jj_scan_token(AND)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_11()
+ {
+    if (jj_3R_14()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_5()
+ {
+    if (jj_3R_13()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_25()
+ {
+    if (jj_3R_8()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_22()
+ {
+    if (jj_scan_token(INVERSE)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_24()
+ {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_25()) {
+    jj_scanpos = xsp;
+    if (jj_3R_26()) return true;
+    }
+    xsp = jj_scanpos;
+    if (jj_3R_27()) {
+    jj_scanpos = xsp;
+    if (jj_3R_28()) {
+    jj_scanpos = xsp;
+    if (jj_3R_29()) {
+    jj_scanpos = xsp;
+    if (jj_3R_30()) {
+    jj_scanpos = xsp;
+    if (jj_3R_31()) {
+    jj_scanpos = xsp;
+    if (jj_3R_32()) return true;
+    }
+    }
+    }
+    }
+    }
+    return false;
+  }
+
+  private boolean jj_3_3()
+ {
+    if (jj_3R_8()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_36()
+ {
+    if (jj_scan_token(IN)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_16()
+ {
+    if (jj_3R_18()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_10()
+ {
+    if (jj_3R_13()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_37()
+ {
+    if (jj_scan_token(MATCHES)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_4()
+ {
+    if (jj_3R_12()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_23()
+ {
+    if (jj_scan_token(ALIAS_SYMBOL)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_35()
+ {
+    if (jj_scan_token(CONTAINS)) return true;
+    return false;
+  }
+
+  private boolean jj_3_2()
+ {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_4()) {
+    jj_scanpos = xsp;
+    if (jj_3R_5()) {
+    jj_scanpos = xsp;
+    if (jj_3R_6()) return true;
+    }
+    }
+    if (jj_3R_7()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_9()
+ {
+    if (jj_3R_12()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_21()
+ {
+    if (jj_3R_24()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_3()
+ {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_9()) {
+    jj_scanpos = xsp;
+    if (jj_3R_10()) {
+    jj_scanpos = xsp;
+    if (jj_3R_11()) return true;
+    }
+    }
+    if (jj_3R_7()) return true;
+    return false;
   }
 
   private boolean jj_3R_43()
@@ -728,9 +1036,20 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3R_6()
+  private boolean jj_3R_18()
  {
-    if (jj_3R_15()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_20()) {
+    jj_scanpos = xsp;
+    if (jj_3R_21()) return true;
+    }
+    return false;
+  }
+
+  private boolean jj_3R_20()
+ {
+    if (jj_3R_23()) return true;
     return false;
   }
 
@@ -757,179 +1076,14 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3R_28()
+  private boolean jj_3R_32()
  {
-    if (jj_3R_34()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_27()
- {
-    if (jj_3R_33()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_12()
- {
-    if (jj_3R_15()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_5()
- {
-    if (jj_3R_14()) return true;
-    return false;
-  }
-
-  private boolean jj_3_3()
- {
-    if (jj_3R_8()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_25()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_3()) {
-    jj_scanpos = xsp;
-    if (jj_3R_26()) return true;
-    }
-    xsp = jj_scanpos;
-    if (jj_3R_27()) {
-    jj_scanpos = xsp;
-    if (jj_3R_28()) {
-    jj_scanpos = xsp;
-    if (jj_3R_29()) {
-    jj_scanpos = xsp;
-    if (jj_3R_30()) {
-    jj_scanpos = xsp;
-    if (jj_3R_31()) {
-    jj_scanpos = xsp;
-    if (jj_3R_32()) return true;
-    }
-    }
-    }
-    }
-    }
-    return false;
-  }
-
-  private boolean jj_3_5()
- {
-    if (jj_3R_9()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_11()
- {
-    if (jj_3R_14()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_17()
- {
-    if (jj_3R_19()) return true;
-    return false;
-  }
-
-  private boolean jj_3_4()
- {
-    if (jj_3R_8()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_4()
- {
-    if (jj_3R_13()) return true;
-    return false;
-  }
-
-  private boolean jj_3_2()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_4()) {
-    jj_scanpos = xsp;
-    if (jj_3R_5()) {
-    jj_scanpos = xsp;
-    if (jj_3R_6()) return true;
-    }
-    }
-    if (jj_3R_7()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_10()
- {
-    if (jj_3R_13()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_22()
- {
-    if (jj_3R_25()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_3()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_10()) {
-    jj_scanpos = xsp;
-    if (jj_3R_11()) {
-    jj_scanpos = xsp;
-    if (jj_3R_12()) return true;
-    }
-    }
-    if (jj_3R_7()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_24()
- {
-    if (jj_scan_token(ALIAS_SYMBOL)) return true;
     return false;
   }
 
   private boolean jj_3R_15()
  {
-    if (jj_scan_token(XOR)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_9()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_scan_token(14)) {
-    jj_scanpos = xsp;
-    if (jj_scan_token(15)) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3R_19()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_21()) {
-    jj_scanpos = xsp;
-    if (jj_3R_22()) return true;
-    }
-    return false;
-  }
-
-  private boolean jj_3R_21()
- {
-    if (jj_3R_24()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_14()
- {
-    if (jj_scan_token(OR)) return true;
+    if (jj_3R_17()) return true;
     return false;
   }
 
@@ -937,16 +1091,10 @@ Operator EqualityOperator() throws ParseException {
  {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_16()) {
+    if (jj_3R_15()) {
     jj_scanpos = xsp;
-    if (jj_3R_17()) return true;
+    if (jj_3R_16()) return true;
     }
-    return false;
-  }
-
-  private boolean jj_3R_16()
- {
-    if (jj_3R_18()) return true;
     return false;
   }
 
@@ -956,35 +1104,18 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3R_32()
+  private boolean jj_3R_19()
  {
+    if (jj_3R_22()) return true;
     return false;
   }
 
-  private boolean jj_3R_13()
- {
-    if (jj_scan_token(AND)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_20()
- {
-    if (jj_3R_23()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_18()
+  private boolean jj_3R_17()
  {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_20()) jj_scanpos = xsp;
+    if (jj_3R_19()) jj_scanpos = xsp;
     if (jj_scan_token(LPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_23()
- {
-    if (jj_scan_token(INVERSE)) return true;
     return false;
   }
 
@@ -994,21 +1125,22 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3R_36()
- {
-    if (jj_scan_token(IN)) return true;
-    return false;
-  }
-
   private boolean jj_3R_30()
  {
     if (jj_3R_36()) return true;
     return false;
   }
 
-  private boolean jj_3R_37()
+  private boolean jj_3R_29()
  {
-    if (jj_scan_token(MATCHES)) return true;
+    if (jj_3R_35()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_8()
+ {
+    if (jj_scan_token(IDENTIFIER)) return true;
+    if (jj_scan_token(DOT)) return true;
     return false;
   }
 
@@ -1017,23 +1149,21 @@ Operator EqualityOperator() throws ParseException {
     return false;
   }
 
-  private boolean jj_3R_8()
+  private boolean jj_3R_6()
  {
-    if (jj_scan_token(IDENTIFIER)) return true;
-    if (jj_scan_token(DOT)) return true;
-    if (jj_scan_token(IDENTIFIER)) return true;
+    if (jj_3R_14()) return true;
     return false;
   }
 
-  private boolean jj_3R_35()
+  private boolean jj_3R_28()
  {
-    if (jj_scan_token(CONTAINS)) return true;
+    if (jj_3R_34()) return true;
     return false;
   }
 
-  private boolean jj_3R_29()
+  private boolean jj_3R_14()
  {
-    if (jj_3R_35()) return true;
+    if (jj_scan_token(XOR)) return true;
     return false;
   }
 
@@ -1048,18 +1178,26 @@ Operator EqualityOperator() throws ParseException {
   private Token jj_scanpos, jj_lastpos;
   private int jj_la;
   private int jj_gen;
-  final private int[] jj_la1 = new int[23];
+  final private int[] jj_la1 = new int[29];
   static private int[] jj_la1_0;
+  static private int[] jj_la1_1;
   static {
 	   jj_la1_init_0();
+	   jj_la1_init_1();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x800000,0x400000,0xa00000,0x20000000,0x700,0x700,0x28de000,0x2010000,0x201c000,0x4000000,0xcc000,0x1018fc,0x812000,0xcc000,0x1c000,0x10000000,0x1c000,0xc000,0xc000,0xc0000,0x800000,0xc,0xf0,};
+	   jj_la1_0 = new int[] {0x200000,0x100000,0x280000,0x8000000,0x700,0x700,0x800000,0x30a36000,0x804000,0x30804000,0x1000000,0x30030000,0x418fc,0x30236000,0x30004000,0x4000000,0x30004000,0x40000000,0x80000000,0x0,0x0,0x30000000,0x80000000,0x0,0x30000000,0x30000,0x200000,0xc,0xf0,};
 	}
-  final private JJCalls[] jj_2_rtns = new JJCalls[5];
+	private static void jj_la1_init_1() {
+	   jj_la1_1 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x2,0x0,0x0,0x2,0x0,0x0,0x0,0x0,0x0,};
+	}
+  final private JJCalls[] jj_2_rtns = new JJCalls[3];
   private boolean jj_rescan = false;
   private int jj_gc = 0;
 
+  {
+      enable_tracing();
+  }
   /** Constructor with InputStream. */
   public FilterParser(java.io.InputStream stream) {
 	  this(stream, null);
@@ -1071,7 +1209,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1087,7 +1225,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1098,7 +1236,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1118,7 +1256,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1128,7 +1266,7 @@ Operator EqualityOperator() throws ParseException {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1139,7 +1277,7 @@ Operator EqualityOperator() throws ParseException {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 23; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 29; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -1160,6 +1298,7 @@ Operator EqualityOperator() throws ParseException {
 		   }
 		 }
 	   }
+	   trace_token(token, "");
 	   return token;
 	 }
 	 token = oldToken;
@@ -1198,6 +1337,7 @@ Operator EqualityOperator() throws ParseException {
 	 else token = token.next = token_source.getNextToken();
 	 jj_ntk = -1;
 	 jj_gen++;
+	   trace_token(token, " (in getNextToken)");
 	 return token;
   }
 
@@ -1265,21 +1405,24 @@ Operator EqualityOperator() throws ParseException {
   /** Generate ParseException. */
   public ParseException generateParseException() {
 	 jj_expentries.clear();
-	 boolean[] la1tokens = new boolean[30];
+	 boolean[] la1tokens = new boolean[35];
 	 if (jj_kind >= 0) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 23; i++) {
+	 for (int i = 0; i < 29; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
 			 la1tokens[j] = true;
 		   }
+		   if ((jj_la1_1[i] & (1<<j)) != 0) {
+			 la1tokens[32+j] = true;
+		   }
 		 }
 	   }
 	 }
-	 for (int i = 0; i < 30; i++) {
+	 for (int i = 0; i < 35; i++) {
 	   if (la1tokens[i]) {
 		 jj_expentry = new int[1];
 		 jj_expentry[0] = i;
@@ -1304,17 +1447,57 @@ Operator EqualityOperator() throws ParseException {
 	 return trace_enabled;
   }
 
-  /** Enable tracing. */
+/** Enable tracing. */
   final public void enable_tracing() {
+	 trace_enabled = true;
   }
 
-  /** Disable tracing. */
+/** Disable tracing. */
   final public void disable_tracing() {
+	 trace_enabled = false;
+  }
+
+  protected void trace_call(String s) {
+	 if (trace_enabled) {
+	   for (int i = 0; i < trace_indent; i++) { System.out.print(" "); }
+	   System.out.println("Call:	" + s);
+	 }
+	 trace_indent = trace_indent + 2;
+  }
+
+  protected void trace_return(String s) {
+	 trace_indent = trace_indent - 2;
+	 if (trace_enabled) {
+	   for (int i = 0; i < trace_indent; i++) { System.out.print(" "); }
+	   System.out.println("Return: " + s);
+	 }
+  }
+
+  protected void trace_token(Token t, String where) {
+	 if (trace_enabled) {
+	   for (int i = 0; i < trace_indent; i++) { System.out.print(" "); }
+	   System.out.print("Consumed token: <" + tokenImage[t.kind]);
+	   if (t.kind != 0 && !tokenImage[t.kind].equals("\"" + t.image + "\"")) {
+		 System.out.print(": \"" + TokenMgrError.addEscapes(t.image) + "\"");
+	   }
+	   System.out.println(" at line " + t.beginLine + " column " + t.beginColumn + ">" + where);
+	 }
+  }
+
+  protected void trace_scan(Token t1, int t2) {
+	 if (trace_enabled) {
+	   for (int i = 0; i < trace_indent; i++) { System.out.print(" "); }
+	   System.out.print("Visited token: <" + tokenImage[t1.kind]);
+	   if (t1.kind != 0 && !tokenImage[t1.kind].equals("\"" + t1.image + "\"")) {
+		 System.out.print(": \"" + TokenMgrError.addEscapes(t1.image) + "\"");
+	   }
+	   System.out.println(" at line " + t1.beginLine + " column " + t1.beginColumn + ">; Expected token: <" + tokenImage[t2] + ">");
+	 }
   }
 
   private void jj_rescan_token() {
 	 jj_rescan = true;
-	 for (int i = 0; i < 5; i++) {
+	 for (int i = 0; i < 3; i++) {
 	   try {
 		 JJCalls p = jj_2_rtns[i];
 
@@ -1325,8 +1508,6 @@ Operator EqualityOperator() throws ParseException {
 			   case 0: jj_3_1(); break;
 			   case 1: jj_3_2(); break;
 			   case 2: jj_3_3(); break;
-			   case 3: jj_3_4(); break;
-			   case 4: jj_3_5(); break;
 			 }
 		   }
 		   p = p.next;

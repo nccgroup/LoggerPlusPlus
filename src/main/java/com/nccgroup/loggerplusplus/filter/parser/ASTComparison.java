@@ -4,6 +4,7 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.Operator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -47,7 +48,7 @@ class ASTComparison extends SimpleNode {
       if(operator == Operator.MATCHES) return "\"" + String.valueOf(obj) + "\"";
       else return "/" + String.valueOf(obj) + "/";
     }else if(obj instanceof String){
-      return "\"" + obj + "\"";
+      return "\"" + StringEscapeUtils.escapeJava((String) obj) + "\"";
     }else if(obj instanceof Set){
       StringBuilder sb = new StringBuilder();
       sb.append("[");

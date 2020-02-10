@@ -18,6 +18,7 @@ import com.nccgroup.loggerplusplus.logview.RequestViewerController;
 import com.nccgroup.loggerplusplus.userinterface.LogTableModel;
 import com.nccgroup.loggerplusplus.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.jdesktop.swingx.JXTable;
 
 import javax.swing.*;
 import javax.swing.event.RowSorterEvent;
