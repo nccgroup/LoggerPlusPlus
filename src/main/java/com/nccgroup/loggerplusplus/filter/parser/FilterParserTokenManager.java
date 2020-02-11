@@ -9,10 +9,12 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import com.nccgroup.loggerplusplus.logentry.LogManager;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 /** Token Manager. */

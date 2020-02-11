@@ -18,10 +18,11 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logentry.LogManager;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
@@ -32,11 +33,7 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
     public static ASTExpression parseFilter(String string) throws ParseException {
         FilterParser FilterParser = new FilterParser(new StringReader(string));
         ASTExpression node;
-        try{
-            node = FilterParser.Filter();
-        }catch(Exception e){
-            throw new ParseException(e.getMessage());
-        }
+        node = FilterParser.Filter();
 //        VisitorData result = new SanityCheckVisitor().visit(node);
 //        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
@@ -210,7 +207,14 @@ void Comparison()            :
     (left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
 
     (
-        op = EqualityOperator() (
+        op = EqualityOperator() (LOOKAHEAD(3)
+            right = Date()
+            {
+                if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                    throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
+                }
+            }
+        |
             right = Value()
         |
             {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
@@ -225,7 +229,7 @@ void Comparison()            :
     |
         op = NumericOperator()
         {
-            if(!Number.class.isAssignableFrom(((LogEntryField) left).getType())){
+            if(!Number.class.isAssignableFrom(((LogEntryField) left).getType()) && !Date.class.isAssignableFrom(((LogEntryField) left).getType())){
                 throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));
             }
         }
@@ -236,6 +240,13 @@ void Comparison()            :
             {
                 if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
                     throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));
+                }
+            }
+        |
+            right = Date()
+            {
+                if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                    throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
                 }
             }
         |
@@ -414,6 +425,23 @@ LogEntryField Identifier()      :
 
 
 //TYPES
+Date Date()       :
+{Token t;}
+{
+    (
+        <OPEN_SINGLE_QUOTE_STRING> t=<SINGLE_STRING_BODY> <CLOSE_SINGLE_QUOTE_STRING>
+    |
+        <OPEN_DOUBLE_QUOTE_STRING> t=<DOUBLE_STRING_BODY> <CLOSE_DOUBLE_QUOTE_STRING>
+    )
+    {
+        try{
+            Date date = LogManager.sdf.parse(t.image);
+            return date;
+        }catch (Exception e){
+            throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
+        }
+    }
+}
 
 BigDecimal Number()       :
 {Token t;}
@@ -490,8 +518,8 @@ Boolean Boolean()       :
     [inverse=<INVERSE>]
     t=<BOOLEAN>
     {
-        return (inverse != null ^ Boolean.parseBoolean(t.image));
-    }
+    return (inverse != null ^ java.lang.Boolean.parseBoolean(t.image));
+}
 }
 
 //END TYPES

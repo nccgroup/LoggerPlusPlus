@@ -137,7 +137,7 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
         return m.find() ^ op == Operator.NOT_EQUAL;
       }else if (left instanceof Date) {
         try {
-          Date rightDate = DateUtils.truncate(LogManager.sdf.parse(String.valueOf(right)), Calendar.SECOND);
+          Date rightDate = DateUtils.truncate(right, Calendar.SECOND);
           switch (op){
             case EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) == 0;
             case NOT_EQUAL: return DateUtils.truncate((Date) left, Calendar.SECOND).compareTo(rightDate) != 0;

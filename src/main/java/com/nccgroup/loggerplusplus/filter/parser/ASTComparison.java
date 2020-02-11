@@ -4,8 +4,10 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.Operator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.LogManager;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.util.Date;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,8 +47,8 @@ class ASTComparison extends SimpleNode {
 
   private String convertObjectToString(Object obj){
     if(obj instanceof Pattern){
-      if(operator == Operator.MATCHES) return "\"" + String.valueOf(obj) + "\"";
-      else return "/" + String.valueOf(obj) + "/";
+      if(operator == Operator.MATCHES) return "\"" + obj + "\"";
+      else return "/" + obj + "/";
     }else if(obj instanceof String){
       return "\"" + StringEscapeUtils.escapeJava((String) obj) + "\"";
     }else if(obj instanceof Set){
@@ -58,6 +60,8 @@ class ASTComparison extends SimpleNode {
       }).collect(Collectors.joining(", ")));
       sb.append("]");
       return sb.toString();
+    }else if(obj instanceof Date){
+      return "\"" + LogManager.sdf.format(obj) + "\"";
     }
     return String.valueOf(obj);
   }
