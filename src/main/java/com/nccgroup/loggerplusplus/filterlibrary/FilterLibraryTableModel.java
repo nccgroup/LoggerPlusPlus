@@ -15,7 +15,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
     private final FilterLibraryController controller;
     JButton btnApplyFilter;
     JButton btnSetColorFilter;
-    private final String[] columnNames = {"Alias", "LogFilter", "", ""};
+    private final String[] columnNames = {"Alias", "Snippet", "", ""};
 
     public FilterLibraryTableModel(FilterLibraryController controller){
         this.controller = controller;
@@ -100,26 +100,24 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
     }
 
     @Override
-    public void onFilterAdded(SavedFilter savedFilter) {
+    public void onFilterAdded(SavedFilter savedFilter, int index) {
         int rows = getRowCount();
         SwingUtilities.invokeLater(() -> {
-            this.fireTableRowsInserted(rows-1, rows-1);
+            this.fireTableRowsInserted(index, index);
         });
     }
 
     @Override
-    public void onFilterModified(SavedFilter savedFilter) {
+    public void onFilterModified(SavedFilter savedFilter, int index) {
         SwingUtilities.invokeLater(() -> {
-            int index = controller.getSavedFilters().indexOf(savedFilter);
-            if (index > 0) this.fireTableRowsUpdated(index, index);
+            this.fireTableRowsUpdated(index, index);
         });
     }
 
     @Override
-    public void onFilterRemoved(SavedFilter savedFilter) {
+    public void onFilterRemoved(SavedFilter savedFilter, int index) {
         SwingUtilities.invokeLater(() -> {
-            int index = controller.getSavedFilters().indexOf(savedFilter);
-            if (index > 0) this.fireTableRowsDeleted(index, index);
+            this.fireTableRowsDeleted(index, index);
         });
     }
 }

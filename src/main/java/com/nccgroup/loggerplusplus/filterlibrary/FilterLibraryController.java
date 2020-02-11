@@ -39,12 +39,14 @@ public class FilterLibraryController {
     }
 
     public void addFilter(SavedFilter savedFilter){
+        int index;
         synchronized (this.savedFilters) {
             this.savedFilters.add(savedFilter);
+            index = this.savedFilters.size()-1;
         }
         for (FilterLibraryListener listener : this.listeners) {
             try{
-                listener.onFilterAdded(savedFilter);
+                listener.onFilterAdded(savedFilter, index);
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -53,12 +55,14 @@ public class FilterLibraryController {
     }
 
     public void removeFilter(SavedFilter filter){
+        int index;
         synchronized (this.savedFilters){
-            this.savedFilters.remove(filter);
+            index = this.savedFilters.indexOf(filter);
+            this.savedFilters.remove(index);
         }
         for (FilterLibraryListener listener : this.listeners) {
             try{
-                listener.onFilterRemoved(filter);
+                listener.onFilterRemoved(filter, index);
             }catch (Exception e){
                 e.printStackTrace();
             }

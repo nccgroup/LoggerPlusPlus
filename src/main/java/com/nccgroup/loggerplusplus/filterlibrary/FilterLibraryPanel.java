@@ -47,7 +47,8 @@ public class FilterLibraryPanel extends JPanel {
         });
 
         JPanel controlPanel = new JPanel(new GridLayout(1,0));
-        JButton addFilterButton = new JButton("Add Filter");
+        JButton addFilterButton = new JButton("Add Snippet");
+        addFilterButton.setPreferredSize(new Dimension(0, 75));
         addFilterButton.addActionListener(actionEvent -> {
             try {
                 libraryController.addFilter(new SavedFilter(LoggerPlusPlus.instance.getLibraryController(),
@@ -57,6 +58,7 @@ public class FilterLibraryPanel extends JPanel {
             }
         });
         JButton removeSelectedButton = new JButton("Remove Selected");
+        removeSelectedButton.setMinimumSize(new Dimension(0, 75));
         removeSelectedButton.addActionListener(actionEvent -> {
             int selectedRow = libraryTable.getSelectedRow();
             if(selectedRow == -1) return;

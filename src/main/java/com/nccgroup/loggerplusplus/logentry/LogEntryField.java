@@ -123,7 +123,7 @@ public enum LogEntryField {
     }
 
     public String getDescriptiveMessage(){
-        return String.format("Field: %s\nDescription: %s", String.join(", ", labels), description);
+        return String.format("Field: <b>%s</b>\nType: %s\nDescription: %s", String.join(", ", labels), type.getSimpleName(), description);
     }
 
     @Override
