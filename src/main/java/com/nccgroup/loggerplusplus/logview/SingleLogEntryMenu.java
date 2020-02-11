@@ -21,13 +21,11 @@ import static com.nccgroup.loggerplusplus.util.Globals.PREF_COLOR_FILTERS;
 /**
  * Created by corey on 24/08/17.
  */
-public class LogEntryMenu extends JPopupMenu {
+public class SingleLogEntryMenu extends JPopupMenu {
 
-    public LogEntryMenu(final LogTable logTable, final int modelRow, final int modelColumn){
-        final LogEntry entry = logTable.getModel().getRow(modelRow);
-        final LogEntryField selectedField = (logTable.getColumnModel().getModelColumn(modelColumn)).getIdentifier();
+    public SingleLogEntryMenu(final LogTable logTable, final LogEntry entry, final LogEntryField selectedField){
         final String columnName = selectedField.getFullLabel();
-        final Object columnValue = logTable.getModel().getValueAt(modelRow, modelColumn);
+        final Object columnValue = entry.getValueByKey(selectedField);
         final String columnValueString;
 
         if(columnValue != null){
@@ -99,7 +97,7 @@ public class LogEntryMenu extends JPopupMenu {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        URL domainURL = new URL(entry.protocol, entry.host, entry.targetPort, "");
+                        URL domainURL = new URL(entry.protocol, entry.hostname, entry.targetPort, "");
                         LoggerPlusPlus.callbacks.includeInScope(domainURL);
                     } catch (MalformedURLException e) {
                         JOptionPane.showMessageDialog(scopeItem, "Could not build URL for scope entry. Sorry!", "Add to scope", JOptionPane.ERROR_MESSAGE);
@@ -135,7 +133,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Do an active scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doActiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.doActiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
             }
         });
         this.add(activeScan);
@@ -144,7 +142,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Do a passive scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doPassiveScan(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
+                LoggerPlusPlus.callbacks.doPassiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
             }
         });
         passiveScan.setEnabled(entry.complete && isPro);
@@ -155,7 +153,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem sendToRepeater = new JMenuItem(new AbstractAction("Send to Repeater") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToRepeater(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
+                LoggerPlusPlus.callbacks.sendToRepeater(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
             }
         });
         this.add(sendToRepeater);
@@ -163,7 +161,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem sendToIntruder = new JMenuItem(new AbstractAction("Send to Intruder") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToIntruder(entry.host, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.sendToIntruder(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
             }
         });
         this.add(sendToIntruder);
@@ -190,7 +188,7 @@ public class LogEntryMenu extends JPopupMenu {
         JMenuItem removeItem = new JMenuItem(new AbstractAction("Remove Item") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                logTable.getModel().removeRow(modelRow);
+                LoggerPlusPlus.instance.getLogManager().removeLogEntry(entry);
             }
         });
         this.add(removeItem);

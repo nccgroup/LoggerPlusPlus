@@ -11,14 +11,15 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterListener;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogEntryListener;
-import com.nccgroup.loggerplusplus.logview.LogEntryMenu;
+import com.nccgroup.loggerplusplus.logview.MultipleLogEntryMenu;
+import com.nccgroup.loggerplusplus.logview.SingleLogEntryMenu;
 import com.nccgroup.loggerplusplus.logview.LogTableFilterStatusListener;
 import com.nccgroup.loggerplusplus.logview.RequestViewerController;
 import com.nccgroup.loggerplusplus.userinterface.LogTableModel;
 import com.nccgroup.loggerplusplus.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.Globals;
-import org.jdesktop.swingx.JXTable;
 
 import javax.swing.*;
 import javax.swing.event.RowSorterEvent;
@@ -29,6 +30,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LogTable extends JTable implements LogFilterListener, ColorFilterListener, LogEntryListener
 {
@@ -41,7 +44,6 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
         filterStatusListeners = new ArrayList<>();
         this.setTableHeader(new TableHeader(getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
-        this.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // selecting one row at a time
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
         this.setDefaultRenderer(Boolean.class, new BooleanRenderer()); //Fix grey checkbox background
         ((JComponent) this.getDefaultRenderer(Boolean.class)).setOpaque(true); // to remove the white background of the checkboxes!
@@ -83,8 +85,8 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
                 }
             }
         });
-        //TODO Multi selection + relevant context menu changes
-        this.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        this.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         registerListeners();
     }
@@ -114,7 +116,9 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
 
         Component c = super.prepareRenderer(renderer, row, column);
 
-        if(this.getSelectedRow() == row){
+        IntStream selectedRows = IntStream.of(this.getSelectedRows());
+
+        if(selectedRows.anyMatch(i -> i == row)){
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
         }else {
@@ -163,15 +167,30 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
                 if ( SwingUtilities.isRightMouseButton( e )){
                     Point p = e.getPoint();
                     int rowAtPoint = rowAtPoint(p);
-                    if(rowAtPoint > -1){
+                    if(rowAtPoint == -1) return;
+
+                    if(IntStream.of(LogTable.this.getSelectedRows()).noneMatch(i -> i == rowAtPoint)){
+                        //We right clicked an unselected row. Set it as the selected row and update our selected
                         setRowSelectionInterval(rowAtPoint, rowAtPoint);
                     }
 
-                    final int row = convertRowIndexToModel(rowAtPoint);
-                    final int modelCol = convertColumnIndexToModel(columnAtPoint(p));
+                    LogTableModel model = LogTable.this.getModel();
+                    if(LogTable.this.getSelectedRowCount() == 1){
+                        LogEntry logEntry = model.getRow(convertRowIndexToModel(rowAtPoint));
+                        LogEntryField logField = LogTable.this.getColumnModel()
+                                .getModelColumn(convertColumnIndexToModel(columnAtPoint(p))).getIdentifier();
 
-                    if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
-                        new LogEntryMenu(LogTable.this, row, modelCol).show(e.getComponent(), e.getX(), e.getY());
+                        if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                            new SingleLogEntryMenu(LogTable.this, logEntry, logField).show(e.getComponent(), e.getX(), e.getY());
+                        }
+                    }else{
+                        List<LogEntry> selectedEntries = IntStream.of(LogTable.this.getSelectedRows())
+                                .mapToObj(selectedRow -> model.getRow(convertRowIndexToModel(selectedRow)))
+                                .collect(Collectors.toList());
+
+                        if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
+                            new MultipleLogEntryMenu(LogTable.this, selectedEntries).show(e.getComponent(), e.getX(), e.getY());
+                        }
                     }
                 }
             }

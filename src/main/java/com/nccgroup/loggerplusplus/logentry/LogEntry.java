@@ -35,10 +35,10 @@ public class LogEntry
 	public transient IHttpRequestResponse requestResponse;
 	public int tool;
 	public String toolName;
-	public String host="";
+	public String hostname ="";
+	public String host = ""; //TODO better name?
 	public String method="";
 	public URL url;
-	public String relativeURL="";
 	public boolean params=false;
 	public Short status=-1;
 	public boolean hasBodyParam=false;
@@ -64,8 +64,8 @@ public class LogEntry
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	public String comment="";
-	public String[] regexAllReq = {"","","","",""};
-	public String[] regexAllResp = {"","","","",""};
+//	public String[] regexAllReq = {"","","","",""};
+//	public String[] regexAllResp = {"","","","",""};
 
 	public ArrayList<UUID> matchingColorFilters;
 	public int requestBodyOffset;
@@ -76,9 +76,6 @@ public class LogEntry
 	public int requestResponseDelay;
 	public String responseHeaders;
 	public String requestHeaders;
-
-	private boolean requestProcessed;
-	private boolean responseProcessed;
 
 	public LogEntry(){
 		this.identifier = UUID.randomUUID();
@@ -117,11 +114,17 @@ public class LogEntry
 		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
 
 		this.url = tempAnalyzedReq.getUrl();
-		this.relativeURL = this.url.getPath();
-		this.host = tempRequestResponseHttpService.getHost();
+		this.hostname = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
 		this.isSSL= this.protocol.equals("https");
 		this.targetPort = tempRequestResponseHttpService.getPort();
+
+		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
+				|| (this.protocol.equals("http") && this.targetPort == 80);
+
+		this.host = this.protocol+"://"+this.hostname+(isDefaultPort ? "" : this.targetPort);
+
+
 		this.method = tempAnalyzedReq.getMethod();
 		try{
 			// I don't want to delete special characters such as ; or : from the extension as it may really be part of the extension! (burp proxy log ignores them)
@@ -158,7 +161,7 @@ public class LogEntry
 						boolean anyParamMatched = false;
 
 						for(ICookie cookieItem : cookieJars){
-							if(cookieItem.getDomain().equals(this.host)){
+							if(cookieItem.getDomain().equals(this.hostname)){
 								// now we want to see if any of these cookies have been set here!
 								String currentCookieJarParam = cookieItem.getName()+"="+cookieItem.getValue()+";";
 								if(this.sentCookies.contains(currentCookieJarParam)){
@@ -234,7 +237,7 @@ public class LogEntry
 //			}
 //		}
 
-		this.requestProcessed = true;
+//		this.requestProcessed = true;
 	}
 
 	public void addResponse(Date arrivalTime, IHttpRequestResponse requestResponse){
@@ -338,7 +341,7 @@ public class LogEntry
 //			this.requestResponse = null;
 //		}
 
-		this.responseProcessed = true;
+//		this.responseProcessed = true;
 		this.complete = true;
 	}
 
@@ -457,7 +460,7 @@ public class LogEntry
 				case URL:
 					return this.url;
 				case PATH:
-					return this.relativeURL;
+					return this.url.getPath();
 				case QUERY:
 					return this.url.getQuery();
 				case STATUS:
@@ -465,9 +468,9 @@ public class LogEntry
 				case PROTOCOL:
 					return this.protocol;
 				case HOSTNAME:
-					return this.host;
+					return this.hostname;
 				case HOST:
-					return this.protocol+"://"+this.host;
+					return this.host;
 				case MIME_TYPE:
 					return this.responseMimeType;
 				case RESPONSE_LENGTH:
