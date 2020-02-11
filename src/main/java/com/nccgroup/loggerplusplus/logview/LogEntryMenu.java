@@ -11,6 +11,8 @@ import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -90,16 +92,35 @@ public class LogEntryMenu extends JPopupMenu {
 
         this.add(new JPopupMenu.Separator());
         final boolean inScope = LoggerPlusPlus.callbacks.isInScope(entry.url);
-        JMenuItem scope = new JMenuItem(new AbstractAction((inScope ? "Remove from scope" : "Add to scope")) {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                if(inScope)
-                    LoggerPlusPlus.callbacks.excludeFromScope(entry.url);
-                else
+        JMenuItem scopeItem;
+        if(!inScope){
+            scopeItem = new JMenu("Add to scope");
+            scopeItem.add(new JMenuItem(new AbstractAction("Domain") {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    try {
+                        URL domainURL = new URL(entry.protocol, entry.host, entry.targetPort, "");
+                        LoggerPlusPlus.callbacks.includeInScope(domainURL);
+                    } catch (MalformedURLException e) {
+                        JOptionPane.showMessageDialog(scopeItem, "Could not build URL for scope entry. Sorry!", "Add to scope", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }));
+            scopeItem.add(new JMenuItem(new AbstractAction("Domain + Path") {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
                     LoggerPlusPlus.callbacks.includeInScope(entry.url);
-            }
-        });
-        this.add(scope);
+                }
+            }));
+        }else{
+            scopeItem = new JMenuItem(new AbstractAction("Remove from scope") {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    LoggerPlusPlus.callbacks.excludeFromScope(entry.url);
+                }
+            });
+        }
+        this.add(scopeItem);
 
         this.add(new JPopupMenu.Separator());
 
