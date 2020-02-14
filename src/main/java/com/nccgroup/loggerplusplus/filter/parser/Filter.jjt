@@ -166,25 +166,21 @@ void Comparison() #Comparison:
     (left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
 
     (
-        op = EqualityOperator() (LOOKAHEAD(3)
-            right = Date()
-            {
-                if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
-                    throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
+        op = EqualityOperator() {
+            if(((LogEntryField) left).getType().isAssignableFrom(Date.class)){
+                right = Date();
+            }else{
+                try{
+                    left = Value();
+                }catch (Exception e){
+                    throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");
                 }
             }
-        |
-            right = Value()
-        |
-            {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
-        )
 
-        {
             if(right instanceof Pattern && !String.class.isAssignableFrom(((LogEntryField) left).getType())){
-              throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));
+                throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));
             }
         }
-
     |
         op = NumericOperator()
         {
