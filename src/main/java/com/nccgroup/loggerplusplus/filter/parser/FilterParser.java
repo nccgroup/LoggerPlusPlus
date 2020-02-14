@@ -207,7 +207,7 @@ if(((LogEntryField) left).getType().isAssignableFrom(Date.class)){
                 right = Date();
             }else{
                 try{
-                    left = Value();
+                    right = Value();
                 }catch (Exception e){
                     {if (true) throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
                 }

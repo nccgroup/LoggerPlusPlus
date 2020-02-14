@@ -212,7 +212,7 @@ void Comparison()            :
                 right = Date();
             }else{
                 try{
-                    left = Value();
+                    right = Value();
                 }catch (Exception e){
                     throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");
                 }
