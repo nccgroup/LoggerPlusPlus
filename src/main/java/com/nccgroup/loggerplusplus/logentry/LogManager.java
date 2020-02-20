@@ -47,49 +47,11 @@ public class LogManager implements IHttpListener, IProxyListener {
         proxyIdToUUIDMap = new ConcurrentHashMap<>();
         pendingRequests = new ConcurrentHashMap<>();
         requestsAwaitingResponse = new ConcurrentHashMap<>();
-        LoggerPlusPlus.callbacks.getProxyHistory();
-
         executorService = Executors.newFixedThreadPool(20, new NamedThreadFactory("LPP-LogManager"));
 
         //Create incomplete request cleanup thread so map doesn't get too big.
         cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
-        cleanupFuture = cleanupExecutor.scheduleAtFixedRate(() -> {
-            long timeNow = new Date().getTime();
-            synchronized (requestsAwaitingResponse){
-                try {
-                    HashSet<UUID> removedUUIDs = new HashSet<>();
-                    Iterator<Map.Entry<UUID, EntryPendingResponse>> iter
-                            = requestsAwaitingResponse.entrySet().iterator();
-
-                    while (iter.hasNext()) {
-                        Map.Entry<UUID, EntryPendingResponse> value = iter.next();
-                        LogEntry logEntry = value.getValue().getLogEntry();
-                        if(logEntry.requestDateTime == null) return;
-                        long entryTime = logEntry.requestDateTime.getTime();
-                        long responseTimeout = 1000 * ((Integer) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
-                        if (timeNow - entryTime > responseTimeout) {
-                            iter.remove();
-                            removedUUIDs.add(value.getKey());
-                        }
-                    }
-
-                    Iterator<Map.Entry<Integer, UUID>> proxyMapIter = proxyIdToUUIDMap.entrySet().iterator();
-                    while (proxyMapIter.hasNext()) {
-                        Map.Entry<Integer, UUID> entry = proxyMapIter.next();
-                        if (removedUUIDs.contains(entry.getValue())) {
-                            iter.remove();
-                        }
-                    }
-
-                    if (removedUUIDs.size() > 0) {
-                        LoggerPlusPlus.instance.logOutput("Cleaned Up " + removedUUIDs.size()
-                                + " proxy requests without a response after the specified timeout.");
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-            }
-        },120000L, 120000L, TimeUnit.MILLISECONDS);
+        cleanupFuture = cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),120000L, 120000L, TimeUnit.MILLISECONDS);
     }
 
 
@@ -467,8 +429,51 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void shutdown(){
         this.cleanupExecutor.shutdownNow();
         this.executorService.shutdownNow();
+        this.logEntryListeners.clear();
         if(!importFuture.isDone()){
             importFuture.cancel(true);
+        }
+    }
+
+    private class AbandonedRequestCleanupRunnable implements Runnable {
+
+        @Override
+        public void run() {
+            long timeNow = new Date().getTime();
+            synchronized (requestsAwaitingResponse){
+                try {
+                    HashSet<UUID> removedUUIDs = new HashSet<>();
+                    Iterator<Map.Entry<UUID, EntryPendingResponse>> iter
+                            = requestsAwaitingResponse.entrySet().iterator();
+
+                    while (iter.hasNext()) {
+                        Map.Entry<UUID, EntryPendingResponse> abandonedEntry = iter.next();
+                        LogEntry logEntry = abandonedEntry.getValue().getLogEntry();
+                        if(logEntry.requestDateTime == null) return;
+                        long entryTime = logEntry.requestDateTime.getTime();
+                        long responseTimeout = 1000 * ((Integer) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
+                        if (timeNow - entryTime > responseTimeout) {
+                            iter.remove();
+                            removedUUIDs.add(abandonedEntry.getKey());
+                        }
+                    }
+
+                    Iterator<Map.Entry<Integer, UUID>> proxyMapIter = proxyIdToUUIDMap.entrySet().iterator();
+                    while (proxyMapIter.hasNext()) {
+                        Map.Entry<Integer, UUID> entry = proxyMapIter.next();
+                        if (removedUUIDs.contains(entry.getValue())) {
+                            iter.remove();
+                        }
+                    }
+
+                    if (removedUUIDs.size() > 0) {
+                        LoggerPlusPlus.instance.logOutput("Cleaned Up " + removedUUIDs.size()
+                                + " proxy requests without a response after the specified timeout.");
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
