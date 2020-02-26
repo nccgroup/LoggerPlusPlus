@@ -29,8 +29,7 @@ import java.util.regex.Matcher;
 
 public class LogEntry
 {
-	public boolean isCompleteEntry;
-	public boolean isImported;
+	private boolean isImported;
 	public UUID identifier;
 	public transient IHttpRequestResponse requestResponse;
 	public int tool;
@@ -73,41 +72,52 @@ public class LogEntry
 	public String requestTime;
 	public Date responseDateTime;
 	public Date requestDateTime;
-	public int requestResponseDelay;
+	public int requestResponseDelay = -1;
 	public String responseHeaders;
 	public String requestHeaders;
 
-	public LogEntry(){
+	private LogEntry(){
 		this.identifier = UUID.randomUUID();
 		this.matchingColorFilters = new ArrayList<UUID>();
 	}
 
-	public LogEntry(int tool, boolean isCompleteEntry, Date arrivalTime, IHttpRequestResponse requestResponse){
+	public LogEntry(int tool, IHttpRequestResponse requestResponse){
 		this();
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
-
-		this.isCompleteEntry = isCompleteEntry;
-		if(isCompleteEntry) {
-		    //We cannot determine the request times for complete entries.
-            //If we are supplied with an arrival time, use that for the response.
-			this.requestTime = "";
-			if(arrivalTime == null) {
-                this.responseTime = "";
-            }else {
-                setResponseTime(arrivalTime);
-            }
-			this.requestResponseDelay = -1;
-		}else{
-			this.setReqestTime(arrivalTime);
-		}
-
 		this.requestResponse = requestResponse;
 	}
 
+	public LogEntry(int tool, Date requestTime, IHttpRequestResponse requestResponse){
+		this(tool, requestResponse);
+		this.setReqestTime(requestTime);
+	}
+
+	public UUID getIdentifier() {
+		return this.identifier;
+	}
+
+	public boolean isImported() {
+		return isImported;
+	}
+
+	public void setImported(boolean imported) {
+		isImported = imported;
+	}
+
+	public void setReqestTime(Date requestTime){
+		this.requestDateTime = requestTime;
+		this.requestTime = LogManager.sdf.format(this.requestDateTime);
+	}
+
+	public void setResponseTime(Date responseTime) {
+	    this.responseDateTime = responseTime;
+	    this.responseTime = LogManager.sdf.format(this.responseDateTime);
+	}
+
 	public void processRequest(IRequestInfo tempAnalyzedReq){
-	    if(this.requestResponse == null)
-	        throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
+		if(this.requestResponse == null)
+			throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
 
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
@@ -241,24 +251,15 @@ public class LogEntry
 	}
 
 	public void addResponse(Date arrivalTime, IHttpRequestResponse requestResponse){
-	    this.responseDateTime = arrivalTime;
-	    this.requestResponse = requestResponse;
-    }
+		this.responseDateTime = arrivalTime;
+		this.requestResponse = requestResponse;
+	}
 
 	public void processResponse() {
-        if(this.requestResponse == null)
-            throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
-        else if(this.requestResponse.getResponse() == null)
-            throw new IllegalStateException("Cannot analyse the response of an incomplete IHttpRequestResponse.");
-
-		if(this.responseDateTime == null && !isCompleteEntry){
-			//If it didn't have an arrival time set, assume it was right now.
-			this.responseDateTime = new Date();
-		}
-		if(!isCompleteEntry) { //If the request and response didn't arrive at the same time.
-			this.responseTime = LogManager.sdf.format(responseDateTime);
-			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
-		}
+		if(this.requestResponse == null)
+			throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
+		else if(this.requestResponse.getResponse() == null)
+			throw new IllegalStateException("Cannot analyse the response of an incomplete IHttpRequestResponse.");
 
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
@@ -289,6 +290,16 @@ public class LogEntry
 		Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
 		if(titleMatcher.find()){
 			this.title = titleMatcher.group(1);
+		}
+
+		if(this.responseDateTime == null){
+			//If it didn't have an arrival time set, parse the response for it.
+			this.responseDateTime = new Date();
+		}
+		this.responseTime = LogManager.sdf.format(responseDateTime);
+
+		if(requestDateTime != null && responseDateTime != null) {
+			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
 		}
 
 		// RegEx processing for responses - should be available only when we have a RegEx rule!
@@ -345,16 +356,6 @@ public class LogEntry
 		this.complete = true;
 	}
 
-	public void setReqestTime(Date requestTime){
-		this.requestDateTime = requestTime;
-		this.requestTime = LogManager.sdf.format(this.requestDateTime);
-	}
-
-	public void setResponseTime(Date responseTime) {
-	    this.responseDateTime = responseTime;
-	    this.responseTime = LogManager.sdf.format(this.responseDateTime);
-	}
-
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
 		return getCSVHeader(table, isFullLog, isFullLog);
 	}
@@ -388,63 +389,6 @@ public class LogEntry
 		if(includeResponse) {
 			result.append(",");
 			result.append("Response");
-		}
-		return result.toString();
-	}
-
-	// We need StringEscapeUtils library from http://commons.apache.org/proper/commons-lang/download_lang.cgi
-	public String toCSVString(boolean isFullLog) {		
-		return toCSVString(isFullLog, isFullLog);
-	}
-
-	private String sanitize(String string){
-		if(string == null) return null;
-		if(string.length() == 0) return "";
-		char first = string.toCharArray()[0];
-		switch (first){
-			case '=':
-			case '-':
-			case '+':
-			case '@': {
-				return "'" + string;
-			}
-		}
-		return string;
-	}
-
-	public String toCSVString(boolean includeRequests, boolean includeResponses) {
-		StringBuilder result = new StringBuilder();
-
-		LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
-		ArrayList<LogTableColumn> columns = new ArrayList<>();
-		Enumeration<TableColumn> columnEnumeration = columnModel.getColumns();
-		while(columnEnumeration.hasMoreElements()){
-			columns.add((LogTableColumn) columnEnumeration.nextElement());
-		}
-
-		Collections.sort(columns);
-		boolean firstDone = false;
-		for (LogTableColumn logTableColumn : columns) {
-			if(logTableColumn.isVisible()){
-				if(firstDone){
-					result.append(",");
-				}else{
-					firstDone = true;
-				}
-				result.append(StringEscapeUtils.escapeCsv(sanitize(
-						getValueByKey(logTableColumn.getIdentifier()).toString())));
-			}
-		}
-
-		if(includeRequests) {
-			result.append(",");
-			if (requestResponse != null && requestResponse.getRequest() != null)
-				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getRequest()))));
-		}
-		if(includeResponses) {
-			result.append(",");
-			if(requestResponse != null && requestResponse.getResponse() != null)
-				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getResponse()))));
 		}
 		return result.toString();
 	}
@@ -564,10 +508,6 @@ public class LogEntry
 
 	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
 
-	public UUID getIdentifier() {
-		return this.identifier;
-	}
-
 	public enum CookieJarStatus {
 		YES("Yes"),
 		NO("No"),
@@ -580,6 +520,63 @@ public class LogEntry
 		public String toString() {
 			return this.value;
 		}
+	}
+
+
+	public String toCSVString(boolean isFullLog) {
+		return toCSVString(isFullLog, isFullLog);
+	}
+
+	private String sanitize(String string){
+		if(string == null) return null;
+		if(string.length() == 0) return "";
+		char first = string.toCharArray()[0];
+		switch (first){
+			case '=':
+			case '-':
+			case '+':
+			case '@': {
+				return "'" + string;
+			}
+		}
+		return string;
+	}
+
+	public String toCSVString(boolean includeRequests, boolean includeResponses) {
+		StringBuilder result = new StringBuilder();
+
+		LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
+		ArrayList<LogTableColumn> columns = new ArrayList<>();
+		Enumeration<TableColumn> columnEnumeration = columnModel.getColumns();
+		while(columnEnumeration.hasMoreElements()){
+			columns.add((LogTableColumn) columnEnumeration.nextElement());
+		}
+
+		Collections.sort(columns);
+		boolean firstDone = false;
+		for (LogTableColumn logTableColumn : columns) {
+			if(logTableColumn.isVisible()){
+				if(firstDone){
+					result.append(",");
+				}else{
+					firstDone = true;
+				}
+				result.append(StringEscapeUtils.escapeCsv(sanitize(
+						getValueByKey(logTableColumn.getIdentifier()).toString())));
+			}
+		}
+
+		if(includeRequests) {
+			result.append(",");
+			if (requestResponse != null && requestResponse.getRequest() != null)
+				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getRequest()))));
+		}
+		if(includeResponses) {
+			result.append(",");
+			if(requestResponse != null && requestResponse.getResponse() != null)
+				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getResponse()))));
+		}
+		return result.toString();
 	}
 
 	public synchronized boolean testColorFilter(ColorFilter colorFilter, boolean retest){
