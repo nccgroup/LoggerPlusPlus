@@ -23,18 +23,18 @@ public class LogManager implements IHttpListener, IProxyListener {
     public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
 
-    private final ArrayList<LogEntry> logEntries;
+    private final List<LogEntry> logEntries;
     private AtomicInteger pendingImport;
 
     private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
     private final ConcurrentHashMap<UUID, LogEntry> pendingRequests;
     private final ConcurrentHashMap<UUID, EntryPendingResponse> requestsAwaitingResponse;
-    private final ArrayList<LogEntryListener> logEntryListeners;
+    private final List<LogEntryListener> logEntryListeners;
     private final ExecutorService executorService;
     private final ScheduledExecutorService cleanupExecutor;
     //Stats
     private AtomicInteger totalRequests;
-    private short lateResponses = 0;
+    private AtomicInteger lateResponses;
 
     private Future importFuture;
 
@@ -45,9 +45,12 @@ public class LogManager implements IHttpListener, IProxyListener {
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
     public LogManager(){
-        this.totalRequests = new AtomicInteger(0);
-        logEntries = new ArrayList<>();
+        totalRequests = new AtomicInteger(0);
         pendingImport = new AtomicInteger(0);
+        lateResponses = new AtomicInteger(0);
+
+        logEntries = Collections.synchronizedList(new ArrayList<>());
+
         logEntryListeners = new ArrayList<>();
         proxyIdToUUIDMap = new ConcurrentHashMap<>();
         pendingRequests = new ConcurrentHashMap<>();
@@ -131,23 +134,6 @@ public class LogManager implements IHttpListener, IProxyListener {
             }
         }
     }
-
-    /**
-     * If we're not logging the Http method requests live, or if we're importing,
-     * then we just add the complete request as a whole.
-     * @param arrivalTime The time the request arrived
-     * @param toolFlag The tool used to initiate the request
-     * @param requestResponse The HTTP request object with response
-     * @param isImported If the entry is imported from history
-     * @return Log entry pending processing.
-     */
-//    private LogEntry logCompletedRequestWithResponse(final Date arrivalTime, final int toolFlag,
-//                                                     final IHttpRequestResponse requestResponse, boolean isImported){
-//        final LogEntry logEntry = new LogEntry(toolFlag, requestResponse);
-//        logEntry.isImported = isImported;
-//        executorService.submit(createNewEntryRunnable(logEntry));
-//        return logEntry;
-//    }
 
     /**
      * When a response comes in, determine if the request has already been processed or not.
@@ -242,7 +228,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     private Runnable createEntryUpdateRunnable(final Date arrivalTime, final EntryPendingResponse entryAwaitingResponse,
                                                final IHttpRequestResponse requestResponse){
         return () -> {
-            LogEntry logEntry = entryAwaitingResponse.getLogEntry();
+            final LogEntry logEntry = entryAwaitingResponse.getLogEntry();
             synchronized (logEntry) {
                 logEntry.addResponse(arrivalTime, requestResponse);
                 logEntry.processResponse();
@@ -271,36 +257,31 @@ public class LogManager implements IHttpListener, IProxyListener {
         //After handling request / response logEntries generation.
 
         int modelIndex;
-        synchronized (logEntries) {
-            int removedEntries = 0;
-            while (logEntries.size() >= getMaximumEntries()) {
-                final LogEntry removed = logEntries.remove(0);
-                removedEntries++;
-                for (LogEntryListener listener : logEntryListeners) {
-                    listener.onRequestRemoved(0, removed);
-                }
+        int removedEntries = 0;
+        while (logEntries.size() >= getMaximumEntries()) {
+            final LogEntry removedLogEntry = logEntries.get(0);
+            removeLogEntry(removedLogEntry);
+            removedEntries++;
+        }
+
+        if(removedEntries > 0) {
+            //Update model indices of entries pending their responses
+            for (EntryPendingResponse entry : this.requestsAwaitingResponse.values()) {
+                entry.setModelIndex(entry.getModelIndex() - removedEntries);
             }
+        }
 
-            if(removedEntries > 0) {
-                //Update model indices of entries pending their responses
-                for (EntryPendingResponse entry : this.requestsAwaitingResponse.values()) {
-                    entry.setModelIndex(entry.getModelIndex() - removedEntries);
-                }
-            }
+        logEntries.add(logEntry);
+        modelIndex = logEntries.size()-1;
 
-            logEntries.add(logEntry);
-            modelIndex = logEntries.size()-1;
+        //Add to grepTable / modify existing entry.
+        HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+        for (ColorFilter colorFilter : colorFilters.values()) {
+            logEntry.testColorFilter(colorFilter, false);
+        }
 
-            //Add to grepTable / modify existing entry.
-            HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-            for (ColorFilter colorFilter : colorFilters.values()) {
-                logEntry.testColorFilter(colorFilter, false);
-            }
-
-            for (LogEntryListener listener : logEntryListeners) {
-                listener.onRequestAdded(modelIndex, logEntry, hasResponse);
-            }
-
+        for (LogEntryListener listener : logEntryListeners) {
+            listener.onRequestAdded(modelIndex, logEntry, hasResponse);
         }
 
         totalRequests.getAndIncrement();
@@ -316,27 +297,20 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     private synchronized void handleExpiredResponse(IHttpRequestResponse requestResponse){
-        lateResponses++;
+        lateResponses.incrementAndGet();
         int totalReqs = totalRequests.get();
-        if(totalReqs > 100 && ((float)lateResponses)/totalReqs > 0.17){
+        if(totalReqs > 100 && ((float)lateResponses.get())/totalReqs > 0.17){
             MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
             //Reset late responses to prevent message being displayed again so soon.
-            lateResponses = 0;
+            lateResponses.set(0);
         }
     }
 
     public void removeLogEntry(LogEntry logEntry){
-        SwingUtilities.invokeLater(() -> {
-            synchronized (logEntries) {
-                int index = logEntries.indexOf(logEntry);
-                if (index > 0) {
-                    logEntries.remove(logEntry);
-                    for (LogEntryListener listener : logEntryListeners) {
-                        listener.onRequestRemoved(index, logEntry);
-                    }
-                }
-            }
-        });
+        int index = logEntries.indexOf(logEntry);
+        for (LogEntryListener listener : logEntryListeners) {
+            listener.onRequestRemoved(index, logEntry);
+        }
     }
 
     private EntryPendingResponse moveEntryToPendingResponse(LogEntry logEntry){
@@ -396,7 +370,7 @@ public class LogManager implements IHttpListener, IProxyListener {
         reset();
     }
 
-    public ArrayList<LogEntry> getLogEntries() {
+    public List<LogEntry> getLogEntries() {
         return logEntries;
     }
 
@@ -423,7 +397,7 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void removeLogListener(LogEntryListener listener) {
         logEntryListeners.remove(listener);
     }
-    public ArrayList<LogEntryListener> getLogEntryListeners() {
+    public List<LogEntryListener> getLogEntryListeners() {
         return logEntryListeners;
     }
 
@@ -432,13 +406,9 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public void reset() {
-        synchronized (this.logEntries) {
-            this.logEntries.clear();
-        }
-        synchronized (this.proxyIdToUUIDMap) {
-            this.proxyIdToUUIDMap.clear();
-        }
-        this.lateResponses = 0;
+        this.logEntries.clear();
+        this.proxyIdToUUIDMap.clear();
+        this.lateResponses.set(0);
         this.totalRequests.set(0);
 
         for (LogEntryListener logEntryListener : logEntryListeners) {

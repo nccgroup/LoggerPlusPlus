@@ -16,7 +16,7 @@ import java.util.List;
 public class LogTableModel extends AbstractTableModel {
 
     private final LogManager logManager;
-    private final ArrayList<LogEntry> entries;
+    private final List<LogEntry> entries;
     private LogTableColumnModel columnModel;
     private IHttpRequestResponse currentlyDisplayedItem;
 
