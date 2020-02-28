@@ -326,15 +326,17 @@ public class LogManager implements IHttpListener, IProxyListener {
     }
 
     public void removeLogEntry(LogEntry logEntry){
-        synchronized (logEntries) {
-            int index = logEntries.indexOf(logEntry);
-            if (index > 0) {
-                logEntries.remove(logEntry);
-                for (LogEntryListener listener : logEntryListeners) {
-                    listener.onRequestRemoved(index, logEntry);
+        SwingUtilities.invokeLater(() -> {
+            synchronized (logEntries) {
+                int index = logEntries.indexOf(logEntry);
+                if (index > 0) {
+                    logEntries.remove(logEntry);
+                    for (LogEntryListener listener : logEntryListeners) {
+                        listener.onRequestRemoved(index, logEntry);
+                    }
                 }
             }
-        }
+        });
     }
 
     private EntryPendingResponse moveEntryToPendingResponse(LogEntry logEntry){

@@ -192,7 +192,7 @@ public class ElasticSearchLogger implements LogEntryListener {
     }
 
     @Override
-    public void onRequestRemoved(int index, LogEntry logEntry) {
+    public void onRequestRemoved(int modelIndex, LogEntry logEntry) {
 
     }
 

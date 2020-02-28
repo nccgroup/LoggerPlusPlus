@@ -309,12 +309,12 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
 
     @Override
     public void onResponseUpdated(int modelRow, LogEntry existingEntry) {
-        SwingUtilities.invokeLater(() -> getModel().fireTableRowsUpdated(modelRow, modelRow));
+        getModel().fireTableRowsUpdated(modelRow, modelRow);
     }
 
     @Override
-    public void onRequestRemoved(int index, LogEntry logEntry) {
-        SwingUtilities.invokeLater(() -> getModel().fireTableRowsDeleted(index, index));
+    public void onRequestRemoved(int modelIndex, LogEntry logEntry) {
+        getModel().fireTableRowsDeleted(modelIndex, modelIndex);
     }
 
     @Override
