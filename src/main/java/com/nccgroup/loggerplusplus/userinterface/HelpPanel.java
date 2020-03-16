@@ -36,10 +36,18 @@ public class HelpPanel extends JPanel {
 
     private void setup(){
         this.setLayout(new BorderLayout());
+        Color fontColor;
+        if(UIManager.getLookAndFeel().getName().equalsIgnoreCase("Darcula")){
+            fontColor = UIManager.getColor("darcula.textForeground");
+        }else{
+            fontColor = this.getForeground();
+        }
+        String colorHex = String.format("#%02x%02x%02x", fontColor.getRed(), fontColor.getGreen(), fontColor.getBlue());
+
         JTextPane overviewTitle = new JTextPane();
         overviewTitle.setContentType("text/html");
         overviewTitle.setEditable(false);
-        overviewTitle.setText("<html><h1>Logger++</h1>" +
+        overviewTitle.setText("<html><div style=\"color:"+colorHex+"\"><h1>Logger++</h1>" +
             "Logger++ was developed as an alternative to the log history included within Burp Suite. " +
             "Advantages over the original implementation are a more comprehensive number of fields, " +
             "the ability to show only specific entries to better monitor activity via the use of adaptable " +
@@ -49,7 +57,7 @@ public class HelpPanel extends JPanel {
         overviewPane.setContentType("text/html");
         overviewPane.setEditable(false);
         overviewPane.setEditorKit(new HTMLEditorKit());
-        overviewPane.setText("<html>" +
+        overviewPane.setText("<html><div style=\"color:"+colorHex+"\">" +
                 "<h2>Creating Filters</h2>" +
                 "Filters were developed with the intention of being highly customisable and therefore may be " +
                 "as simple or complex as you require. Once a filter has been entered, the color of the input field " +
@@ -137,14 +145,14 @@ public class HelpPanel extends JPanel {
         JTextPane fieldTitle = new JTextPane();
         fieldTitle.setContentType("text/html");
         fieldTitle.setEditable(false);
-        fieldTitle.setText("<html><h1>Filter Fields</h1>" +
+        fieldTitle.setText("<html><div style=\"color:"+colorHex+"\"><h1>Filter Fields</h1>" +
             "A number of fields are available to use from the requests within your filters. These are listed below.");
 
         JTextPane fieldPane = new JTextPane();
         fieldPane.setContentType("text/html");
         fieldPane.setEditable(false);
         fieldPane.setEditorKit(new HTMLEditorKit());
-        fieldPane.setText(getFormattedFields(FieldGroup.REQUEST) +
+        fieldPane.setText("<html><div style=\"color:"+colorHex+"\">"+getFormattedFields(FieldGroup.REQUEST) +
                 getFormattedFields(FieldGroup.RESPONSE) +
                 getFormattedFields(FieldGroup.PROXY));
 
