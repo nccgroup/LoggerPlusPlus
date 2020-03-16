@@ -10,8 +10,9 @@ options {
 
 PARSER_BEGIN(FilterParser)
 package com.nccgroup.loggerplusplus.filter.parser;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
-import com.nccgroup.loggerplusplus.filter.Operator;import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ public class FilterParser {
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
     }
 
-    private static void throwOperatorAmbiguityException(BooleanOperator op, BooleanOperator other) throws ParseException {
+    private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
 }
@@ -104,7 +105,7 @@ ASTExpression Filter() #void :
 
 ASTExpression Expression(boolean inverse) #Expression :
 {
- BooleanOperator op = null;
+ LogicalOperator op = null;
 }
 {
     ExpressionInner() [LOOKAHEAD(2) op=ExpressionCompounding()]
@@ -137,10 +138,10 @@ void Statement() #void :
     Alias() | Comparison()
 }
 
-BooleanOperator ExpressionCompounding() #void :
+LogicalOperator ExpressionCompounding() #void :
 {
-    BooleanOperator op;
-    BooleanOperator nextOp;
+    LogicalOperator op;
+    LogicalOperator nextOp;
 }
 {
     (op = And() | op = Or() | op = Xor()) ExpressionInner() //First compounding can be any operator
@@ -159,7 +160,7 @@ BooleanOperator ExpressionCompounding() #void :
 //To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
 void Comparison() #Comparison:
 {
- Operator op = Operator.EQUAL;
+ BooleanOperator op = BooleanOperator.EQUAL;
  Object left, right = true;
 }
 {
@@ -243,7 +244,7 @@ void Comparison() #Comparison:
     {
         jjtThis.left = left;
         jjtThis.right = right;
-        jjtThis.operator = op;
+        jjtThis.booleanOperator = op;
     }
 }
 
@@ -440,38 +441,38 @@ Boolean Boolean() #void :
 
 //BASIC OPERATORS
 
-Operator EqualityOperator() #void :
+BooleanOperator EqualityOperator() #void :
 {}
 {
-      <EQ>  {return Operator.EQUAL;}
-    | <NEQ> {return Operator.NOT_EQUAL;}
+      <EQ>  {return BooleanOperator.EQUAL;}
+    | <NEQ> {return BooleanOperator.NOT_EQUAL;}
 }
 
-Operator NumericOperator() #void :
+BooleanOperator NumericOperator() #void :
 {}
 {
-    <GT>  {return Operator.GREATER_THAN;}
-    | <LT>  {return Operator.LESS_THAN;}
-    | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
-    | <LEQ> {return Operator.LESS_THAN_EQUAL;}
+    <GT>  {return BooleanOperator.GREATER_THAN;}
+    | <LT>  {return BooleanOperator.LESS_THAN;}
+    | <GEQ> {return BooleanOperator.GREATER_THAN_EQUAL;}
+    | <LEQ> {return BooleanOperator.LESS_THAN_EQUAL;}
 }
 
-Operator ContainsOperator() #void :
+BooleanOperator ContainsOperator() #void :
 {}
 {
-    <CONTAINS> {return Operator.CONTAINS;}
+    <CONTAINS> {return BooleanOperator.CONTAINS;}
 }
 
-Operator MatchesOperator() #void :
+BooleanOperator MatchesOperator() #void :
 {}
 {
-    <MATCHES> {return Operator.MATCHES;}
+    <MATCHES> {return BooleanOperator.MATCHES;}
 }
 
-Operator InOperator() #void :
+BooleanOperator InOperator() #void :
 {}
 {
-    <IN> {return Operator.IN;}
+    <IN> {return BooleanOperator.IN;}
 }
 
 boolean Inverse() #void :
@@ -480,20 +481,20 @@ boolean Inverse() #void :
     <INVERSE> {return true;}
 }
 
-BooleanOperator And() #void :
+LogicalOperator And() #void :
 {}
 {
-    <AND> {return BooleanOperator.AND;}
+    <AND> {return LogicalOperator.AND;}
 }
 
-BooleanOperator Or() #void :
+LogicalOperator Or() #void :
 {}
 {
-    <OR> {return BooleanOperator.OR;}
+    <OR> {return LogicalOperator.OR;}
 }
 
-BooleanOperator Xor() #void :
+LogicalOperator Xor() #void :
 {}
 {
-    <XOR> {return BooleanOperator.XOR;}
+    <XOR> {return LogicalOperator.XOR;}
 }

@@ -1,7 +1,8 @@
 package com.nccgroup.loggerplusplus.filter;
 
 public enum BooleanOperator {
-    AND("AND"), OR("OR"), XOR("XOR");
+    EQUAL("=="), NOT_EQUAL("!="), GREATER_THAN(">"), LESS_THAN("<"),
+    GREATER_THAN_EQUAL(">="), LESS_THAN_EQUAL("<="), CONTAINS("CONTAINS"), IN("IN"), MATCHES("MATCHES");
 
     private final String label;
 
@@ -10,6 +11,6 @@ public enum BooleanOperator {
     }
 
     public String getLabel() {
-        return label;
+        return this.label;
     }
 }

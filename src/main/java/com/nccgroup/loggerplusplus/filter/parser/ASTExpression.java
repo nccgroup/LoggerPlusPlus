@@ -2,13 +2,13 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=true,TRACK_TOKENS=false,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package com.nccgroup.loggerplusplus.filter.parser;
 
-import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 
 public
 class ASTExpression extends SimpleNode {
 
     boolean inverse = false;
-    BooleanOperator op;
+    LogicalOperator op;
 
     public ASTExpression(int id) {
         super(id);
@@ -35,6 +35,10 @@ class ASTExpression extends SimpleNode {
 
         if (inverse) return "!(" + sb.toString() + ")";
         else return sb.toString();
+    }
+
+    public LogicalOperator getLogicalOperator() {
+        return op;
     }
 
     @Override

@@ -5,9 +5,8 @@ import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
-import com.nccgroup.loggerplusplus.filter.Operator;
 import org.apache.commons.lang3.time.DateUtils;
 
 import java.math.BigDecimal;
@@ -45,12 +44,12 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
     if(node.op != null) {
       compoundEvaluation:
       {
-        BooleanOperator op = node.op;
+        LogicalOperator op = node.op;
 
         for (int i = 1; i < node.children.length; i++) {
           //If we're processing an OR expression and the value is true.
           //Or we're processing an AND expression and the value was false. Don't bother evaluating the other nodes.
-          if ((op == BooleanOperator.OR && result) || (op == BooleanOperator.AND && !result)) break compoundEvaluation;
+          if ((op == LogicalOperator.OR && result) || (op == LogicalOperator.AND && !result)) break compoundEvaluation;
 
           Node child = node.children[i];
           boolean childResult = evaluateNode(child, visitorData);
@@ -80,7 +79,7 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
     left = node.left instanceof LogEntryField ? getValueForField(visitorData, (LogEntryField) node.left) : node.left;
     right = node.right instanceof LogEntryField ? getValueForField(visitorData, (LogEntryField) node.right) : node.right;
 
-    return compare(node.operator, left, right);
+    return compare(node.booleanOperator, left, right);
   }
 
   private Object getValueForField(VisitorData visitorData, LogEntryField field){
@@ -107,7 +106,7 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
     }
   }
 
-  private boolean compare(Operator op, Object left, Object right){
+  private boolean compare(BooleanOperator op, Object left, Object right){
     if(left == null) left = "";
     if(right == null) right = "";
     try{
@@ -129,12 +128,12 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
           case LESS_THAN_EQUAL:
             return leftBigDecimal.compareTo(rightBigDecimal) <= 0;
         }
-      }else if(op == Operator.MATCHES){
+      }else if(op == BooleanOperator.MATCHES){
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
         return m.matches();
       }else if(right instanceof Pattern) {
         Matcher m = ((Pattern) right).matcher(String.valueOf(left));
-        return m.find() ^ op == Operator.NOT_EQUAL;
+        return m.find() ^ op == BooleanOperator.NOT_EQUAL;
       }else if (left instanceof Date) {
         try {
           Date rightDate = DateUtils.truncate(right, Calendar.SECOND);
@@ -149,7 +148,7 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
         }catch (Exception e){
           return false;
         }
-      }else if(op == Operator.IN){
+      }else if(op == BooleanOperator.IN){
           if(!(right instanceof Set)) return false;
           String leftString = String.valueOf(left);
           for (Object item : ((Set) right)) {

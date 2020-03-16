@@ -2,7 +2,7 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=true,TRACK_TOKENS=false,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package com.nccgroup.loggerplusplus.filter.parser;
 
-import com.nccgroup.loggerplusplus.filter.Operator;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogManager;
 import org.apache.commons.text.StringEscapeUtils;
@@ -16,7 +16,7 @@ public
 class ASTComparison extends SimpleNode {
 
   Object left, right;
-  Operator operator;
+  BooleanOperator booleanOperator;
 
   public ASTComparison(int id) {
     super(id);
@@ -33,21 +33,33 @@ class ASTComparison extends SimpleNode {
     return visitor.visit(this, data);
   }
 
+  public BooleanOperator getBooleanOperator() {
+    return booleanOperator;
+  }
+
+  public Object getLeft() {
+    return left;
+  }
+
+  public Object getRight() {
+    return right;
+  }
+
   @Override
   public String toString() {
     Class<?> leftClass = left instanceof LogEntryField ? ((LogEntryField) left).getType() : left.getClass();
     Class<?> rightClass = right instanceof LogEntryField ? ((LogEntryField) right).getType() : right.getClass();
-    return String.format("ASTComparison[left=%s (%s), op=%s, right=%s (%s)]", left, leftClass, operator, right, rightClass);
+    return String.format("ASTComparison[left=%s (%s), op=%s, right=%s (%s)]", left, leftClass, booleanOperator, right, rightClass);
   }
 
   @Override
   public String getFilterString() {
-    return String.format("%s %s %s", convertObjectToString(left), operator.getLabel(), convertObjectToString(right));
+    return String.format("%s %s %s", convertObjectToString(left), booleanOperator.getLabel(), convertObjectToString(right));
   }
 
   private String convertObjectToString(Object obj){
     if(obj instanceof Pattern){
-      if(operator == Operator.MATCHES) return "\"" + obj + "\"";
+      if(booleanOperator == BooleanOperator.MATCHES) return "\"" + obj + "\"";
       else return "/" + obj + "/";
     }else if(obj instanceof String){
       return "\"" + StringEscapeUtils.escapeJava((String) obj) + "\"";

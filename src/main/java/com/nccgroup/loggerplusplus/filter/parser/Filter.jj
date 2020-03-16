@@ -11,8 +11,9 @@
 
 PARSER_BEGIN(FilterParser)
 package com.nccgroup.loggerplusplus.filter.parser;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
-import com.nccgroup.loggerplusplus.filter.Operator;import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -44,7 +45,7 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
     }
 
-    private static void throwOperatorAmbiguityException(BooleanOperator op, BooleanOperator other) throws ParseException {
+    private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
 }
@@ -112,7 +113,7 @@ ASTExpression Expression(boolean inverse)             :
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
- BooleanOperator op = null;
+ LogicalOperator op = null;
 }
 {/*@bgen(jjtree) Expression */
     try {
@@ -172,10 +173,10 @@ void Statement()       :
     Alias() | Comparison()
 }
 
-BooleanOperator ExpressionCompounding()       :
+LogicalOperator ExpressionCompounding()       :
 {
-    BooleanOperator op;
-    BooleanOperator nextOp;
+    LogicalOperator op;
+    LogicalOperator nextOp;
 }
 {
     (op = And() | op = Or() | op = Xor()) ExpressionInner() //First compounding can be any operator
@@ -198,7 +199,7 @@ void Comparison()            :
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
- Operator op = Operator.EQUAL;
+ BooleanOperator op = BooleanOperator.EQUAL;
  Object left, right = true;
 }
 {/*@bgen(jjtree) Comparison */
@@ -289,7 +290,7 @@ void Comparison()            :
     {
         jjtn000.left = left;
         jjtn000.right = right;
-        jjtn000.operator = op;
+        jjtn000.booleanOperator = op;
     }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -523,38 +524,38 @@ Boolean Boolean()       :
 
 //BASIC OPERATORS
 
-Operator EqualityOperator()       :
+BooleanOperator EqualityOperator()       :
 {}
 {
-      <EQ>  {return Operator.EQUAL;}
-    | <NEQ> {return Operator.NOT_EQUAL;}
+      <EQ>  {return BooleanOperator.EQUAL;}
+    | <NEQ> {return BooleanOperator.NOT_EQUAL;}
 }
 
-Operator NumericOperator()       :
+BooleanOperator NumericOperator()       :
 {}
 {
-    <GT>  {return Operator.GREATER_THAN;}
-    | <LT>  {return Operator.LESS_THAN;}
-    | <GEQ> {return Operator.GREATER_THAN_EQUAL;}
-    | <LEQ> {return Operator.LESS_THAN_EQUAL;}
+    <GT>  {return BooleanOperator.GREATER_THAN;}
+    | <LT>  {return BooleanOperator.LESS_THAN;}
+    | <GEQ> {return BooleanOperator.GREATER_THAN_EQUAL;}
+    | <LEQ> {return BooleanOperator.LESS_THAN_EQUAL;}
 }
 
-Operator ContainsOperator()       :
+BooleanOperator ContainsOperator()       :
 {}
 {
-    <CONTAINS> {return Operator.CONTAINS;}
+    <CONTAINS> {return BooleanOperator.CONTAINS;}
 }
 
-Operator MatchesOperator()       :
+BooleanOperator MatchesOperator()       :
 {}
 {
-    <MATCHES> {return Operator.MATCHES;}
+    <MATCHES> {return BooleanOperator.MATCHES;}
 }
 
-Operator InOperator()       :
+BooleanOperator InOperator()       :
 {}
 {
-    <IN> {return Operator.IN;}
+    <IN> {return BooleanOperator.IN;}
 }
 
 boolean Inverse()       :
@@ -563,20 +564,20 @@ boolean Inverse()       :
     <INVERSE> {return true;}
 }
 
-BooleanOperator And()       :
+LogicalOperator And()       :
 {}
 {
-    <AND> {return BooleanOperator.AND;}
+    <AND> {return LogicalOperator.AND;}
 }
 
-BooleanOperator Or()       :
+LogicalOperator Or()       :
 {}
 {
-    <OR> {return BooleanOperator.OR;}
+    <OR> {return LogicalOperator.OR;}
 }
 
-BooleanOperator Xor()       :
+LogicalOperator Xor()       :
 {}
 {
-    <XOR> {return BooleanOperator.XOR;}
+    <XOR> {return LogicalOperator.XOR;}
 }
