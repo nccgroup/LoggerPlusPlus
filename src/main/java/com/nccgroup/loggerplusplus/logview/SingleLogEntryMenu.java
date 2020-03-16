@@ -1,6 +1,8 @@
 package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
@@ -52,16 +54,18 @@ public class SingleLogEntryMenu extends JPopupMenu {
 
             if (logTable.getCurrentFilter() != null) {
                 JMenu addToCurrentFilter = new JMenu("Add " + columnName + " Value To LogFilter");
-                JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
+                JMenuItem andFilter = new JMenuItem(new AbstractAction(LogicalOperator.AND.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        LoggerPlusPlus.instance.getLogFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") && " + columnName + " == " + columnValueString);
+                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, BooleanOperator.EQUAL, columnValueString);
+                        LoggerPlusPlus.instance.getLogFilterController().setFilter(newFilter);
                     }
                 });
-                JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
+                JMenuItem orFilter = new JMenuItem(new AbstractAction(LogicalOperator.OR.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        LoggerPlusPlus.instance.getLogFilterController().setFilter("(" + logTable.getCurrentFilter().toString() + ") || " + columnName + " == " + columnValueString);
+                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.OR, selectedField, BooleanOperator.EQUAL, columnValueString);
+                        LoggerPlusPlus.instance.getLogFilterController().setFilter(newFilter);
                     }
                 });
                 addToCurrentFilter.add(andFilter);

@@ -26,7 +26,6 @@ class ASTComparison extends SimpleNode {
     super(p, id);
   }
 
-
   /** Accept the visitor. **/
   public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
 

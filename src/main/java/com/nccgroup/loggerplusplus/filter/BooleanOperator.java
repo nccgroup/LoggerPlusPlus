@@ -13,4 +13,9 @@ public enum BooleanOperator {
     public String getLabel() {
         return this.label;
     }
+
+    @Override
+    public String toString() {
+        return label;
+    }
 }

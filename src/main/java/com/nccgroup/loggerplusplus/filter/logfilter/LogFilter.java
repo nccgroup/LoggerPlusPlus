@@ -2,14 +2,19 @@ package com.nccgroup.loggerplusplus.filter.logfilter;
 
 import com.google.gson.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.parser.*;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
+import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
+import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
+import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.userinterface.LogTableModel;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;
-import java.io.IOException;
 import java.lang.reflect.Type;
 
 public class LogFilter extends RowFilter<TableModel, Integer> {
@@ -23,6 +28,19 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     public LogFilter(FilterLibraryController filterLibraryController, String filterString) throws ParseException {
         this(filterString);
         FilterParser.checkAliasesForSanity(filterLibraryController, this.filter);
+    }
+
+    public String addConditionToFilter(LogicalOperator logicalOperator, LogEntryField field,
+                                     BooleanOperator booleanOperator, String value) {
+        //TODO Move functionality to LogFilter itself.
+        String existing;
+        if(this.getAST().getLogicalOperator() != null && !this.getAST().getLogicalOperator().equals(logicalOperator)){
+            existing = "(" + this.filter.getFilterString() + ")";
+        }else{
+            existing = this.filter.getFilterString();
+        }
+
+        return String.format("%s %s %s %s %s", existing, logicalOperator.toString(), field.toString(), booleanOperator, value);
     }
 
     public ASTExpression getAST(){

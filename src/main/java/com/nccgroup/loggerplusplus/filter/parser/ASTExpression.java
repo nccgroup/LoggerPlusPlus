@@ -41,6 +41,14 @@ class ASTExpression extends SimpleNode {
         return op;
     }
 
+    public void addCondition(ASTExpression comparison){
+        jjtAddChild(comparison, this.jjtGetNumChildren());
+    }
+
+    public void addCondition(ASTComparison comparison){
+        jjtAddChild(comparison, this.jjtGetNumChildren());
+    }
+
     @Override
     public String toString() {
         return String.format("ASTExpression[inverse=%s, op=%s]", inverse, op);
