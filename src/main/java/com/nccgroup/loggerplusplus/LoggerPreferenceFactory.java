@@ -66,7 +66,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_SORT_COLUMN, Integer.class, -1, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_SORT_ORDER, SortOrder.class, SortOrder.UNSORTED, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60000, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 5000, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 1000000, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_SEARCH_THREADS, Integer.class, 5, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true, Preferences.Visibility.GLOBAL);
