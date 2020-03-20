@@ -156,7 +156,7 @@ LogicalOperator ExpressionCompounding() #void :
     { return op; }
 }
 
-//Comparisons can take two forms (Value) or (value operation value).
+//Comparisons can take two forms (Valuea) or (value operation value).
 //To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
 void Comparison() #Comparison:
 {
@@ -312,7 +312,7 @@ LogEntryField Identifier() #void:
     {
         fieldGroup = FieldGroup.findByLabel(group.image);
         if(fieldGroup == null)
-            throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n%s", group.image, Arrays.toString(FieldGroup.values())));
+            throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n\n%s", group.image, Arrays.toString(FieldGroup.values())));
     }
     <DOT>
     identifier=<IDENTIFIER>
@@ -327,7 +327,7 @@ LogEntryField Identifier() #void:
                 if(i != fields.size()-1)
                     fieldMessage.append("\n\n");
             }
-            throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n%s", identifier.image, fieldGroup, fieldMessage));
+            throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n\n%s", identifier.image, fieldGroup, fieldMessage));
         }
         if(field == LogEntryField.NUMBER)
             throw new ParseException("Field " + LogEntryField.NUMBER + " is ephemeral and cannot be used in filters.");

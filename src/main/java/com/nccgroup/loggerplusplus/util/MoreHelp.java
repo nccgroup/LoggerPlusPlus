@@ -5,6 +5,8 @@ import burp.IExtensionHelpers;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -199,11 +201,13 @@ public class MoreHelp {
 	}
 
 	public static void showLargeOutputDialog(String title, String output){
-		JTextArea outputArea = new JTextArea(20,20);
-		outputArea.append(output);
-		outputArea.setWrapStyleWord(true);
-		outputArea.setLineWrap(true);
+		JTextPane outputArea = new JTextPane();
+		outputArea.setEditorKit(new HTMLEditorKit());
+		outputArea.setText(output);
+		outputArea.setCaretPosition(0);
 		JScrollPane scrollPane = new JScrollPane(outputArea);
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		scrollPane.setPreferredSize(new Dimension((int) (screenSize.getWidth()/2.0), (int) (screenSize.getHeight()/2.0)));
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), scrollPane, title, JOptionPane.PLAIN_MESSAGE);
 	}

@@ -183,7 +183,7 @@ if (jjtc000) {
     throw new Error("Missing return statement in function");
 }
 
-//Comparisons can take two forms (Value) or (value operation value).
+//Comparisons can take two forms (Valuea) or (value operation value).
 //To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
   final public void Comparison() throws ParseException {/*@bgen(jjtree) Comparison */
  ASTComparison jjtn000 = new ASTComparison(JJTCOMPARISON);
@@ -454,7 +454,7 @@ if(!initial.getClass().isAssignableFrom(subsequent.getClass())){
     group = jj_consume_token(IDENTIFIER);
 fieldGroup = FieldGroup.findByLabel(group.image);
         if(fieldGroup == null)
-            {if (true) throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n%s", group.image, Arrays.toString(FieldGroup.values())));}
+            {if (true) throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n\n%s", group.image, Arrays.toString(FieldGroup.values())));}
     jj_consume_token(DOT);
     identifier = jj_consume_token(IDENTIFIER);
 field = LogEntryField.getByLabel(fieldGroup, identifier.image);
@@ -467,7 +467,7 @@ field = LogEntryField.getByLabel(fieldGroup, identifier.image);
                 if(i != fields.size()-1)
                     fieldMessage.append("\n\n");
             }
-            {if (true) throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n%s", identifier.image, fieldGroup, fieldMessage));}
+            {if (true) throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n\n%s", identifier.image, fieldGroup, fieldMessage));}
         }
         if(field == LogEntryField.NUMBER)
             {if (true) throw new ParseException("Field " + LogEntryField.NUMBER + " is ephemeral and cannot be used in filters.");}
