@@ -431,13 +431,13 @@ Date Date()       :
         <OPEN_DOUBLE_QUOTE_STRING> t=<DOUBLE_STRING_BODY> <CLOSE_DOUBLE_QUOTE_STRING>
     )
     {
-        try{
-            Date date = LogManager.sdf.parse(t.image);
-            return date;
-        }catch (Exception e){
-            throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
-        }
+    try{
+        Date date = LogManager.LOGGER_DATE_FORMAT.parse(t.image);
+        return date;
+    }catch (Exception e){
+        throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
     }
+}
 }
 
 BigDecimal Number()       :

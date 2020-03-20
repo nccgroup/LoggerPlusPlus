@@ -8,13 +8,16 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.LogManager;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -31,8 +34,12 @@ public class SingleLogEntryMenu extends JPopupMenu {
         final String columnValueString;
 
         if(columnValue != null){
-            columnValueString = columnValue instanceof Number ?
-                    columnValue.toString() : "\"" + columnValue + "\"";
+            if(columnValue instanceof Date){
+                columnValueString = "\"" + LogManager.LOGGER_DATE_FORMAT.format(columnValue) + "\"";
+            }else {
+                columnValueString = columnValue instanceof Number ?
+                        columnValue.toString() : "\"" + columnValue + "\"";
+            }
         }else{
             columnValueString = "\"\"";
         }
@@ -186,6 +193,21 @@ public class SingleLogEntryMenu extends JPopupMenu {
         });
         sendToComparer.add(comparerResponse);
         this.add(sendToComparer);
+
+        if((Boolean) LoggerPlusPlus.instance.getPreferences().getSetting(Globals.PREF_IS_DEBUG) && entry.requestResponse != null){
+            this.add(new JPopupMenu.Separator());
+            JMenuItem reprocessItem = new JMenuItem(new AbstractAction("Reprocess Entry") {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    new Thread(() -> {
+                        entry.processRequest();
+                        entry.processResponse();
+                    }).start();
+                }
+            });
+            this.add(reprocessItem);
+        }
+
 
         this.add(new JPopupMenu.Separator());
 

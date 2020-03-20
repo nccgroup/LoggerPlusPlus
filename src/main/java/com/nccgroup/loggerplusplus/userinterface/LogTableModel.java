@@ -8,7 +8,6 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -90,8 +89,9 @@ public class LogTableModel extends AbstractTableModel {
         LogTableColumn column = columnModel.getModelColumn(colModelIndex);
 
         Object value = entries.get(rowIndex).getValueByKey(column.getIdentifier());
+
         if(value instanceof Date){
-            return LogManager.sdf.format(value);
+            return LogManager.LOGGER_DATE_FORMAT.format(value);
         }
         return value;
     }

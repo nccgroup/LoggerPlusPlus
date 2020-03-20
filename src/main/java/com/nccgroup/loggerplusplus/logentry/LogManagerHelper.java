@@ -13,7 +13,7 @@ public class LogManagerHelper {
         requestResponse.setComment(originalComment + "$LPP:" + instanceIdentifier + ":" + uuid + "$");
     }
 
-    public static UUID extractUUIDFromRequestResponse(String instanceIdentifier, IHttpRequestResponse requestResponse){
+    public static UUID extractAndRemoveUUIDFromRequestResponseComment(String instanceIdentifier, IHttpRequestResponse requestResponse){
         UUID uuid = null;
         if(requestResponse.getComment() != null) {
             Matcher matcher = Globals.UUID_COMMENT_PATTERN.matcher(requestResponse.getComment());

@@ -72,7 +72,7 @@ class ASTComparison extends SimpleNode {
       sb.append("]");
       return sb.toString();
     }else if(obj instanceof Date){
-      return "\"" + LogManager.sdf.format(obj) + "\"";
+      return "\"" + LogManager.LOGGER_DATE_FORMAT.format(obj) + "\"";
     }
     return String.valueOf(obj);
   }

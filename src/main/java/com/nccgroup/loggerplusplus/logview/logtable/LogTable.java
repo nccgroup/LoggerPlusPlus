@@ -106,7 +106,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
             modelRow = convertRowIndexToModel(row);
             entry = this.getModel().getRow(modelRow);
         }catch (NullPointerException ignored){
-            //The NPE here should hopefully be fixed. Log anyway just in case...
+            ignored.printStackTrace();
             LoggerPlusPlus.instance.logError("NullPointerException caused by view->model index conversion.");
         }
 
@@ -293,14 +293,12 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     @Override
     public void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
         try {
-            SwingUtilities.invokeLater(() -> {
-                getModel().fireTableRowsInserted(modelIndex, modelIndex);
+            getModel().fireTableRowsInserted(modelIndex, modelIndex);
 
-                if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
-                    JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
-                    scrollBar.setValue(scrollBar.getMaximum()+50);
-                }
-            });
+            if (LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
+                JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
+                scrollBar.setValue(scrollBar.getMaximum() + 50);
+            }
         }catch (Exception e){
             e.printStackTrace();
             //TODO Fix out of bounds exception here.

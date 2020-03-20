@@ -3,7 +3,8 @@
 // 
 // Released as open source by NCC Group Plc - https://www.nccgroup.trust/
 // 
-// Developed by Soroush Dalili (@irsdl)
+// Originally Developed by Soroush Dalili (@irsdl)
+// Maintained by Corey Arthur (@CoreyD97)
 //
 // Project link: http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
 //
@@ -24,8 +25,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.table.TableColumn;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 public class LogEntry
 {
@@ -55,7 +58,7 @@ public class LogEntry
 	public int requestLength=-1;
 	public String clientIP="";
 	public boolean hasSetCookies=false;
-	public String responseTime="";
+	public String formattedResponseTime ="";
 	public String responseMimeType ="";
 	public String responseInferredMimeType ="";
 	public int responseLength=-1;
@@ -69,7 +72,7 @@ public class LogEntry
 	public ArrayList<UUID> matchingColorFilters;
 	public int requestBodyOffset;
 	public int responseBodyOffset;
-	public String requestTime;
+	public String formattedRequestTime;
 	public Date responseDateTime;
 	public Date requestDateTime;
 	public int requestResponseDelay = -1;
@@ -88,9 +91,9 @@ public class LogEntry
 		this.requestResponse = requestResponse;
 	}
 
-	public LogEntry(int tool, Date requestTime, IHttpRequestResponse requestResponse){
+	public LogEntry(int tool, Date formattedRequestTime, IHttpRequestResponse requestResponse){
 		this(tool, requestResponse);
-		this.setReqestTime(requestTime);
+		this.setReqestTime(formattedRequestTime);
 	}
 
 	public UUID getIdentifier() {
@@ -107,12 +110,17 @@ public class LogEntry
 
 	public void setReqestTime(Date requestTime){
 		this.requestDateTime = requestTime;
-		this.requestTime = LogManager.sdf.format(this.requestDateTime);
+		this.formattedRequestTime = LogManager.LOGGER_DATE_FORMAT.format(this.requestDateTime);
 	}
 
 	public void setResponseTime(Date responseTime) {
 	    this.responseDateTime = responseTime;
-	    this.responseTime = LogManager.sdf.format(this.responseDateTime);
+	    this.formattedResponseTime = LogManager.LOGGER_DATE_FORMAT.format(this.responseDateTime);
+	}
+
+	public void processRequest(){
+		IRequestInfo requestInfo = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(this.requestResponse);
+		processRequest(requestInfo);
 	}
 
 	public void processRequest(IRequestInfo tempAnalyzedReq){
@@ -266,8 +274,24 @@ public class LogEntry
 		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
 		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
 
-		List<String> lstFullResponseHeader = tempAnalyzedResp.getHeaders();
-		responseHeaders =  StringUtils.join(lstFullResponseHeader, ", ");
+		Map<String, List<String>> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":")).collect(Collectors.toMap(
+				s -> {
+					String[] split = s.split(": ", 2);
+					return split.length > 0 ? split[0] : "";
+				},s -> {
+					List<String> values = new ArrayList<>();
+					String[] split = s.split(": ", 2);
+					if(split.length > 1) {
+						values.add(split[1]);
+					}
+					return values;
+				}, (s, s2) -> {
+					s.addAll(s2);
+					return s;
+				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
+		));
+
+		responseHeaders =  tempAnalyzedResp.getHeaders().stream().collect(Collectors.joining(", "));
 		this.status= tempAnalyzedResp.getStatusCode();
 		this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
 		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
@@ -276,13 +300,8 @@ public class LogEntry
 		}
 		this.hasSetCookies = !newCookies.isEmpty();
 
-		for(String item:lstFullResponseHeader){
-			item = item.toLowerCase();
-			if(item.startsWith("content-type: ")){
-				String[] temp = item.split("content-type:\\s",2);
-				if(temp.length>0)
-					this.responseContentType = temp[1];
-			}
+		if(headers.containsKey("content-type")){
+			this.responseContentType = headers.get("content-type").get(0);
 		}
 
 		this.comment = requestResponse.getComment();
@@ -294,9 +313,24 @@ public class LogEntry
 
 		if(this.responseDateTime == null){
 			//If it didn't have an arrival time set, parse the response for it.
-			this.responseDateTime = new Date();
+			if(headers.get("date") != null && headers.get("date").size() > 0){
+				try {
+					synchronized (LogManager.SERVER_DATE_FORMAT) {
+						this.responseDateTime = LogManager.SERVER_DATE_FORMAT.parse(headers.get("date").get(0));
+					}
+				} catch (ParseException e) {
+					this.responseDateTime = null;
+				}
+			}else{
+				//No date header...
+				this.responseDateTime = null;
+			}
 		}
-		this.responseTime = LogManager.sdf.format(responseDateTime);
+		if(responseDateTime != null) {
+			this.formattedResponseTime = LogManager.LOGGER_DATE_FORMAT.format(responseDateTime);
+		}else{
+			this.formattedResponseTime = "";
+		}
 
 		if(requestDateTime != null && responseDateTime != null) {
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
@@ -428,7 +462,7 @@ public class LogEntry
 				case RESPONSE_TIME:
 					return this.responseDateTime;
 				case COMMENT:
-					return this.comment;
+					return this.requestResponse.getComment();
 				case REQUEST_CONTENT_TYPE:
 					return this.requestContentType;
 				case EXTENSION:

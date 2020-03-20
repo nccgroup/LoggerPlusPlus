@@ -23,7 +23,7 @@ public class MainControlsPanel extends JPanel {
         gbc.weightx = 0;
         gbc.weighty = 1;
 
-        this.add(new JLabel(" LogFilter: "), gbc);
+        this.add(new JLabel(" Filter: "), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 99.0;
