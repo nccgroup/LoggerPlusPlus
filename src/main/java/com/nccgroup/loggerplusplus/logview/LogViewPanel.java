@@ -2,7 +2,7 @@ package com.nccgroup.loggerplusplus.logview;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
@@ -24,11 +24,11 @@ public class LogViewPanel extends JPanel {
     JComponent importPanel;
     JComponent filteringPanel;
 
-    public LogViewPanel(LogManager logManager){
+    public LogViewPanel(LogProcessor logProcessor){
         this.setLayout(new BorderLayout());
 
         LogTableColumnModel columnModel = new LogTableColumnModel();
-        LogTableModel tableModel = new LogTableModel(logManager, columnModel);
+        LogTableModel tableModel = new LogTableModel(logProcessor, columnModel);
         logTable = new LogTable(tableModel, columnModel);
         logTableScrollPane = new JScrollPane(logTable,ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);//View
         logTableScrollPane.addMouseWheelListener(new MouseWheelListener() {

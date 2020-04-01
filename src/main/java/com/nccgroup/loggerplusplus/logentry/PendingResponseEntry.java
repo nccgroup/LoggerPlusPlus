@@ -1,11 +1,11 @@
 package com.nccgroup.loggerplusplus.logentry;
 
-public class EntryPendingResponse {
+public class PendingResponseEntry {
 
     private final LogEntry logEntry;
     private int modelIndex = -1;
 
-    public EntryPendingResponse(LogEntry logEntry){
+    public PendingResponseEntry(LogEntry logEntry){
         this.logEntry = logEntry;
     }
 

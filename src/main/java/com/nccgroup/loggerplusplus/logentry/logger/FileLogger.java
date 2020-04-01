@@ -180,7 +180,7 @@ public class FileLogger implements LogEntryListener {
                     if (autoSaveFile.length() == 0)
                         exp.addHeader(autoSaveWriter, autoLogIncludeRequests, autoLogIncludeResponses);
 
-                    LoggerPlusPlus.instance.getLogManager().addLogListener(this);
+                    LoggerPlusPlus.instance.getLogProcessor().addLogListener(this);
 
                 } catch (IOException e) {
                     autoSaveFile = null;
@@ -195,7 +195,7 @@ public class FileLogger implements LogEntryListener {
                 autoSaveWriter.close();
             } catch (Exception e) {}
             autoSaveWriter = null;
-            LoggerPlusPlus.instance.getLogManager().removeLogListener(this);
+            LoggerPlusPlus.instance.getLogProcessor().removeLogListener(this);
         }
         LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SAVE, enabled);
         LoggerPlusPlus.instance.getLoggerOptionsPanel().setAutoSaveBtn(enabled);
@@ -257,7 +257,7 @@ public class FileLogger implements LogEntryListener {
                 out.write("\n");
             }
 
-            for (LogEntry item : LoggerPlusPlus.instance.getLogManager().getLogEntries()) {
+            for (LogEntry item : LoggerPlusPlus.instance.getLogProcessor().getLogEntries()) {
                 out.write(item.toCSVString(isFullLog) + "\n");
             }
 

@@ -32,9 +32,12 @@ import java.util.stream.Collectors;
 
 public class LogEntry
 {
-	private boolean isImported;
-	public UUID identifier;
+	enum Status {UNPROCESSED, AWAITING_RESPONSE, PROCESSED, IGNORED}
+	Status previousStatus;
+	Status status = Status.UNPROCESSED;
 	public transient IHttpRequestResponse requestResponse;
+
+	public UUID identifier;
 	public int tool;
 	public String toolName;
 	public String hostname ="";
@@ -42,7 +45,7 @@ public class LogEntry
 	public String method="";
 	public URL url;
 	public boolean params=false;
-	public Short status=-1;
+	public Short responseStatus =-1;
 	public boolean hasBodyParam=false;
 	public boolean hasCookieParam=false;
 	public String title="";
@@ -69,7 +72,7 @@ public class LogEntry
 //	public String[] regexAllReq = {"","","","",""};
 //	public String[] regexAllResp = {"","","","",""};
 
-	public ArrayList<UUID> matchingColorFilters;
+	public List<UUID> matchingColorFilters;
 	public int requestBodyOffset;
 	public int responseBodyOffset;
 	public String formattedRequestTime;
@@ -81,7 +84,7 @@ public class LogEntry
 
 	private LogEntry(){
 		this.identifier = UUID.randomUUID();
-		this.matchingColorFilters = new ArrayList<UUID>();
+		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<UUID>());
 	}
 
 	public LogEntry(int tool, IHttpRequestResponse requestResponse){
@@ -91,41 +94,56 @@ public class LogEntry
 		this.requestResponse = requestResponse;
 	}
 
+	/**
+	 * Create new entry and specify arrival time.
+	 * @param tool
+	 * @param formattedRequestTime
+	 * @param requestResponse
+	 */
 	public LogEntry(int tool, Date formattedRequestTime, IHttpRequestResponse requestResponse){
 		this(tool, requestResponse);
 		this.setReqestTime(formattedRequestTime);
 	}
 
-	public UUID getIdentifier() {
-		return this.identifier;
+	public void process(){
+		previousStatus = this.status;
+		switch (this.status){
+			case UNPROCESSED: {
+				this.status = processRequest();
+				//If the entry should be ignored, break here.
+				if(this.status == Status.IGNORED) break;
+
+				//Else continue, fall through to process response
+			}
+			case AWAITING_RESPONSE: {
+				if(this.requestResponse.getResponse() == null){
+					this.status = Status.AWAITING_RESPONSE;
+					break;
+				}
+				processResponse();
+				this.status = Status.PROCESSED;
+			}
+
+			case IGNORED:
+			case PROCESSED: {
+				//Nothing to do, we're done!
+				break;
+			}
+		}
 	}
 
-	public boolean isImported() {
-		return isImported;
+	public Status getStatus() {
+		return status;
 	}
 
-	public void setImported(boolean imported) {
-		isImported = imported;
+	public Status getPreviousStatus() {
+		return previousStatus;
 	}
 
-	public void setReqestTime(Date requestTime){
-		this.requestDateTime = requestTime;
-		this.formattedRequestTime = LogManager.LOGGER_DATE_FORMAT.format(this.requestDateTime);
-	}
-
-	public void setResponseTime(Date responseTime) {
-	    this.responseDateTime = responseTime;
-	    this.formattedResponseTime = LogManager.LOGGER_DATE_FORMAT.format(this.responseDateTime);
-	}
-
-	public void processRequest(){
-		IRequestInfo requestInfo = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(this.requestResponse);
-		processRequest(requestInfo);
-	}
-
-	public void processRequest(IRequestInfo tempAnalyzedReq){
-		if(this.requestResponse == null)
-			throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
+	private Status processRequest(){
+		IRequestInfo tempAnalyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(this.requestResponse);
+		URL uUrl = tempAnalyzedReq.getUrl();
+		if (!LogProcessor.shouldLog(uUrl)) return Status.IGNORED;
 
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
@@ -206,6 +224,8 @@ public class LogEntry
 			}
 		}
 
+		return Status.AWAITING_RESPONSE;
+
 		// RegEx processing for requests - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
 //		LogTableColumn.ColumnIdentifier[] regexReqColumns = new LogTableColumn.ColumnIdentifier[]{
@@ -254,21 +274,27 @@ public class LogEntry
 //
 //			}
 //		}
-
-//		this.requestProcessed = true;
 	}
 
-	public void addResponse(Date arrivalTime, IHttpRequestResponse requestResponse){
+	/**
+	 * Update entry with response object
+	 * @param requestResponse
+	 */
+	public void addResponse(IHttpRequestResponse requestResponse){
+		this.requestResponse = requestResponse;
+	}
+
+	/**
+	 * Update entry with response object and arrival time.
+	 * @param requestResponse
+	 * @param arrivalTime
+	 */
+	public void addResponse(IHttpRequestResponse requestResponse, Date arrivalTime){
 		this.responseDateTime = arrivalTime;
 		this.requestResponse = requestResponse;
 	}
 
-	public void processResponse() {
-		if(this.requestResponse == null)
-			throw new IllegalStateException("Cannot analyse a request without an IHttpRequestResponse.");
-		else if(this.requestResponse.getResponse() == null)
-			throw new IllegalStateException("Cannot analyse the response of an incomplete IHttpRequestResponse.");
-
+	private Status processResponse() {
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
 		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
@@ -292,7 +318,7 @@ public class LogEntry
 		));
 
 		responseHeaders =  tempAnalyzedResp.getHeaders().stream().collect(Collectors.joining(", "));
-		this.status= tempAnalyzedResp.getStatusCode();
+		this.responseStatus = tempAnalyzedResp.getStatusCode();
 		this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
 		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
 		for(ICookie cookieItem : tempAnalyzedResp.getCookies()){
@@ -315,8 +341,8 @@ public class LogEntry
 			//If it didn't have an arrival time set, parse the response for it.
 			if(headers.get("date") != null && headers.get("date").size() > 0){
 				try {
-					synchronized (LogManager.SERVER_DATE_FORMAT) {
-						this.responseDateTime = LogManager.SERVER_DATE_FORMAT.parse(headers.get("date").get(0));
+					synchronized (LogProcessor.SERVER_DATE_FORMAT) {
+						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date").get(0));
 					}
 				} catch (ParseException e) {
 					this.responseDateTime = null;
@@ -327,7 +353,7 @@ public class LogEntry
 			}
 		}
 		if(responseDateTime != null) {
-			this.formattedResponseTime = LogManager.LOGGER_DATE_FORMAT.format(responseDateTime);
+			this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(responseDateTime);
 		}else{
 			this.formattedResponseTime = "";
 		}
@@ -335,6 +361,10 @@ public class LogEntry
 		if(requestDateTime != null && responseDateTime != null) {
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
 		}
+
+		this.complete = true;
+
+		return Status.PROCESSED;
 
 		// RegEx processing for responses - should be available only when we have a RegEx rule!
 		// There are 5 RegEx rule for requests
@@ -385,9 +415,20 @@ public class LogEntry
 //		if(!logTable.getColumnModel().isColumnEnabled("response") && !logTable.getColumnModel().isColumnEnabled("request")){
 //			this.requestResponse = null;
 //		}
+	}
 
-//		this.responseProcessed = true;
-		this.complete = true;
+	public UUID getIdentifier() {
+		return this.identifier;
+	}
+
+	public void setReqestTime(Date requestTime){
+		this.requestDateTime = requestTime;
+		this.formattedRequestTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.requestDateTime);
+	}
+
+	public void setResponseTime(Date responseTime) {
+		this.responseDateTime = responseTime;
+		this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.responseDateTime);
 	}
 
 	public static String getCSVHeader(LogTable table, boolean isFullLog) {
@@ -442,7 +483,7 @@ public class LogEntry
 				case QUERY:
 					return this.url.getQuery();
 				case STATUS:
-					return this.status;
+					return this.responseStatus;
 				case PROTOCOL:
 					return this.protocol;
 				case HOSTNAME:
@@ -540,7 +581,7 @@ public class LogEntry
 		}
 	}
 
-	public ArrayList<UUID> getMatchingColorFilters(){return matchingColorFilters;}
+	public List<UUID> getMatchingColorFilters(){return matchingColorFilters;}
 
 	public enum CookieJarStatus {
 		YES("Yes"),
@@ -613,10 +654,18 @@ public class LogEntry
 		return result.toString();
 	}
 
-	public synchronized boolean testColorFilter(ColorFilter colorFilter, boolean retest){
+	/**
+	 * TODO CLEAN UP
+	 * @param colorFilter
+	 * @param retest
+	 * @return If the list of matching color filters was updated
+	 */
+	public boolean testColorFilter(ColorFilter colorFilter, boolean retest){
 		if(!colorFilter.isEnabled() || colorFilter.getFilter() == null){
 			return this.getMatchingColorFilters().remove(colorFilter.getUUID());
 		}
+
+		//If we don't already know if the color filter matches (e.g. haven't checked it before)
 		if(!this.matchingColorFilters.contains(colorFilter.getUUID())) {
 			if (colorFilter.getFilter().matches(this)) {
 				this.matchingColorFilters.add(colorFilter.getUUID());
@@ -624,7 +673,7 @@ public class LogEntry
 			}else{
 				return false;
 			}
-		}else if(retest){
+		}else if(retest){ //Or if we are forcing a retest (e.g. filter was updated)
 			if (!colorFilter.getFilter().matches(this)) {
 				this.matchingColorFilters.remove(colorFilter.getUUID());
 			}

@@ -197,7 +197,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
         });
 
         LoggerPlusPlus.instance.getLibraryController().addColorFilterListener(this);
-        LoggerPlusPlus.instance.getLogManager().addLogListener(this);
+        LoggerPlusPlus.instance.getLogProcessor().addLogListener(this);
     }
 
 
@@ -234,70 +234,75 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     //FilterListeners
     @Override
     public void onFilterChange(final ColorFilter filter) {
-        Thread onChangeThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i< getModel().getData().size(); i++) {
-                    boolean colorResult = getModel().getRow(i).testColorFilter(filter, filter.shouldRetest());
-                    if(colorResult || filter.isModified()){
-                        int finalI = i;
-                        SwingUtilities.invokeLater(() -> {
-                            getModel().fireTableRowsUpdated(finalI, finalI);
-                        });
-                    }
-                }
-            }
-        });
-        onChangeThread.start();
+        createFilterTestingWorker(filter, filter.shouldRetest()).execute();
     }
 
     @Override
     public void onFilterAdd(final ColorFilter filter) {
         if(!filter.isEnabled() || filter.getFilter() == null) return;
-        Thread onAddThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i< getModel().getData().size(); i++) {
-                    boolean colorResult = getModel().getRow(i).testColorFilter(filter, false);
-                    int finalI = i;
-                    SwingUtilities.invokeLater(() -> {
-                        if(colorResult) getModel().fireTableRowsUpdated(finalI, finalI);
-                    });
-                }
-            }
-        });
-        onAddThread.start();
+        createFilterTestingWorker(filter, false);
     }
 
     @Override
     public void onFilterRemove(final ColorFilter filter) {
         if(!filter.isEnabled() || filter.getFilter() == null) return;
-        Thread onRemoveThread = new Thread(new Runnable() {
+        new SwingWorker<Void, Integer>(){
             @Override
-            public void run() {
+            protected Void doInBackground() throws Exception {
                 for (int i = 0; i< getModel().getData().size(); i++) {
                     boolean wasPresent = getModel().getRow(i).matchingColorFilters.remove(filter.getUUID());
-                    int finalI = i;
-                    SwingUtilities.invokeLater(() -> {
-                        if(wasPresent) getModel().fireTableRowsUpdated(finalI, finalI);
-                    });
+                    if(wasPresent){
+                        publish(i);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> rows) {
+                for (Integer row : rows) {
+                    getModel().fireTableRowsUpdated(row, row);
                 }
             }
-        });
-        onRemoveThread.start();
+        }.execute();
+    }
+
+    private SwingWorker<Void, Integer> createFilterTestingWorker(final ColorFilter filter, boolean retestExisting){
+        return new SwingWorker<Void, Integer>(){
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                for (int i = 0; i< getModel().getData().size(); i++) {
+                    boolean colorResult = getModel().getRow(i).testColorFilter(filter, retestExisting);
+                    if(colorResult || filter.isModified()){
+                        publish(i);
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> updatedRows) {
+                for (Integer row : updatedRows) {
+                    getModel().fireTableRowsUpdated(row, row);
+                }
+
+            }
+        };
     }
 
     @Override
     public void onFilterRemoveAll() {}
 
     @Override
-    public void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
+    public synchronized void onRequestAdded(int modelIndex, LogEntry logEntry, boolean hasResponse) {
         try {
             getModel().fireTableRowsInserted(modelIndex, modelIndex);
 
             if (LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
                 JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
-                scrollBar.setValue(scrollBar.getMaximum() + 50);
+                scrollBar.setValue(scrollBar.getMaximum() + 100);
             }
         }catch (Exception e){
             e.printStackTrace();

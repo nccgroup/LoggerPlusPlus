@@ -20,26 +20,20 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 /**
  * Created by corey on 07/09/17.
  */
-public class LogManager implements IHttpListener, IProxyListener {
+public class LogProcessor implements IHttpListener, IProxyListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
     private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
 
     private final List<LogEntry> logEntries;
-    private AtomicInteger pendingImport;
 
     private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
-    private final ConcurrentHashMap<UUID, LogEntry> pendingRequests;
-    private final ConcurrentHashMap<UUID, EntryPendingResponse> requestsAwaitingResponse;
+    private final ConcurrentHashMap<UUID, LogEntry> entriesPendingProcessing;
+    private final ConcurrentHashMap<UUID, LogEntry> requestsAwaitingResponse;
     private final List<LogEntryListener> logEntryListeners;
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
-    //Stats
-    private AtomicInteger totalRequests;
-    private AtomicInteger lateResponses;
-
-    private Future importFuture;
 
     /**
      * Capture incoming requests and responses.
@@ -47,16 +41,13 @@ public class LogManager implements IHttpListener, IProxyListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogManager(){
-        totalRequests = new AtomicInteger(0);
-        pendingImport = new AtomicInteger(0);
-        lateResponses = new AtomicInteger(0);
+    public LogProcessor(){
 
         logEntries = Collections.synchronizedList(new ArrayList<>());
 
         logEntryListeners = new ArrayList<>();
         proxyIdToUUIDMap = new ConcurrentHashMap<>();
-        pendingRequests = new ConcurrentHashMap<>();
+        entriesPendingProcessing = new ConcurrentHashMap<>();
         requestsAwaitingResponse = new ConcurrentHashMap<>();
         entryProcessExecutor = new PausableThreadPoolExecutor(10, 10,
                 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-LogManager"));
@@ -85,7 +76,8 @@ public class LogManager implements IHttpListener, IProxyListener {
             //Submit normally, we're not tracking requests and responses separately.
             if(!isRequestOnly) { //But only add entries complete with a response.
                 final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-                entryProcessExecutor.submit(createNewEntryRunnable(logEntry));
+                entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
+                entryProcessExecutor.submit(() -> processNewEntry(logEntry, false));
             }
             return;
         }
@@ -94,10 +86,9 @@ public class LogManager implements IHttpListener, IProxyListener {
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
             //Tag the request with the UUID in the comment field, as this persists for when we get the response back!
             LogManagerHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getIdentifier(), httpMessage);
-            //Store the identifier so we know its pending its response
-            pendingRequests.put(logEntry.getIdentifier(), logEntry);
+            entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
             //Create a task to be executed at some point in the future, and queue it.
-            entryProcessExecutor.submit(createNewEntryRunnable(logEntry));
+            entryProcessExecutor.submit(() -> processNewEntry(logEntry, false));
             return;
         }else{
             UUID uuid = LogManagerHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
@@ -128,10 +119,9 @@ public class LogManager implements IHttpListener, IProxyListener {
 
             //Make a note of the entry UUID corresponding to the message identifier.
             proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
-            //Store the identifier so we know its pending its response
-            pendingRequests.put(logEntry.getIdentifier(), logEntry);
+            entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
             //Create a task to be executed at some point in the future, and queue it.
-            entryProcessExecutor.submit(createNewEntryRunnable(logEntry));
+            entryProcessExecutor.submit(() -> processNewEntry(logEntry, false));
         }else{
             //We're handling a response.
             UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
@@ -151,31 +141,34 @@ public class LogManager implements IHttpListener, IProxyListener {
      * @param requestResponse The HTTP request response object.
      */
     private void updateRequestWithResponse(UUID entryIdentifier, Date arrivalTime, IHttpRequestResponse requestResponse){
-        if(pendingRequests.containsKey(entryIdentifier)){
+        if(entriesPendingProcessing.containsKey(entryIdentifier)){
             //The entry has not been processed yet! We can add its response data before its processed.
 
-            //We must remove it from the pendingRequests list to prevent memory leaks.
-            final LogEntry logEntry = pendingRequests.remove(entryIdentifier);
+            final LogEntry logEntry = entriesPendingProcessing.get(entryIdentifier);
 
             synchronized (logEntry) {
                 //Update the requestResponse with the new one, and tell it when it arrived.
-                logEntry.addResponse(arrivalTime, requestResponse);
+                logEntry.addResponse(requestResponse, arrivalTime);
             }
 
             //Do nothing now, there's already a runnable submitted to process it somewhere in the queue.
             return;
 
         }else if(requestsAwaitingResponse.containsKey(entryIdentifier)){
-
             //The entry has already been processed, we must update it with the response.
-            EntryPendingResponse entryPendingResponse = requestsAwaitingResponse.remove(entryIdentifier);
+            LogEntry pendingResponseEntry = requestsAwaitingResponse.remove(entryIdentifier);
+
+            synchronized (pendingResponseEntry) {
+                //Update the requestResponse with the new one, and tell it when it arrived.
+                pendingResponseEntry.addResponse(requestResponse, arrivalTime);
+            }
 
             //Create and submit a job for the processing of its response.
-            Runnable process = createEntryUpdateRunnable(arrivalTime, entryPendingResponse, requestResponse);
-            entryProcessExecutor.submit(process);
+            entryProcessExecutor.submit(createEntryUpdateRunnable(pendingResponseEntry));
         }else{
+            //TODO Fix race condition. Response arrives while processing but before added to requestsAwaitingResponse.
+            System.out.println("AA");
             //Unknown UUID. Potentially for a request which was cleaned up already.
-            handleExpiredResponse(requestResponse);
         }
     }
 
@@ -187,147 +180,95 @@ public class LogManager implements IHttpListener, IProxyListener {
      * @param logEntry The LogEntry object which will store the processed results
      * @return Runnable for use in executor to process the entry.
      */
-    private Runnable createNewEntryRunnable(final LogEntry logEntry){
-        return () -> {
-            try {
-                IRequestInfo analyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(logEntry.requestResponse);
-                URL uUrl = analyzedReq.getUrl();
-                if (!shouldLog(uUrl)) return; //Do not log out of scope items.
+    private LogEntry processNewEntry(final LogEntry logEntry, boolean isImported){
+        synchronized (logEntry) {
+            //Remove from pending requests (only effective for incomplete entries)
+            //If its response comes in after this point, we will have to process it separately
+            entriesPendingProcessing.remove(logEntry.getIdentifier());
+            logEntry.process();
 
-                //We will always have a request to work with at least.
-                logEntry.processRequest(analyzedReq);
+            //If the status has been changed
+            if (logEntry.getStatus() != logEntry.getPreviousStatus()) {
+                if (logEntry.getStatus() == LogEntry.Status.IGNORED) return null; //Don't care about entry
 
-                if (logEntry.requestResponse.getResponse() == null) {
-                    //We're waiting on the response, move the entry from pending to the waitingForResponse list
-                    EntryPendingResponse entryPendingResponse = moveEntryToPendingResponse(logEntry);
-                    int modelIndex = addNewRequest(logEntry, false);
-                    entryPendingResponse.setModelIndex(modelIndex);
-                } else {
-                    //Either we got the initial request with the response
-                    //Or the response was received before we started processing.
-                    logEntry.processResponse();
-
-                    //We have our request, and our response!
-                    addNewRequest(logEntry, true);
-
-                    //We're done with processing the entry. We can finalize it.
-                    finalizeEntry(logEntry);
-                }
-            }catch (Exception e){
-                e.printStackTrace();
-            } finally {
-                if (logEntry.isImported()) pendingImport.getAndDecrement();
-            }
-        };
-    }
-
-    /**
-     * Used to update entries which have already been added to the table, but were waiting on a response.
-     * @param arrivalTime
-     * @param entryAwaitingResponse
-     * @param requestResponse
-     * @return
-     */
-    private Runnable createEntryUpdateRunnable(final Date arrivalTime, final EntryPendingResponse entryAwaitingResponse,
-                                               final IHttpRequestResponse requestResponse){
-        return () -> {
-            final LogEntry logEntry = entryAwaitingResponse.getLogEntry();
-            synchronized (logEntry) {
-                logEntry.addResponse(arrivalTime, requestResponse);
-                logEntry.processResponse();
-
+                //Check against color filters
                 HashMap<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
                 for (ColorFilter colorFilter : colorFilters.values()) {
                     logEntry.testColorFilter(colorFilter, true);
                 }
 
-                for (LogEntryListener logEntryListener : logEntryListeners) {
-                    logEntryListener.onResponseUpdated(entryAwaitingResponse.getModelIndex(), logEntry);
+                //Ensure capacity and add the entry
+                AddEntryAndEnsureCapacitySwingWorker addEntryWorker = new AddEntryAndEnsureCapacitySwingWorker(logEntry);
+                addEntryWorker.execute(); //Start adding the entry
+
+                try {
+                    if (logEntry.getStatus() == LogEntry.Status.AWAITING_RESPONSE && !isImported) {
+                        //If we've just reached the AWAITING_RESPONSE status, make sure we mark the entry as pending response.
+                        //We're waiting on the response, move the entry from pending to the waitingForResponse list
+                        requestsAwaitingResponse.put(logEntry.getIdentifier(), logEntry);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+        return logEntry;
+    }
+
+    private RunnableFuture<Integer> createEntryUpdateRunnable(final LogEntry entry){
+        return new SwingWorker<Integer, Void>(){
+            @Override
+            protected Integer doInBackground() throws Exception {
+                entry.process();
+
+                //Check against color filters
+                HashMap<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                for (ColorFilter colorFilter : colorFilters.values()) {
+                    entry.testColorFilter(colorFilter, true);
                 }
 
-                //We're done processing the entry now. We can finalize it.
-                finalizeEntry(logEntry);
+                return logEntries.indexOf(entry);
+            }
+
+            @Override
+            protected void done() {
+                //TODO fireTableRowsUpdated - DIRECT TO TABLE
+                try {
+                    int index = get();
+                    for (LogEntryListener logEntryListener : logEntryListeners) {
+                        logEntryListener.onResponseUpdated(index, entry);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
         };
     }
 
-    /**
-     * Adds the new request
-     * @param logEntry
-     * @param hasResponse
-     */
-    private int addNewRequest(LogEntry logEntry, boolean hasResponse){
-        //After handling request / response logEntries generation.
-
-        int modelIndex;
-        int removedEntries = 0;
-        while (logEntries.size() >= getMaximumEntries()) {
-            final LogEntry removedLogEntry = logEntries.get(0);
-            removeLogEntry(removedLogEntry);
-            removedEntries++;
-        }
-
-        if(removedEntries > 0) {
-            //Update model indices of entries pending their responses
-            for (EntryPendingResponse entry : this.requestsAwaitingResponse.values()) {
-                entry.setModelIndex(entry.getModelIndex() - removedEntries);
-            }
-        }
-
-        //Add to grepTable / modify existing entry.
-        HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-        for (ColorFilter colorFilter : colorFilters.values()) {
-            logEntry.testColorFilter(colorFilter, false);
-        }
-
-        logEntries.add(logEntry);
-        modelIndex = logEntries.size()-1;
-
-        for (LogEntryListener listener : logEntryListeners) {
-            listener.onRequestAdded(modelIndex, logEntry, hasResponse);
-        }
-
-        totalRequests.getAndIncrement();
-
-        //Finally, return the model index for the entry so we can
-        //use it later if we're dealing with an incomplete request.
-        return modelIndex;
-    }
-
-    private void finalizeEntry(LogEntry logEntry){
-        //Clean the entry up and remove any leftover processing artifacts.
-
-    }
-
-    private synchronized void handleExpiredResponse(IHttpRequestResponse requestResponse){
-        lateResponses.incrementAndGet();
-        int totalReqs = totalRequests.get();
-        if(totalReqs > 100 && ((float)lateResponses.get())/totalReqs > 0.17){
-            MoreHelp.showWarningMessage(lateResponses + " responses have been delivered after the Logger++ timeout. Consider increasing this value.");
-            //Reset late responses to prevent message being displayed again so soon.
-            lateResponses.set(0);
-        }
-    }
-
     public void removeLogEntry(LogEntry logEntry){
-        int index = logEntries.indexOf(logEntry);
-        for (LogEntryListener listener : logEntryListeners) {
-            listener.onRequestRemoved(index, logEntry);
-        }
-    }
+        new SwingWorker<Integer, Void>(){
 
-    private EntryPendingResponse moveEntryToPendingResponse(LogEntry logEntry){
-        EntryPendingResponse entryAwaitingResponse = new EntryPendingResponse(logEntry);
-        pendingRequests.remove(logEntry.getIdentifier());
-        requestsAwaitingResponse.put(logEntry.getIdentifier(), entryAwaitingResponse);
-        return entryAwaitingResponse;
-    }
+            @Override
+            protected Integer doInBackground() throws Exception {
+                int index = logEntries.indexOf(logEntry);
+                logEntries.remove(index);
+                return index;
+            }
 
-    public void importExisting(IHttpRequestResponse requestResponse) {
-        final LogEntry logEntry = new LogEntry(IBurpExtenderCallbacks.TOOL_PROXY, requestResponse);
-        logEntry.setImported(true);
-        pendingImport.getAndIncrement();
-        entryImportExecutor.submit(createNewEntryRunnable(logEntry));
+            @Override
+            protected void done() {
+                //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
+                try {
+                    Integer index = get();
+                    for (LogEntryListener logEntryListener : logEntryListeners) {
+                        logEntryListener.onRequestRemoved(index, logEntry);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }.execute();
     }
 
     public void importProxyHistory(boolean askConfirmation){
@@ -347,34 +288,45 @@ public class LogManager implements IHttpListener, IProxyListener {
                     message, new String[]{"Import", "Cancel"});
         }
         if(result == JOptionPane.OK_OPTION) {
-            importFuture = entryProcessExecutor.submit(() -> {
-                this.reset(); //Clear existing entries
-                entryProcessExecutor.pause(); //Do not process new entries yet.
+            LogViewPanel logViewPanel = LoggerPlusPlus.instance.getLogViewPanel();
+            new SwingWorker<Void, Integer>(){
+                @Override
+                protected Void doInBackground() throws Exception {
+                    reset(); //Clear existing entries
+                    entryProcessExecutor.pause(); //Do not process new entries yet.
 
-                LogViewPanel logViewPanel = LoggerPlusPlus.instance.getLogViewPanel();
-                IHttpRequestResponse[] history = LoggerPlusPlus.callbacks.getProxyHistory();
+                    IHttpRequestResponse[] history = LoggerPlusPlus.callbacks.getProxyHistory();
 
-                int startIndex = Math.max(0, history.length-maxEntries);
-                int importCount = historySize - startIndex;
-                logViewPanel.showImportProgress(importCount); //TODO Use listeners instead
+                    int startIndex = Math.max(0, history.length-maxEntries);
+                    int importCount = historySize - startIndex;
+                    logViewPanel.showImportProgress(importCount);
 
-                for (int index = startIndex; index < history.length; index++) {
-                    importExisting(history[index]);
+                    CountDownLatch countDownLatch = new CountDownLatch(importCount);
+                    for (int index = startIndex; index < history.length; index++) {
+                        final LogEntry logEntry = new LogEntry(IBurpExtenderCallbacks.TOOL_PROXY, history[index]);
+                        int importIndex = index - startIndex;
+                        entryImportExecutor.submit(() -> {
+                            processNewEntry(logEntry, true);
+                            publish(importIndex);
+                            countDownLatch.countDown();
+                        });
+                    }
+                    countDownLatch.await();
+                    return null;
                 }
-                int pending;
-                while((pending = pendingImport.get()) != 0 && !Thread.currentThread().isInterrupted()){
-                    try {
-                        Thread.sleep(500);
-//                        LoggerPlusPlus.instance.logOutput("Importing logs, " + pending + " entries remaining.");
-                        logViewPanel.setProgressValue(importCount - pending);
-                    } catch (InterruptedException e) {}
+
+                @Override
+                protected void process(List<Integer> chunks) {
+                    logViewPanel.setProgressValue(Collections.max(chunks));
                 }
 
-                entryProcessExecutor.resume();
-
-                //All imported
-                LoggerPlusPlus.instance.getLogViewPanel().showLogTable();
-            });
+                @Override
+                protected void done() {
+                    entryProcessExecutor.resume();
+                    logViewPanel.showLogTable();
+                    super.done();
+                }
+            }.execute();
         }
     }
 
@@ -394,7 +346,7 @@ public class LogManager implements IHttpListener, IProxyListener {
                 ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
     }
 
-    private boolean shouldLog(URL url){
+    public static boolean shouldLog(URL url){
         return (!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_RESTRICT_TO_SCOPE)
                 || LoggerPlusPlus.callbacks.isInScope(url));
     }
@@ -416,8 +368,6 @@ public class LogManager implements IHttpListener, IProxyListener {
     public void reset() {
         this.logEntries.clear();
         this.proxyIdToUUIDMap.clear();
-        this.lateResponses.set(0);
-        this.totalRequests.set(0);
 
         for (LogEntryListener logEntryListener : logEntryListeners) {
             logEntryListener.onLogsCleared();
@@ -433,6 +383,53 @@ public class LogManager implements IHttpListener, IProxyListener {
         }
     }
 
+    private class AddEntryAndEnsureCapacitySwingWorker extends SwingWorker<Void, Integer> {
+
+        LogEntry entry;
+
+        AddEntryAndEnsureCapacitySwingWorker(LogEntry entry){
+            this.entry = entry;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            int excessCount = Math.max(logEntries.size()+1 - getMaximumEntries(), 0);
+            for (int entryIndex = 0; entryIndex < excessCount; entryIndex++) {
+                logEntries.remove(entryIndex);
+                publish(entryIndex);
+            }
+
+//            if(excessCount > 0) {
+//                //Update model indices of incomplete entries with removed delta
+//                for (PendingResponseEntry entry : requestsAwaitingResponse.values()) {
+//                    entry.setModelIndex(entry.getModelIndex() - excessCount);
+//                }
+//            }
+
+            return null;
+        }
+
+        @Override
+        protected void process(List<Integer> removedEntryIndices) {
+            for (Integer removedIndex : removedEntryIndices) {
+                //TODO Fire table rows deleted - DIRECT TO TABLE
+                for (LogEntryListener logEntryListener : logEntryListeners) {
+                    logEntryListener.onRequestRemoved(removedIndex, null);
+                }
+            }
+        }
+
+        @Override
+        protected void done() {
+            logEntries.add(entry);
+            int index = logEntries.size()-1;
+            //TODO Fire table rows inserted - DIRECT TO TABLE
+            for (LogEntryListener logEntryListener : logEntryListeners) {
+                logEntryListener.onRequestAdded(index, entry, entry.status == LogEntry.Status.PROCESSED);
+            }
+        }
+    }
+
     private class AbandonedRequestCleanupRunnable implements Runnable {
 
         @Override
@@ -441,17 +438,17 @@ public class LogManager implements IHttpListener, IProxyListener {
             synchronized (requestsAwaitingResponse){
                 try {
                     HashSet<UUID> removedUUIDs = new HashSet<>();
-                    Iterator<Map.Entry<UUID, EntryPendingResponse>> iter
+                    Iterator<Map.Entry<UUID, LogEntry>> iter
                             = requestsAwaitingResponse.entrySet().iterator();
 
                     while (iter.hasNext()) {
-                        Map.Entry<UUID, EntryPendingResponse> abandonedEntry = iter.next();
-                        LogEntry logEntry = abandonedEntry.getValue().getLogEntry();
+                        Map.Entry<UUID, LogEntry> abandonedEntry = iter.next();
+                        LogEntry logEntry = abandonedEntry.getValue();
                         if(logEntry.requestDateTime == null){
                             //Should never be the case.
                             //Entries should always have request times unless they are imported,
                             //In which case they will never be awaiting a response so never in this list.
-                            return;
+                            continue;
                         }
                         long entryTime = logEntry.requestDateTime.getTime();
                         long responseTimeout = 1000 * ((Integer) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();

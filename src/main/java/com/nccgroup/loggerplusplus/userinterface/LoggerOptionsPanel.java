@@ -20,7 +20,6 @@ import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 
 import javax.swing.*;
@@ -105,7 +104,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         ComponentGroup importGroup = panelBuilder.createComponentGroup("Import");
         importGroup.addPreferenceComponent(PREF_AUTO_IMPORT_PROXY_HISTORY, "Import proxy history on startup");
         importGroup.addButton("Import Burp Proxy History", actionEvent -> {
-            LoggerPlusPlus.instance.getLogManager().importProxyHistory(true);
+            LoggerPlusPlus.instance.getLogProcessor().importProxyHistory(true);
         });
 
         importGroup.addButton("Import From CSV (Not Implemented)", null).setEnabled(false);

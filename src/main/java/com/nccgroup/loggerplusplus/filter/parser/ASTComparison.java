@@ -4,7 +4,7 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Date;
@@ -72,7 +72,7 @@ class ASTComparison extends SimpleNode {
       sb.append("]");
       return sb.toString();
     }else if(obj instanceof Date){
-      return "\"" + LogManager.LOGGER_DATE_FORMAT.format(obj) + "\"";
+      return "\"" + LogProcessor.LOGGER_DATE_FORMAT.format(obj) + "\"";
     }
     return String.valueOf(obj);
   }

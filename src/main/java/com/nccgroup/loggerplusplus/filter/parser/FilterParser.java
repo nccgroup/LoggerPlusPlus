@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, FilterParserConstants {/*@bgen(jjtree)*/
@@ -495,7 +495,7 @@ field = LogEntryField.getByLabel(fieldGroup, identifier.image);
       throw new ParseException();
     }
 try{
-            Date date = LogManager.LOGGER_DATE_FORMAT.parse(t.image);
+            Date date = LogProcessor.LOGGER_DATE_FORMAT.parse(t.image);
             {if ("" != null) return date;}
         }catch (Exception e){
             {if (true) throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");}

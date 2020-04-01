@@ -3,7 +3,7 @@ package com.nccgroup.loggerplusplus.logentry.logger;
 import com.nccgroup.loggerplusplus.*;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryListener;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.util.Globals;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -44,11 +44,11 @@ public class ElasticSearchLogger implements LogEntryListener {
     private ScheduledFuture indexTask;
 
 
-    public ElasticSearchLogger(LogManager logManager){
+    public ElasticSearchLogger(LogProcessor logProcessor){
         this.isEnabled = false;
         this.indexName = "logger";
 
-        logManager.addLogListener(this);
+        logProcessor.addLogListener(this);
         executorService = Executors.newScheduledThreadPool(1);
     }
 
@@ -113,7 +113,7 @@ public class ElasticSearchLogger implements LogEntryListener {
                                 .field("requesttime", logEntry.formattedRequestTime.equals("NA") ? null : logEntry.formattedRequestTime)
                                 .field("responsetime", logEntry.formattedResponseTime.equals("NA") ? null : logEntry.formattedResponseTime)
                                 .field("responsedelay", logEntry.requestResponseDelay)
-                                .field("status", logEntry.status)
+                                .field("status", logEntry.responseStatus)
                                 .field("title", logEntry.title)
                                 .field("newcookies", logEntry.newCookies)
                                 .field("sentcookies", logEntry.sentCookies)

@@ -8,7 +8,7 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
 import com.nccgroup.loggerplusplus.util.Globals;
@@ -35,7 +35,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
 
         if(columnValue != null){
             if(columnValue instanceof Date){
-                columnValueString = "\"" + LogManager.LOGGER_DATE_FORMAT.format(columnValue) + "\"";
+                columnValueString = "\"" + LogProcessor.LOGGER_DATE_FORMAT.format(columnValue) + "\"";
             }else {
                 columnValueString = columnValue instanceof Number ?
                         columnValue.toString() : "\"" + columnValue + "\"";
@@ -200,8 +200,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     new Thread(() -> {
-                        entry.processRequest();
-                        entry.processResponse();
+                        //TODO ADD IMPLEMENTATION
                     }).start();
                 }
             });
@@ -214,7 +213,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem removeItem = new JMenuItem(new AbstractAction("Remove Item") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getLogManager().removeLogEntry(entry);
+                LoggerPlusPlus.instance.getLogProcessor().removeLogEntry(entry);
             }
         });
         this.add(removeItem);

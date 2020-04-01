@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
@@ -48,6 +48,7 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
+}}
 }
 
 PARSER_END(FilterParser)

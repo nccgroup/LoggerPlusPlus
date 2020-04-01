@@ -36,7 +36,7 @@ public class GrepperController {
         return remainingEntries.get() > 0;
     }
 
-    public void reset(){
+    public void reset(){ //TODO SwingWorker
         for (GrepperListener listener : this.listeners) {
             try{
                 listener.onResetRequested();
@@ -49,7 +49,7 @@ public class GrepperController {
         this.searchExecutor = Executors.newFixedThreadPool(searchThreads, new NamedThreadFactory("LPP-Grepper"));
 
         new Thread(() -> {
-            ArrayList<LogEntry> logEntries = new ArrayList<>(LoggerPlusPlus.instance.getLogManager().getLogEntries());
+            ArrayList<LogEntry> logEntries = new ArrayList<>(LoggerPlusPlus.instance.getLogProcessor().getLogEntries());
             remainingEntries.getAndSet(logEntries.size());
 
             this.listeners.forEach(listener -> {

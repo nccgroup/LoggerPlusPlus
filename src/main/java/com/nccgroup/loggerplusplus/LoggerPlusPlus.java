@@ -5,11 +5,10 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionStateListener;
 import burp.ITab;
 import com.coreyd97.BurpExtenderUtilities.*;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.grepper.GrepperController;
-import com.nccgroup.loggerplusplus.logentry.LogManager;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.logentry.logger.ElasticSearchLogger;
 import com.nccgroup.loggerplusplus.logview.LogViewPanel;
 import com.nccgroup.loggerplusplus.logview.RequestViewerController;
@@ -20,7 +19,6 @@ import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -33,7 +31,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     public static IGsonProvider gsonProvider;
     public static Preferences preferences;
 
-    private LogManager logManager;
+    private LogProcessor logProcessor;
     private LogFilterController logFilterController;
     private FilterLibraryController libraryController;
     private ElasticSearchLogger elasticSearchLogger;
@@ -78,7 +76,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         logFilterController = new LogFilterController(preferences);
         grepperController = new GrepperController(preferences);
         libraryController = new FilterLibraryController(preferences);
-        logManager = new LogManager();
+        logProcessor = new LogProcessor();
 
         Double lastVersion = preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
         preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
@@ -92,7 +90,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
 
         callbacks.setExtensionName("Logger++");
-        elasticSearchLogger = new ElasticSearchLogger(logManager);
+        elasticSearchLogger = new ElasticSearchLogger(logProcessor);
 
         if(!callbacks.isExtensionBapp() && (boolean) preferences.getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
             MoreHelp.checkForUpdate(false);
@@ -109,7 +107,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
             {
                 //UI
                 JPanel logOuterPanel = new JPanel(new GridBagLayout());
-                logViewPanel = new LogViewPanel(logManager);
+                logViewPanel = new LogViewPanel(logProcessor);
                 logFilterController.addFilterListener(logViewPanel.getLogTable());
                 GridBagConstraints gbc = new GridBagConstraints();
                 gbc.weighty = 0;
@@ -170,14 +168,14 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                     loggerMenu = null;
                 }
 
-                LoggerPlusPlus.callbacks.registerHttpListener(logManager);
-                LoggerPlusPlus.callbacks.registerProxyListener(logManager);
+                LoggerPlusPlus.callbacks.registerHttpListener(logProcessor);
+                LoggerPlusPlus.callbacks.registerProxyListener(logProcessor);
                 LoggerPlusPlus.callbacks.registerContextMenuFactory(new LoggerContextMenuFactory());
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
                 if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
                     Thread importThread = new Thread(() -> {
-                        logManager.importProxyHistory(false);
+                        logProcessor.importProxyHistory(false);
                     });
                     importThread.start();
                 }
@@ -194,7 +192,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         if(uiReqRespPopOut.isPoppedOut()) uiReqRespPopOut.getPopoutFrame().dispose();
 
         //Stop LogManager executors and pending tasks.
-        logManager.shutdown();
+        logProcessor.shutdown();
 
         //Null out static variables so not leftover.
         LoggerPlusPlus.instance = null;
@@ -250,7 +248,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
     }
 
     public void reset(){
-        this.logManager.reset();
+        this.logProcessor.reset();
         this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
     }
 
@@ -298,8 +296,8 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         return this.tabbedWrapper;
     }
 
-    public LogManager getLogManager() {
-        return logManager;
+    public LogProcessor getLogProcessor() {
+        return logProcessor;
     }
 
     public void setEsEnabled(boolean esEnabled) throws Exception {

@@ -154,7 +154,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry selectedEntry : selectedEntries) {
-                    LoggerPlusPlus.instance.getLogManager().removeLogEntry(selectedEntry);
+                    LoggerPlusPlus.instance.getLogProcessor().removeLogEntry(selectedEntry);
                 }
 
             }
