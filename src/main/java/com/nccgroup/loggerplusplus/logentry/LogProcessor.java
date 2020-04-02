@@ -1,10 +1,9 @@
 package com.nccgroup.loggerplusplus.logentry;
 
 import burp.*;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.logview.LogViewPanel;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
 
@@ -22,10 +21,9 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 public class LogProcessor implements IHttpListener, IProxyListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
-    private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
-
+    
+    private final Preferences preferences;
     private final List<LogEntry> logEntries;
-
     private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
     private final ConcurrentHashMap<UUID, LogEntry> entriesPendingProcessing;
     private final ConcurrentHashMap<UUID, Future<LogEntry>> entryProcessingFutures;
@@ -33,8 +31,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
-
-    private SwingWorker importFuture;
+    private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
 
     /**
      * Capture incoming requests and responses.
@@ -42,22 +39,22 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogProcessor(){
+    public LogProcessor(Preferences preferences){
+        this.preferences = preferences;
+        this.logEntries = Collections.synchronizedList(new ArrayList<>());
 
-        logEntries = Collections.synchronizedList(new ArrayList<>());
-
-        logEntryListeners = new ArrayList<>();
-        proxyIdToUUIDMap = new ConcurrentHashMap<>();
-        entriesPendingProcessing = new ConcurrentHashMap<>();
-        entryProcessingFutures = new ConcurrentHashMap<>();
-        entryProcessExecutor = new PausableThreadPoolExecutor(10, 10,
+        this.logEntryListeners = new ArrayList<>();
+        this.proxyIdToUUIDMap = new ConcurrentHashMap<>();
+        this.entriesPendingProcessing = new ConcurrentHashMap<>();
+        this.entryProcessingFutures = new ConcurrentHashMap<>();
+        this.entryProcessExecutor = new PausableThreadPoolExecutor(10, 10,
                 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-LogManager"));
-        entryImportExecutor = new PausableThreadPoolExecutor(10, 10, 0L,
+        this.entryImportExecutor = new PausableThreadPoolExecutor(10, 10, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-Import"));
 
         //Create incomplete request cleanup thread so map doesn't get too big.
-        cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
-        cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30000L, 30000L, TimeUnit.MILLISECONDS);
+        this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
+        this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30000L, 30000L, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -70,10 +67,10 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     @Override
     public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
         if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
-        if(httpMessage == null || !(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        if(httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
-        if(!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_OTHER_LIVE)){
+        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
             //Submit normally, we're not tracking requests and responses separately.
             if(!isRequestOnly) { //But only add entries complete with a response.
                 final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
@@ -104,7 +101,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     @Override
     public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
         final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
-        if(proxyMessage == null || !(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
         if(isRequestOnly){
@@ -196,7 +193,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * @param logEntry The LogEntry object which will store the processed results
      * @return LogEntry Stores the processed results
      */
-    private LogEntry processEntry(final LogEntry logEntry){
+    LogEntry processEntry(final LogEntry logEntry){
         synchronized (logEntry) {
             logEntry.process();
 
@@ -205,7 +202,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 if (logEntry.getStatus() == LogEntry.Status.IGNORED) return null; //Don't care about entry
 
                 //Check against color filters
-                HashMap<UUID, ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
                 for (ColorFilter colorFilter : colorFilters.values()) {
                     logEntry.testColorFilter(colorFilter, true);
                 }
@@ -280,67 +277,27 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         }.execute();
     }
 
-    public void importProxyHistory(boolean askConfirmation){
+    public EntryImportWorker.Builder createEntryImportBuilder(){
+        return new EntryImportWorker.Builder(this);
+    }
+
+    public void importProxyHistory(){
         //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
 
-        int result = JOptionPane.OK_OPTION;
-        int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
-        int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
-        if(askConfirmation) {
-            String message = "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
-                    "\nLarge imports may take a few minutes to process.";
-            if(historySize > maxEntries) {
-                message += "\nNote: History will be truncated to " + maxEntries + " entries.";
-            }
+        clearEntries(); //Clear existing entries
 
-            result = MoreHelp.askConfirmMessage("Burp Proxy Import",
-                    message, new String[]{"Import", "Cancel"});
-        }
-        if(result == JOptionPane.OK_OPTION) {
-            LogViewPanel logViewPanel = LoggerPlusPlus.instance.getLogViewPanel();
-            importFuture = new SwingWorker<Void, Integer>(){
-                @Override
-                protected Void doInBackground() throws Exception {
-                    reset(); //Clear existing entries
-                    entryProcessExecutor.pause(); //Do not process new entries yet.
+        //Build list of entries to import
+        IHttpRequestResponse[] proxyHistory = LoggerPlusPlus.callbacks.getProxyHistory();
+        int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+        int startIndex = Math.max(proxyHistory.length - maxEntries, 0);
+        List<IHttpRequestResponse> entriesToImport = Arrays.asList(proxyHistory).subList(startIndex, proxyHistory.length);
 
-                    IHttpRequestResponse[] history = LoggerPlusPlus.callbacks.getProxyHistory();
+        //Build and start import worker
+        EntryImportWorker importWorker = new EntryImportWorker.Builder(this)
+                .setOriginatingTool(IBurpExtenderCallbacks.TOOL_PROXY)
+                .setEntries(entriesToImport).build();
 
-                    int startIndex = Math.max(0, history.length-maxEntries);
-                    int importCount = historySize - startIndex;
-                    logViewPanel.showImportProgress(importCount);
-
-                    CountDownLatch countDownLatch = new CountDownLatch(importCount);
-                    for (int index = startIndex; index < history.length; index++) {
-                        final LogEntry logEntry = new LogEntry(IBurpExtenderCallbacks.TOOL_PROXY, history[index]);
-                        int importIndex = index - startIndex;
-                        entryImportExecutor.submit(() -> {
-                            LogEntry result = processEntry(logEntry);
-                            if(result != null) {
-                                new AddEntryAndEnsureCapacitySwingWorker(logEntry).execute();
-                            }
-                            publish(importIndex);
-                            countDownLatch.countDown();
-                        });
-                    }
-                    countDownLatch.await();
-                    return null;
-                }
-
-                @Override
-                protected void process(List<Integer> chunks) {
-                    logViewPanel.setProgressValue(Collections.max(chunks));
-                }
-
-                @Override
-                protected void done() {
-                    entryProcessExecutor.resume();
-                    logViewPanel.showLogTable();
-                    super.done();
-                }
-            };
-            importFuture.execute();
-        }
+        importWorker.execute();
     }
 
     public List<LogEntry> getLogEntries() {
@@ -348,20 +305,15 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     }
 
     private boolean isValidTool(int toolFlag){
-        return ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_GLOBAL) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_PROXY) && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_INTRUDER) && toolFlag== IBurpExtenderCallbacks.TOOL_INTRUDER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_REPEATER) && toolFlag== IBurpExtenderCallbacks.TOOL_REPEATER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_SCANNER) && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_SEQUENCER) && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_SPIDER) && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
-                ((Boolean) LoggerPlusPlus.preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
-    }
-
-    public static boolean shouldLog(URL url){
-        return (!(Boolean) LoggerPlusPlus.preferences.getSetting(PREF_RESTRICT_TO_SCOPE)
-                || LoggerPlusPlus.callbacks.isInScope(url));
+        return ((Boolean) preferences.getSetting(PREF_LOG_GLOBAL) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_PROXY) && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_INTRUDER) && toolFlag== IBurpExtenderCallbacks.TOOL_INTRUDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_REPEATER) && toolFlag== IBurpExtenderCallbacks.TOOL_REPEATER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SCANNER) && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SEQUENCER) && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_SPIDER) && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
     }
 
     public void addLogListener(LogEntryListener listener) {
@@ -374,11 +326,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         return logEntryListeners;
     }
 
-    public int getMaximumEntries() {
-        return (int) LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
-    }
-
-    public void reset() {
+    public void clearEntries() {
         this.logEntries.clear();
         this.proxyIdToUUIDMap.clear();
 
@@ -390,11 +338,28 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     public void shutdown(){
         this.cleanupExecutor.shutdownNow();
         this.entryProcessExecutor.shutdownNow();
+        this.entryImportExecutor.shutdownNow();
         this.logEntryListeners.clear();
-        if(!importFuture.isDone()){
-            importFuture.cancel(true);
-        }
     }
+
+    void addProcessedEntry(LogEntry logEntry){
+        new AddEntryAndEnsureCapacitySwingWorker(logEntry).execute();
+    }
+
+    PausableThreadPoolExecutor getEntryImportExecutor() {
+        return entryImportExecutor;
+    }
+
+    public PausableThreadPoolExecutor getEntryProcessExecutor() {
+        return entryProcessExecutor;
+    }
+
+
+    /*************************
+     *
+     * Private worker implementations
+     *
+     *************************/
 
     private class AddEntryAndEnsureCapacitySwingWorker extends SwingWorker<Integer, Integer> {
 
@@ -406,7 +371,8 @@ public class LogProcessor implements IHttpListener, IProxyListener {
 
         @Override
         protected Integer doInBackground() throws Exception {
-            int excessCount = Math.max(logEntries.size()+1 - getMaximumEntries(), 0);
+            int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+            int excessCount = Math.max(logEntries.size()+1 - maxEntries, 0);
             for (int entryIndex = 0; entryIndex < excessCount; entryIndex++) {
                 logEntries.remove(entryIndex);
                 publish(entryIndex);
@@ -441,6 +407,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         }
     }
 
+
     private class AbandonedRequestCleanupRunnable implements Runnable {
 
         @Override
@@ -463,7 +430,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                                 continue;
                             }
                             long entryTime = logEntry.requestDateTime.getTime();
-                            long responseTimeout = 1000 * ((Integer) LoggerPlusPlus.preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
+                            long responseTimeout = 1000 * ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
                             if (timeNow - entryTime > responseTimeout) {
                                 iter.remove();
                                 LogManagerHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);

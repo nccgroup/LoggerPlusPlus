@@ -36,12 +36,9 @@ import java.util.stream.IntStream;
 public class LogTable extends JTable implements LogFilterListener, ColorFilterListener, LogEntryListener
 {
 
-    private ArrayList<LogTableFilterStatusListener> filterStatusListeners;
-
     public LogTable(LogTableModel tableModel, LogTableColumnModel logTableColumnModel)
     {
         super(tableModel, logTableColumnModel);
-        filterStatusListeners = new ArrayList<>();
         this.setTableHeader(new TableHeader(getColumnModel(),this)); // This was used to create tool tips
         this.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // to have horizontal scroll bar
         this.setRowHeight(20); // As we are not using Burp customised UI, we have to define the row height to make it more pretty
@@ -206,13 +203,7 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     }
 
     public void setFilter(LogFilter filter){
-        synchronized (this.filterStatusListeners) {
-            this.filterStatusListeners.forEach(listener -> listener.onFilteringStart());
-        }
         ((DefaultRowSorter) this.getRowSorter()).setRowFilter(filter);
-        synchronized (this.filterStatusListeners) {
-            this.filterStatusListeners.forEach(listener -> listener.onFilteringFinish());
-        }
         ((JScrollPane) this.getParent().getParent()).getVerticalScrollBar().setValue(0);
     }
 
@@ -306,6 +297,8 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
             }
         }catch (Exception e){
             e.printStackTrace();
+            System.out.println(modelIndex);
+            System.out.println(logEntry);
             //TODO Fix out of bounds exception here.
         }
     }
@@ -338,13 +331,5 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
     @Override
     public void onFilterCleared() {
         this.setFilter(null);
-    }
-
-    public void addFilterStatusListener(LogTableFilterStatusListener listener){
-        this.filterStatusListeners.add(listener);
-    }
-
-    public void removeFilterStatusListener(LogTableFilterStatusListener listener){
-        this.filterStatusListeners.remove(listener);
     }
 }

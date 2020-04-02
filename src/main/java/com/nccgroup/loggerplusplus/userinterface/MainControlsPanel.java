@@ -36,7 +36,7 @@ public class MainControlsPanel extends JPanel {
 
         final JButton clearLogsButton = new JButton("Clear Logs");
         clearLogsButton.addActionListener(actionEvent ->
-                LoggerPlusPlus.instance.getLogProcessor().reset());
+                LoggerPlusPlus.instance.getLogProcessor().clearEntries());
 
         gbc.gridx = 4;
         gbc.weightx = 0;

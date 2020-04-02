@@ -16,6 +16,8 @@ import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -104,10 +106,26 @@ public class LoggerOptionsPanel extends JScrollPane{
         ComponentGroup importGroup = panelBuilder.createComponentGroup("Import");
         importGroup.addPreferenceComponent(PREF_AUTO_IMPORT_PROXY_HISTORY, "Import proxy history on startup");
         importGroup.addButton("Import Burp Proxy History", actionEvent -> {
-            LoggerPlusPlus.instance.getLogProcessor().importProxyHistory(true);
+
+            int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
+            int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+            String message = "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
+                    "\nLarge imports may take a few minutes to process.";
+            if(historySize > maxEntries) {
+                message += "\nNote: History will be truncated to " + maxEntries + " entries.";
+            }
+
+            int result = MoreHelp.askConfirmMessage("Burp Proxy Import",
+                    message, new String[]{"Import", "Cancel"});
+
+            if(result == JOptionPane.OK_OPTION) {
+                LoggerPlusPlus.instance.getLogProcessor().importProxyHistory();
+            }
         });
 
-        importGroup.addButton("Import From CSV (Not Implemented)", null).setEnabled(false);
+        importGroup.addButton("Import From CSV (Not Implemented)", actionEvent -> {
+            //Ah jeez rick, I dunno about that.
+        }).setEnabled(false);
 
 
         ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");

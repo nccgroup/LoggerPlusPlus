@@ -143,7 +143,7 @@ public class LogEntry
 	private Status processRequest(){
 		IRequestInfo tempAnalyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(this.requestResponse);
 		URL uUrl = tempAnalyzedReq.getUrl();
-		if (!LogProcessor.shouldLog(uUrl)) return Status.IGNORED;
+		if (!LoggerPlusPlus.isUrlInScope(uUrl)) return Status.IGNORED;
 
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();

@@ -19,8 +19,11 @@ import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
+
+import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
 /**
  * Created by corey on 07/09/17.
@@ -76,7 +79,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         logFilterController = new LogFilterController(preferences);
         grepperController = new GrepperController(preferences);
         libraryController = new FilterLibraryController(preferences);
-        logProcessor = new LogProcessor();
+        logProcessor = new LogProcessor(preferences);
 
         Double lastVersion = preferences.getSetting(Globals.PREF_LAST_USED_VERSION);
         preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
@@ -174,10 +177,7 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
                 LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
                 if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_IMPORT_PROXY_HISTORY)){
-                    Thread importThread = new Thread(() -> {
-                        logProcessor.importProxyHistory(false);
-                    });
-                    importThread.start();
+                    logProcessor.importProxyHistory();
                 }
             }
         });
@@ -247,8 +247,13 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
         }
     }
 
+    public static boolean isUrlInScope(URL url){
+        return (!(Boolean) preferences.getSetting(PREF_RESTRICT_TO_SCOPE)
+                || callbacks.isInScope(url));
+    }
+
     public void reset(){
-        this.logProcessor.reset();
+        this.logProcessor.clearEntries();
         this.logViewPanel.getLogTable().getModel().fireTableDataChanged();
     }
 
@@ -274,10 +279,6 @@ public class LoggerPlusPlus implements ITab, IBurpExtender, IExtensionStateListe
 
     public VariableViewPanel getReqRespPanel() {
         return reqRespPanel;
-    }
-
-    public LogViewPanel getLogViewPanel() {
-        return logViewPanel;
     }
 
     public JScrollPane getLogScrollPanel() {
