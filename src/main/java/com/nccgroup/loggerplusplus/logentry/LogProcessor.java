@@ -119,6 +119,8 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
             if(uuid != null){
                 updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
+            }else{
+                System.out.println("LOST");
             }
         }
     }
@@ -372,16 +374,18 @@ public class LogProcessor implements IHttpListener, IProxyListener {
 
         @Override
         protected Integer doInBackground() throws Exception {
-            int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
-            int excessCount = Math.max(logEntries.size()+1 - maxEntries, 0);
-            for (int entryIndex = 0; entryIndex < excessCount; entryIndex++) {
-                logEntries.remove(entryIndex);
-                publish(entryIndex);
-            }
+            synchronized (logEntries) {
+                int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+                int excessCount = Math.max(logEntries.size() + 1 - maxEntries, 0);
+                for (int entryIndex = 0; entryIndex < excessCount; entryIndex++) {
+                    logEntries.remove(entryIndex);
+                    publish(entryIndex);
+                }
 
-            int index = logEntries.size();
-            logEntries.add(entry);
-            return index;
+                int index = logEntries.size();
+                logEntries.add(entry);
+                return index;
+            }
         }
 
         @Override
