@@ -283,6 +283,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
 
     public void importProxyHistory(){
         //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
+        //TODO Remove to more suitable UI class and show dialog
 
         clearEntries(); //Clear existing entries
 
@@ -440,6 +441,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                         }
                     }
 
+                    //Clean the removed UUIDs from the proxy reference map also.
                     Iterator<Map.Entry<Integer, UUID>> proxyMapIter = proxyIdToUUIDMap.entrySet().iterator();
                     while (proxyMapIter.hasNext()) {
                         Map.Entry<Integer, UUID> entry = proxyMapIter.next();
