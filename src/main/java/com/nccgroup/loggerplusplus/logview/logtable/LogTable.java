@@ -310,7 +310,11 @@ public class LogTable extends JTable implements LogFilterListener, ColorFilterLi
 
     @Override
     public void onRequestRemoved(int modelIndex, LogEntry logEntry) {
-        getModel().fireTableRowsDeleted(modelIndex, modelIndex);
+        try {
+            getModel().fireTableRowsDeleted(modelIndex, modelIndex);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @Override

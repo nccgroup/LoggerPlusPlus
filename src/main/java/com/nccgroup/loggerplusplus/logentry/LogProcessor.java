@@ -8,7 +8,6 @@ import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
 
 import javax.swing.*;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -254,16 +253,22 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     }
 
     public void removeLogEntry(LogEntry logEntry){
+        removeLogEntries(Arrays.asList(logEntry));
+    }
+
+    public void removeLogEntries(List<LogEntry> logEntry){
         SwingUtilities.invokeLater(() -> {
-            int index;
             synchronized (logEntries) {
-                index = logEntries.indexOf(logEntry);
-                logEntries.remove(index);
+                for (LogEntry entry : logEntry) {
+                    int index = logEntries.indexOf(entry);
+                    logEntries.remove(index);
+
+                    //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
+                    for (LogEntryListener logEntryListener : logEntryListeners) {
+                        logEntryListener.onRequestRemoved(index, entry);
+                    }
+                }
             }
-            for (LogEntryListener logEntryListener : logEntryListeners) {
-                logEntryListener.onRequestRemoved(index, logEntry);
-            }
-            //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
         });
     }
 
