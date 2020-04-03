@@ -69,9 +69,13 @@ public class LoggerImport {
         IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
         
         String filename = getLoadFile();
-        lines = readFile(filename);
+        if ( filename.length() == 0 ) { // exit if no file selected
+            return new ArrayList<IHttpRequestResponse>();
+        }
 
+        lines = readFile(filename);
         Iterator<String> i = lines.iterator();
+        
         while (i.hasNext()) {
             try {
                 String line = i.next();
@@ -99,6 +103,10 @@ public class LoggerImport {
         IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
         
         String filename = getLoadFile();
+        if ( filename.length() == 0 ) { // exit if no file selected
+            return new ArrayList<IHttpRequestResponse>();
+        }
+
         lines = readFile(filename);
         Iterator<String> i = lines.iterator();
 
