@@ -13,3 +13,4 @@ build.xml
 hs_err_*.log
 .vscode/**/*
 releases/**/*
+.settings/
