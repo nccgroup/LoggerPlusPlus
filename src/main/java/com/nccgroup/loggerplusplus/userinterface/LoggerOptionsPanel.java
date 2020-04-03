@@ -12,10 +12,13 @@
 
 package com.nccgroup.loggerplusplus.userinterface;
 
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.nccgroup.loggerplusplus.logentry.EntryImportWorker;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
@@ -124,7 +127,19 @@ public class LoggerOptionsPanel extends JScrollPane{
         });
 
         importGroup.addButton("Import From CSV (Not Implemented)", actionEvent -> {
-            //Ah jeez rick, I dunno about that.
+            EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
+                    .setOriginatingTool(IBurpExtenderCallbacks.TOOL_EXTENDER)
+                    .setEntries(new ArrayList<IHttpRequestResponse>()) //Entries to import, empty list as example
+                    .setInterimConsumer(integers -> {
+                        //Optional
+                        //Outputs chunks of integers representing imported indices
+                        //May be used to update progress bar for example
+                    })
+                    .setCallback(() -> {
+                        //Optional
+                        //Called when all entries have been imported.
+                    }).build();
+            importWorker.execute();
         }).setEnabled(false);
 
 
