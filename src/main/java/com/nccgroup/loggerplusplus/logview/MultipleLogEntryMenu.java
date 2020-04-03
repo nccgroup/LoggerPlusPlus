@@ -153,6 +153,9 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenuItem removeItem = new JMenuItem(new AbstractAction("Remove " + selectedEntries.size() + " selected items") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                //If we don't clear the selection, the table will select the next entry after row is deleted
+                //This causes the request response viewer to change after each and slow the process.
+                logTable.getSelectionModel().clearSelection();
                 for (LogEntry selectedEntry : selectedEntries) {
                     LoggerPlusPlus.instance.getLogProcessor().removeLogEntry(selectedEntry);
                 }

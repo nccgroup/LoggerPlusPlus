@@ -254,29 +254,17 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     }
 
     public void removeLogEntry(LogEntry logEntry){
-        new SwingWorker<Integer, Void>(){
-
-            @Override
-            protected Integer doInBackground() {
-                int index = logEntries.indexOf(logEntry);
+        SwingUtilities.invokeLater(() -> {
+            int index;
+            synchronized (logEntries) {
+                index = logEntries.indexOf(logEntry);
                 logEntries.remove(index);
-                return index;
             }
-
-            @Override
-            protected void done() {
-                //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
-                try {
-                    Integer index = get();
-                    for (LogEntryListener logEntryListener : logEntryListeners) {
-                        logEntryListener.onRequestRemoved(index, logEntry);
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
+            for (LogEntryListener logEntryListener : logEntryListeners) {
+                logEntryListener.onRequestRemoved(index, logEntry);
             }
-
-        }.execute();
+            //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
+        });
     }
 
     public EntryImportWorker.Builder createEntryImportBuilder(){
