@@ -20,6 +20,9 @@ import burp.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.*;
+import java.net.URL;
+import java.net.http.HttpRequest;
+
 import javax.swing.*;
 
 public class LoggerImport {
@@ -63,6 +66,7 @@ public class LoggerImport {
     public static ArrayList<IHttpRequestResponse> importWStalker() {
         ArrayList<String> lines = new ArrayList<String>();
         ArrayList<IHttpRequestResponse> requests = new ArrayList<IHttpRequestResponse>();
+        IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
         
         String filename = getLoadFile();
         lines = readFile(filename);
@@ -73,7 +77,6 @@ public class LoggerImport {
                 String line = i.next();
                 String[] v = line.split(","); // Format: "base64(request),base64(response),url"
 
-                IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
                 byte[] request = helpers.base64Decode(v[0]);
                 byte[] response = helpers.base64Decode(v[1]);
                 String url = v[3];
@@ -91,7 +94,88 @@ public class LoggerImport {
     }
 
     public static ArrayList<IHttpRequestResponse> importZAP() {
+        ArrayList<String> lines = new ArrayList<String>();
         ArrayList<IHttpRequestResponse> requests = new ArrayList<IHttpRequestResponse>();
+        IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
+        
+        String filename = getLoadFile();
+        lines = readFile(filename);
+        Iterator<String> i = lines.iterator();
+
+        // Format:
+        // ==== [0-9]+ ==========
+        // REQUEST
+        // <empty>
+        // RESPONSE
+        String reSeparator = "^==== [0-9]+ ==========$";
+        String reResponse = "^HTTP/[0-9]\\.[0-9] [0-9]+ .*$";
+
+        // Ignore first line, since it should be a separator
+        if ( i.hasNext() ) {
+            i.next();
+        }
+
+        boolean isRequest = true;
+        String requestBuffer = "";
+        String responseBuffer = "";
+        String url = "";
+
+        // Loop lines
+        while (i.hasNext()) {
+            String line = i.next();
+
+            // Request and Response Ready
+            if ( line.matches(reSeparator) || !i.hasNext() ) {
+                // TODO: Remove one or two \n at the end of requestBuffer
+
+                byte[] req = helpers.stringToBytes(requestBuffer);
+                byte[] res = helpers.stringToBytes(responseBuffer);
+
+                // Add IHttpRequestResponse Object
+                LoggerRequestResponse x = new LoggerRequestResponse(url, req, res);
+                requests.add(x);
+
+                // Reset content
+                isRequest = true;
+                requestBuffer = "";
+                responseBuffer = "";
+                url = "";
+
+                continue;
+            }
+
+            // It's the beginning of a request
+            if ( requestBuffer.length() == 0 ) {
+                try {
+                    // Expected format: "GET https://whatever/whatever.html HTTP/1.1"
+                    String[] x = line.split(" ");
+                    url = x[1];
+
+                    URL u = new URL(url);
+                    String path = u.getPath();
+                    line = x[0] + " " + path + " " + x[2]; // fix the path in the request
+
+                } catch (Exception e) {
+                    LoggerPlusPlus.callbacks.printError("importZAP: Wrong Path Format");
+                    return new ArrayList<IHttpRequestResponse>();
+                } 
+            }
+
+            // It's the beginning of a response
+            if ( line.matches(reResponse) ) {
+                isRequest = false;
+            }
+
+            // Add line to the corresponding buffer
+            if ( isRequest ) {
+                requestBuffer += line;
+                requestBuffer += "\n";
+            } else {
+                responseBuffer += line;
+                responseBuffer += "\n";
+            }
+        }
+
         return requests;
     }
 

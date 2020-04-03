@@ -132,10 +132,10 @@ public class LoggerOptionsPanel extends JScrollPane{
             LoggerImport.loadImported(requests);
         }).setEnabled(true);
 
-        importGroup.addButton("Import From OWASP ZAP (inactive)", actionEvent -> {
-            //ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
-            //LoggerImport.loadImported(requests);
-        }).setEnabled(false);
+        importGroup.addButton("Import From OWASP ZAP", actionEvent -> {
+            ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
+            LoggerImport.loadImported(requests);
+        }).setEnabled(true);
 
         ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");
         exportGroup.addButton("Save log table as CSV", actionEvent -> {
