@@ -1,3 +1,29 @@
+v 3.14
+=========================================================================
+- Rework log processing yet again.
+- More concurrency fixes.
+
+v 3.13
+=========================================================================
+- Implements #75 - Multi selection and contextual menu.
+- Implements #76 - Aliases for predefined library filters.
+- Implements #71 - Add NOT operator in filters.
+
+v 3.12
+=========================================================================
+- Rework log processing for better concurrency handling.
+- Run table change events on Swing thread.
+- Fix filter not always correctly updating.
+- Log table now correctly updates after setting filters.
+- Small project reshuffle.
+
+v 3.11
+=========================================================================
+- Rewrite filter parser using JavaCC grammar.
+- New filter operators CONTAINS, IN.
+- Filter fields now split into categories, Request, Response, Proxy.
+- Bug Fixes.
+
 v 3.10
 =========================================================================
 - Change "Response Delay" column type from String to int for better sorting.
