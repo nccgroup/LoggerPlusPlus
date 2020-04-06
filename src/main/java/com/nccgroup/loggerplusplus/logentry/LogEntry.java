@@ -277,14 +277,6 @@ public class LogEntry
 	}
 
 	/**
-	 * Update entry with response object
-	 * @param requestResponse
-	 */
-	public void addResponse(IHttpRequestResponse requestResponse){
-		this.requestResponse = requestResponse;
-	}
-
-	/**
 	 * Update entry with response object and arrival time.
 	 * @param requestResponse
 	 * @param arrivalTime
@@ -417,6 +409,10 @@ public class LogEntry
 //		}
 	}
 
+	public IHttpRequestResponse getRequestResponse() {
+		return requestResponse;
+	}
+
 	public UUID getIdentifier() {
 		return this.identifier;
 	}
@@ -429,43 +425,6 @@ public class LogEntry
 	public void setResponseTime(Date responseTime) {
 		this.responseDateTime = responseTime;
 		this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.responseDateTime);
-	}
-
-	public static String getCSVHeader(LogTable table, boolean isFullLog) {
-		return getCSVHeader(table, isFullLog, isFullLog);
-	}
-
-	public static String getCSVHeader(LogTable table, boolean includeRequest, boolean includeResponse) {
-		StringBuilder result = new StringBuilder();
-
-		boolean firstDone = false;
-		ArrayList<LogTableColumn> columns = new ArrayList<>();
-		Enumeration<TableColumn> columnEnumeration = table.getColumnModel().getColumns();
-		while(columnEnumeration.hasMoreElements()){
-			columns.add((LogTableColumn) columnEnumeration.nextElement());
-		}
-
-		Collections.sort(columns);
-		for (LogTableColumn logTableColumn : columns) {
-			if(logTableColumn.isVisible()) {
-				if(firstDone) {
-					result.append(",");
-				}else{
-					firstDone = true;
-				}
-				result.append(logTableColumn.getName());
-			}
-		}			
-
-		if(includeRequest) {
-			result.append(",");
-			result.append("Request");
-		}
-		if(includeResponse) {
-			result.append(",");
-			result.append("Response");
-		}
-		return result.toString();
 	}
 
 	public Object getValueByKey(LogEntryField columnName){
@@ -595,63 +554,6 @@ public class LogEntry
 		public String toString() {
 			return this.value;
 		}
-	}
-
-
-	public String toCSVString(boolean isFullLog) {
-		return toCSVString(isFullLog, isFullLog);
-	}
-
-	private String sanitize(String string){
-		if(string == null) return null;
-		if(string.length() == 0) return "";
-		char first = string.toCharArray()[0];
-		switch (first){
-			case '=':
-			case '-':
-			case '+':
-			case '@': {
-				return "'" + string;
-			}
-		}
-		return string;
-	}
-
-	public String toCSVString(boolean includeRequests, boolean includeResponses) {
-		StringBuilder result = new StringBuilder();
-
-		LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
-		ArrayList<LogTableColumn> columns = new ArrayList<>();
-		Enumeration<TableColumn> columnEnumeration = columnModel.getColumns();
-		while(columnEnumeration.hasMoreElements()){
-			columns.add((LogTableColumn) columnEnumeration.nextElement());
-		}
-
-		Collections.sort(columns);
-		boolean firstDone = false;
-		for (LogTableColumn logTableColumn : columns) {
-			if(logTableColumn.isVisible()){
-				if(firstDone){
-					result.append(",");
-				}else{
-					firstDone = true;
-				}
-				result.append(StringEscapeUtils.escapeCsv(sanitize(
-						getValueByKey(logTableColumn.getIdentifier()).toString())));
-			}
-		}
-
-		if(includeRequests) {
-			result.append(",");
-			if (requestResponse != null && requestResponse.getRequest() != null)
-				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getRequest()))));
-		}
-		if(includeResponses) {
-			result.append(",");
-			if(requestResponse != null && requestResponse.getResponse() != null)
-				result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getResponse()))));
-		}
-		return result.toString();
 	}
 
 	/**

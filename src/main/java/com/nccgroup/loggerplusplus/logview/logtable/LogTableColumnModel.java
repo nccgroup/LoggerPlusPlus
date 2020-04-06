@@ -12,6 +12,7 @@
 
 package com.nccgroup.loggerplusplus.logview.logtable;
 
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 
@@ -45,6 +46,14 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
             if (column.isVisible())
                 addColumn(column);
         }
+    }
+
+    public TableColumn getColumnByIdentifier(LogEntryField identifier){
+        for (LogTableColumn col : allColumns) {
+            if(col.getIdentifier() == identifier) return col;
+        }
+
+        return null;
     }
 
     @Override

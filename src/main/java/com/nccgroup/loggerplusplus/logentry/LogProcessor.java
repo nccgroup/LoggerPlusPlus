@@ -172,7 +172,6 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 addEntryWorker.execute();
                 //Don't actually care about the result, but wait here until its complete.
                 //Stops race condition if this and response update threads finish before AddEntry thread.
-                //TODO Better optimise?
                 addEntryWorker.get();
 
                 if(result.getStatus() == LogEntry.Status.PROCESSED){

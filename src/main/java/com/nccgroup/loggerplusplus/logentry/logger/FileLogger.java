@@ -1,15 +1,25 @@
 package com.nccgroup.loggerplusplus.logentry.logger;
 
 import burp.BurpExtender;
+import burp.IHttpRequestResponse;
 import com.nccgroup.loggerplusplus.*;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogEntryListener;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableColumn;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 
 /**
  * Created by corey on 21/08/17.
@@ -38,13 +48,7 @@ public class FileLogger implements LogEntryListener {
     }
 
     public void autoLogItem(LogEntry entry, boolean includeRequests, boolean includeResponses) {
-        try {
-            exp.exportItem(entry, includeRequests, includeResponses);
-        } catch (IOException e) {
-            LoggerPlusPlus.callbacks.printError("Could not write log item. Autologging has been disabled.");
-            MoreHelp.showMessage("Could not write to automatic log file. Automatic logging will be disabled.");
-            this.setAutoSave(false);
-        }
+        exp.exportItem(entry, includeRequests, includeResponses);
     }
 
     // source: https://community.oracle.com/thread/1357495?start=0&tstart=0
@@ -98,7 +102,7 @@ public class FileLogger implements LogEntryListener {
             return true;
         }
         try {
-            String thisHeader = LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog);
+            String thisHeader = getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog);
             String oldHeader = reader.readLine();
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {
@@ -242,45 +246,146 @@ public class FileLogger implements LogEntryListener {
     public class ExcelExporter {
 
         public void addHeader(FileWriter writer, boolean isFullLog) throws IOException {
-            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog) + "\n");
+            writer.write(getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog) + "\n");
         }
 
         public void addHeader(FileWriter writer, boolean includeRequest, boolean includeResponse) throws IOException {
-            writer.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), includeRequest, includeResponse) + "\n");
+            writer.write(getCSVHeader(LoggerPlusPlus.instance.getLogTable(), includeRequest, includeResponse) + "\n");
         }
 
         public void exportTable(File file, boolean isFullLog, boolean append, boolean header) throws IOException {
             FileWriter out = new FileWriter(file, append);
 
             if (header) {
-                out.write(LogEntry.getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog));
+                out.write(getCSVHeader(LoggerPlusPlus.instance.getLogTable(), isFullLog));
                 out.write("\n");
             }
 
             for (LogEntry item : LoggerPlusPlus.instance.getLogProcessor().getLogEntries()) {
-                out.write(item.toCSVString(isFullLog) + "\n");
+                out.write(entryToCSVString(item, isFullLog) + "\n");
             }
 
             out.close();
             MoreHelp.showMessage("Log saved to " + file.getAbsolutePath());
         }
 
-        public void exportItem(LogEntry logEntry, boolean includeRequests, boolean includeResponses) throws IOException {
+        public void exportItem(LogEntry logEntry, boolean includeRequests, boolean includeResponses) {
             if(autoSaveWriter != null) {
                 try {
-                    autoSaveWriter.write(logEntry.toCSVString(includeRequests, includeResponses));
+                    autoSaveWriter.write(entryToCSVString(logEntry, includeRequests, includeResponses));
                     autoSaveWriter.write("\n");
                     autoSaveWriter.flush();
                 } catch (Exception e) {
-                    MoreHelp.showMessage("Could not saveFilters log. Automatic logging will be disabled.");
+                    MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
                     setAutoSave(false);
                 }
             }else{
-                MoreHelp.showMessage("Could not saveFilters log. Automatic logging will be disabled.");
+                MoreHelp.showMessage("Could not save log. Automatic logging will be disabled.");
                 setAutoSave(false);
             }
         }
 
+    }
+
+    public static String getCSVHeader(LogTable table, boolean isFullLog) {
+        return getCSVHeader(table, isFullLog, isFullLog);
+    }
+
+    public static String getCSVHeader(LogTable table, boolean includeRequest, boolean includeResponse) {
+        StringBuilder result = new StringBuilder();
+
+        boolean firstDone = false;
+        ArrayList<LogTableColumn> columns = new ArrayList<>();
+        Enumeration<TableColumn> columnEnumeration = table.getColumnModel().getColumns();
+        while(columnEnumeration.hasMoreElements()){
+            columns.add((LogTableColumn) columnEnumeration.nextElement());
+        }
+
+        columns.remove(table.getColumnModel().getColumnByIdentifier(LogEntryField.NUMBER));
+
+        Collections.sort(columns);
+        for (LogTableColumn logTableColumn : columns) {
+            if(logTableColumn.isVisible()) {
+                if(firstDone) {
+                    result.append(",");
+                }else{
+                    firstDone = true;
+                }
+                result.append(logTableColumn.getName());
+            }
+        }
+
+        if(includeRequest) {
+            result.append(",");
+            result.append("Request");
+        }
+        if(includeResponse) {
+            result.append(",");
+            result.append("Response");
+        }
+        return result.toString();
+    }
+
+
+    public String entryToCSVString(LogEntry logEntry, boolean isFullLog) {
+        return entryToCSVString(logEntry, isFullLog, isFullLog);
+    }
+
+    private String sanitize(String string){
+        if(string == null) return null;
+        if(string.length() == 0) return "";
+        char first = string.toCharArray()[0];
+        switch (first){
+            case '=':
+            case '-':
+            case '+':
+            case '@': {
+                return "'" + string;
+            }
+        }
+        return string;
+    }
+
+    public String entryToCSVString(LogEntry logEntry, boolean includeRequests, boolean includeResponses) {
+        StringBuilder result = new StringBuilder();
+
+        LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogTable().getColumnModel();
+        ArrayList<LogTableColumn> columns = new ArrayList<>();
+        Enumeration<TableColumn> columnEnumeration = columnModel.getColumns();
+        while(columnEnumeration.hasMoreElements()){
+            columns.add((LogTableColumn) columnEnumeration.nextElement());
+        }
+
+        columns.remove(columnModel.getColumnByIdentifier(LogEntryField.NUMBER));
+
+        Collections.sort(columns);
+        boolean firstDone = false;
+        for (LogTableColumn logTableColumn : columns) {
+            if(logTableColumn.isVisible() && logTableColumn.getIdentifier() != LogEntryField.NUMBER){
+                if(firstDone){
+                    result.append(",");
+                }else{
+                    firstDone = true;
+                }
+                String columnValue = String.valueOf(logEntry.getValueByKey(logTableColumn.getIdentifier()));
+
+                result.append(StringEscapeUtils.escapeCsv(sanitize(columnValue)));
+            }
+        }
+
+        IHttpRequestResponse requestResponse = logEntry.getRequestResponse();
+        if(includeRequests) {
+
+            result.append(",");
+            if (requestResponse != null && requestResponse.getRequest() != null)
+                result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getRequest()))));
+        }
+        if(includeResponses) {
+            result.append(",");
+            if(requestResponse != null && requestResponse.getResponse() != null)
+                result.append(StringEscapeUtils.escapeCsv(sanitize(new String(requestResponse.getResponse()))));
+        }
+        return result.toString();
     }
 
 }
