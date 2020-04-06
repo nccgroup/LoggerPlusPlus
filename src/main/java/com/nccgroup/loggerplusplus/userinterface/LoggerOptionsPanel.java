@@ -23,6 +23,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogProcessor;
 import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
+import com.nccgroup.loggerplusplus.imports.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
@@ -126,22 +127,15 @@ public class LoggerOptionsPanel extends JScrollPane{
             }
         });
 
-        importGroup.addButton("Import From CSV (Not Implemented)", actionEvent -> {
-            EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
-                    .setOriginatingTool(IBurpExtenderCallbacks.TOOL_EXTENDER)
-                    .setEntries(new ArrayList<IHttpRequestResponse>()) //Entries to import, empty list as example
-                    .setInterimConsumer(integers -> {
-                        //Optional
-                        //Outputs chunks of integers representing imported indices
-                        //May be used to update progress bar for example
-                    })
-                    .setCallback(() -> {
-                        //Optional
-                        //Called when all entries have been imported.
-                    }).build();
-            importWorker.execute();
-        }).setEnabled(false);
+        importGroup.addButton("Import From WStalker CSV", actionEvent -> {
+            ArrayList<IHttpRequestResponse> requests = LoggerImport.importWStalker();
+            LoggerImport.loadImported(requests);
+        }).setEnabled(true);
 
+        importGroup.addButton("Import From OWASP ZAP", actionEvent -> {
+            ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
+            LoggerImport.loadImported(requests);
+        }).setEnabled(true);
 
         ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");
         exportGroup.addButton("Save log table as CSV", actionEvent -> {
