@@ -3,14 +3,13 @@ package com.nccgroup.loggerplusplus.filterlibrary;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
-import com.nccgroup.loggerplusplus.userinterface.renderer.ButtonRenderer;
-import com.nccgroup.loggerplusplus.userinterface.renderer.FilterRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.FilterRenderer;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.logging.Logger;
 
 /**
  * Created by corey on 27/08/17.
@@ -51,7 +50,7 @@ public class FilterLibraryPanel extends JPanel {
         addFilterButton.setPreferredSize(new Dimension(0, 75));
         addFilterButton.addActionListener(actionEvent -> {
             try {
-                libraryController.addFilter(new SavedFilter(LoggerPlusPlus.instance.getLibraryController(),
+                libraryController.addFilter(new SavedFilter(libraryController,
                         "Unnamed", "Response.body CONTAINS \"Example\""));
             } catch (ParseException e) {
                 e.printStackTrace();

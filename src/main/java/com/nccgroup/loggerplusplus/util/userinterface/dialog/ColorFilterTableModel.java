@@ -1,8 +1,7 @@
-package com.nccgroup.loggerplusplus.userinterface.dialog;
+package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;

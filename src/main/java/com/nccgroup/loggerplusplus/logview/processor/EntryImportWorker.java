@@ -1,7 +1,8 @@
-package com.nccgroup.loggerplusplus.logentry;
+package com.nccgroup.loggerplusplus.logview.processor;
 
 import burp.IBurpExtenderCallbacks;
 import burp.IHttpRequestResponse;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
 import java.util.List;

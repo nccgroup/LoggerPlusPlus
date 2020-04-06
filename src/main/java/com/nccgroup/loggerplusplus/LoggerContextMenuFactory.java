@@ -7,7 +7,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -20,6 +20,12 @@ import static com.nccgroup.loggerplusplus.util.Globals.PREF_COLOR_FILTERS;
 
 public class LoggerContextMenuFactory implements IContextMenuFactory {
 
+    private final LoggerPlusPlus loggerPlusPlus;
+    
+    public LoggerContextMenuFactory(LoggerPlusPlus loggerPlusPlus){
+        this.loggerPlusPlus = loggerPlusPlus;
+    }
+    
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
         if(invocation == null) return null;
@@ -65,13 +71,13 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             default: return null;
         }
 
-        final LogTable logTable = LoggerPlusPlus.instance.getLogTable();
+        final LogTable logTable = loggerPlusPlus.getLogViewController().getLogTableController().getLogTable();
         String selectedText = new String(selectedBytes);
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getLogFilterController().setFilter(context.getFullLabel() +  " CONTAINS \"" + selectedText + "\"");
+                loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +  " CONTAINS \"" + selectedText + "\"");
             }
         });
 
@@ -82,14 +88,14 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
+                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
                             + "" + context.getFullLabel() +  " CONTAINS \"" + selectedText + "\"");
                 }
             });
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
+                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
                             + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
@@ -103,11 +109,11 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(),
+                    colorFilter.setFilter(new LogFilter(loggerPlusPlus.getLibraryController(),
                             context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
-                    HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
+                    HashMap<UUID,ColorFilter> colorFilters = loggerPlusPlus.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUUID(), colorFilter);
-                    new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
+                    new ColorFilterDialog(loggerPlusPlus.getLibraryController()).setVisible(true);
                 } catch (ParseException e) {
                     return;
                 }

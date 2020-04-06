@@ -7,23 +7,27 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logview.LogViewController;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class LogFilterController {
 
+    private final LogViewController logViewController;
+    private final Preferences preferences;
+    private final LogTable logTable;
     private final HistoryField filterField;
     private final JPopupMenu fieldMenu;
-    private final ArrayList<LogFilterListener> logFilterListeners;
-    private String currentFilterString;
 
-    public LogFilterController(Preferences preferences) {
-        this.logFilterListeners = new ArrayList<>();
+    public LogFilterController(LogViewController logViewController) {
+        this.logViewController = logViewController;
+        this.preferences = logViewController.getPreferences();
+        this.logTable = logViewController.getLogTableController().getLogTable();
         this.filterField = buildFilterField(preferences);
         this.fieldMenu = buildFieldMenu();
     }
@@ -91,56 +95,36 @@ public class LogFilterController {
         return autoComplete;
     }
 
-    public void addFilterListener(LogFilterListener logFilterListener) {
-        this.logFilterListeners.add(logFilterListener);
-    }
-
-    public void removeFilterListener(LogFilterListener logFilterListener) {
-        this.logFilterListeners.remove(logFilterListener);
-    }
-
     public void setFilter(final String filterString) {
-        SwingUtilities.invokeLater(() -> {
-            if (filterString == null || filterString.length() == 0 || filterString.matches(" +")) {
-                setFilter((LogFilter) null);
-            } else {
-                currentFilterString = filterString;
-                try {
-                    LogFilter filter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);
-                    setFilter(filter);
-                } catch (ParseException e) {
-                    for (LogFilterListener logFilterListener : logFilterListeners) {
-                        try {
-                            logFilterListener.onFilterError(filterString, e);
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
-                        }
-                    }
+        if (filterString == null || filterString.length() == 0 || filterString.matches(" +")) {
+            setFilter((LogFilter) null);
+        } else {
+            try {
+                LogFilter filter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);
+                setFilter(filter);
+            } catch (ParseException e) {
+                logTable.setFilter(null);
 
-                    JLabel header = new JLabel("Could not parse filter:");
-                    JTextArea errorArea = new JTextArea(e.getMessage());
-                    errorArea.setEditable(false);
+                JLabel header = new JLabel("Could not parse filter:");
+                JTextArea errorArea = new JTextArea(e.getMessage());
+                errorArea.setEditable(false);
 
-                    JScrollPane errorScroller = new JScrollPane(errorArea);
-                    errorScroller.setBorder(BorderFactory.createEmptyBorder());
-                    JPanel wrapper = new JPanel(new BorderLayout());
-                    wrapper.add(errorScroller, BorderLayout.CENTER);
-                    wrapper.setPreferredSize(new Dimension(600, 300));
+                JScrollPane errorScroller = new JScrollPane(errorArea);
+                errorScroller.setBorder(BorderFactory.createEmptyBorder());
+                JPanel wrapper = new JPanel(new BorderLayout());
+                wrapper.add(errorScroller, BorderLayout.CENTER);
+                wrapper.setPreferredSize(new Dimension(600, 300));
 
-                    JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()),
-                            new Component[]{header, wrapper}, "Parse Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(logTable),
+                        new Component[]{header, wrapper}, "Parse Error", JOptionPane.ERROR_MESSAGE);
 
-                    formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
-                }
+                formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
             }
-        });
+        }
     }
 
     public void clearFilter() {
-        for (LogFilterListener logFilterListener : this.logFilterListeners) {
-            logFilterListener.onFilterCleared();
-        }
-
+        logTable.setFilter(null);
         formatFilter("", null, null);
     }
 
@@ -151,11 +135,7 @@ public class LogFilterController {
             String filterString = filter.toString();
             formatFilter(filterString, Color.BLACK, new Color(76, 255, 155));
 
-            new Thread(() -> {
-                for (LogFilterListener logFilterListener : logFilterListeners) {
-                    logFilterListener.onFilterSet(filter);
-                }
-            }).start();
+            logTable.setFilter(filter);
         }
     }
 
@@ -170,6 +150,10 @@ public class LogFilterController {
             filterField.setForegroundColor(foregroundColor);
             filterField.setBackgroundColor(backgroundColor);
         });
+    }
+
+    public LogViewController getLogViewController() {
+        return logViewController;
     }
 
     public HistoryField getFilterField() {

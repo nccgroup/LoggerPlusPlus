@@ -10,8 +10,9 @@
 // Released under AGPL see LICENSE for more information
 //
 
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.about;
 
+import com.nccgroup.loggerplusplus.util.userinterface.ScrollablePanel;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.MoreHelp;

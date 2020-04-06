@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus;
+package com.nccgroup.loggerplusplus.preferences;
 
 import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;

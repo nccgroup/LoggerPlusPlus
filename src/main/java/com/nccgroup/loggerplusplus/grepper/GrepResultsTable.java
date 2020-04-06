@@ -46,17 +46,18 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
                     } else if (obj instanceof GrepResults.Match) {
                         obj = ((GrepResults) path.getPathComponent(path.getPathCount() - 2)).getLogEntry();
                     }
-                    final int index = LoggerPlusPlus.instance.getLogTable().getModel().getData().indexOf(obj);
+                    final int index = controller.getLogTableController()
+                                                    .getLogTable().getModel().getData().indexOf(obj);
                     JMenuItem viewInLogs = new JMenuItem(new AbstractAction("View in Logs") {
                         @Override
                         public void actionPerformed(ActionEvent actionEvent) {
-                            LogTable table = LoggerPlusPlus.instance.getLogTable();
+                            LogTable table = controller.getLogTableController().getLogTable();
                             table.changeSelection(table.convertRowIndexToView(index), 1, false, false);
-                            LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
+                            controller.getLoggerPlusPlus().getMainViewController().getTabbedPanel().setSelectedIndex(0);
                         }
                     });
                     menu.add(viewInLogs);
-                    if(LoggerPlusPlus.instance.getLogTable().convertRowIndexToView(index) == -1){
+                    if(controller.getLogTableController().getLogTable().convertRowIndexToView(index) == -1){
                         viewInLogs.setEnabled(false);
                         viewInLogs.setToolTipText("Unavailable. Hidden by filter.");
                         viewInLogs.addMouseListener(new MouseAdapter() {

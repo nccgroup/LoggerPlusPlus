@@ -3,6 +3,7 @@ package com.nccgroup.loggerplusplus.logview;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 
 import javax.swing.*;
 import java.awt.datatransfer.Clipboard;
@@ -16,7 +17,8 @@ import java.util.stream.Collectors;
  */
 public class MultipleLogEntryMenu extends JPopupMenu {
 
-    public MultipleLogEntryMenu(final LogTable logTable, final List<LogEntry> selectedEntries){
+    public MultipleLogEntryMenu(final LogTableController logTableController, final List<LogEntry> selectedEntries){
+        final LogTable logTable = logTableController.getLogTable();
         final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
 
         this.add(new JMenuItem(selectedEntries.size() + " items"));
@@ -156,8 +158,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
                 //If we don't clear the selection, the table will select the next entry after row is deleted
                 //This causes the request response viewer to change after each and slow the process.
                 logTable.getSelectionModel().clearSelection();
-                LoggerPlusPlus.instance.getLogProcessor().removeLogEntries(selectedEntries);
-
+                logTable.getModel().removeLogEntries(selectedEntries);
             }
         });
         this.add(removeItem);

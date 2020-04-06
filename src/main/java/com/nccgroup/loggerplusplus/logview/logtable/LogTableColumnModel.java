@@ -12,6 +12,7 @@
 
 package com.nccgroup.loggerplusplus.logview.logtable;
 
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -25,16 +26,20 @@ import java.util.*;
 
 public class LogTableColumnModel extends DefaultTableColumnModel {
 
+    private final LogTableController controller;
+    private final Preferences preferences;
     private final ArrayList<LogTableColumn> allColumns;
 
-    public LogTableColumnModel() {
+    public LogTableColumnModel(LogTableController controller) {
         super();
+        this.controller = controller;
+        this.preferences = controller.getPreferences();
         allColumns = new ArrayList<>();
         setup();
     }
 
     private void setup(){
-        ArrayList<LogTableColumn> columnList = LoggerPlusPlus.preferences.getSetting(Globals.PREF_LOG_TABLE_SETTINGS);
+        ArrayList<LogTableColumn> columnList = preferences.getSetting(Globals.PREF_LOG_TABLE_SETTINGS);
 
         // Sorting based on order number
         Collections.sort(columnList);
@@ -95,7 +100,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     }
 
     public void resetToDefaultVariables() {
-        LoggerPlusPlus.preferences.resetSetting(Globals.PREF_LOG_TABLE_SETTINGS);
+        preferences.resetSetting(Globals.PREF_LOG_TABLE_SETTINGS);
         List<TableColumn> columns = Collections.list(this.getColumns());
         for (TableColumn column : columns) {
             this.removeColumn(column);
@@ -106,7 +111,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     }
 
     public void saveLayout() {
-        LoggerPlusPlus.preferences.setSetting(Globals.PREF_LOG_TABLE_SETTINGS, this.allColumns);
+        preferences.setSetting(Globals.PREF_LOG_TABLE_SETTINGS, this.allColumns);
     }
 
     @Override

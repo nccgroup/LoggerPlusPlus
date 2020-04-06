@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.util;
+package com.nccgroup.loggerplusplus.util.userinterface;
 
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;

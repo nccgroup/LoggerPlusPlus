@@ -1,22 +1,13 @@
-package com.nccgroup.loggerplusplus.userinterface.dialog;
+package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
-import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
-import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.

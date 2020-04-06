@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.logview.logtable;
 
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
@@ -18,13 +18,14 @@ import java.util.regex.PatternSyntaxException;
 
 public class TableHeaderMenu extends JPopupMenu{
 
+	private final LogTableController logTableController;
 	private final LogTable logTable;
 	private final LogTableColumn columnObj;
 
-	public TableHeaderMenu(LogTable logTable, LogTableColumn columnObj)
+	public TableHeaderMenu(LogTableController logTableController, LogTableColumn columnObj)
 	{
-		super();
-		this.logTable = logTable;
+		this.logTableController = logTableController;
+		this.logTable = logTableController.getLogTable();
 		this.columnObj=columnObj;
 
 	}
@@ -166,9 +167,9 @@ public class TableHeaderMenu extends JPopupMenu{
 	public void saveAndReloadTableSettings(){
 		//Stop automatically logging, prevents changing of csv format midway through
 		//TODO constant csv format?
-		if((Boolean) LoggerPlusPlus.preferences.getSetting(Globals.PREF_AUTO_SAVE)){
-			LoggerPlusPlus.preferences.setSetting(Globals.PREF_AUTO_SAVE, false);
-			LoggerPlusPlus.instance.getLoggerOptionsPanel().getFileLogger().setAutoSave(false);
+		if(logTableController.getPreferences().getSetting(Globals.PREF_AUTO_SAVE)){
+			logTableController.getPreferences().setSetting(Globals.PREF_AUTO_SAVE, false);
+//			logTableController.getFileLogger().setAutoSave(false); //TODO FIXME
 			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
 		}
 		logTable.saveTableChanges();

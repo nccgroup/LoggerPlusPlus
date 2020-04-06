@@ -10,23 +10,21 @@
 // Released under AGPL see LICENSE for more information
 //
 
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.preferences;
 
-import burp.IBurpExtenderCallbacks;
 import burp.IHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
-import com.nccgroup.loggerplusplus.logentry.EntryImportWorker;
-import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.logentry.LogProcessor;
-import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
-import com.nccgroup.loggerplusplus.imports.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
+import com.nccgroup.loggerplusplus.imports.LoggerImport;
+import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
+import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +35,10 @@ import java.util.UUID;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
-public class LoggerOptionsPanel extends JScrollPane{
+public class PreferencesPanel extends JScrollPane{
+
+    private final PreferencesController preferencesController;
+    private final Preferences preferences;
 
     private final JToggleButton tglbtnIsEnabled;
     private JToggleButton btnAutoSaveLogs;
@@ -49,19 +50,20 @@ public class LoggerOptionsPanel extends JScrollPane{
     /**
      * Create the panel.
      */
-    public LoggerOptionsPanel() {
-        PanelBuilder panelBuilder = new PanelBuilder(LoggerPlusPlus.preferences);
+    public PreferencesPanel(PreferencesController preferencesController) {
+        this.preferencesController = preferencesController;
+        this.preferences = preferencesController.getPreferences();
+
+        PanelBuilder panelBuilder = new PanelBuilder(this.preferences);
         this.fileLogger = new FileLogger();
         this.esValueChangeWarning.setForeground(Color.RED);
-        JPanel innerContainer = new JPanel(new GridBagLayout());
-
 
         ComponentGroup statusPanel = panelBuilder.createComponentGroup("Status");
-        tglbtnIsEnabled = statusPanel.addToggleButton("Logger++ is running", actionEvent -> {
+        tglbtnIsEnabled = statusPanel.addToggleButton(APP_NAME + " is running", actionEvent -> {
             JToggleButton thisButton = (JToggleButton) actionEvent.getSource();
             toggleEnabledButton(thisButton.isSelected());
         });
-        tglbtnIsEnabled.setSelected(LoggerPlusPlus.preferences.getSetting(PREF_ENABLED));
+        tglbtnIsEnabled.setSelected(preferences.getSetting(PREF_ENABLED));
 
         ComponentGroup logFromPanel = panelBuilder.createComponentGroup("Log From");
         logFromPanel.addPreferenceComponent(PREF_RESTRICT_TO_SCOPE, "In scope items only");
@@ -112,7 +114,7 @@ public class LoggerOptionsPanel extends JScrollPane{
         importGroup.addButton("Import Burp Proxy History", actionEvent -> {
 
             int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
-            int maxEntries = LoggerPlusPlus.preferences.getSetting(PREF_MAXIMUM_ENTRIES);
+            int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
             String message = "Import " + historySize + " items from burp suite proxy history? This will clear the current entries." +
                     "\nLarge imports may take a few minutes to process.";
             if(historySize > maxEntries) {
@@ -123,7 +125,7 @@ public class LoggerOptionsPanel extends JScrollPane{
                     message, new String[]{"Import", "Cancel"});
 
             if(result == JOptionPane.OK_OPTION) {
-                LoggerPlusPlus.instance.getLogProcessor().importProxyHistory();
+                preferencesController.getLoggerPlusPlus().getLogProcessor().importProxyHistory();
             }
         });
 
@@ -139,13 +141,13 @@ public class LoggerOptionsPanel extends JScrollPane{
 
         ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");
         exportGroup.addButton("Save log table as CSV", actionEvent -> {
-            fileLogger.saveLogs(false);
+//            fileLogger.saveLogs(false);
         });
         exportGroup.addButton("Save full logs as CSV (slow)", actionEvent -> {
-            fileLogger.saveLogs(true);
+//            fileLogger.saveLogs(true);
         });
         btnAutoSaveLogs = exportGroup.addToggleButton("Autosave as CSV", actionEvent -> {
-            fileLogger.setAutoSave(!(boolean) LoggerPlusPlus.preferences.getSetting(PREF_AUTO_SAVE));
+//            fileLogger.setAutoSave(!(boolean) preferences.getSetting(PREF_AUTO_SAVE));
         });
 
         ComponentGroup elasticPanel = panelBuilder.createComponentGroup("Elastic Search");
@@ -195,33 +197,33 @@ public class LoggerOptionsPanel extends JScrollPane{
         ComponentGroup savedFilterSharing = panelBuilder.createComponentGroup("Saved LogFilter Sharing");
         savedFilterSharing.addButton("Import Saved Filters", actionEvent -> {
             String json = MoreHelp.showLargeInputDialog("Import Saved Filters", null);
-            ArrayList<SavedFilter> importedFilters = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
+            ArrayList<SavedFilter> importedFilters = preferencesController.getGsonProvider().getGson().fromJson(json,
                     new TypeToken<ArrayList<SavedFilter>>(){}.getType());
-            ArrayList<SavedFilter> savedFilters = LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
+            ArrayList<SavedFilter> savedFilters = preferences.getSetting(PREF_SAVED_FILTERS);
             ArrayList<SavedFilter> savedFiltersClone = new ArrayList<>(savedFilters);
             for (SavedFilter importedFilter : importedFilters) {
                 if(!savedFiltersClone.contains(importedFilter)) savedFiltersClone.add(importedFilter);
             }
-            LoggerPlusPlus.preferences.setSetting(PREF_SAVED_FILTERS, savedFiltersClone);
+            preferences.setSetting(PREF_SAVED_FILTERS, savedFiltersClone);
         });
         savedFilterSharing.addButton("Export Saved Filters", actionEvent -> {
-            ArrayList<SavedFilter> savedFilters = LoggerPlusPlus.preferences.getSetting(PREF_SAVED_FILTERS);
-            String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(savedFilters);
+            ArrayList<SavedFilter> savedFilters = preferences.getSetting(PREF_SAVED_FILTERS);
+            String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(savedFilters);
             MoreHelp.showLargeOutputDialog("Export Saved Filters", jsonOutput);
         });
 
         ComponentGroup colorFilterSharing = panelBuilder.createComponentGroup("Color LogFilter Sharing");
         colorFilterSharing.addButton("Import Color Filters", actionEvent -> {
             String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
-            Map<UUID, ColorFilter> colorFilterMap = LoggerPlusPlus.gsonProvider.getGson().fromJson(json,
+            Map<UUID, ColorFilter> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
                     new TypeToken<Map<UUID, ColorFilter>>(){}.getType());
             for (ColorFilter colorFilter : colorFilterMap.values()) {
                 LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
             }
         });
         colorFilterSharing.addButton("Export Color Filters", actionEvent -> {
-            HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.preferences.getSetting(PREF_COLOR_FILTERS);
-            String jsonOutput = LoggerPlusPlus.gsonProvider.getGson().toJson(colorFilters);
+            HashMap<UUID,ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
+            String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(colorFilters);
             MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
         });
 
@@ -229,13 +231,12 @@ public class LoggerOptionsPanel extends JScrollPane{
         resetPanel.addButton("Reset All Settings", actionEvent -> {
             int result = JOptionPane.showConfirmDialog(null, "Are you sure you wish to reset all settings? This includes the table layout!", "Warning", JOptionPane.YES_NO_OPTION);
             if(result == JOptionPane.YES_OPTION){
-                LoggerPlusPlus.preferences.resetSettings(LoggerPlusPlus.preferences.getRegisteredSettings().keySet());
-                LoggerPlusPlus.instance.getLogTable().getColumnModel().resetToDefaultVariables();
-                LoggerPlusPlus.instance.getLogTable().getModel().fireTableStructureChanged();
+                preferences.resetSettings(preferences.getRegisteredSettings().keySet());
+                preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController().reinitialize();
             }
         });
         resetPanel.addButton("Clear The Logs", actionEvent -> {
-            LoggerPlusPlus.instance.reset();
+            preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController().reset();
         });
 
 
@@ -266,9 +267,9 @@ public class LoggerOptionsPanel extends JScrollPane{
     }
 
     private void toggleEnabledButton(boolean isSelected) {
-        tglbtnIsEnabled.setText((isSelected ? "Logger++ is running" : "Logger++ has been stopped"));
+        tglbtnIsEnabled.setText(APP_NAME + (isSelected ? " is running" : " has been stopped"));
         tglbtnIsEnabled.setSelected(isSelected);
-        LoggerPlusPlus.preferences.setSetting(PREF_ENABLED, isSelected);
+        preferences.setSetting(PREF_ENABLED, isSelected);
     }
 
     private void toggleEsEnabledButton(final boolean isSelected) {
@@ -279,7 +280,7 @@ public class LoggerOptionsPanel extends JScrollPane{
                     esEnabled.setText("Starting...");
                 }
                 try {
-                    LoggerPlusPlus.instance.setEsEnabled(isSelected);
+//                    LoggerPlusPlus.instance.setEsEnabled(isSelected);//TODO FIXME
                     esEnabled.setText((isSelected ? "Enabled" : "Disabled"));
                     esEnabled.setSelected(isSelected);
                     if(isSelected) {

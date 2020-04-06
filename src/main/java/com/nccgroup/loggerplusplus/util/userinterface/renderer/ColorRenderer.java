@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.userinterface.renderer;
+package com.nccgroup.loggerplusplus.util.userinterface.renderer;
 
 /*
  * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.

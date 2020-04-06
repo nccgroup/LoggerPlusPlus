@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 
 public class Globals {
-    public static final String APP_NAME = "Burp Suite Logger++";
+    public static final String APP_NAME = "Logger++";
     public static final double VERSION = 3.14;
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String COMPANY_LINK = "https://www.nccgroup.trust/";

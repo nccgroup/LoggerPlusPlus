@@ -1,20 +1,16 @@
-package com.nccgroup.loggerplusplus.userinterface.dialog;
+package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
-import com.nccgroup.loggerplusplus.userinterface.renderer.ButtonRenderer;
-import com.nccgroup.loggerplusplus.userinterface.renderer.ColorRenderer;
-import com.nccgroup.loggerplusplus.userinterface.renderer.FilterRenderer;
-import com.nccgroup.loggerplusplus.util.ColorEditor;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.ColorRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.FilterRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.ColorEditor;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.

@@ -1,9 +1,10 @@
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.util.userinterface;
 
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.BurpExtenderUtilities.VariableViewPanel;
-import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -13,8 +14,17 @@ import java.awt.event.ActionEvent;
  */
 public class LoggerMenu extends javax.swing.JMenu {
 
-    public LoggerMenu(){
-        super(LoggerPlusPlus.instance.getTabCaption());
+    private final LoggerPlusPlus loggerPlusPlus;
+    private final Preferences preferences;
+
+    public LoggerMenu(LoggerPlusPlus loggerPlusPlus){
+        super(Globals.APP_NAME);
+        this.loggerPlusPlus = loggerPlusPlus;
+        this.preferences = loggerPlusPlus.getPreferencesController().getPreferences();
+
+        this.add(loggerPlusPlus.getMainViewController().getPopOutWrapper().getPopoutMenuItem());
+        this.add(loggerPlusPlus.getLogViewController().getLogViewPanel().getRequestViewerPanel().getPopoutMenuItem());
+
         JMenuItem colorFilters = new JMenuItem(new AbstractAction("Color Filters") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -24,12 +34,12 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(colorFilters);
 
         JMenu viewMenu = new JMenu("View");
-        VariableViewPanel.View currentView = LoggerPlusPlus.preferences.getSetting(Globals.PREF_LAYOUT);
+        VariableViewPanel.View currentView = preferences.getSetting(Globals.PREF_LAYOUT);
         ButtonGroup bGroup = new ButtonGroup();
         JRadioButtonMenuItem viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getLogSplitPanel().setView(VariableViewPanel.View.VERTICAL);
+                loggerPlusPlus.getLogViewController().setPanelLayout(VariableViewPanel.View.VERTICAL);
             }
         });
         viewMenuItem.setSelected(currentView == VariableViewPanel.View.VERTICAL);
@@ -38,7 +48,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getLogSplitPanel().setView(VariableViewPanel.View.HORIZONTAL);
+                loggerPlusPlus.getLogViewController().setPanelLayout(VariableViewPanel.View.HORIZONTAL);
             }
         });
         viewMenuItem.setSelected(currentView == VariableViewPanel.View.HORIZONTAL);
@@ -47,7 +57,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getLogSplitPanel().setView(VariableViewPanel.View.TABS);
+                loggerPlusPlus.getLogViewController().setPanelLayout(VariableViewPanel.View.TABS);
             }
         });
         viewMenuItem.setSelected(currentView == VariableViewPanel.View.TABS);
@@ -56,12 +66,12 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(viewMenu);
 
         viewMenu = new JMenu("Request/Response View");
-        VariableViewPanel.View currentReqRespView = LoggerPlusPlus.preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
+        VariableViewPanel.View currentReqRespView = preferences.getSetting(Globals.PREF_MESSAGE_VIEW_LAYOUT);
         bGroup = new ButtonGroup();
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Top/Bottom Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getReqRespPanel().setView(VariableViewPanel.View.VERTICAL);
+                loggerPlusPlus.getLogViewController().setEntryViewerLayout(VariableViewPanel.View.VERTICAL);
             }
         });
         viewMenu.add(viewMenuItem);
@@ -70,7 +80,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Left/Right Split") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getReqRespPanel().setView(VariableViewPanel.View.HORIZONTAL);
+                loggerPlusPlus.getLogViewController().setEntryViewerLayout(VariableViewPanel.View.HORIZONTAL);
             }
         });
         viewMenu.add(viewMenuItem);
@@ -79,7 +89,7 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem = new JRadioButtonMenuItem(new AbstractAction("Tabs") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.instance.getReqRespPanel().setView(VariableViewPanel.View.TABS);
+                loggerPlusPlus.getLogViewController().setEntryViewerLayout(VariableViewPanel.View.TABS);
             }
         });
         viewMenu.add(viewMenuItem);
@@ -88,15 +98,15 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(viewMenu);
 
         JCheckBoxMenuItem debugOption = new JCheckBoxMenuItem("Debug");
-        if(LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG) != null) {
-            debugOption.setSelected(LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG));
+        if(preferences.getSetting(Globals.PREF_IS_DEBUG) != null) {
+            debugOption.setSelected(preferences.getSetting(Globals.PREF_IS_DEBUG));
         }
         debugOption.addActionListener((e) -> {
-            Boolean currentSetting = LoggerPlusPlus.preferences.getSetting(Globals.PREF_IS_DEBUG);
+            Boolean currentSetting = preferences.getSetting(Globals.PREF_IS_DEBUG);
             if(currentSetting == null) {
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_IS_DEBUG, true);
+                preferences.setSetting(Globals.PREF_IS_DEBUG, true);
             }else{
-                LoggerPlusPlus.preferences.setSetting(Globals.PREF_IS_DEBUG, !currentSetting);
+                preferences.setSetting(Globals.PREF_IS_DEBUG, !currentSetting);
             }
         });
         this.add(debugOption);

@@ -8,5 +8,4 @@ public interface ColorFilterListener {
     void onFilterChange(ColorFilter filter);
     void onFilterAdd(ColorFilter filter);
     void onFilterRemove(ColorFilter filter);
-    void onFilterRemoveAll();
 }

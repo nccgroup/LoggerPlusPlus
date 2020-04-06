@@ -1,8 +1,8 @@
-package com.nccgroup.loggerplusplus.userinterface.renderer;
+package com.nccgroup.loggerplusplus.util.userinterface.renderer;
 
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterTable;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterTableModel;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterTable;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterTableModel;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;

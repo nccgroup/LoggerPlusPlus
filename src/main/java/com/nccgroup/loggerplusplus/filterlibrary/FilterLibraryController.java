@@ -1,9 +1,11 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 
@@ -14,15 +16,17 @@ import java.util.UUID;
 
 public class FilterLibraryController {
 
+    private final LoggerPlusPlus loggerPlusPlus;
     private final Preferences preferences;
     private final FilterLibraryPanel panel;
-    private final ArrayList<SavedFilter> savedFilters;
     private final ArrayList<FilterLibraryListener> listeners;
+    private final ArrayList<SavedFilter> savedFilters;
     private final HashMap<UUID, ColorFilter> colorFilters;
     private final ArrayList<ColorFilterListener> colorFilterListeners;
 
-    public FilterLibraryController(Preferences preferences){
-        this.preferences = preferences;
+    public FilterLibraryController(LoggerPlusPlus loggerPlusPlus, PreferencesController preferencesController){
+        this.loggerPlusPlus = loggerPlusPlus;
+        this.preferences = preferencesController.getPreferences();
         this.listeners = new ArrayList<>();
         this.colorFilterListeners = new ArrayList<>();
         this.savedFilters = preferences.getSetting(Globals.PREF_SAVED_FILTERS);
@@ -30,7 +34,11 @@ public class FilterLibraryController {
         this.panel = new FilterLibraryPanel(this);
     }
 
-    public FilterLibraryPanel getUIComponent() {
+    public LoggerPlusPlus getLoggerPlusPlus() {
+        return loggerPlusPlus;
+    }
+
+    public FilterLibraryPanel getFilterLibraryPanel() {
         return panel;
     }
 

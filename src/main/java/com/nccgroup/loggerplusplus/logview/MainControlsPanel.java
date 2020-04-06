@@ -1,8 +1,8 @@
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,7 +36,7 @@ public class MainControlsPanel extends JPanel {
 
         final JButton clearLogsButton = new JButton("Clear Logs");
         clearLogsButton.addActionListener(actionEvent ->
-                LoggerPlusPlus.instance.getLogProcessor().clearEntries());
+                logFilterController.getLogViewController().getLogTableController().reset());
 
         gbc.gridx = 4;
         gbc.weightx = 0;

@@ -1,16 +1,26 @@
-package com.nccgroup.loggerplusplus.logview;
+package com.nccgroup.loggerplusplus.logview.entryviewer;
 
 import burp.*;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logview.LogViewController;
 
 public class RequestViewerController implements IMessageEditorController {
 
-    private IHttpRequestResponse currentItem;
-    private IMessageEditor requestEditor;
-    private IMessageEditor responseEditor;
+    private final LogViewController logViewController;
+    private final Preferences preferences;
+    private final IMessageEditor requestEditor;
+    private final IMessageEditor responseEditor;
+    private final RequestViewerPanel requestViewerPanel;
 
-    public RequestViewerController(IBurpExtenderCallbacks callbacks, boolean requestEditable, boolean responseEditable){
-        requestEditor = callbacks.createMessageEditor(this, requestEditable);
-        responseEditor = callbacks.createMessageEditor(this, responseEditable);
+    private IHttpRequestResponse currentItem;
+
+    public RequestViewerController(LogViewController logViewController, boolean requestEditable, boolean responseEditable){
+        this.logViewController = logViewController;
+        this.preferences = logViewController.getPreferences();
+        this.requestEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, requestEditable);
+        this.responseEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, responseEditable);
+        this.requestViewerPanel = new RequestViewerPanel(this);
     }
 
     public IHttpRequestResponse getDisplayedEntity() {
@@ -40,6 +50,14 @@ public class RequestViewerController implements IMessageEditorController {
 
     public IMessageEditor getResponseEditor() {
         return responseEditor;
+    }
+
+    public Preferences getPreferences() {
+        return preferences;
+    }
+
+    public RequestViewerPanel getRequestViewerPanel() {
+        return requestViewerPanel;
     }
 
     @Override

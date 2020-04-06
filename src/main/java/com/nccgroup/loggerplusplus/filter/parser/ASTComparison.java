@@ -4,7 +4,7 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.LogProcessor;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Date;

@@ -13,17 +13,20 @@
 
 package com.nccgroup.loggerplusplus.imports;
 
+import burp.IBurpExtenderCallbacks;
+import burp.IExtensionHelpers;
+import burp.IHttpRequestResponse;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.logentry.EntryImportWorker;
-
-import burp.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.io.*;
-import java.net.URL;
-import java.net.http.HttpRequest;
+import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
 
 import javax.swing.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class LoggerImport {
 

@@ -1,9 +1,13 @@
-package com.nccgroup.loggerplusplus.logentry;
+package com.nccgroup.loggerplusplus.logview.processor;
 
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogManagerHelper;
+import com.nccgroup.loggerplusplus.logentry.Status;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
 
@@ -20,13 +24,13 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 public class LogProcessor implements IHttpListener, IProxyListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
-    
+
+    private final LoggerPlusPlus loggerPlusPlus;
+    private final LogTableController logTableController;
     private final Preferences preferences;
-    private final List<LogEntry> logEntries;
     private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
     private final ConcurrentHashMap<UUID, LogEntry> entriesPendingProcessing;
     private final ConcurrentHashMap<UUID, Future<LogEntry>> entryProcessingFutures;
-    private final List<LogEntryListener> logEntryListeners;
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
@@ -38,11 +42,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogProcessor(Preferences preferences){
-        this.preferences = preferences;
-        this.logEntries = Collections.synchronizedList(new ArrayList<>());
+    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController){
+        this.loggerPlusPlus = loggerPlusPlus;
+        this.logTableController = logTableController;
+        this.preferences = this.loggerPlusPlus.getPreferencesController().getPreferences();
 
-        this.logEntryListeners = new ArrayList<>();
         this.proxyIdToUUIDMap = new ConcurrentHashMap<>();
         this.entriesPendingProcessing = new ConcurrentHashMap<>();
         this.entryProcessingFutures = new ConcurrentHashMap<>();
@@ -54,6 +58,9 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         //Create incomplete request cleanup thread so map doesn't get too big.
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
         this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30000L, 30000L, TimeUnit.MILLISECONDS);
+
+        LoggerPlusPlus.callbacks.registerHttpListener(this);
+        LoggerPlusPlus.callbacks.registerProxyListener(this);
     }
 
     /**
@@ -168,13 +175,9 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 return null; //Ignored entry. Skip it.
             }else{
                 //Ensure capacity and add the entry
-                AddEntryAndEnsureCapacitySwingWorker addEntryWorker = new AddEntryAndEnsureCapacitySwingWorker(logEntry);
-                addEntryWorker.execute();
-                //Don't actually care about the result, but wait here until its complete.
-                //Stops race condition if this and response update threads finish before AddEntry thread.
-                addEntryWorker.get();
+                logTableController.getLogTableModel().addEntry(logEntry);
 
-                if(result.getStatus() == LogEntry.Status.PROCESSED){
+                if(result.getStatus() == Status.PROCESSED){
                     //If the entry was fully processed, remove it from the processing list.
                     entryProcessingFutures.remove(logEntry.getIdentifier());
                 }else{
@@ -199,7 +202,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
 
             //If the status has been changed
             if (logEntry.getStatus() != logEntry.getPreviousStatus()) {
-                if (logEntry.getStatus() == LogEntry.Status.IGNORED) return null; //Don't care about entry
+                if (logEntry.getStatus() == Status.IGNORED) return null; //Don't care about entry
 
                 //Check against color filters
                 HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
@@ -211,12 +214,12 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         return logEntry;
     }
 
-    private RunnableFuture<Integer> createEntryUpdateRunnable(final Future<LogEntry> processingFuture,
+    private RunnableFuture<LogEntry> createEntryUpdateRunnable(final Future<LogEntry> processingFuture,
                                                               final IHttpRequestResponse requestResponse,
                                                               final Date arrivalTime){
-        return new SwingWorker<Integer, Void>(){
+        return new SwingWorker<LogEntry, Void>(){
             @Override
-            protected Integer doInBackground() throws Exception {
+            protected LogEntry doInBackground() throws Exception {
                 //Block until initial processing is complete.
                 LogEntry logEntry = processingFuture.get();
                 if(logEntry == null){
@@ -225,50 +228,24 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 logEntry.addResponse(requestResponse, arrivalTime);
                 processEntry(logEntry);
 
-                if(logEntry.getStatus() == LogEntry.Status.PROCESSED) {
+                if(logEntry.getStatus() == Status.PROCESSED) {
                     //If the entry was fully processed, remove it from the processing list.
                     entryProcessingFutures.remove(logEntry.getIdentifier());
                 }
 
-                int index = logEntries.indexOf(logEntry);
-                return index;
+                return logEntry;
             }
 
             @Override
             protected void done() {
-                //TODO fireTableRowsUpdated - DIRECT TO TABLE
-                try {
-                    Integer index = get();
-                    if(index != null) {
-                        for (LogEntryListener logEntryListener : logEntryListeners) {
-                            logEntryListener.onResponseUpdated(index, processingFuture.get());
-                        }
-                    }
+                try{
+                    LogEntry logEntry = get();
+                    logTableController.getLogTableModel().updateEntry(logEntry);
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
         };
-    }
-
-    public void removeLogEntry(LogEntry logEntry){
-        removeLogEntries(Arrays.asList(logEntry));
-    }
-
-    public void removeLogEntries(List<LogEntry> logEntry){
-        SwingUtilities.invokeLater(() -> {
-            synchronized (logEntries) {
-                for (LogEntry entry : logEntry) {
-                    int index = logEntries.indexOf(entry);
-                    logEntries.remove(index);
-
-                    //TODO Tablemodel Fire Rows Deleted - DIRECT TO TABLE
-                    for (LogEntryListener logEntryListener : logEntryListeners) {
-                        logEntryListener.onRequestRemoved(index, entry);
-                    }
-                }
-            }
-        });
     }
 
     public EntryImportWorker.Builder createEntryImportBuilder(){
@@ -278,8 +255,6 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     public void importProxyHistory(){
         //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
         //TODO Remove to more suitable UI class and show dialog
-
-        clearEntries(); //Clear existing entries
 
         //Build list of entries to import
         IHttpRequestResponse[] proxyHistory = LoggerPlusPlus.callbacks.getProxyHistory();
@@ -295,10 +270,6 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         importWorker.execute();
     }
 
-    public List<LogEntry> getLogEntries() {
-        return logEntries;
-    }
-
     private boolean isValidTool(int toolFlag){
         return ((Boolean) preferences.getSetting(PREF_LOG_GLOBAL) ||
                 ((Boolean) preferences.getSetting(PREF_LOG_PROXY) && toolFlag== IBurpExtenderCallbacks.TOOL_PROXY) ||
@@ -311,34 +282,14 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
     }
 
-    public void addLogListener(LogEntryListener listener) {
-        logEntryListeners.add(listener);
-    }
-    public void removeLogListener(LogEntryListener listener) {
-        logEntryListeners.remove(listener);
-    }
-    public List<LogEntryListener> getLogEntryListeners() {
-        return logEntryListeners;
-    }
-
-    public void clearEntries() {
-        this.logEntries.clear();
-        this.proxyIdToUUIDMap.clear();
-
-        for (LogEntryListener logEntryListener : logEntryListeners) {
-            logEntryListener.onLogsCleared();
-        }
-    }
-
     public void shutdown(){
         this.cleanupExecutor.shutdownNow();
         this.entryProcessExecutor.shutdownNow();
         this.entryImportExecutor.shutdownNow();
-        this.logEntryListeners.clear();
     }
 
     void addProcessedEntry(LogEntry logEntry){
-        new AddEntryAndEnsureCapacitySwingWorker(logEntry).execute();
+        logTableController.getLogTableModel().addEntry(logEntry);
     }
 
     PausableThreadPoolExecutor getEntryImportExecutor() {
@@ -355,55 +306,6 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * Private worker implementations
      *
      *************************/
-
-    private class AddEntryAndEnsureCapacitySwingWorker extends SwingWorker<Integer, Integer> {
-
-        LogEntry entry;
-
-        AddEntryAndEnsureCapacitySwingWorker(LogEntry entry){
-            this.entry = entry;
-        }
-
-        @Override
-        protected Integer doInBackground() throws Exception {
-            synchronized (logEntries) {
-                int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
-                int excessCount = Math.max(logEntries.size() + 1 - maxEntries, 0);
-                for (int entryIndex = 0; entryIndex < excessCount; entryIndex++) {
-                    logEntries.remove(entryIndex);
-                    publish(entryIndex);
-                }
-
-                int index = logEntries.size();
-                logEntries.add(entry);
-                return index;
-            }
-        }
-
-        @Override
-        protected void process(List<Integer> removedEntryIndices) {
-            for (Integer removedIndex : removedEntryIndices) {
-                //TODO Fire table rows deleted - DIRECT TO TABLE
-                for (LogEntryListener logEntryListener : logEntryListeners) {
-                    logEntryListener.onRequestRemoved(removedIndex, null);
-                }
-            }
-        }
-
-        @Override
-        protected void done() {
-            try {
-                int index = get();
-                //TODO Fire table rows inserted - DIRECT TO TABLE
-                for (LogEntryListener logEntryListener : logEntryListeners) {
-                    logEntryListener.onRequestAdded(index, entry, entry.status == LogEntry.Status.PROCESSED);
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 
     private class AbandonedRequestCleanupRunnable implements Runnable {
 
@@ -447,7 +349,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                     }
 
                     if (removedUUIDs.size() > 0) {
-                        LoggerPlusPlus.instance.logOutput("Cleaned Up " + removedUUIDs.size()
+                        loggerPlusPlus.getLoggingController().logOutput("Cleaned Up " + removedUUIDs.size()
                                 + " proxy requests without a response after the specified timeout.");
                     }
                 }catch (Exception e){

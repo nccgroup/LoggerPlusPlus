@@ -1,7 +1,5 @@
 package com.nccgroup.loggerplusplus.logview.logtable;
 
-import com.nccgroup.loggerplusplus.userinterface.TableHeaderMenu;
-
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
@@ -12,12 +10,11 @@ import java.awt.event.MouseEvent;
 // This was used to create tool tips
 public class TableHeader extends JTableHeader {
 
-	private final LogTableColumnModel tableColumnModel;
 	
-	TableHeader(TableColumnModel tcm, final LogTable logTable) {
-		super(tcm);
-		this.tableColumnModel = (LogTableColumnModel) tcm;
-		this.setTable(logTable);
+	TableHeader(LogTableController logTableController) {
+		super(logTableController.getLogTableColumnModel());
+
+		this.setTable(logTableController.getLogTable());
 
 		this.addMouseListener(new MouseAdapter(){
 			@Override
@@ -26,10 +23,10 @@ public class TableHeader extends JTableHeader {
 				if ( SwingUtilities.isRightMouseButton( e )){
 					// get the coordinates of the mouse click
 					Point p = e.getPoint();
-					int columnID = logTable.convertColumnIndexToModel(columnAtPoint(p));
-					LogTableColumn column = tableColumnModel.getModelColumn(columnID);
-					//TODO
-					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTable, column);
+					int columnID = getTable().convertColumnIndexToModel(columnAtPoint(p));
+					LogTableColumn column = ((LogTableColumnModel) getColumnModel()).getModelColumn(columnID);
+
+					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTableController, column);
 					tblHeaderMenu.showMenu(e);
 				}
 			}

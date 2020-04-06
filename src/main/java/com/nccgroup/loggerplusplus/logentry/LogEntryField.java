@@ -1,6 +1,9 @@
 package com.nccgroup.loggerplusplus.logentry;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public enum LogEntryField {
 

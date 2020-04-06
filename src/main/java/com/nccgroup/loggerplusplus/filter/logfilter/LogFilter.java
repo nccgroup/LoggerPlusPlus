@@ -11,7 +11,7 @@ import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.userinterface.LogTableModel;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableModel;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;

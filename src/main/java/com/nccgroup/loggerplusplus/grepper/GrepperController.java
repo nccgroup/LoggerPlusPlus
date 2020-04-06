@@ -3,6 +3,8 @@ package com.nccgroup.loggerplusplus.grepper;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
+import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 
@@ -14,6 +16,8 @@ import java.util.regex.Pattern;
 
 public class GrepperController {
 
+    private final LoggerPlusPlus loggerPlusPlus;
+    private final LogTableController logTableController;
     private final Preferences preferences;
     private final GrepperPanel grepPanel;
     private final ArrayList<GrepperListener> listeners;
@@ -21,14 +25,24 @@ public class GrepperController {
 
     private ExecutorService searchExecutor;
 
-    public GrepperController(Preferences preferences){
-        this.preferences = preferences;
+    public GrepperController(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, PreferencesController preferencesController){
+        this.loggerPlusPlus = loggerPlusPlus;
+        this.logTableController = logTableController;
+        this.preferences = preferencesController.getPreferences();
         this.listeners = new ArrayList<>();
         this.remainingEntries = new AtomicInteger(0);
         this.grepPanel = new GrepperPanel(this, preferences);
     }
 
-    public GrepperPanel getUIComponent() {
+    public LoggerPlusPlus getLoggerPlusPlus() {
+        return loggerPlusPlus;
+    }
+
+    public LogTableController getLogTableController() {
+        return logTableController;
+    }
+
+    public GrepperPanel getGrepperPanel() {
         return grepPanel;
     }
 
@@ -49,7 +63,7 @@ public class GrepperController {
         this.searchExecutor = Executors.newFixedThreadPool(searchThreads, new NamedThreadFactory("LPP-Grepper"));
 
         new Thread(() -> {
-            ArrayList<LogEntry> logEntries = new ArrayList<>(LoggerPlusPlus.instance.getLogProcessor().getLogEntries());
+            ArrayList<LogEntry> logEntries = new ArrayList<>(loggerPlusPlus.getLogViewController().getLogTableController().getLogTableModel().getData());
             remainingEntries.getAndSet(logEntries.size());
 
             this.listeners.forEach(listener -> {

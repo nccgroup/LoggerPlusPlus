@@ -58,7 +58,7 @@ public class MoreHelp {
 			@Override
 			public void run()
 			{
-				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), strMsg);
+				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getMainViewController().getUiComponent()), strMsg);
 			}
 		}).start();
 		
@@ -71,7 +71,7 @@ public class MoreHelp {
 			@Override
 			public void run()
 			{
-				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), strMsg, "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getMainViewController().getUiComponent()), strMsg, "Warning", JOptionPane.WARNING_MESSAGE);
 			}
 		}).start();
 		
@@ -79,7 +79,7 @@ public class MoreHelp {
 	
 	// Show a message to the user
 	public static String showPlainInputMessage(final String strMessage, final String strTitle, final String defaultValue){
-			String output = (String)JOptionPane.showInputDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()),
+			String output = (String)JOptionPane.showInputDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getMainViewController().getUiComponent()),
 						strMessage,strTitle,JOptionPane.PLAIN_MESSAGE, null, null, defaultValue); 
 			if(output==null){
 				output = defaultValue;
@@ -209,7 +209,7 @@ public class MoreHelp {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		scrollPane.setPreferredSize(new Dimension((int) (screenSize.getWidth()/2.0), (int) (screenSize.getHeight()/2.0)));
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), scrollPane, title, JOptionPane.PLAIN_MESSAGE);
+		JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getMainViewController().getUiComponent()), scrollPane, title, JOptionPane.PLAIN_MESSAGE);
 	}
 
 	public static String showLargeInputDialog(String title, String message){

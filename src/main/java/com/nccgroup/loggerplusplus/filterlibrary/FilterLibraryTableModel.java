@@ -5,7 +5,7 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
-import com.nccgroup.loggerplusplus.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
@@ -68,7 +68,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         if(column == 0) {
             savedFilter.setName((String) value);
             if(!((String) value).equalsIgnoreCase(savedFilter.getName())){
-                JOptionPane.showMessageDialog(BurpExtender.instance.getUiComponent(), "Alias names may only contain alphanumeric characters and the symbols period (.) and underscore (_)\n" +
+                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getMainViewController().getUiComponent(), "Alias names may only contain alphanumeric characters and the symbols period (.) and underscore (_)\n" +
                         "Invalid characters have been replaced with an underscore.", "Alias Error", JOptionPane.WARNING_MESSAGE);
             }
         }
@@ -80,7 +80,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
                 savedFilter.setFilterString((String) value);
                 savedFilter.setFilter(null);
                 MoreHelp.showLargeOutputDialog("Filter Exception", "<html>" + e.getMessage().replaceAll("\n", "<br>") + "</html>");
-//                JOptionPane.showMessageDialog(BurpExtender.instance.getUiComponent(), "<html><body style=\"max-height: 400px; max-width: 400px;\">" + e.getMessage().replaceAll("\n", "<br>") + "</html>", "Filter Exception", JOptionPane.ERROR_MESSAGE);
+//                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getMainViewController().getUiComponent(), "<html><body style=\"max-height: 400px; max-width: 400px;\">" + e.getMessage().replaceAll("\n", "<br>") + "</html>", "Filter Exception", JOptionPane.ERROR_MESSAGE);
             }
         }
         controller.saveFilters();
@@ -90,12 +90,12 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         if(row < 0 || row >= controller.getSavedFilters().size()) return;
         SavedFilter savedFilter = controller.getSavedFilters().get(row);
         if(col == 2){
-            LoggerPlusPlus.instance.getLogFilterController().setFilter(savedFilter.getFilterString());
-            LoggerPlusPlus.instance.getTabbedPane().setSelectedIndex(0);
+            controller.getLoggerPlusPlus().getLogViewController().getLogFilterController().setFilter(savedFilter.getFilterString());
+            controller.getLoggerPlusPlus().getMainViewController().getTabbedPanel().setSelectedIndex(0);
             return;
         }
         if(col == 3){
-            LoggerPlusPlus.instance.getLibraryController().addColorFilter(savedFilter.getName(), savedFilter.getFilter());
+            controller.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
             ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
             dialog.setVisible(true);
         }

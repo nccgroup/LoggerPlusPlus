@@ -87,7 +87,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         try {
             pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         }catch (PatternSyntaxException e){
-            JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(BurpExtender.instance.getUiComponent()), "Pattern Syntax Invalid", "Invalid Pattern", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(controller.getLoggerPlusPlus().getMainViewController().getUiComponent()), "Pattern Syntax Invalid", "Invalid Pattern", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

@@ -14,16 +14,12 @@
 package com.nccgroup.loggerplusplus.logentry;
 
 import burp.*;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
-import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
-import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.swing.table.TableColumn;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.*;
@@ -32,7 +28,6 @@ import java.util.stream.Collectors;
 
 public class LogEntry
 {
-	enum Status {UNPROCESSED, AWAITING_RESPONSE, PROCESSED, IGNORED}
 	Status previousStatus;
 	Status status = Status.UNPROCESSED;
 	public transient IHttpRequestResponse requestResponse;
@@ -106,6 +101,7 @@ public class LogEntry
 	}
 
 	public void process(){
+		//TODO Move into separate processing class
 		previousStatus = this.status;
 		switch (this.status){
 			case UNPROCESSED: {

@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.help;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;

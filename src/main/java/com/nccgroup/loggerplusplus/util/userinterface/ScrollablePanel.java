@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.userinterface;
+package com.nccgroup.loggerplusplus.util.userinterface;
 
 import javax.swing.*;
 import java.awt.*;

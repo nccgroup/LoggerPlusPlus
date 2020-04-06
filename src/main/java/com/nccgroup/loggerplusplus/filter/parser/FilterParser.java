@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logentry.LogProcessor;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, FilterParserConstants {/*@bgen(jjtree)*/

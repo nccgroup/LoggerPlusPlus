@@ -19,7 +19,7 @@ package com.nccgroup.loggerplusplus.logview.logtable;
 
 import com.google.gson.*;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.userinterface.renderer.LeftTableCellRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.LeftTableCellRenderer;
 
 import javax.swing.table.TableColumn;
 import java.lang.reflect.Type;
