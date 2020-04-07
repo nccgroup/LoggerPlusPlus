@@ -175,7 +175,9 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 return null; //Ignored entry. Skip it.
             }else{
                 //Ensure capacity and add the entry
-                logTableController.getLogTableModel().addEntry(logEntry);
+                SwingUtilities.invokeLater(() -> {
+                    logTableController.getLogTableModel().addEntry(logEntry);
+                });
 
                 if(result.getStatus() == Status.PROCESSED){
                     //If the entry was fully processed, remove it from the processing list.
@@ -289,7 +291,9 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     }
 
     void addProcessedEntry(LogEntry logEntry){
-        logTableController.getLogTableModel().addEntry(logEntry);
+        SwingUtilities.invokeLater(() -> {
+            logTableController.getLogTableModel().addEntry(logEntry);
+        });
     }
 
     PausableThreadPoolExecutor getEntryImportExecutor() {

@@ -89,12 +89,6 @@ public class LogTable extends JTable
         this.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         registerListeners();
-
-        //TODO AUTOSCROLL ON ENTRY ADDED
-//        if (this.preferences.getSetting(Globals.PREF_AUTO_SCROLL)) {
-//            JScrollBar scrollBar = LoggerPlusPlus.instance.getLogScrollPanel().getVerticalScrollBar();
-//            scrollBar.setValue(scrollBar.getMaximum() + 100);
-//        }
     }
 
     @Override
@@ -120,10 +114,6 @@ public class LogTable extends JTable
             }
         }
 
-        if(entry == null){
-            return new JLabel("Error, view the logs for info.");
-        }
-
         Component c = super.prepareRenderer(renderer, row, column);
 
         IntStream selectedRows = IntStream.of(this.getSelectedRows());
@@ -132,6 +122,10 @@ public class LogTable extends JTable
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
         }else {
+            if(entry == null){
+                System.err.println("Could not convert row index to model. Table entry might not be highlighted properly.");
+                return c;
+            }
             if(entry.getMatchingColorFilters().size() != 0){
                 ColorFilter colorFilter = null;
                 Map<UUID, ColorFilter> colorFilters = this.preferences.getSetting(Globals.PREF_COLOR_FILTERS);
