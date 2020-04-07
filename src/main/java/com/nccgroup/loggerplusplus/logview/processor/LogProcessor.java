@@ -50,14 +50,14 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         this.proxyIdToUUIDMap = new ConcurrentHashMap<>();
         this.entriesPendingProcessing = new ConcurrentHashMap<>();
         this.entryProcessingFutures = new ConcurrentHashMap<>();
-        this.entryProcessExecutor = new PausableThreadPoolExecutor(10, 10,
-                0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-LogManager"));
-        this.entryImportExecutor = new PausableThreadPoolExecutor(10, 10, 0L,
+        this.entryProcessExecutor = new PausableThreadPoolExecutor(0, 2147483647,
+                30L, TimeUnit.SECONDS, new SynchronousQueue<>(), new NamedThreadFactory("LPP-LogManager"));
+        this.entryImportExecutor = new PausableThreadPoolExecutor(0, 10, 60L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-Import"));
 
         //Create incomplete request cleanup thread so map doesn't get too big.
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
-        this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30000L, 30000L, TimeUnit.MILLISECONDS);
+        this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30, 30, TimeUnit.SECONDS);
 
         LoggerPlusPlus.callbacks.registerHttpListener(this);
         LoggerPlusPlus.callbacks.registerProxyListener(this);
@@ -219,35 +219,24 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     private RunnableFuture<LogEntry> createEntryUpdateRunnable(final Future<LogEntry> processingFuture,
                                                               final IHttpRequestResponse requestResponse,
                                                               final Date arrivalTime){
-        return new SwingWorker<LogEntry, Void>(){
-            @Override
-            protected LogEntry doInBackground() throws Exception {
-                //Block until initial processing is complete.
-                LogEntry logEntry = processingFuture.get();
-                if(logEntry == null){
-                    return null; //Request to an ignored host. Stop processing.
-                }
-                logEntry.addResponse(requestResponse, arrivalTime);
-                processEntry(logEntry);
+        return new FutureTask<>(() -> {
+            //Block until initial processing is complete.
+            LogEntry logEntry = processingFuture.get();
+            if (logEntry == null) {
+                return null; //Request to an ignored host. Stop processing.
+            }
+            logEntry.addResponse(requestResponse, arrivalTime);
+            processEntry(logEntry);
 
-                if(logEntry.getStatus() == Status.PROCESSED) {
-                    //If the entry was fully processed, remove it from the processing list.
-                    entryProcessingFutures.remove(logEntry.getIdentifier());
-                }
-
-                return logEntry;
+            if (logEntry.getStatus() == Status.PROCESSED) {
+                //If the entry was fully processed, remove it from the processing list.
+                entryProcessingFutures.remove(logEntry.getIdentifier());
             }
 
-            @Override
-            protected void done() {
-                try{
-                    LogEntry logEntry = get();
-                    logTableController.getLogTableModel().updateEntry(logEntry);
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
+            updateExistingEntry(logEntry);
+
+            return logEntry;
+        });
     }
 
     public EntryImportWorker.Builder createEntryImportBuilder(){
@@ -293,6 +282,12 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     void addProcessedEntry(LogEntry logEntry){
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().addEntry(logEntry);
+        });
+    }
+
+    void updateExistingEntry(LogEntry logEntry){
+        SwingUtilities.invokeLater(() -> {
+            logTableController.getLogTableModel().updateEntry(logEntry);
         });
     }
 
