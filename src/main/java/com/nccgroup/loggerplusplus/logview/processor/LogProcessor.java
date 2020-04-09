@@ -3,9 +3,9 @@ package com.nccgroup.loggerplusplus.logview.processor;
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.logentry.LogManagerHelper;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
@@ -27,6 +27,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
 
     private final LoggerPlusPlus loggerPlusPlus;
     private final LogTableController logTableController;
+    private final ExportController exportController;
     private final Preferences preferences;
     private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
     private final ConcurrentHashMap<UUID, LogEntry> entriesPendingProcessing;
@@ -42,9 +43,10 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController){
+    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController){
         this.loggerPlusPlus = loggerPlusPlus;
         this.logTableController = logTableController;
+        this.exportController = exportController;
         this.preferences = this.loggerPlusPlus.getPreferencesController().getPreferences();
 
         this.proxyIdToUUIDMap = new ConcurrentHashMap<>();
@@ -88,10 +90,10 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         if(isRequestOnly){
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
             //Tag the request with the UUID in the comment field, as this persists for when we get the response back!
-            LogManagerHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getIdentifier(), httpMessage);
+            LogProcessorHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getIdentifier(), httpMessage);
             submitNewEntryProcessingRunnable(logEntry);
         }else{
-            UUID uuid = LogManagerHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
+            UUID uuid = LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
             if(uuid != null) {
                 updateRequestWithResponse(uuid, arrivalTime, httpMessage);
             }
@@ -280,12 +282,14 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     }
 
     void addProcessedEntry(LogEntry logEntry){
+        exportController.exportNewEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().addEntry(logEntry);
         });
     }
 
     void updateExistingEntry(LogEntry logEntry){
+        exportController.exportUpdatedEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().updateEntry(logEntry);
         });
@@ -331,7 +335,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                             long responseTimeout = 1000 * ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
                             if (timeNow - entryTime > responseTimeout) {
                                 iter.remove();
-                                LogManagerHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);
+                                LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);
                                 logEntry.requestResponse.setComment("Timed Out " + logEntry.requestResponse.getComment());
                                 removedUUIDs.add(abandonedEntry.getKey());
                             }

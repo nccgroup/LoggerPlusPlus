@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.logentry;
+package com.nccgroup.loggerplusplus.logview.processor;
 
 import burp.IHttpRequestResponse;
 import com.nccgroup.loggerplusplus.util.Globals;
@@ -6,7 +6,7 @@ import com.nccgroup.loggerplusplus.util.Globals;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
-public class LogManagerHelper {
+public class LogProcessorHelper {
 
     public static void tagRequestResponseWithUUID(String instanceIdentifier, UUID uuid, IHttpRequestResponse requestResponse){
         String originalComment = requestResponse.getComment() != null ? requestResponse.getComment() : "";

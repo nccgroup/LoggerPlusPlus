@@ -67,13 +67,13 @@ public class LoggerImport {
     }
 
     public static ArrayList<IHttpRequestResponse> importWStalker() {
-        ArrayList<String> lines = new ArrayList<String>();
-        ArrayList<IHttpRequestResponse> requests = new ArrayList<IHttpRequestResponse>();
+        ArrayList<String> lines;
+        ArrayList<IHttpRequestResponse> requests = new ArrayList<>();
         IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
         
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
-            return new ArrayList<IHttpRequestResponse>();
+            return new ArrayList<>();
         }
 
         lines = readFile(filename);
@@ -88,7 +88,7 @@ public class LoggerImport {
                 byte[] response = helpers.base64Decode(v[1]);
                 String url = v[3];
 
-                LoggerRequestResponse x = new LoggerRequestResponse(url, request, response);
+                ImportRequestResponse x = new ImportRequestResponse(url, request, response);
                 requests.add(x);
 
             } catch (Exception e) {
@@ -143,7 +143,7 @@ public class LoggerImport {
                 byte[] res = helpers.stringToBytes(responseBuffer);
 
                 // Add IHttpRequestResponse Object
-                LoggerRequestResponse x = new LoggerRequestResponse(url, req, res);
+                ImportRequestResponse x = new ImportRequestResponse(url, req, res);
                 requests.add(x);
 
                 // Reset content
@@ -168,7 +168,7 @@ public class LoggerImport {
 
                 } catch (Exception e) {
                     LoggerPlusPlus.callbacks.printError("importZAP: Wrong Path Format");
-                    return new ArrayList<IHttpRequestResponse>();
+                    return new ArrayList<>();
                 } 
             }
 

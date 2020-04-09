@@ -6,6 +6,7 @@ import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
@@ -21,6 +22,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     private HashMap<UUID, ColorFilter> defaultColorFilters;
     private ArrayList<LogTableColumn> defaultlogTableColumns;
+    private List<LogEntryField> defaultExportFields;
 
     public LoggerPreferenceFactory(IGsonProvider gsonProvider, ILogProvider logProvider, IBurpExtenderCallbacks callbacks){
         super("LoggerPlusPlus", gsonProvider, logProvider, callbacks);
@@ -36,6 +38,8 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
+        defaultExportFields = this.gsonProvider.getGson().fromJson(
+                Globals.DEFAULT_EXPORT_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType());
     }
 
     @Override
@@ -76,6 +80,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger", Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_PREVIOUS_CSV_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), Preferences.Visibility.GLOBAL);
 
         prefs.registerSetting(PREF_AUTO_SAVE, Boolean.class, false, Preferences.Visibility.VOLATILE);
         prefs.registerSetting(PREF_AUTO_SCROLL, Boolean.class, true, Preferences.Visibility.VOLATILE);

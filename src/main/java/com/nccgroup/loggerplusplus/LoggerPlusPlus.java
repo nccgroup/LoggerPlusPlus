@@ -5,8 +5,10 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.grepper.GrepperController;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
@@ -17,6 +19,7 @@ import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
 
 import javax.swing.*;
 import java.net.URL;
+import java.util.List;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
@@ -30,6 +33,7 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
     private final IGsonProvider gsonProvider;
     private LoggingController loggingController;
     private LogProcessor logProcessor;
+    private ExportController exportController;
     private PreferencesController preferencesController;
     private LogViewController logViewController;
     private FilterLibraryController libraryController;
@@ -65,9 +69,10 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
         loggingController = new LoggingController(this);
         preferencesController = new PreferencesController(this, loggingController);
+        exportController = new ExportController(this, preferencesController.getPreferences());
         libraryController = new FilterLibraryController(this, preferencesController);
         logViewController = new LogViewController(this, libraryController);
-        logProcessor = new LogProcessor(this, logViewController.getLogTableController());
+        logProcessor = new LogProcessor(this, logViewController.getLogTableController(), exportController);
         grepperController = new GrepperController(this, logViewController.getLogTableController(), preferencesController);
         contextMenuFactory = new LoggerContextMenuFactory(this);
 
@@ -161,5 +166,13 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
     public LoggerMenu getLoggerMenu() {
         return loggerMenu;
+    }
+
+    public List<LogEntry> getLogEntries(){
+        return logViewController.getLogTableController().getLogTableModel().getData();
+    }
+
+    public ExportController getExportController() {
+        return exportController;
     }
 }

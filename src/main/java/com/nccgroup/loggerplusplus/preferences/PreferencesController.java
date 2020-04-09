@@ -14,7 +14,7 @@ public class PreferencesController {
     private final IGsonProvider gsonProvider;
     private final Preferences preferences;
 
-    private final PreferencesPanel preferencesPanel;
+    private PreferencesPanel preferencesPanel;
 
     public PreferencesController(LoggerPlusPlus loggerPlusPlus, LoggingController loggingController) {
         this.loggerPlusPlus = loggerPlusPlus;
@@ -36,11 +36,12 @@ public class PreferencesController {
             //Reset preferences which may cause issues.
             preferences.resetSettings(new HashSet<>(Arrays.asList(Globals.VERSION_CHANGE_SETTINGS_TO_RESET)));
         }
-
-        this.preferencesPanel = new PreferencesPanel(this);
     }
 
     public PreferencesPanel getPreferencesPanel() {
+        if(preferencesPanel == null) {
+            preferencesPanel = new PreferencesPanel(this);
+        }
         return preferencesPanel;
     }
 

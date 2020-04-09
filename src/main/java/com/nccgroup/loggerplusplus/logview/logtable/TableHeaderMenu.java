@@ -94,7 +94,7 @@ public class TableHeaderMenu extends JPopupMenu{
 				// Save it only if it is different! no need to refresh the columns
 				if(!newValue.equals(columnObj.getDefaultVisibleName())){
 					columnObj.setVisibleName(newValue);
-					saveAndReloadTableSettings();
+					logTableController.getLogTableColumnModel().saveLayout();
 				}
 			}
 		});
@@ -104,7 +104,6 @@ public class TableHeaderMenu extends JPopupMenu{
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				logTable.getColumnModel().toggleHidden(columnObj);
-				saveAndReloadTableSettings();
 			}
 		});
 		menu.add(item);
@@ -140,7 +139,7 @@ public class TableHeaderMenu extends JPopupMenu{
 						logTable.getColumnModel().toggleHidden(logTableColumn);
 					}
 				}
-				saveAndReloadTableSettings();
+				logTableController.getLogTableColumnModel().saveLayout();
 			}
 		});
 		subMenuVisibleCols.add(item);
@@ -153,7 +152,6 @@ public class TableHeaderMenu extends JPopupMenu{
 			visibleItem.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					logTable.getColumnModel().toggleHidden(logTableColumn);
-					saveAndReloadTableSettings();
 				}
 			});
 			subMenuVisibleCols.add(visibleItem);
@@ -162,18 +160,6 @@ public class TableHeaderMenu extends JPopupMenu{
 		menu.add(subMenuVisibleCols);
 
 		menu.show(e.getComponent(), e.getX(), e.getY());
-	}
-
-	public void saveAndReloadTableSettings(){
-		//Stop automatically logging, prevents changing of csv format midway through
-		//TODO constant csv format?
-		if(logTableController.getPreferences().getSetting(Globals.PREF_AUTO_SAVE)){
-			logTableController.getPreferences().setSetting(Globals.PREF_AUTO_SAVE, false);
-//			logTableController.getFileLogger().setAutoSave(false); //TODO FIXME
-			MoreHelp.showMessage("The logTable structure has been changed. Autosave was disabled to prevent invalid csv.");
-		}
-		logTable.saveTableChanges();
-//		logTable.getModel().fireTableStructureChanged();
 	}
 
 

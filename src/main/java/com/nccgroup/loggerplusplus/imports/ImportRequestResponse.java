@@ -20,56 +20,7 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 
-class LoggerHttpService implements IHttpService {
-
-    private String host;
-    private int port;
-    private String protocol;
-
-    LoggerHttpService(String urlS) {
-        URL url;
-        try {
-            url = new URL(urlS);
-        } catch (Exception e) {
-            LoggerPlusPlus.callbacks.printError("LoggerHttpService: Error Parsing URL: " + urlS);
-            LoggerPlusPlus.callbacks.printError(e.toString());
-            return;
-        }
-
-        host = url.getHost();
-        protocol = url.getProtocol();
-        port = url.getPort();
-
-        if ( port < 1 ) {
-            switch (protocol) {
-                case "http":
-                    port = 80;
-                    break;
-                case "https":
-                    port = 443;
-                    break;
-            }
-        }
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public int getPort() {
-        return port;
-    }
-
-    @Override
-    public String getProtocol() {
-        return protocol;
-    }
-
-}
-
-public class LoggerRequestResponse implements IHttpRequestResponse {
+class ImportRequestResponse implements IHttpRequestResponse {
 
     private IHttpService service;
     private byte[] request;
@@ -77,7 +28,7 @@ public class LoggerRequestResponse implements IHttpRequestResponse {
     private String comment;
     private String highlight;
 
-    LoggerRequestResponse(String url, byte[] req, byte[] res) {
+    ImportRequestResponse(String url, byte[] req, byte[] res) {
         LoggerHttpService srv = new LoggerHttpService(url);
         setHttpService(srv);
         setRequest(req);
@@ -122,7 +73,6 @@ public class LoggerRequestResponse implements IHttpRequestResponse {
     @Override
     public void setHighlight(String color) {
         highlight = color;
-
     }
 
     @Override
@@ -135,4 +85,52 @@ public class LoggerRequestResponse implements IHttpRequestResponse {
         service = httpService;
     }
 
+    private static class LoggerHttpService implements IHttpService {
+
+        private String host;
+        private int port;
+        private String protocol;
+
+        LoggerHttpService(String urlS) {
+            URL url;
+            try {
+                url = new URL(urlS);
+            } catch (Exception e) {
+                LoggerPlusPlus.callbacks.printError("LoggerHttpService: Error Parsing URL: " + urlS);
+                LoggerPlusPlus.callbacks.printError(e.toString());
+                return;
+            }
+
+            host = url.getHost();
+            protocol = url.getProtocol();
+            port = url.getPort();
+
+            if ( port < 1 ) {
+                switch (protocol) {
+                    case "http":
+                        port = 80;
+                        break;
+                    case "https":
+                        port = 443;
+                        break;
+                }
+            }
+        }
+
+        @Override
+        public String getHost() {
+            return host;
+        }
+
+        @Override
+        public int getPort() {
+            return port;
+        }
+
+        @Override
+        public String getProtocol() {
+            return protocol;
+        }
+
+    }
 }

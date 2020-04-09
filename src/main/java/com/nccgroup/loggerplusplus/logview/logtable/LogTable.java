@@ -217,12 +217,6 @@ public class LogTable extends JTable
         ((JScrollPane) this.getParent().getParent()).getVerticalScrollBar().setValue(0);
     }
 
-    // to saveFilters the new grepTable changes
-    public void saveTableChanges(){
-        // saveFilters it to the relevant variables and preferences
-        this.getColumnModel().saveLayout();
-    }
-
     @Override
     public LogTableModel getModel(){
         return (LogTableModel) super.getModel();

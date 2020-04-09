@@ -158,6 +158,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
             //Remove the column from the view and adjust others to fit.
             removeColumn(logTableColumn);
         }
+        saveLayout();
     }
 
     public Enumeration<LogTableColumn> getAllColumns() {

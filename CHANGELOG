@@ -1,7 +1,10 @@
 v 3.15
 =========================================================================
 BETA
-- Fix "Autosave as CSV"
+- Fix "Autosave as CSV".
+- Huge Refactor.
+- Yet more concurrency fixes.
+- Rewrote export mechanism to be more generic.
 
 v 3.14
 =========================================================================

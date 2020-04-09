@@ -22,8 +22,6 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
-import com.nccgroup.loggerplusplus.logentry.logger.FileLogger;
-import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
@@ -44,7 +42,6 @@ public class PreferencesPanel extends JScrollPane{
     private JToggleButton btnAutoSaveLogs;
     private final JToggleButton esEnabled;
     private final JLabel esValueChangeWarning = new JLabel("Warning: Changing preferences while running will disable the upload service and clear all pending groups.");
-    private final FileLogger fileLogger;
 
 
     /**
@@ -55,7 +52,6 @@ public class PreferencesPanel extends JScrollPane{
         this.preferences = preferencesController.getPreferences();
 
         PanelBuilder panelBuilder = new PanelBuilder(this.preferences);
-        this.fileLogger = new FileLogger();
         this.esValueChangeWarning.setForeground(Color.RED);
 
         ComponentGroup statusPanel = panelBuilder.createComponentGroup("Status");
@@ -140,15 +136,19 @@ public class PreferencesPanel extends JScrollPane{
         }).setEnabled(true);
 
         ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");
-        exportGroup.addButton("Save log table as CSV", actionEvent -> {
-//            fileLogger.saveLogs(false);
+        preferencesController.getLoggerPlusPlus().getExportController().getExporters().forEach(logExporter -> {
+            exportGroup.addComponent(logExporter.getExportPanel());
         });
-        exportGroup.addButton("Save full logs as CSV (slow)", actionEvent -> {
-//            fileLogger.saveLogs(true);
-        });
-        btnAutoSaveLogs = exportGroup.addToggleButton("Autosave as CSV", actionEvent -> {
-//            fileLogger.setAutoSave(!(boolean) preferences.getSetting(PREF_AUTO_SAVE));
-        });
+
+//        exportGroup.addButton("Save log table as CSV", actionEvent -> {
+////            fileLogger.saveLogs(false);
+//        });
+//        exportGroup.addButton("Save full logs as CSV (slow)", actionEvent -> {
+////            fileLogger.saveLogs(true);
+//        });
+//        btnAutoSaveLogs = exportGroup.addToggleButton("Autosave as CSV", actionEvent -> {
+////            fileLogger.setAutoSave(!(boolean) preferences.getSetting(PREF_AUTO_SAVE));
+//        });
 
         ComponentGroup elasticPanel = panelBuilder.createComponentGroup("Elastic Search");
         esEnabled = elasticPanel.addToggleButton("Disabled", actionEvent -> {
@@ -301,9 +301,5 @@ public class PreferencesPanel extends JScrollPane{
                 }
             }
         }).start();
-    }
-
-    public FileLogger getFileLogger() {
-        return fileLogger;
     }
 }

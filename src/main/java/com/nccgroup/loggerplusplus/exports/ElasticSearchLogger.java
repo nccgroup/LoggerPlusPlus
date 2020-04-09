@@ -1,4 +1,4 @@
-package com.nccgroup.loggerplusplus.logentry.logger;
+package com.nccgroup.loggerplusplus.exports;
 
 import com.nccgroup.loggerplusplus.*;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
