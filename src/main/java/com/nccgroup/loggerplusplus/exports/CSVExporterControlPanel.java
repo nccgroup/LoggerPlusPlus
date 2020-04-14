@@ -28,28 +28,25 @@ public class CSVExporterControlPanel extends JPanel {
             handleManualSave();
         });
 
-        JToggleButton autoExportButton = new JToggleButton("Auto-export as CSV");
-        autoExportButton.addActionListener(new AbstractAction() {
+        JToggleButton exportButton = new JToggleButton("Auto-export as CSV");
+        exportButton.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                boolean newSelectedState = autoExportButton.isSelected();
-                if(!newSelectedState){
-                    boolean disabled = disableExporter();
-                    autoExportButton.setSelected(!disabled);
-                }else{
-                    boolean enabled = enableExporter();
-                    autoExportButton.setSelected(enabled);
-                }
+                boolean newSelectedState = exportButton.isSelected();
+                boolean operationSuccess = exportButton.isSelected() ? enableExporter() : disableExporter();
+                exportButton.setSelected(!newSelectedState ^ operationSuccess);
             }
         });
 
         this.add(new PanelBuilder().build(new JComponent[][]{
                 new JComponent[]{manualSaveButton},
-                new JComponent[]{autoExportButton}
+                new JComponent[]{exportButton}
         }, new int[][]{
                 new int[]{1},
                 new int[]{1}
         }, Alignment.FILL, 1.0, 1.0), BorderLayout.CENTER);
+
+        this.setBorder(BorderFactory.createTitledBorder("CSV Exporter"));
     }
 
     private boolean enableExporter(){

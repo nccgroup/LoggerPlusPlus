@@ -21,13 +21,14 @@ public class ExportController {
         this.preferences = preferences;
 
         this.exporters = new ArrayList<>();
-        this.enabledExporters = Collections.synchronizedList(new ArrayList());
+        this.enabledExporters = Collections.synchronizedList(new ArrayList<>());
 
         initializeExporters();
     }
 
     private void initializeExporters(){
         this.exporters.add(new CSVExporter(this, preferences));
+        this.exporters.add(new ElasticExporter(this, preferences));
     }
 
     public List<LogExporter> getExporters() {

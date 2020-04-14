@@ -17,6 +17,7 @@ import javax.swing.*;
 import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
+import static com.nccgroup.loggerplusplus.util.Globals.Protocol.HTTP;
 
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
@@ -75,7 +76,8 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_ADDRESS, String.class, "127.0.0.1", Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_PORT, Integer.class, 9300, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_ELASTIC_PORT, Integer.class, 9200, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_ELASTIC_PROTOCOL, Protocol.class, Protocol.HTTP, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch", Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger", Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120, Preferences.Visibility.GLOBAL);

@@ -42,6 +42,7 @@ public class Globals {
     public static final String PREF_AUTO_IMPORT_PROXY_HISTORY = "autoimportproxyhistory";
     public static final String PREF_ELASTIC_ADDRESS = "esAddress";
     public static final String PREF_ELASTIC_PORT = "esPort";
+    public static final String PREF_ELASTIC_PROTOCOL = "esProto";
     public static final String PREF_ELASTIC_CLUSTER_NAME = "esClusterName";
     public static final String PREF_ELASTIC_INDEX = "esIndex";
     public static final String PREF_ELASTIC_DELAY = "esDelay";
@@ -52,6 +53,8 @@ public class Globals {
     public static final String PREF_AUTO_SCROLL = "autoScroll";
     public static final String PREF_GREP_HISTORY = "grepHistory";
     public static final String PREF_PREVIOUS_CSV_FIELDS = "previousCSVFields";
+
+    public enum Protocol {HTTP, HTTPS}
 
     public static final String[] VERSION_CHANGE_SETTINGS_TO_RESET = new String[]{
             PREF_LOG_TABLE_SETTINGS

@@ -46,4 +46,7 @@ public abstract class LogExporter {
      */
     public abstract JComponent getExportPanel();
 
+    public Preferences getPreferences() {
+        return preferences;
+    }
 }

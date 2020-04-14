@@ -39,8 +39,6 @@ public class PreferencesPanel extends JScrollPane{
     private final Preferences preferences;
 
     private final JToggleButton tglbtnIsEnabled;
-    private JToggleButton btnAutoSaveLogs;
-    private final JToggleButton esEnabled;
     private final JLabel esValueChangeWarning = new JLabel("Warning: Changing preferences while running will disable the upload service and clear all pending groups.");
 
 
@@ -135,44 +133,10 @@ public class PreferencesPanel extends JScrollPane{
             LoggerImport.loadImported(requests);
         }).setEnabled(true);
 
-        ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export");
+        ComponentGroup exportGroup = panelBuilder.createComponentGroup("");
         preferencesController.getLoggerPlusPlus().getExportController().getExporters().forEach(logExporter -> {
             exportGroup.addComponent(logExporter.getExportPanel());
         });
-
-//        exportGroup.addButton("Save log table as CSV", actionEvent -> {
-////            fileLogger.saveLogs(false);
-//        });
-//        exportGroup.addButton("Save full logs as CSV (slow)", actionEvent -> {
-////            fileLogger.saveLogs(true);
-//        });
-//        btnAutoSaveLogs = exportGroup.addToggleButton("Autosave as CSV", actionEvent -> {
-////            fileLogger.setAutoSave(!(boolean) preferences.getSetting(PREF_AUTO_SAVE));
-//        });
-
-        ComponentGroup elasticPanel = panelBuilder.createComponentGroup("Elastic Search");
-        esEnabled = elasticPanel.addToggleButton("Disabled", actionEvent -> {
-            JToggleButton thisButton = (JToggleButton) actionEvent.getSource();
-            toggleEsEnabledButton(thisButton.isSelected());
-        });
-
-        JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
-        separator.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
-        elasticPanel.addComponent(separator);
-
-        elasticPanel.addPreferenceComponent(PREF_ELASTIC_ADDRESS, "Address: ");
-        JSpinner elasticPort = elasticPanel.addPreferenceComponent(PREF_ELASTIC_PORT, "Port: ");
-        ((SpinnerNumberModel) elasticPort.getModel()).setMaximum(65535);
-        ((SpinnerNumberModel) elasticPort.getModel()).setMinimum(0);
-        elasticPort.setEditor(new JSpinner.NumberEditor(elasticPort,"#"));
-
-        elasticPanel.addPreferenceComponent(PREF_ELASTIC_CLUSTER_NAME, "Cluster Name: ");
-        elasticPanel.addPreferenceComponent(PREF_ELASTIC_INDEX, "Index: ");
-        JSpinner elasticDelay = elasticPanel.addPreferenceComponent(PREF_ELASTIC_DELAY, "Upload Delay (Seconds): ");
-        ((SpinnerNumberModel) elasticDelay.getModel()).setMaximum(99999);
-        ((SpinnerNumberModel) elasticDelay.getModel()).setMinimum(10);
-        ((SpinnerNumberModel) elasticDelay.getModel()).setStepSize(10);
-        elasticPanel.addPreferenceComponent(PREF_ELASTIC_INCLUDE_REQ_RESP, "Include Request and Response: ");
 
         ComponentGroup otherPanel = panelBuilder.createComponentGroup("Other");
         JSpinner spnRespTimeout = otherPanel.addPreferenceComponent(PREF_RESPONSE_TIMEOUT, "Response Timeout (Seconds): ");
@@ -251,7 +215,6 @@ public class PreferencesPanel extends JScrollPane{
                 new JPanel[]{statusPanel, statusPanel},
                 new JPanel[]{logFromPanel, importGroup},
                 new JPanel[]{logFromPanel, exportGroup},
-                new JPanel[]{elasticPanel, elasticPanel},
                 new JPanel[]{otherPanel, otherPanel},
                 new JPanel[]{colorFilterSharing, savedFilterSharing},
                 new JPanel[]{resetPanel, resetPanel},
@@ -262,44 +225,9 @@ public class PreferencesPanel extends JScrollPane{
     }
 
 
-    public void setAutoSaveBtn(boolean enabled){
-        btnAutoSaveLogs.setSelected(enabled);
-    }
-
     private void toggleEnabledButton(boolean isSelected) {
         tglbtnIsEnabled.setText(APP_NAME + (isSelected ? " is running" : " has been stopped"));
         tglbtnIsEnabled.setSelected(isSelected);
         preferences.setSetting(PREF_ENABLED, isSelected);
-    }
-
-    private void toggleEsEnabledButton(final boolean isSelected) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(isSelected) {
-                    esEnabled.setText("Starting...");
-                }
-                try {
-//                    LoggerPlusPlus.instance.setEsEnabled(isSelected);//TODO FIXME
-                    esEnabled.setText((isSelected ? "Enabled" : "Disabled"));
-                    esEnabled.setSelected(isSelected);
-                    if(isSelected) {
-                        //TODO Re-Add these.
-//                        GridBagConstraints gbc = new GridBagConstraints();
-//                        gbc.gridx = 0;
-//                        gbc.gridwidth = 3;
-//                        elasticPanel.add(esValueChangeWarning, gbc);
-                    }else{
-//                        elasticPanel.remove(esValueChangeWarning);
-                    }
-                } catch (Exception e) {
-                    if(isSelected) {
-                        MoreHelp.showWarningMessage("Elastic Search could not be enabled. Please check your settings.\n" + e.getMessage());
-                    }
-                    esEnabled.setText("Connection Failed");
-                    esEnabled.setSelected(false);
-                }
-            }
-        }).start();
     }
 }
