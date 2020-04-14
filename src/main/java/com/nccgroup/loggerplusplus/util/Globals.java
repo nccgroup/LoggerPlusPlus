@@ -5,7 +5,7 @@ import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 
 public class Globals {
     public static final String APP_NAME = "Logger++";
-    public static final double VERSION = 3.14;
+    public static final double VERSION = 3.16;
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String COMPANY_LINK = "https://www.nccgroup.trust/";
     public static final String AUTHOR_LINK = "https://soroush.secproject.com/";
