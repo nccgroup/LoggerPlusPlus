@@ -52,7 +52,6 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     @Override
     protected void registerSettings() {
         prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LAST_USED_VERSION, Double.class, Globals.VERSION, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_IS_DEBUG, Boolean.class, false, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ENABLED, Boolean.class, true, Preferences.Visibility.GLOBAL);

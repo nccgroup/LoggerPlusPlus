@@ -16,7 +16,6 @@ public class Globals {
 
     //Preferences Keys
     public static final String PREF_LOG_TABLE_SETTINGS = "tabledetailsjson";
-    public static final String PREF_LAST_USED_VERSION = "version";
     public static final String PREF_IS_DEBUG = "isDebug";
     public static final String PREF_UPDATE_ON_STARTUP = "updateonstartup";
     public static final String PREF_ENABLED = "enabled";
@@ -55,10 +54,6 @@ public class Globals {
     public static final String PREF_PREVIOUS_CSV_FIELDS = "previousCSVFields";
 
     public enum Protocol {HTTP, HTTPS}
-
-    public static final String[] VERSION_CHANGE_SETTINGS_TO_RESET = new String[]{
-            PREF_LOG_TABLE_SETTINGS
-    };
 
     public static final String DEFAULT_COLOR_FILTERS_JSON = "{\"2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
