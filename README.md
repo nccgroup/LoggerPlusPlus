@@ -1,14 +1,12 @@
-Burp Suite Logger++
+Logger++ - Advanced Logging for Burp Suite
 =======================
 Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
 
+Developed by Corey Arthur [@CoreyD97](https://twitter.com/CoreyD97)
+
+Original by Soroush Dalili [@irsdl](https://twitter.com/irsdl)
+
 Released as open source by NCC Group Plc - https://www.nccgroup.trust/
-
-Originally Developed by Soroush Dalili [@irsdl](https://twitter.com/irsdl)
-
-Further developed by Corey Arthur [@CoreyD97](https://twitter.com/CoreyD97)
-
-Project link: http://www.github.com/nccgroup/BurpSuiteLoggerPlusPlus
 
 Released under AGPL see LICENSE for more information
 
@@ -36,7 +34,7 @@ Screenshots
 
 You can use this extension without using the BApp store. In order to install the latest version of this extension from the GitHub repository, follow these steps:
 
-Step 1. (Downloading) Download the ["latest release jar"](https://github.com/nccgroup/LoggerPlusPlus/releases/latest) (this is the only file you need to download if you do not wish to build it yourself).
+Step 1. (Downloading) Download the [latest release jar](https://github.com/nccgroup/LoggerPlusPlus/releases/latest).
 
 Step 2. (Adding to Burp) In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "burplogger++.jar" file.
 
@@ -74,10 +72,6 @@ Step 5. (Using!) Now you can use this extension!
 <b>Reporting bugs:</b>
 
 If you have found an issue, please report it in the GitHub project.
-
-<b>Tested on:</b>
-
-This extension has been built by using Java v7 library and has been tested on Burp Suite v1.7.27.
 
 <b>Latest version:</b>
 
