@@ -24,14 +24,13 @@ public class CSVExporter extends LogExporter {
     private FileWriter autoSaveWriter;
     private File autoSaveFile;
     private List<LogEntryField> fields;
-    private List<LogEntryField> previousFields;
     private Thread exporterThread;
     private LinkedBlockingQueue<LogEntry> awaitingExport;
 
 
     public CSVExporter(ExportController exportController, Preferences preferences){
         super(exportController, preferences);
-        this.previousFields = preferences.getSetting(Globals.PREF_PREVIOUS_CSV_FIELDS);
+        this.fields = preferences.getSetting(Globals.PREF_PREVIOUS_CSV_FIELDS);
         this.controlPanel = new CSVExporterControlPanel(this);
     }
 
@@ -97,14 +96,13 @@ public class CSVExporter extends LogExporter {
 
     public List<LogEntryField> showFieldChooserDialog() throws Exception {
         //TODO Display dialog using previously used fields as default
-        FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(this.controlPanel), "CSV Export", previousFields);
+        FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(this.controlPanel), "CSV Export", fields);
         fieldSelectorDialog.setVisible(true);
 
         List<LogEntryField> selectedFields = fieldSelectorDialog.getSelectedFields();
         if(selectedFields == null || selectedFields.isEmpty()) throw new Exception("Operation cancelled.");
 
-        previousFields = selectedFields;
-        preferences.setSetting(Globals.PREF_PREVIOUS_CSV_FIELDS, previousFields);
+        preferences.setSetting(Globals.PREF_PREVIOUS_CSV_FIELDS, fields);
 
         return selectedFields;
     }

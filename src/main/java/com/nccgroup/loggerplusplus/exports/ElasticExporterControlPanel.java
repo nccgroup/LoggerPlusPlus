@@ -24,7 +24,7 @@ public class ElasticExporterControlPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 new ElasticExporterConfigDialog(JOptionPane.getFrameForComponent(
-                        ElasticExporterControlPanel.this), elasticExporter.getPreferences())
+                        ElasticExporterControlPanel.this), elasticExporter)
                         .setVisible(true);
             }
         });

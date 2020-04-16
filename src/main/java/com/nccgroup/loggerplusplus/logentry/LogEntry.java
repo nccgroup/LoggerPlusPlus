@@ -74,8 +74,8 @@ public class LogEntry
 	public Date responseDateTime;
 	public Date requestDateTime;
 	public int requestResponseDelay = -1;
-	public String responseHeaders;
-	public String requestHeaders;
+	public List<String> responseHeaders;
+	public List<String> requestHeaders;
 
 	private LogEntry(){
 		this.identifier = UUID.randomUUID();
@@ -142,8 +142,7 @@ public class LogEntry
 		if (!LoggerPlusPlus.isUrlInScope(uUrl)) return Status.IGNORED;
 
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
-		List<String> lstFullRequestHeader = tempAnalyzedReq.getHeaders();
-		requestHeaders = StringUtils.join(lstFullRequestHeader, ", ");
+		requestHeaders = tempAnalyzedReq.getHeaders();
 
 		this.url = tempAnalyzedReq.getUrl();
 		this.hostname = tempRequestResponseHttpService.getHost();
@@ -177,7 +176,7 @@ public class LogEntry
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
-		for(String item:lstFullRequestHeader){
+		for(String item:requestHeaders){
 			if(item.indexOf(":")>=0){
 				String[] headerItem = item.split(":\\s",2);
 				headerItem[0] = headerItem[0].toLowerCase();
@@ -305,7 +304,7 @@ public class LogEntry
 				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
 		));
 
-		responseHeaders =  tempAnalyzedResp.getHeaders().stream().collect(Collectors.joining(", "));
+		responseHeaders =  tempAnalyzedResp.getHeaders();
 		this.responseStatus = tempAnalyzedResp.getStatusCode();
 		this.responseMimeType =tempAnalyzedResp.getStatedMimeType();
 		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();

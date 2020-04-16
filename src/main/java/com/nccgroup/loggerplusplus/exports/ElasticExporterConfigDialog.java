@@ -4,21 +4,23 @@ import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
 
 import javax.swing.*;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_ELASTIC_INCLUDE_REQ_RESP;
 
 public class ElasticExporterConfigDialog extends JDialog {
 
-    ElasticExporterConfigDialog(Frame owner, Preferences preferences){
+    ElasticExporterConfigDialog(Frame owner, ElasticExporter elasticExporter){
         super(owner, "Elastic Exporter Configuration", true);
 
         this.setLayout(new BorderLayout());
-        PanelBuilder panelBuilder = new PanelBuilder(preferences);
+        PanelBuilder panelBuilder = new PanelBuilder(elasticExporter.getPreferences());
 
         JTextField addressField = panelBuilder.createPreferenceTextField(PREF_ELASTIC_ADDRESS);
         JSpinner elasticPortSpinner = panelBuilder.createPreferenceSpinner(PREF_ELASTIC_PORT);
@@ -28,7 +30,7 @@ public class ElasticExporterConfigDialog extends JDialog {
 
         JComboBox<Protocol> protocolSelector = new JComboBox<>(Protocol.values());
         protocolSelector.addActionListener(actionEvent -> {
-            preferences.setSetting(PREF_ELASTIC_PROTOCOL, protocolSelector.getSelectedItem());
+            elasticExporter.getPreferences().setSetting(PREF_ELASTIC_PROTOCOL, protocolSelector.getSelectedItem());
         });
 
         //TODO Update PanelBuilder to allow labels with custom components
@@ -40,7 +42,18 @@ public class ElasticExporterConfigDialog extends JDialog {
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setMinimum(10);
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setStepSize(10);
 
-        JToggleButton includeRequestResponse = panelBuilder.createPreferenceCheckBox(PREF_ELASTIC_INCLUDE_REQ_RESP, "Include Request and Response");
+        JButton configureFieldsButton = new JButton(new AbstractAction("Configure") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(
+                        JOptionPane.getFrameForComponent(ElasticExporterConfigDialog.this),
+                        "Elastic Exporter", elasticExporter.getFields());
+                fieldSelectorDialog.setVisible(true);
+                if(fieldSelectorDialog.getSelectedFields() != null){
+                    elasticExporter.setFields(fieldSelectorDialog.getSelectedFields());
+                }
+            }
+        });
 
         this.add(panelBuilder.build(new JComponent[][]{
                 new JComponent[]{new JLabel("Address: "), addressField},
@@ -49,7 +62,7 @@ public class ElasticExporterConfigDialog extends JDialog {
 //                new JComponent[]{new JLabel("Cluster Name: "), clusterNameField},
                 new JComponent[]{new JLabel("Index: "), indexNameField},
                 new JComponent[]{new JLabel("Upload Delay (Seconds): "), elasticDelaySpinner},
-                new JComponent[]{includeRequestResponse, includeRequestResponse},
+                new JComponent[]{new JLabel("Exported Fields: "), configureFieldsButton},
         }, new int[][]{
                 new int[]{0, 1},
                 new int[]{0, 1},

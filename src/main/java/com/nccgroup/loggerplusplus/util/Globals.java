@@ -52,13 +52,13 @@ public class Globals {
     public static final String PREF_AUTO_SCROLL = "autoScroll";
     public static final String PREF_GREP_HISTORY = "grepHistory";
     public static final String PREF_PREVIOUS_CSV_FIELDS = "previousCSVFields";
+    public static final String PREF_PREVIOUS_ELASTIC_FIELDS = "previousElasticFields";
 
     public enum Protocol {HTTP, HTTPS}
 
     public static final String DEFAULT_COLOR_FILTERS_JSON = "{\"2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
-    public static final String DEFAULT_EXPORT_FIELDS = "[]";
 
     private static int colModelIndex = 0;
     private static int colOrder = 0;
