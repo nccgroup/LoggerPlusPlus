@@ -36,7 +36,7 @@ Screenshots
 
 You can use this extension without using the BApp store. In order to install the latest version of this extension from the GitHub repository, follow these steps:
 
-Step 1. (Downloading) Download the ["burplogger++.jar"](burplogger++.jar) file (this is the only file you need to download if you do not wish to build it yourself).
+Step 1. (Downloading) Download the ["latest release jar"](https://github.com/nccgroup/LoggerPlusPlus/releases/latest) (this is the only file you need to download if you do not wish to build it yourself).
 
 Step 2. (Adding to Burp) In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "burplogger++.jar" file.
 
