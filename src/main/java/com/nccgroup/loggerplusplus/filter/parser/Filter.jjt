@@ -1,0 +1,501 @@
+options {
+    MULTI=true;
+    STATIC=false;
+    VISITOR=true;
+//    VISITOR_RETURN_TYPE="VisitorData";
+    VISITOR_DATA_TYPE="VisitorData";
+    NODE_DEFAULT_VOID=true;
+//    DEBUG_PARSER = true;
+}
+
+PARSER_BEGIN(FilterParser)
+package com.nccgroup.loggerplusplus.filter.parser;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
+import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
+
+public class FilterParser {
+
+    public static ASTExpression parseFilter(String string) throws ParseException {
+        FilterParser FilterParser = new FilterParser(new StringReader(string));
+        ASTExpression node;
+        node = FilterParser.Filter();
+//        VisitorData result = new SanityCheckVisitor().visit(node);
+//        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
+        return node;
+    }
+
+    public static void checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
+        VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
+        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
+    }
+
+    private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
+        throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
+    }
+}}
+}
+
+PARSER_END(FilterParser)
+
+SKIP:  { " " }
+TOKEN [IGNORE_CASE]: {
+    <EQ: "=" | "==" >
+    | <NEQ: "!=" >
+    | <GT: ">" >
+    | <LT: "<" >
+    | <GEQ: ">=" >
+    | <LEQ: "<=" >
+    | <OR: "|" | "||" | "OR" >
+    | <AND: "&" | "&&" | "AND" >
+    | <XOR: "^" | "XOR" >
+    | <CONTAINS: "CONTAINS" >
+    | <IN: "IN" >
+    | <BOOLEAN: "TRUE" | "FALSE">
+    | <NUMBER: ("-"|"+")?(<DIGIT>)+("."(<DIGIT>)+)?>
+    | <DIGIT: ["0"-"9"] >
+    | <REGEXLITERAL_IN_FORWARD_SLASHES: "/\\Q" ("\\" ~["E"] | ~["\\"])* "\\E/" >
+    | <REGEX_IN_FORWARD_SLASHES: "/" ("\\" ~[] | ~["/", "\\"])+ "/" >
+    | <MATCHES: "MATCHES" >
+    | <LPAREN: "(" >
+    | <RPAREN: ")" >
+    | <INVERSE: "!" | "NOT" >
+    | <DOT: "." >
+    | <IDENTIFIER: (["a"-"z","A"-"Z","_","0"-"9"])+ >
+    | <ARRAY_START: "[" >
+    | <ARRAY_END: "]" >
+    | <ARRAY_SEPARATOR: ",">
+    | <ALIAS_SYMBOL: "#">
+    | <OPEN_SINGLE_QUOTE_STRING: "'" >: SINGLE_QUOTED_STRING
+    | <OPEN_DOUBLE_QUOTE_STRING: "\"" >: DOUBLE_QUOTED_STRING
+}
+
+<SINGLE_QUOTED_STRING> TOKEN: {
+    <SINGLE_STRING_BODY: ("\\" ~[] | ~["\'", "\\"])+>
+    | <CLOSE_SINGLE_QUOTE_STRING: "'">: DEFAULT
+}
+
+<DOUBLE_QUOTED_STRING> TOKEN: {
+    <DOUBLE_STRING_BODY: ("\\" ~[] | ~["\"", "\\"])+>
+    | <CLOSE_DOUBLE_QUOTE_STRING: "\"">: DEFAULT
+}
+
+<*> TOKEN : { <UNKNOWN: ~[]> }
+
+ASTExpression Filter() #void :
+{
+ ASTExpression ex;
+}
+{
+    ex=Expression(false)<EOF>
+    {
+        return ex;
+    }
+}
+
+ASTExpression Expression(boolean inverse) #Expression :
+{
+ LogicalOperator op = null;
+}
+{
+    ExpressionInner() [LOOKAHEAD(2) op=ExpressionCompounding()]
+
+    {
+        jjtThis.op = op;
+        jjtThis.inverse = inverse;
+        return jjtThis;
+    }
+}
+
+void WrappedCompoundExpression() #void :
+{
+    boolean inverse=false;
+}
+{
+    [inverse=Inverse()] <LPAREN> Expression(inverse) (<RPAREN> | {throw new ParseException("Unbalanced brackets.");})
+}
+
+void ExpressionInner() #void :
+{}
+{
+    WrappedCompoundExpression() | LOOKAHEAD(2) Statement()
+}
+
+void Statement() #void :
+{
+}
+{
+    Alias() | Comparison()
+}
+
+LogicalOperator ExpressionCompounding() #void :
+{
+    LogicalOperator op;
+    LogicalOperator nextOp;
+}
+{
+    (op = And() | op = Or() | op = Xor()) ExpressionInner() //First compounding can be any operator
+    ( LOOKAHEAD(2)
+        (nextOp = And() | nextOp = Or() | nextOp = Xor())
+        { //Subsequent compoundings must be same operator. Otherwise, throw exception.
+            if(op != nextOp) throwOperatorAmbiguityException(op,nextOp);
+        }
+        ExpressionInner()
+    )*
+
+    { return op; }
+}
+
+//Comparisons can take two forms (Valuea) or (value operation value).
+//To make interpretation easier, we convert (Value) to (Value operation value) by means of (Value EQUALS TRUE)
+void Comparison() #Comparison:
+{
+ BooleanOperator op = BooleanOperator.EQUAL;
+ Object left, right = true;
+}
+{
+    (left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
+
+    (
+        op = EqualityOperator() {
+            if(((LogEntryField) left).getType().isAssignableFrom(Date.class)){
+                right = Date();
+            }else{
+                try{
+                    right = Value();
+                }catch (Exception e){
+                    throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");
+                }
+            }
+
+            if(right instanceof Pattern && !String.class.isAssignableFrom(((LogEntryField) left).getType())){
+                throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));
+            }
+        }
+    |
+        op = NumericOperator()
+        {
+            if(!Number.class.isAssignableFrom(((LogEntryField) left).getType()) && !Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));
+            }
+        }
+        (
+            right = Number()
+        |
+            right = Identifier()
+            {
+                if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
+                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));
+                }
+            }
+        |
+            right = Date()
+            {
+                if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                    throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
+                }
+            }
+        |
+            {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
+        )
+    |
+        op = ContainsOperator() (
+            right = String()
+        |
+            right = Number()
+        |
+            right = Identifier()
+        |
+            {throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
+        )
+
+    |
+        op = InOperator() (
+            right = Array()
+        |
+            {throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
+        )
+    | op = MatchesOperator() (
+                                 right = RegexInString()
+                             |
+                                 right = RegexInForwardSlashes()
+                             |
+                                {throw new ParseException("The matches operator must have a pattern as its right hand value."); }
+                             )
+    | //NO OPERATOR OR RIGHT VALUE Default to EQ TRUE
+        {
+            if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
+                //If left isn't a boolean value or field with boolean type
+                throw new ParseException(left + " cannot be evaluated as a boolean.");
+            }
+        }
+    )
+
+    {
+        jjtThis.left = left;
+        jjtThis.right = right;
+        jjtThis.booleanOperator = op;
+    }
+}
+
+void Alias() #Alias:
+{
+    Token identifier;
+}
+{
+    <ALIAS_SYMBOL> identifier=<IDENTIFIER>
+    {
+        jjtThis.identifier = identifier.image;
+    }
+}
+
+Object Value() #void:
+{
+    Object v;
+}
+{
+    (
+        LOOKAHEAD(2) v = Identifier()
+    |
+        v = Number()
+    |
+        v = Boolean()
+    |
+        v = String()
+    |
+        v = RegexInForwardSlashes()
+    )
+    {return v;}
+}
+
+Set Array() #void:
+{
+    Set<Object> items = new LinkedHashSet();
+    Object initial, subsequent;
+}{
+    <ARRAY_START>
+    (initial=String() | initial=Number()) {items.add(initial);}
+    (
+        <ARRAY_SEPARATOR>
+        (subsequent=String() | subsequent=Number())
+        {
+            if(!initial.getClass().isAssignableFrom(subsequent.getClass())){
+                throw new ParseException("Array elements must all be of the same type.");
+            }
+            items.add(subsequent);
+        }
+    )* //String array
+    <ARRAY_END>
+
+    { return items; }
+}
+
+//IDENTIFIERS
+LogEntryField Identifier() #void:
+{
+    Token group, identifier;
+    FieldGroup fieldGroup;
+    LogEntryField field;
+}
+{
+    group=<IDENTIFIER>
+    {
+        fieldGroup = FieldGroup.findByLabel(group.image);
+        if(fieldGroup == null)
+            throw new ParseException(String.format("Invalid field group \"%s\". Valid groups are:\n\n%s", group.image, Arrays.toString(FieldGroup.values())));
+    }
+    <DOT>
+    identifier=<IDENTIFIER>
+    {
+        field = LogEntryField.getByLabel(fieldGroup, identifier.image);
+        if(field == null){
+            StringBuilder fieldMessage = new StringBuilder();
+            ArrayList<LogEntryField> fields = new ArrayList<LogEntryField>(getFieldsInGroup(fieldGroup));
+            for (int i = 0; i < fields.size(); i++) {
+                if(fields.get(i) == LogEntryField.NUMBER) continue;
+                fieldMessage.append(fields.get(i).getDescriptiveMessage());
+                if(i != fields.size()-1)
+                    fieldMessage.append("\n\n");
+            }
+            throw new ParseException(String.format("Invalid field \"%s\". Valid fields for group \"%s\" are:\n\n%s", identifier.image, fieldGroup, fieldMessage));
+        }
+        if(field == LogEntryField.NUMBER)
+            throw new ParseException("Field " + LogEntryField.NUMBER + " is ephemeral and cannot be used in filters.");
+        return field;
+    }
+}
+
+//END IDENTIFIERS
+
+
+//TYPES
+Date Date() #void :
+{Token t;}
+{
+    (
+        <OPEN_SINGLE_QUOTE_STRING> t=<SINGLE_STRING_BODY> <CLOSE_SINGLE_QUOTE_STRING>
+    |
+        <OPEN_DOUBLE_QUOTE_STRING> t=<DOUBLE_STRING_BODY> <CLOSE_DOUBLE_QUOTE_STRING>
+    )
+    {
+    try{
+        Date date = LogManager.LOGGER_DATE_FORMAT.parse(t.image);
+        return date;
+    }catch (Exception e){
+        throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
+    }
+}
+}
+
+BigDecimal Number() #void :
+{Token t;}
+{
+    t=<NUMBER>
+    {return new BigDecimal(t.image);}
+}
+
+String String() #void :
+{Token t = null;}
+{
+
+    (
+        <OPEN_SINGLE_QUOTE_STRING>
+        [t=<SINGLE_STRING_BODY>]
+        (
+            <CLOSE_SINGLE_QUOTE_STRING>
+        |
+            {throw new ParseException("Missing closing quote for string.");}
+        )
+    |
+        <OPEN_DOUBLE_QUOTE_STRING>
+        [t=<DOUBLE_STRING_BODY>]
+        (
+            <CLOSE_DOUBLE_QUOTE_STRING>
+        |
+            {throw new ParseException("Missing closing quote for string.");}
+        )
+    )
+
+    {
+        if(t == null) return "";
+        else return org.apache.commons.text.StringEscapeUtils.unescapeJava(t.image);
+    }
+}
+
+Pattern RegexInString() #void :
+{Token t;}
+{
+    (
+        <OPEN_SINGLE_QUOTE_STRING>
+        t=<SINGLE_STRING_BODY>
+        (
+            <CLOSE_SINGLE_QUOTE_STRING>
+        |
+            {throw new ParseException("Missing closing quote for regex string.");}
+        )
+    |
+        <OPEN_DOUBLE_QUOTE_STRING>
+        t=<DOUBLE_STRING_BODY>
+        (
+            <CLOSE_DOUBLE_QUOTE_STRING>
+        |
+            {throw new ParseException("Missing closing quote for regex string.");}
+        )
+    )
+    {
+        return Pattern.compile(t.image, Pattern.CASE_INSENSITIVE);
+    }
+}
+
+Pattern RegexInForwardSlashes() #void :
+{Token t;}
+{
+    ( t=<REGEXLITERAL_IN_FORWARD_SLASHES> | t=<REGEX_IN_FORWARD_SLASHES> )
+    {
+        return Pattern.compile(t.image.substring(1,t.image.length()-1), Pattern.CASE_INSENSITIVE);
+    }
+}
+
+Boolean Boolean() #void :
+{Token t, inverse=null;}
+{
+    [inverse=<INVERSE>]
+    t=<BOOLEAN>
+    {
+    return (inverse != null ^ java.lang.Boolean.parseBoolean(t.image));
+}
+}
+
+//END TYPES
+
+
+//BASIC OPERATORS
+
+BooleanOperator EqualityOperator() #void :
+{}
+{
+      <EQ>  {return BooleanOperator.EQUAL;}
+    | <NEQ> {return BooleanOperator.NOT_EQUAL;}
+}
+
+BooleanOperator NumericOperator() #void :
+{}
+{
+    <GT>  {return BooleanOperator.GREATER_THAN;}
+    | <LT>  {return BooleanOperator.LESS_THAN;}
+    | <GEQ> {return BooleanOperator.GREATER_THAN_EQUAL;}
+    | <LEQ> {return BooleanOperator.LESS_THAN_EQUAL;}
+}
+
+BooleanOperator ContainsOperator() #void :
+{}
+{
+    <CONTAINS> {return BooleanOperator.CONTAINS;}
+}
+
+BooleanOperator MatchesOperator() #void :
+{}
+{
+    <MATCHES> {return BooleanOperator.MATCHES;}
+}
+
+BooleanOperator InOperator() #void :
+{}
+{
+    <IN> {return BooleanOperator.IN;}
+}
+
+boolean Inverse() #void :
+{}
+{
+    <INVERSE> {return true;}
+}
+
+LogicalOperator And() #void :
+{}
+{
+    <AND> {return LogicalOperator.AND;}
+}
+
+LogicalOperator Or() #void :
+{}
+{
+    <OR> {return LogicalOperator.OR;}
+}
+
+LogicalOperator Xor() #void :
+{}
+{
+    <XOR> {return LogicalOperator.XOR;}
+}

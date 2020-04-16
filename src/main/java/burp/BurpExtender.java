@@ -12,7 +12,7 @@
 
 package burp;
 
-import loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 
 
 public class BurpExtender extends LoggerPlusPlus

@@ -1,0 +1,186 @@
+package com.nccgroup.loggerplusplus.logview.logtable;
+
+import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import java.util.*;
+
+/* Extending AbstractTableModel to design the logTable behaviour based on the array list */
+public class LogTableModel extends AbstractTableModel implements ColorFilterListener {
+
+    private final LogTableController controller;
+    private final List<LogEntry> entries;
+    private LogTableColumnModel columnModel;
+
+    public LogTableModel(LogTableController controller, LogTableColumnModel columnModel){
+        this.controller = controller;
+        this.columnModel = columnModel;
+        this.entries = Collections.synchronizedList(new ArrayList<>());
+    }
+
+    @Override
+    public int getRowCount()
+    {
+        return entries.size();
+    }
+
+    @Override
+    public int getColumnCount()
+    {
+        return (this.columnModel != null) ? this.columnModel.getColumnCount() : 0;
+    }
+
+    @Override
+    public boolean isCellEditable(int rowModelIndex, int columnModelIndex) {
+        return !(this.columnModel.getModelColumn(columnModelIndex)).isReadOnly();
+    }
+
+    @Override
+    public void setValueAt(Object value, int rowModelIndex, int columnModelIndex) {
+        LogEntry logEntry = entries.get(rowModelIndex);
+        if(this.columnModel.getModelColumn(columnModelIndex).getIdentifier() == LogEntryField.COMMENT){
+            logEntry.comment = (String) value;
+        }
+        fireTableCellUpdated(rowModelIndex, this.columnModel.getViewIndex(columnModelIndex));
+    }
+
+    @Override
+    public Class<?> getColumnClass(int columnModelIndex) {
+        Object val = getValueAt(0, columnModelIndex);
+        return val == null ? String.class : val.getClass();
+    }
+
+    private int getMaxEntries(){
+        return this.controller.getMaximumEntries();
+    }
+
+    public void removeLogEntry(LogEntry logEntry){
+        removeLogEntries(Arrays.asList(logEntry));
+    }
+
+    public void removeLogEntries(List<LogEntry> logEntry){
+        synchronized (entries) {
+            for (LogEntry entry : logEntry) {
+                int index = entries.indexOf(entry);
+                removeEntryAtRow(index);
+            }
+        }
+    }
+
+    public synchronized void removeEntryAtRow(int row) {
+        entries.remove(row);
+        this.fireTableRowsDeleted(row, row);
+    }
+
+    public synchronized void addEntry(LogEntry logEntry){
+        int index = entries.size();
+        entries.add(logEntry);
+        this.fireTableRowsInserted(index, index);
+
+        int excess = Math.max(entries.size() - controller.getMaximumEntries(), 0);
+        for (int excessIndex = 0; excessIndex < excess; excessIndex++) {
+            removeEntryAtRow(0); //Always remove the oldest entry
+        }
+    }
+
+    public synchronized void updateEntry(LogEntry logEntry){
+        int index = entries.indexOf(logEntry);
+        fireTableRowsUpdated(index, index);
+    }
+
+    @Override
+    public Object getValueAt(int rowIndex, int colModelIndex)
+    {
+        if(rowIndex >= entries.size()) return null;
+        if(colModelIndex == 0){
+            return rowIndex+1;
+        }
+
+        LogTableColumn column = columnModel.getModelColumn(colModelIndex);
+
+        Object value = entries.get(rowIndex).getValueByKey(column.getIdentifier());
+
+        if(value instanceof Date){
+            return LogProcessor.LOGGER_DATE_FORMAT.format(value);
+        }
+        return value;
+    }
+
+    public List<LogEntry> getData() {
+        return this.entries;
+    }
+
+    public LogEntry getRow(int row) {
+        return this.entries.get(row);
+    }
+
+    public void reset() {
+        this.entries.clear();
+        this.fireTableDataChanged();
+    }
+
+    //FilterListeners
+    @Override
+    public void onFilterChange(final ColorFilter filter) {
+        createFilterTestingWorker(filter, filter.shouldRetest()).execute();
+    }
+
+    @Override
+    public void onFilterAdd(final ColorFilter filter) {
+        if(!filter.isEnabled() || filter.getFilter() == null) return;
+        createFilterTestingWorker(filter, false);
+    }
+
+    @Override
+    public void onFilterRemove(final ColorFilter filter) {
+        if(!filter.isEnabled() || filter.getFilter() == null) return;
+        new SwingWorker<Void, Integer>(){
+            @Override
+            protected Void doInBackground() {
+                for (int i = 0; i< entries.size(); i++) {
+                    boolean wasPresent = entries.get(i).matchingColorFilters.remove(filter.getUUID());
+                    if(wasPresent){
+                        publish(i);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> rows) {
+                for (Integer row : rows) {
+                    fireTableRowsUpdated(row, row);
+                }
+            }
+        }.execute();
+    }
+
+    private SwingWorker<Void, Integer> createFilterTestingWorker(final ColorFilter filter, boolean retestExisting){
+        return new SwingWorker<Void, Integer>(){
+
+            @Override
+            protected Void doInBackground() {
+                for (int i = 0; i< entries.size(); i++) {
+                    boolean testResultChanged = entries.get(i).testColorFilter(filter, retestExisting);
+                    if(testResultChanged){
+                        publish(i);
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> updatedRows) {
+                for (Integer row : updatedRows) {
+                    fireTableRowsUpdated(row, row);
+                }
+            }
+        };
+    }
+}

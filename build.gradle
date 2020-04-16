@@ -1,20 +1,39 @@
 apply plugin: 'java'
 
+sourceCompatibility = 1.8
+
 repositories {
     mavenCentral()
+    maven {
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     compile 'org.swinglabs:swingx:1.6.1'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:5bc1d3f'
     compile 'com.google.code.gson:gson:2.8.2'
-    compile 'org.apache.commons:commons-text:1.1'
-    compile 'org.elasticsearch.client:transport:6.0.0'
-    testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
+    compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.2'
+    compile 'org.apache.httpcomponents:httpclient:4.5.6'
+    compile 'org.apache.commons:commons-text:1.7'
+    // Test on unix system
+     testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
+    // Test on Windows System
+//    testCompile files('C:/Program Files/BurpSuitePro/burpsuite_pro.jar')
 }
 
-task fatJar(type: Jar) {
+jar{
     baseName = project.name
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
+    from {
+        (configurations.compile).collect { it.isDirectory() ? it : zipTree(it) }
+    }{
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+}
+
+tasks.withType(Jar) {
+    destinationDir = file("$rootDir/releases")
 }

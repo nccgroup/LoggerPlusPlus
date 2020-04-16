@@ -1,1 +1,9 @@
-rootProject.name = 'burplogger++'
+rootProject.name = 'LoggerPlusPlus'
+
+//if(file("../BurpExtenderUtilities").exists()){
+//    includeBuild('../BurpExtenderUtilities'){
+//        dependencySubstitution{
+//            substitute module('com.github.CoreyD97:BurpExtenderUtilities') with project(':')
+//        }
+//    }
+//}
