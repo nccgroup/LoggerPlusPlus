@@ -1,12 +1,13 @@
 Logger++ - Advanced Logging for Burp Suite
 =======================
-![Build](https://github.com/nccgroup/LoggerPlusPlus/workflows/Java%20CI%20with%20Gradle/badge.svg)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/nccgroup/LoggerPlusPlus/Java%20CI%20with%20Gradle?style=for-the-badge) ![GitHub watchers](https://img.shields.io/github/watchers/nccgroup/loggerplusplus?label=Watchers&style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/nccgroup/loggerplusplus?style=for-the-badge) ![GitHub All Releases](https://img.shields.io/github/downloads/nccgroup/loggerplusplus/total?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/nccgroup/loggerplusplus?style=for-the-badge)
 
 Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
 
-Developed by Corey Arthur [@CoreyD97](https://twitter.com/CoreyD97)
+Developed by Corey Arthur ![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)
 
-Original by Soroush Dalili [@irsdl](https://twitter.com/irsdl)
+Original by Soroush Dalili ![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)
 
 Released as open source by NCC Group Plc - https://www.nccgroup.trust/
 
@@ -32,7 +33,7 @@ Usage
 ----
 You can use this extension without using the BApp store. In order to install the latest version of this extension from the GitHub repository, follow these steps:
 
-Step 1. Download the [latest release jar](https://github.com/nccgroup/LoggerPlusPlus/releases/latest).
+Step 1. Download the [latest release jar](https://github.com/nccgroup/LoggerPlusPlus/releases/latest) .
 
 Step 2. In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "loggerplusplus.jar" file.
 
