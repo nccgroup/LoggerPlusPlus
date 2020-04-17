@@ -3,15 +3,21 @@ Logger++ - Advanced Logging for Burp Suite
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/nccgroup/LoggerPlusPlus/Java%20CI%20with%20Gradle?style=for-the-badge) ![GitHub watchers](https://img.shields.io/github/watchers/nccgroup/loggerplusplus?label=Watchers&style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/nccgroup/loggerplusplus?style=for-the-badge) ![GitHub All Releases](https://img.shields.io/github/downloads/nccgroup/loggerplusplus/total?style=for-the-badge)
 ![GitHub](https://img.shields.io/github/license/nccgroup/loggerplusplus?style=for-the-badge)
 
-Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
-
-Developed by Corey Arthur  ![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)
-
+Developed by Corey Arthur  ![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)  
 Original by Soroush Dalili  ![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)
 
-Released as open source by NCC Group Plc - https://www.nccgroup.trust/
+Released as open source by NCC Group Plc - https://www.nccgroup.trust/  
+Released under AGPL see LICENSE for more information  
 
-Released under AGPL see LICENSE for more information
+Description
+----
+
+Logger++ is a multithreaded logging extension for Burp Suite. In addition to logging requests and responses from all Burp Suite tools, the extension allows advanced filters to be defined to highlight interesting entries or filter logs to only those which match the filter.
+
+A built in grep tool allows the logs to be searched to locate entries which match a specified pattern, and extract the values of the capture groups.
+
+To enable logs to be used in other systems, the table can also be uploaded to elasticsearch or exported to CSV.
+
 
 Screenshots
 ----------------------
