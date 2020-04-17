@@ -47,6 +47,8 @@ Step 3. You should now be able to see the "Logger++" tab in Burp Suite. If it ca
 
 Step 4. You can configure this extension by using its "option" tab and by right click on the columns' headers.
 
+Step 5. If you like the project, give the repo a star! <3
+![Stargazers](https://starchart.cc/nccgroup/LoggerPlusPlus.svg)
 
 <b>Features:</b>
 
