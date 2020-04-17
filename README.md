@@ -12,8 +12,6 @@ Released as open source by NCC Group Plc - https://www.nccgroup.trust/
 
 Released under AGPL see LICENSE for more information
 
-<br />
-
 Screenshots
 ----------------------
 
@@ -29,26 +27,19 @@ Screenshots
 
 ![Grep Panel](images/grep.png)
 
-<br />
 
-
-### Using the application
-
+Usage
+----
 You can use this extension without using the BApp store. In order to install the latest version of this extension from the GitHub repository, follow these steps:
 
-Step 1. (Downloading) Download the [latest release jar](https://github.com/nccgroup/LoggerPlusPlus/releases/latest).
+Step 1. Download the [latest release jar](https://github.com/nccgroup/LoggerPlusPlus/releases/latest).
 
-Step 2. (Adding to Burp) In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "burplogger++.jar" file.
+Step 2. In Burp Suite, click on the "Extender" tab, then in the "Extensions" tab click on the "Add" button and select the downloaded "loggerplusplus.jar" file.
 
-Step 3. (Testing) Now you should be able to see the "Logger++" tab in Burp Suite. If it cannot log anything, check your Burp Suite extension settings. If the save buttons are disabled, make sure that the requested libraries have been loaded successfully; Unload and then reload the extension and try again. If you have found an issue, please report it in the GitHub project.
+Step 3. You should now be able to see the "Logger++" tab in Burp Suite. If it cannot log anything, check your Burp Suite extension settings. If the save buttons are disabled, make sure that the requested libraries have been loaded successfully; Unload and then reload the extension and try again. If you have found an issue, please report it in the GitHub project.
 
-Step 4. (Configuring) You can configure this extension by using its "option" tab and by right click on the columns' headers.
+Step 4. You can configure this extension by using its "option" tab and by right click on the columns' headers.
 
-Step 5. (Using!) Now you can use this extension!
-
-<b>Requirements:</b>
-- Latest version of Burp Suite
-- Java version 7 or above
 
 <b>Features:</b>
 
