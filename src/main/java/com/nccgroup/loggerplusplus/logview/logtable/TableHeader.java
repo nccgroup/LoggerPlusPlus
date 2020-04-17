@@ -23,8 +23,8 @@ public class TableHeader extends JTableHeader {
 				if ( SwingUtilities.isRightMouseButton( e )){
 					// get the coordinates of the mouse click
 					Point p = e.getPoint();
-					int columnID = getTable().convertColumnIndexToModel(columnAtPoint(p));
-					LogTableColumn column = ((LogTableColumnModel) getColumnModel()).getModelColumn(columnID);
+					int columnIndex = columnAtPoint(p);
+					LogTableColumn column = (LogTableColumn) getColumnModel().getColumn(columnIndex);
 
 					TableHeaderMenu tblHeaderMenu = new TableHeaderMenu(logTableController, column);
 					tblHeaderMenu.showMenu(e);

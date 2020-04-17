@@ -32,21 +32,21 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
     @Override
     public int getColumnCount()
     {
-        return (this.columnModel != null) ? this.columnModel.getColumnCount() : 0;
+        return this.columnModel.getColumnCount();
     }
 
     @Override
     public boolean isCellEditable(int rowModelIndex, int columnModelIndex) {
-        return !(this.columnModel.getModelColumn(columnModelIndex)).isReadOnly();
+        return !((LogTableColumn) this.columnModel.getColumn(columnModelIndex)).isReadOnly();
     }
 
     @Override
     public void setValueAt(Object value, int rowModelIndex, int columnModelIndex) {
         LogEntry logEntry = entries.get(rowModelIndex);
-        if(this.columnModel.getModelColumn(columnModelIndex).getIdentifier() == LogEntryField.COMMENT){
-            logEntry.comment = (String) value;
+        if(this.columnModel.getColumn(columnModelIndex).getIdentifier() == LogEntryField.COMMENT){
+            logEntry.setComment(String.valueOf(value));
         }
-        fireTableCellUpdated(rowModelIndex, this.columnModel.getViewIndex(columnModelIndex));
+        fireTableCellUpdated(rowModelIndex, columnModelIndex);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
             return rowIndex+1;
         }
 
-        LogTableColumn column = columnModel.getModelColumn(colModelIndex);
+        LogTableColumn column = (LogTableColumn) columnModel.getColumn(colModelIndex);
 
         Object value = entries.get(rowIndex).getValueByKey(column.getIdentifier());
 

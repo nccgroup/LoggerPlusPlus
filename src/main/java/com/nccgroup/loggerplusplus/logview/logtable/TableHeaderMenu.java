@@ -108,26 +108,6 @@ public class TableHeaderMenu extends JPopupMenu{
 		});
 		menu.add(item);
 
-//		item = new JMenuItem("Disable");
-//		item.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//
-//				SwingUtilities.invokeLater(new Runnable() {
-//					public void run() {
-//						String[] msgOptions = { "OK", "CANCEL" };
-//						String message = "Are you sure you want to toggleDisabled the \""+ columnObj.getVisibleName()
-//								+"\"? This column may not be populated when it is disabled (if it needs additional resources)";
-//
-//						if(MoreHelp.askConfirmMessage("Disabling a column", message, msgOptions)==JOptionPane.YES_OPTION){
-//							logTable.getColumnModel().toggleDisabled(columnObj);
-//							saveAndReloadTableSettings();
-//						}
-//					}
-//				});
-//			}
-//		});
-//		menu.add(item);
-
 		JMenu subMenuVisibleCols = new JMenu("Visible columns");
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {

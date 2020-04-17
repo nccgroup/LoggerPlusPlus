@@ -63,7 +63,6 @@ public class LogEntry
 	public String responseContentType="";
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
-	public String comment="";
 //	public String[] regexAllReq = {"","","","",""};
 //	public String[] regexAllResp = {"","","","",""};
 
@@ -168,7 +167,6 @@ public class LogEntry
 			this.urlExtension = "";
 		}
 
-		this.comment = requestResponse.getComment();
 		this.requestBodyOffset = tempAnalyzedReq.getBodyOffset();
 		this.requestLength = requestResponse.getRequest().length - requestBodyOffset;
 		this.hasBodyParam = requestLength > 0;
@@ -317,8 +315,6 @@ public class LogEntry
 			this.responseContentType = headers.get("content-type").get(0);
 		}
 
-		this.comment = requestResponse.getComment();
-
 		Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
 		if(titleMatcher.find()){
 			this.title = titleMatcher.group(1);
@@ -420,6 +416,10 @@ public class LogEntry
 	public void setResponseTime(Date responseTime) {
 		this.responseDateTime = responseTime;
 		this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.responseDateTime);
+	}
+
+	public void setComment(String comment) {
+		this.requestResponse.setComment(comment);
 	}
 
 	public Object getValueByKey(LogEntryField columnName){

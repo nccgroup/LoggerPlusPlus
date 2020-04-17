@@ -102,16 +102,11 @@ public class LogTable extends JTable
     {
         LogEntry entry = null;
         Integer modelRow = null;
-        int attempts = 5;
-        while(entry == null && attempts > 0) {
-            try {
-                modelRow = convertRowIndexToModel(row);
-                entry = this.getModel().getRow(modelRow);
-            } catch (NullPointerException ignored) {
-//            ignored.printStackTrace();
-//            controller.getLogViewController().getLoggerPlusPlus().getLoggingController().logError("NullPointerException caused by view->model index conversion.");
-                attempts--;
-            }
+        try {
+            modelRow = convertRowIndexToModel(row);
+            entry = this.getModel().getRow(modelRow);
+        } catch (NullPointerException ignored) {
+            ignored.printStackTrace();
         }
 
         Component c = super.prepareRenderer(renderer, row, column);
@@ -181,8 +176,8 @@ public class LogTable extends JTable
                     LogTableModel model = LogTable.this.getModel();
                     if(LogTable.this.getSelectedRowCount() == 1){
                         LogEntry logEntry = model.getRow(convertRowIndexToModel(rowAtPoint));
-                        LogEntryField logField = LogTable.this.getColumnModel()
-                                .getModelColumn(convertColumnIndexToModel(columnAtPoint(p))).getIdentifier();
+                        LogEntryField logField = (LogEntryField) LogTable.this.getColumnModel()
+                                .getColumn(columnAtPoint(p)).getIdentifier();
 
                         if (e.isPopupTrigger() && e.getComponent() instanceof JTable ) {
                             new SingleLogEntryMenu(controller, logEntry, logField).show(e.getComponent(), e.getX(), e.getY());

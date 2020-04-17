@@ -34,31 +34,30 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         super();
         this.controller = controller;
         this.preferences = controller.getPreferences();
-        allColumns = new ArrayList<>();
-        setup();
-    }
 
-    private void setup(){
         ArrayList<LogTableColumn> columnList = preferences.getSetting(Globals.PREF_LOG_TABLE_SETTINGS);
-
         // Sorting based on order number
         Collections.sort(columnList);
+        this.allColumns = columnList;
 
-        for (int i = 0; i < columnList.size(); i++) {
-            LogTableColumn column = columnList.get(i);
-            column.setModelIndex(i);
-            allColumns.add(column);
-            if (column.isVisible())
+        for (int i = 0; i < allColumns.size(); i++) {
+            LogTableColumn column = allColumns.get(i);
+
+            if (column.isVisible()) {
                 addColumn(column);
+            }
         }
+
+        initialize();
     }
 
-    public TableColumn getColumnByIdentifier(LogEntryField identifier){
-        for (LogTableColumn col : allColumns) {
-            if(col.getIdentifier() == identifier) return col;
-        }
+    private void initialize(){
 
-        return null;
+    }
+
+    @Override
+    public int getColumnCount() {
+        return tableColumns.size();
     }
 
     @Override
@@ -67,23 +66,25 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         if (column == null) {
             throw new IllegalArgumentException("Object is null");
         } else {
-            if(this.tableColumns.size() == 0){
-                this.tableColumns.addElement(column);
-            }else {
-                //Find the first element with a greater order than the one to be added and add it before it.
-                boolean added = false;
-                for (int i = 0; i < this.tableColumns.size(); i++) {
-                    int currentOrderAtIndex = ((LogTableColumn) this.tableColumns.get(i)).getOrder();
-                    if (currentOrderAtIndex > ((LogTableColumn) column).getOrder()){
-                        this.tableColumns.add(i, column);
-                        added = true;
-                        break;
-                    }
-                }
-                if(!added){ //No elements with a greater order value. Add it to the end.
-                    this.tableColumns.addElement(column);
+            //Find the first element with a greater order than the one to be added and add it before it.
+            int newPosition = -1;
+            for (int i = 0; i < this.tableColumns.size(); i++) {
+                int currentOrderAtIndex = ((LogTableColumn) this.tableColumns.get(i)).getOrder();
+                if (currentOrderAtIndex > ((LogTableColumn) column).getOrder()){
+                    newPosition = i;
+                    break;
                 }
             }
+            if(newPosition == -1){ //No elements with a greater order value. Add it to the end.
+                newPosition = this.tableColumns.size();
+            }
+
+            this.tableColumns.add(newPosition, column);
+            //Adjust model index for new and subsequent columns
+            for (int i = newPosition; i < tableColumns.size(); i++) {
+                tableColumns.get(i).setModelIndex(i);
+            }
+
             column.addPropertyChangeListener(this);
             this.fireColumnAdded(new TableColumnModelEvent(this, 0, this.getColumnCount() - 1));
         }
@@ -91,23 +92,6 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
 
     public int getViewIndex(int modelIndex){
         return this.tableColumns.indexOf(this.allColumns.get(modelIndex));
-    }
-
-    //TableModel gets the column from the model index, not the view index.
-    //If we dont do this all the groups are wrong!
-    public LogTableColumn getModelColumn(int modelIndex){
-        return allColumns.get(modelIndex);
-    }
-
-    public void resetToDefaultVariables() {
-        preferences.resetSetting(Globals.PREF_LOG_TABLE_SETTINGS);
-        List<TableColumn> columns = Collections.list(this.getColumns());
-        for (TableColumn column : columns) {
-            this.removeColumn(column);
-        }
-        assert this.tableColumns.size() == 0;
-        allColumns.clear();
-        setup();
     }
 
     public void saveLayout() {
@@ -118,35 +102,44 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
     public void moveColumn(int viewFrom, int viewTo) {
 //		viewToModelMap
         super.moveColumn(viewFrom, viewTo);
-        ((LogTableColumn) getColumn(viewFrom)).setOrder(viewTo);
-        if(viewFrom < viewTo) {
-            for (int i = viewFrom + 1; i <= viewTo; i++) {
-                ((LogTableColumn) getColumn(i)).setOrder(i-1);
-            }
-            //Save the changes
-            saveLayout();
-        }else if(viewFrom > viewTo){
-            for (int i = viewFrom-1; i >= viewTo; i--) {
-                ((LogTableColumn) getColumn(i)).setOrder(i+1);
-            }
-            //Save the changes
-            saveLayout();
-        }else{
-            //no change
+        if(viewFrom == viewTo) return;
+
+        int leftIndex = Math.min(viewFrom, viewTo);
+        int rightIndex = Math.max(viewFrom, viewTo);
+
+        for (int index = leftIndex; index <= rightIndex; index++) {
+            LogTableColumn col = (LogTableColumn) getColumn(index);
+            col.setOrder(index);
+            col.setModelIndex(index);
         }
+
+        saveLayout();
         this.fireColumnMoved(new TableColumnModelEvent(this, viewFrom, viewTo));
     }
 
-    public void toggleDisabled(LogTableColumn logTableColumn) {
-//		logTableColumn.setEnabled(!logTableColumn.isEnabled());
-//		if(logTableColumn.isEnabled()){
-//			logTableColumn.setVisible(true); // when a field is enabled, then it becomes visible automatically
-//			//Add column to view
-//			addColumn(logTableColumn);
-//		}else{
-//			//Remove column from view
-//			removeColumn(logTableColumn);
-//		}
+    @Override
+    public void removeColumn(TableColumn column) {
+        int columnIndex = tableColumns.indexOf(column);
+
+        if (columnIndex != -1) {
+            // Adjust for the selection
+            if (selectionModel != null) {
+                selectionModel.removeIndexInterval(columnIndex,columnIndex);
+            }
+
+            column.removePropertyChangeListener(this);
+            tableColumns.removeElementAt(columnIndex);
+
+            //Update model index for subsequent columns
+            for (int index = columnIndex; index < tableColumns.size(); index++) {
+                tableColumns.get(index).setModelIndex(index);
+            }
+
+            // Post columnAdded event notification.  (JTable and JTableHeader
+            // listens so they can adjust size and redraw)
+            fireColumnRemoved(new TableColumnModelEvent(this,
+                    columnIndex, 0));
+        }
     }
 
     public void toggleHidden(LogTableColumn logTableColumn) {
