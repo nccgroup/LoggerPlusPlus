@@ -17,15 +17,15 @@ Screenshots
 
 <b>Log Filters</b>
 
-![Log Filters](https://i.imgur.com/mgWgcPT.jpg)
+![Log Filters](images/filters.png)
 
 <b>Row Highlights</b>
 
-![Row Highlights](https://i.imgur.com/xGYbx38g.jpg)
+![Row Highlights](images/colorfilters.png)
 
 <b>Grep Search</b>
 
-![Grep Panel](https://i.imgur.com/1ORZr4x.png)
+![Grep Panel](images/grep.png)
 
 <br />
 
