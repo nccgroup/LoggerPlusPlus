@@ -1,5 +1,7 @@
 Logger++ - Advanced Logging for Burp Suite
 =======================
+![Build](https://github.com/nccgroup/LoggerPlusPlus/workflows/Java%20CI%20with%20Gradle/badge.svg)
+
 Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
 
 Developed by Corey Arthur [@CoreyD97](https://twitter.com/CoreyD97)
