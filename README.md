@@ -5,9 +5,9 @@ Logger++ - Advanced Logging for Burp Suite
 
 Sometimes it is necessary to log all the requests and responses of a specific tool in Burp Suite. Logger++ can log activities of all the tools in Burp Suite to show them in a sortable table. It also has an ability to save this data in CSV format.
 
-Developed by Corey Arthur ![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)
+Developed by Corey Arthur  ![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)
 
-Original by Soroush Dalili ![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)
+Original by Soroush Dalili  ![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)
 
 Released as open source by NCC Group Plc - https://www.nccgroup.trust/
 
