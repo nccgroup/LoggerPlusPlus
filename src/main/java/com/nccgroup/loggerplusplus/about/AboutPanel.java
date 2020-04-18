@@ -218,9 +218,10 @@ public class AboutPanel extends JPanel {
 					" \u2022 Grep all entries for regex patterns and extract matching groups\n" +
 					" \u2022 Import entries from WStalker, OWASP ZAP\n" +
 					" \u2022 Export entries to elasticsearch, CSV\n" +
-					" \u2022 Multithreaded\n" +
-					"\nWant a feature implementing? Make a request using the buttons above!\n" +
-					"Want to help improve Logger++? Submit a pull request!\n\n";
+					" \u2022 Multithreaded\n\n" +
+					"Want a feature implementing? Make a request using the buttons above!\n" +
+					"Want to help improve Logger++? Submit a pull request!\n\n" +
+					"Like the extension? Let me know by giving it a star on GitHub.\n\n";
 
 			String thanksTo = "Thanks To:\n";
 			String thanksText = "Shaddy, ours-code, jselvi, jaesbit, wotgl, StanHVA, theblackturtle";
