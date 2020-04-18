@@ -174,6 +174,7 @@ public class MoreHelp {
 							int res = MoreHelp.askConfirmMessage("Update Available", "An update is available. Would you like to update now?", new String[]{"Yes", "No"});
 							if (res == JOptionPane.OK_OPTION) {
 								try {
+									//TODO FIXME
 									URL updateUrl = new URL(Globals.UPDATE_URL);
 									InputStream input = updateUrl.openStream();
 									Path outputPath = Paths.get(LoggerPlusPlus.callbacks.getExtensionFilename());

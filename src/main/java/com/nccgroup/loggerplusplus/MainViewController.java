@@ -22,7 +22,7 @@ public class MainViewController implements ITab {
         tabbedPane.addTab("Filter Library", null, loggerPlusPlus.getLibraryController().getFilterLibraryPanel(), null);
         tabbedPane.addTab("Grep Values", null, loggerPlusPlus.getGrepperController().getGrepperPanel(), null);
         tabbedPane.addTab("Options", null, loggerPlusPlus.getPreferencesController().getPreferencesPanel(), null);
-        tabbedPane.addTab("About", null, new AboutPanel(), null);
+        tabbedPane.addTab("About", null, new AboutPanel(loggerPlusPlus.getPreferencesController().getPreferences()), null);
         tabbedPane.addTab("Help", null, new HelpPanel(), null);
         this.popOutWrapper = new PopOutPanel(tabbedPane, Globals.APP_NAME);
     }

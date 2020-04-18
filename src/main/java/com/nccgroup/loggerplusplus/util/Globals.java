@@ -7,12 +7,16 @@ public class Globals {
     public static final String APP_NAME = "Logger++";
     public static final double VERSION = 3.16;
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
+    public static final String TWITTER_URL = "https://twitter.com/CoreyD97";
+    public static final String IRSDL_TWITTER_URL = "https://twitter.com/irsdl";
+    public static final String NCC_TWITTER_URL = "https://twitter.com/nccgroup";
     public static final String COMPANY_LINK = "https://www.nccgroup.trust/";
-    public static final String AUTHOR_LINK = "https://soroush.secproject.com/";
-    public static final String PROJECT_LINK = "https://github.com/NCCGroup/BurpSuiteLoggerPlusPlus";
-    public static final String PROJECT_ISSUE_LINK = "https://github.com/nccgroup/BurpSuiteLoggerPlusPlus/issues";
-    public static final String CHANGELOG = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/CHANGELOG";
-    public static final String UPDATE_URL = "https://raw.githubusercontent.com/NCCGroup/BurpSuiteLoggerPlusPlus/master/burplogger++.jar";
+    public static final String GITHUB_URL = "https://github.com/nccgroup/LoggerPlusPlus";
+    public static final String GITHUB_FEATURE_URL = "https://github.com/nccgroup/LoggerPlusPlus/issues/new?assignees=CoreyD97&labels=enhancement&template=feature_request.md&title=";
+    public static final String GITHUB_BUG_URL = "https://github.com/nccgroup/LoggerPlusPlus/issues/new?assignees=CoreyD97&labels=bug&template=bug_report.md&title=";
+    public static final String PROJECT_ISSUE_LINK = "https://github.com/nccgroup/LoggerPlusPlus/issues";
+    public static final String CHANGELOG = "https://raw.githubusercontent.com/NCCGroup/LoggerPlusPlus/master/CHANGELOG";
+    public static final String UPDATE_URL = "https://raw.githubusercontent.com/NCCGroup/LoggerPlusPlus/releases/burplogger++.jar";
 
     //Preferences Keys
     public static final String PREF_LOG_TABLE_SETTINGS = "tabledetailsjson";
