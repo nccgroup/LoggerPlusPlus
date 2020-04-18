@@ -152,7 +152,7 @@ public class LogEntry
 		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
 				|| (this.protocol.equals("http") && this.targetPort == 80);
 
-		this.host = this.protocol+"://"+this.hostname+(isDefaultPort ? "" : this.targetPort);
+		this.host = this.protocol+"://"+this.hostname+(isDefaultPort ? "" : ":" + this.targetPort);
 
 
 		this.method = tempAnalyzedReq.getMethod();
