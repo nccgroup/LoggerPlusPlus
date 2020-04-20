@@ -1,6 +1,8 @@
 package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.exports.ExportController;
+import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
 import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
@@ -18,6 +20,7 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
@@ -131,6 +134,18 @@ public class SingleLogEntryMenu extends JPopupMenu {
             });
         }
         this.add(scopeItem);
+
+        JMenu exportMenu = new JMenu("Export as...");
+        ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
+        for (LogExporter exporter : exportController.getExporters().values()) {
+            JMenuItem item = exporter.getExportEntriesMenuItem(Arrays.asList(entry));
+            if(item != null) exportMenu.add(item);
+        }
+
+        if(exportMenu.getItemCount() > 0){
+            this.add(new JPopupMenu.Separator());
+            this.add(exportMenu);
+        }
 
         this.add(new JPopupMenu.Separator());
 

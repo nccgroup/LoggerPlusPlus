@@ -2,10 +2,12 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 public class CSVExporterControlPanel extends JPanel {
 
@@ -17,7 +19,8 @@ public class CSVExporterControlPanel extends JPanel {
 
         JButton manualSaveButton = new JButton("Export as CSV");
         manualSaveButton.addActionListener(actionEvent -> {
-            csvExporter.manualSave();
+            final List<LogEntry> entries = csvExporter.getExportController().getLoggerPlusPlus().getLogEntries();
+            csvExporter.exportEntries(entries);
         });
 
         JToggleButton exportButton = new JToggleButton("Auto-export as CSV");

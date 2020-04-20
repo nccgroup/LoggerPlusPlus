@@ -2,9 +2,11 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class JSONExporterControlPanel extends JPanel {
 
@@ -13,7 +15,8 @@ public class JSONExporterControlPanel extends JPanel {
 
         JButton manualSaveButton = new JButton("Export as JSON");
         manualSaveButton.addActionListener(actionEvent -> {
-            jsonExporter.manualSave();
+            final List<LogEntry> entries = jsonExporter.getExportController().getLoggerPlusPlus().getLogEntries();
+            jsonExporter.exportEntries(entries);
         });
 
         this.add(PanelBuilder.build(new JComponent[][]{

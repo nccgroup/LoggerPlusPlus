@@ -12,6 +12,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -95,6 +96,16 @@ public class CSVExporter extends AutomaticLogExporter {
         return this.controlPanel;
     }
 
+    @Override
+    public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
+        return new JMenuItem(new AbstractAction(String.format("Export %s as CSV", entries.size() != 1 ? "entries" : "entry")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                exportEntries(entries);
+            }
+        });
+    }
+
     static boolean shouldAppendToExistingFile(File file, List<LogEntryField> fields) throws Exception{
         if (validHeader(file, fields)) {
             //The existing file uses the same field set.
@@ -168,7 +179,8 @@ public class CSVExporter extends AutomaticLogExporter {
         }
     }
 
-    void manualSave(){
+    @Override
+    public void exportEntries(List<LogEntry> entries) {
         try {
             List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.csv", "CSV File", "csv");
@@ -178,8 +190,6 @@ public class CSVExporter extends AutomaticLogExporter {
             }else{
                 append = true;
             }
-
-            final List<LogEntry> entries = exportController.getLoggerPlusPlus().getLogEntries();
 
             SwingWorkerWithProgressDialog<Void> importWorker = new SwingWorkerWithProgressDialog<Void>(
                     JOptionPane.getFrameForComponent(this.controlPanel),

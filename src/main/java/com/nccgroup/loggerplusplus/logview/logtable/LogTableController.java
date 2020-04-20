@@ -52,6 +52,7 @@ public class LogTableController {
         return preferences;
     }
 
+
     public void reset(){
         logTableModel.reset();
     }

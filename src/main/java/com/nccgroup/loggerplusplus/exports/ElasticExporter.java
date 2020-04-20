@@ -52,6 +52,11 @@ public class ElasticExporter extends AutomaticLogExporter {
     }
 
     @Override
+    public void exportEntries(List<LogEntry> entries) throws Exception {
+        throw new Exception("Manual export not supported");
+    }
+
+    @Override
     void setup() throws Exception {
         if(this.fields == null || this.fields.isEmpty())
             throw new Exception("No fields configured for export.");
@@ -95,6 +100,11 @@ public class ElasticExporter extends AutomaticLogExporter {
     @Override
     public JComponent getExportPanel() {
         return controlPanel;
+    }
+
+    @Override
+    public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
+        return null;
     }
 
     private void createIndices() throws IOException {

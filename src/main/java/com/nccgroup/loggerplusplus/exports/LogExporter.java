@@ -5,6 +5,7 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
+import java.util.List;
 
 public abstract class LogExporter {
 
@@ -16,11 +17,15 @@ public abstract class LogExporter {
         this.preferences = preferences;
     }
 
+    public abstract void exportEntries(List<LogEntry> entries) throws Exception;
+
     /**
      * Build the control panel to be displayed in the preferences tab
      * @return
      */
     public abstract JComponent getExportPanel();
+
+    public abstract JMenuItem getExportEntriesMenuItem(List<LogEntry> entries);
 
     public Preferences getPreferences() {
         return preferences;

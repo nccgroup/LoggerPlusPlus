@@ -1,6 +1,8 @@
 package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.exports.ExportController;
+import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
@@ -68,6 +70,18 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             }
         }));
         this.add(copySelectedUrls);
+
+        JMenu exportMenu = new JMenu("Export entries as...");
+        ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
+        for (LogExporter exporter : exportController.getExporters().values()) {
+            JMenuItem item = exporter.getExportEntriesMenuItem(selectedEntries);
+            if(item != null) exportMenu.add(item);
+        }
+
+        if(exportMenu.getItemCount() > 0){
+            this.add(new JPopupMenu.Separator());
+            this.add(exportMenu);
+        }
 
         this.add(new Separator());
 

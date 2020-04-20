@@ -13,6 +13,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.List;
 
@@ -33,13 +34,11 @@ public class JSONExporter extends LogExporter {
         return this.controlPanel;
     }
 
-
-    void manualSave(){
+    @Override
+    public void exportEntries(List<LogEntry> entries) {
         try {
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.json", "JSON Format", "json");
             if(file.exists() && !shouldOverwriteExistingFilePrompt()) return;
-
-            final List<LogEntry> entries = exportController.getLoggerPlusPlus().getLogEntries();
 
             SwingWorkerWithProgressDialog<Void> importWorker = new SwingWorkerWithProgressDialog<Void>(
                     JOptionPane.getFrameForComponent(this.controlPanel),
@@ -69,6 +68,16 @@ public class JSONExporter extends LogExporter {
             //Cancelled.
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
+        return new JMenuItem(new AbstractAction(String.format("Export %s as JSON", entries.size() != 1 ? "entries" : "entry")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                exportEntries(entries);
+            }
+        });
     }
 
     private static boolean shouldOverwriteExistingFilePrompt() throws Exception {
