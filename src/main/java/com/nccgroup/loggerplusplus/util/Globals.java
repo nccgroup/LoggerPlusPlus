@@ -55,7 +55,7 @@ public class Globals {
     public static final String PREF_AUTO_SAVE = "autoSave";
     public static final String PREF_AUTO_SCROLL = "autoScroll";
     public static final String PREF_GREP_HISTORY = "grepHistory";
-    public static final String PREF_PREVIOUS_CSV_FIELDS = "previousCSVFields";
+    public static final String PREF_PREVIOUS_EXPORT_FIELDS = "previousExportFields";
     public static final String PREF_PREVIOUS_ELASTIC_FIELDS = "previousElasticFields";
 
     public enum Protocol {HTTP, HTTPS}
@@ -97,7 +97,7 @@ public class Globals {
         .append("{'id':" + HASPOSTPARAM + ",'name':'HasBodyParam','defaultVisibleName':'Body Params?','visibleName':'Body Params?','preferredWidth':50,'type':'boolean','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Indicates whether or not the request contains any POST parameters','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
         .append("{'id':" + HASCOOKIEPARAM + ",'name':'HasCookieParam','defaultVisibleName':'Sent Cookie?','visibleName':'Sent Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Indicates whether or not the request has any Cookie parameters','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
         .append("{'id':" + SENTCOOKIES + ",'name':'SentCookies','defaultVisibleName':'Sent Cookies','visibleName':'Sent Cookies','preferredWidth':150,'type':'string','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Shows the cookies which was sent in the request','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
-        .append("{'id':" + USES_COOKIE_JAR_PROXY + ",'name':'UsesCookieJar','defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'type':'string','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Compares the cookies with the cookie jar ones to see if any of them in use','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
+        .append("{'id':" + USES_COOKIE_JAR + ",'name':'UsesCookieJar','defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'type':'string','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Compares the cookies with the cookie jar ones to see if any of them in use','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
         .append("{'id':" + REQUEST_CONTENT_TYPE + ",'name':'RequestContentType','defaultVisibleName':'Request Content Type','visibleName':'Request Type','preferredWidth':150,'type':'string','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Shows the request content-type header','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
         .append("{'id':" + REFERRER + ",'name':'Referrer','defaultVisibleName':'Referrer','visibleName':'Referrer','preferredWidth':250,'type':'string','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Shows the referer header','isRegEx':false,'regExString':'','regExCaseSensitive':false},")
         .append("{'id':" + HAS_SET_COOKIES + ",'name':'HasSetCookies','defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'type':'boolean','readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'Indicates whether or not the response contains the set-cookie header','isRegEx':false,'regExString':'','regExCaseSensitive':false},")

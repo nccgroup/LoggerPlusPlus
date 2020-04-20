@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class ElasticExporter extends LogExporter {
+public class ElasticExporter extends AutomaticLogExporter {
 
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;

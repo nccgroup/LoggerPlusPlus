@@ -18,7 +18,6 @@ import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import org.apache.commons.lang3.StringUtils;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -494,8 +493,7 @@ public class LogEntry
 					return this.complete;
 				case SENTCOOKIES:
 					return this.sentCookies;
-				case REQUEST_USES_COOKIE_JAR:
-				case USES_COOKIE_JAR_PROXY:
+				case USES_COOKIE_JAR:
 					return this.usesCookieJar.toString();
 //				case REGEX1REQ:
 //					return this.regexAllReq[0];

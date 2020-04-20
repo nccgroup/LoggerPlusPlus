@@ -6,6 +6,8 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
 import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.MoreHelp;
+import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
 import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
@@ -17,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Created by corey on 21/08/17.
  */
-public class CSVExporter extends LogExporter {
+public class CSVExporter extends AutomaticLogExporter {
 
     private final CSVExporterControlPanel controlPanel;
 
@@ -30,14 +32,14 @@ public class CSVExporter extends LogExporter {
 
     public CSVExporter(ExportController exportController, Preferences preferences){
         super(exportController, preferences);
-        this.fields = preferences.getSetting(Globals.PREF_PREVIOUS_CSV_FIELDS);
+        this.fields = preferences.getSetting(Globals.PREF_PREVIOUS_EXPORT_FIELDS);
         this.controlPanel = new CSVExporterControlPanel(this);
     }
 
     @Override
     public void setup() throws Exception {
-        fields = showFieldChooserDialog();
-        autoSaveFile = getSaveFile("LoggerPlusPlus_Autosave.csv");
+        fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+        autoSaveFile = MoreHelp.getSaveFile("LoggerPlusPlus_Autosave.csv", "CSV File", "csv");
         boolean append;
         if(autoSaveFile.exists()){
             append = shouldAppendToExistingFile(autoSaveFile, fields);
@@ -91,40 +93,6 @@ public class CSVExporter extends LogExporter {
     @Override
     public JComponent getExportPanel() {
         return this.controlPanel;
-    }
-
-
-    public List<LogEntryField> showFieldChooserDialog() throws Exception {
-        //TODO Display dialog using previously used fields as default
-        FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(this.controlPanel), "CSV Export", fields);
-        fieldSelectorDialog.setVisible(true);
-
-        List<LogEntryField> selectedFields = fieldSelectorDialog.getSelectedFields();
-        if(selectedFields == null || selectedFields.isEmpty()) throw new Exception("Operation cancelled.");
-
-        preferences.setSetting(Globals.PREF_PREVIOUS_CSV_FIELDS, fields);
-
-        return selectedFields;
-    }
-
-    static File getSaveFile(String filename) throws Exception {
-        JFileChooser chooser = null;
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel Format (CSV)", "csv");
-
-        chooser = new JFileChooser();
-        chooser.setDialogTitle("Saving Logger++ Entries");
-        chooser.setFileFilter(filter);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setSelectedFile(new File(filename));
-        chooser.setAcceptAllFileFilterUsed(false);
-
-        int val = chooser.showSaveDialog(null);
-
-        if (val == JFileChooser.APPROVE_OPTION) {
-            return chooser.getSelectedFile();
-        }
-
-        throw new Exception("Operation cancelled.");
     }
 
     static boolean shouldAppendToExistingFile(File file, List<LogEntryField> fields) throws Exception{
@@ -200,7 +168,61 @@ public class CSVExporter extends LogExporter {
         }
     }
 
-    public static String buildHeader(List<LogEntryField> fields) {
+    void manualSave(){
+        try {
+            List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+            File file = MoreHelp.getSaveFile("LoggerPlusPlus.csv", "CSV File", "csv");
+            final boolean append;
+            if (file.exists()) {
+                append = CSVExporter.shouldAppendToExistingFile(file, fields);
+            }else{
+                append = true;
+            }
+
+            final List<LogEntry> entries = exportController.getLoggerPlusPlus().getLogEntries();
+
+            SwingWorkerWithProgressDialog<Void> importWorker = new SwingWorkerWithProgressDialog<Void>(
+                    JOptionPane.getFrameForComponent(this.controlPanel),
+                    "CSV Export", "Exporting as CSV...", entries.size()){
+                @Override
+                protected Void doInBackground() throws Exception {
+                    super.doInBackground();
+                    try(FileWriter fileWriter = new FileWriter(file, append)) {
+                        if(!append) { //If we're not appending to existing file, add the header
+                            fileWriter.append(buildHeader(fields));
+                            fileWriter.flush();
+                        }
+
+                        for (int i = 0; i < entries.size(); i++) {
+                            if(this.isCancelled()) break;
+                            fileWriter.append("\n");
+                            LogEntry entry = entries.get(i);
+                            fileWriter.append(CSVExporter.entryToCSVString(entry, fields));
+                            fileWriter.flush();
+                            publish(i);
+                        }
+                    }
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    super.done();
+                    JOptionPane.showMessageDialog(controlPanel, "Export as CSV completed.",
+                            "CSV Export", JOptionPane.INFORMATION_MESSAGE);
+                }
+            };
+
+            importWorker.execute();
+
+        }catch (Exception e){
+            //Cancelled.
+            e.printStackTrace();
+        }
+    }
+
+    private static String buildHeader(List<LogEntryField> fields) {
         StringBuilder result = new StringBuilder();
 
         for (int i = 0; i < fields.size(); i++) {
@@ -228,7 +250,7 @@ public class CSVExporter extends LogExporter {
         return string;
     }
 
-    public static String entryToCSVString(LogEntry logEntry, List<LogEntryField> fields) {
+    private static String entryToCSVString(LogEntry logEntry, List<LogEntryField> fields) {
         StringBuilder result = new StringBuilder();
 
         for (int i = 0; i < fields.size(); i++) {

@@ -12,7 +12,6 @@ public enum LogEntryField {
     PROXY_TOOL(FieldGroup.PROXY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
     LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
     CLIENT_IP(FieldGroup.PROXY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
-    USES_COOKIE_JAR_PROXY(FieldGroup.PROXY, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"),
     COMMENT(FieldGroup.PROXY, String.class, "Comments set on the entry.", "Comment"),
 
     //Request + Response
@@ -35,7 +34,7 @@ public enum LogEntryField {
     QUERY(FieldGroup.REQUEST, String.class, "The query parameters of the requested URL.", "Query", "GetParams", "QueryParams"),
     PROTOCOL(FieldGroup.REQUEST, String.class, "The protocol component of the requested URL.", "Protocol"),
     ISSSL(FieldGroup.REQUEST, Boolean.class, "Did the request use SSL?", "IsSSL", "ssl"),
-    REQUEST_USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"), //Alias for proxy.usescookiejar
+    USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"),
     HOSTNAME(FieldGroup.REQUEST, String.class, "The hostname component of the requested URL.", "Hostname"),
     HOST(FieldGroup.REQUEST, String.class, "The protocol and hostname of the requested URL.", "Host"),
     PORT(FieldGroup.REQUEST, Short.class, "The port the request was sent to.", "Port"),

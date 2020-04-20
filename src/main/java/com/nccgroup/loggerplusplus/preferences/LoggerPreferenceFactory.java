@@ -8,6 +8,7 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
@@ -18,7 +19,6 @@ import javax.swing.*;
 import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
-import static com.nccgroup.loggerplusplus.util.Globals.Protocol.HTTP;
 
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
@@ -46,6 +46,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     protected void registerTypeAdapters(){
         this.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
         this.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
+        this.gsonProvider.registerTypeAdapter(LogEntry.class, new LogEntrySerializer());
     }
 
     @Override
@@ -80,7 +81,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger", Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_PREVIOUS_CSV_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_PREVIOUS_EXPORT_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_PREVIOUS_ELASTIC_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
 
         prefs.registerSetting(PREF_AUTO_SAVE, Boolean.class, false, Preferences.Visibility.VOLATILE);

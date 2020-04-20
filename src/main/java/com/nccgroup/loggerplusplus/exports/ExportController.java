@@ -14,7 +14,7 @@ public class ExportController {
     private final LoggerPlusPlus loggerPlusPlus;
     private final Preferences preferences;
     private final List<LogExporter> exporters;
-    private final List<LogExporter> enabledExporters;
+    private final List<AutomaticLogExporter> enabledExporters;
     
     public ExportController(LoggerPlusPlus loggerPlusPlus, Preferences preferences){
         this.loggerPlusPlus = loggerPlusPlus;
@@ -28,6 +28,7 @@ public class ExportController {
 
     private void initializeExporters(){
         this.exporters.add(new CSVExporter(this, preferences));
+        this.exporters.add(new JSONExporter(this, preferences));
         this.exporters.add(new ElasticExporter(this, preferences));
     }
 
@@ -35,28 +36,28 @@ public class ExportController {
         return exporters;
     }
 
-    public List<LogExporter> getEnabledExporters() {
+    public List<AutomaticLogExporter> getEnabledExporters() {
         return enabledExporters;
     }
 
-    public void enableExporter(LogExporter logExporter) throws Exception {
+    public void enableExporter(AutomaticLogExporter logExporter) throws Exception {
         logExporter.setup();
         this.enabledExporters.add(logExporter);
     }
 
-    public void disableExporter(LogExporter logExporter) throws Exception {
+    public void disableExporter(AutomaticLogExporter logExporter) throws Exception {
         this.enabledExporters.remove(logExporter);
         logExporter.shutdown();
     }
 
     public void exportNewEntry(LogEntry logEntry){
-        for (LogExporter exporter : this.enabledExporters) {
+        for (AutomaticLogExporter exporter : this.enabledExporters) {
             exporter.exportNewEntry(logEntry);
         }
     }
 
     public void exportUpdatedEntry(LogEntry logEntry){
-        for (LogExporter exporter : this.enabledExporters) {
+        for (AutomaticLogExporter exporter : this.enabledExporters) {
             exporter.exportUpdatedEntry(logEntry);
         }
     }

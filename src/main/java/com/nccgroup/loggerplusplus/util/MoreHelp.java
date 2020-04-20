@@ -3,11 +3,14 @@ package com.nccgroup.loggerplusplus.util;
 import burp.BurpExtender;
 import burp.IExtensionHelpers;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
+import java.io.File;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -215,5 +218,37 @@ public class MoreHelp {
 
 	public static String showLargeInputDialog(String title, String message){
 		return JOptionPane.showInputDialog(title);
+	}
+
+	public static File getSaveFile(String filename, String formatDescription, String extension) throws Exception {
+		JFileChooser chooser = null;
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Format (JSON)", "json");
+
+		chooser = new JFileChooser();
+		chooser.setDialogTitle("Saving Logger++ Entries");
+		chooser.setFileFilter(filter);
+		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		chooser.setSelectedFile(new File(filename));
+		chooser.setAcceptAllFileFilterUsed(false);
+
+		int val = chooser.showSaveDialog(null);
+
+		if (val == JFileChooser.APPROVE_OPTION) {
+			return chooser.getSelectedFile();
+		}
+
+		throw new Exception("Operation cancelled.");
+	}
+
+	public static List<LogEntryField> showFieldChooserDialog(JComponent owner, String title, List<LogEntryField> defaultFields) throws Exception {
+		FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(owner), title, defaultFields);
+		fieldSelectorDialog.setVisible(true);
+
+		List<LogEntryField> selectedFields = fieldSelectorDialog.getSelectedFields();
+		if(selectedFields.isEmpty()) {
+			return null;
+		}
+
+		return selectedFields;
 	}
 }
