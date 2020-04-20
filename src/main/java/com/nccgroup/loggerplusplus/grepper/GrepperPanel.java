@@ -9,6 +9,7 @@ import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.regex.Pattern;
@@ -31,8 +32,6 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         this.controller = controller;
         this.preferences = preferences;
 
-        PanelBuilder panelBuilder = new PanelBuilder(this.preferences);
-
         searchField = new HistoryField(this.preferences, Globals.PREF_GREP_HISTORY, 15);
         searchField.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
             @Override
@@ -46,16 +45,22 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         this.progressBar = new JProgressBar();
         this.inScopeOnly = new JCheckBox("In Scope Only");
 
-        this.searchButton = panelBuilder.createButton("Search", e -> {
-            if(this.controller.isSearching()){
-                controller.cancelSearch();
-            }else{
-                startSearch();
+        this.searchButton = new JButton(new AbstractAction("Search") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (controller.isSearching()) {
+                    controller.cancelSearch();
+                } else {
+                    startSearch();
+                }
             }
         });
 
-        this.resetButton = panelBuilder.createButton("Reset", e -> {
-            this.controller.reset();
+        this.resetButton = new JButton(new AbstractAction("Reset") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controller.reset();
+            }
         });
 
         this.grepResultsTable = new GrepResultsTable(controller);
@@ -65,7 +70,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         this.resultsPane.addTab("Results", new JScrollPane(grepResultsTable));
         this.resultsPane.addTab("Unique Results", new JScrollPane(uniqueTable));
 
-        JPanel wrapperPanel = panelBuilder.build(new JComponent[][]{
+        JPanel wrapperPanel = PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{new JLabel("Regex: "), searchField, inScopeOnly, searchButton, resetButton},
                 new JComponent[]{resultsPane, resultsPane, resultsPane, resultsPane, resultsPane},
                 new JComponent[]{progressBar, progressBar, progressBar, progressBar, progressBar}

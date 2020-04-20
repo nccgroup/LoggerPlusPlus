@@ -20,7 +20,7 @@ public class ElasticExporterControlPanel extends JPanel {
         this.elasticExporter = elasticExporter;
         this.setLayout(new BorderLayout());
 
-        JButton showConfigDialogButton = new JButton(new AbstractAction("Configure") {
+        JButton showConfigDialogButton = new JButton(new AbstractAction("Configure Elastic Exporter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 new ElasticExporterConfigDialog(JOptionPane.getFrameForComponent(
@@ -78,7 +78,7 @@ public class ElasticExporterControlPanel extends JPanel {
             }
         });
 
-        this.add(new PanelBuilder().build(new JComponent[][]{
+        this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{showConfigDialogButton},
                 new JComponent[]{exportButton}
         }, new int[][]{

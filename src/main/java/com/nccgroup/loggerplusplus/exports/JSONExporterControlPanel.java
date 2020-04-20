@@ -16,7 +16,7 @@ public class JSONExporterControlPanel extends JPanel {
             jsonExporter.manualSave();
         });
 
-        this.add(new PanelBuilder().build(new JComponent[][]{
+        this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{manualSaveButton},
         }, new int[][]{
                 new int[]{1},

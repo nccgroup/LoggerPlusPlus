@@ -62,8 +62,6 @@ public class AboutPanel extends JPanel {
 	}
 
 	private JComponent buildMainPanel(){
-		PanelBuilder panelBuilder = new PanelBuilder(preferences);
-
 		JLabel headerLabel = new JLabel("Logger++");
 		Font font = this.getFont().deriveFont(32f).deriveFont(this.getFont().getStyle() | Font.BOLD);
 		headerLabel.setFont(font);
@@ -188,7 +186,7 @@ public class AboutPanel extends JPanel {
 		JLabel ideaBy = new JLabel("Originally by: Soroush Dalili ( @irsdl )");
 		ideaBy.setHorizontalAlignment(SwingConstants.CENTER);
 		ideaBy.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
-		JComponent creditsPanel = panelBuilder.build(new JComponent[][]{
+		JComponent creditsPanel = PanelBuilder.build(new JComponent[][]{
 					new JComponent[]{createdBy},
 					new JComponent[]{ideaBy},
 					new JComponent[]{nccBranding},
@@ -244,7 +242,7 @@ public class AboutPanel extends JPanel {
 		JScrollPane aboutContentScrollPane = new JScrollPane(aboutContent);
 		aboutContentScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
-		JPanel panel = panelBuilder.build(new JComponent[][]{
+		JPanel panel = PanelBuilder.build(new JComponent[][]{
 				new JComponent[]{headerLabel, headerLabel},
 				new JComponent[]{subtitle, subtitle},
 				new JComponent[]{separator, separator},

@@ -63,8 +63,7 @@ public class LogViewPanel extends JPanel {
         this.removeAll();
         this.setLayout(new BorderLayout());
 
-        PanelBuilder panelBuilder = new PanelBuilder();
-        JPanel panel = panelBuilder.build(new Component[][]{
+        JPanel panel = PanelBuilder.build(new Component[][]{
                 new Component[]{mainControlsPanel},
                 new Component[]{tableViewerSplitPanel},
         }, new int[][]{

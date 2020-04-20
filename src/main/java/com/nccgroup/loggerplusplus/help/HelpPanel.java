@@ -176,8 +176,7 @@ public class HelpPanel extends JPanel {
         JScrollPane fieldScroll = new JScrollPane(fieldPane);
 
         Component separator = new JSeparator(JSeparator.VERTICAL);
-        PanelBuilder panelBuilder = new PanelBuilder();
-        JPanel panel = panelBuilder.build(new Component[][]{
+        JPanel panel = PanelBuilder.build(new Component[][]{
                 new Component[]{overviewTitle, separator, fieldTitle},
                 new Component[]{overviewScroll, separator, fieldScroll}
         }, new int[][]{new int[]{0, 0, 0},

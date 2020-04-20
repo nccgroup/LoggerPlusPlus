@@ -25,7 +25,7 @@ public abstract class SwingWorkerWithProgressDialog<T> extends SwingWorker<T, In
             }
         });
 
-        JPanel bodyPanel = new PanelBuilder().build(new Component[][]{
+        JPanel bodyPanel = PanelBuilder.build(new Component[][]{
                 new Component[]{messageLabel, messageLabel},
                 new Component[]{jProgressBar, cancelButton}
         }, new int[][]{

@@ -81,10 +81,6 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
         callbacks.setExtensionName("Logger++");
 
-        if(!callbacks.isExtensionBapp() && (boolean) preferencesController.getPreferences().getSetting(Globals.PREF_UPDATE_ON_STARTUP)){
-            MoreHelp.checkForUpdate(false);
-        }
-
         LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
         LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 

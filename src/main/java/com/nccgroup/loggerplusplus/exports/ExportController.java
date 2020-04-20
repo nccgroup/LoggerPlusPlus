@@ -7,32 +7,33 @@ import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public class ExportController {
 
     private final LoggerPlusPlus loggerPlusPlus;
     private final Preferences preferences;
-    private final List<LogExporter> exporters;
+    private final HashMap<Class<? extends LogExporter>, LogExporter> exporters;
     private final List<AutomaticLogExporter> enabledExporters;
     
     public ExportController(LoggerPlusPlus loggerPlusPlus, Preferences preferences){
         this.loggerPlusPlus = loggerPlusPlus;
         this.preferences = preferences;
 
-        this.exporters = new ArrayList<>();
+        this.exporters = new HashMap<>();
         this.enabledExporters = Collections.synchronizedList(new ArrayList<>());
 
         initializeExporters();
     }
 
     private void initializeExporters(){
-        this.exporters.add(new CSVExporter(this, preferences));
-        this.exporters.add(new JSONExporter(this, preferences));
-        this.exporters.add(new ElasticExporter(this, preferences));
+        this.exporters.put(CSVExporter.class, new CSVExporter(this, preferences));
+        this.exporters.put(JSONExporter.class, new JSONExporter(this, preferences));
+        this.exporters.put(ElasticExporter.class, new ElasticExporter(this, preferences));
     }
 
-    public List<LogExporter> getExporters() {
+    public HashMap<Class<? extends LogExporter>, LogExporter> getExporters() {
         return exporters;
     }
 

@@ -20,10 +20,10 @@ public class ElasticExporterConfigDialog extends JDialog {
         super(owner, "Elastic Exporter Configuration", true);
 
         this.setLayout(new BorderLayout());
-        PanelBuilder panelBuilder = new PanelBuilder(elasticExporter.getPreferences());
+        Preferences preferences = elasticExporter.getPreferences();
 
-        JTextField addressField = panelBuilder.createPreferenceTextField(PREF_ELASTIC_ADDRESS);
-        JSpinner elasticPortSpinner = panelBuilder.createPreferenceSpinner(PREF_ELASTIC_PORT);
+        JTextField addressField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_ADDRESS);
+        JSpinner elasticPortSpinner = PanelBuilder.createPreferenceSpinner(preferences, PREF_ELASTIC_PORT);
         ((SpinnerNumberModel) elasticPortSpinner.getModel()).setMaximum(65535);
         ((SpinnerNumberModel) elasticPortSpinner.getModel()).setMinimum(0);
         elasticPortSpinner.setEditor(new JSpinner.NumberEditor(elasticPortSpinner,"#"));
@@ -35,9 +35,9 @@ public class ElasticExporterConfigDialog extends JDialog {
 
         //TODO Update PanelBuilder to allow labels with custom components
 
-        JTextField clusterNameField = panelBuilder.createPreferenceTextField(PREF_ELASTIC_CLUSTER_NAME);
-        JTextField indexNameField = panelBuilder.createPreferenceTextField(PREF_ELASTIC_INDEX);
-        JSpinner elasticDelaySpinner = panelBuilder.createPreferenceSpinner(PREF_ELASTIC_DELAY);
+        JTextField clusterNameField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_CLUSTER_NAME);
+        JTextField indexNameField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_INDEX);
+        JSpinner elasticDelaySpinner = PanelBuilder.createPreferenceSpinner(preferences, PREF_ELASTIC_DELAY);
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setMaximum(99999);
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setMinimum(10);
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setStepSize(10);
@@ -55,7 +55,7 @@ public class ElasticExporterConfigDialog extends JDialog {
             }
         });
 
-        this.add(panelBuilder.build(new JComponent[][]{
+        this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{new JLabel("Address: "), addressField},
                 new JComponent[]{new JLabel("Port: "), elasticPortSpinner},
                 new JComponent[]{new JLabel("Protocol: "), protocolSelector},

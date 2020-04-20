@@ -30,7 +30,7 @@ public class CSVExporterControlPanel extends JPanel {
             }
         });
 
-        this.add(new PanelBuilder().build(new JComponent[][]{
+        this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{manualSaveButton},
                 new JComponent[]{exportButton}
         }, new int[][]{

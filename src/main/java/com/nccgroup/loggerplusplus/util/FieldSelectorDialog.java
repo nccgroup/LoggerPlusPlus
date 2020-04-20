@@ -48,7 +48,7 @@ public class FieldSelectorDialog extends JDialog {
             this.dispose();
         });
 
-        JPanel panel = new PanelBuilder().build(
+        JPanel panel = PanelBuilder.build(
                 new JComponent[][]{
                         new JComponent[]{message, message, message},
                         new JComponent[]{fieldScrollPane, fieldScrollPane, fieldScrollPane},
