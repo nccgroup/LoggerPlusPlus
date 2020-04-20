@@ -19,6 +19,7 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.userinterface.NoTextSelectionCaret;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.WrappedTextPane;
+import org.elasticsearch.common.Glob;
 
 import javax.swing.*;
 import javax.swing.text.Style;
@@ -186,9 +187,13 @@ public class AboutPanel extends JPanel {
 		JLabel ideaBy = new JLabel("Originally by: Soroush Dalili ( @irsdl )");
 		ideaBy.setHorizontalAlignment(SwingConstants.CENTER);
 		ideaBy.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
+		JLabel version = new JLabel("Version: " + Globals.VERSION);
+		version.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
+		version.setHorizontalAlignment(SwingConstants.CENTER);
 		JComponent creditsPanel = PanelBuilder.build(new JComponent[][]{
 					new JComponent[]{createdBy},
 					new JComponent[]{ideaBy},
+					new JComponent[]{version},
 					new JComponent[]{nccBranding},
 					new JComponent[]{nccBranding}
 			}, Alignment.FILL, 1, 1);

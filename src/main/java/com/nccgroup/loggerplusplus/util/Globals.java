@@ -5,7 +5,7 @@ import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 
 public class Globals {
     public static final String APP_NAME = "Logger++";
-    public static final double VERSION = 3.16;
+    public static final double VERSION = 3.17;
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String TWITTER_URL = "https://twitter.com/CoreyD97";
     public static final String IRSDL_TWITTER_URL = "https://twitter.com/irsdl";
@@ -13,7 +13,7 @@ public class Globals {
     public static final String COMPANY_LINK = "https://www.nccgroup.trust/";
     public static final String GITHUB_URL = "https://github.com/nccgroup/LoggerPlusPlus";
     public static final String GITHUB_FEATURE_URL = "https://github.com/nccgroup/LoggerPlusPlus/issues/new?assignees=CoreyD97&labels=enhancement&template=feature_request.md&title=";
-    public static final String GITHUB_BUG_URL = "https://github.com/nccgroup/LoggerPlusPlus/issues/new?assignees=CoreyD97&labels=bug&template=bug_report.md&title=";
+    public static final String GITHUB_BUG_URL = "https://github.com/nccgroup/LoggerPlusPlus/issues/new?assignees=CoreyD97&labels=bug&template=bug_report.md&title=v" + VERSION + "%20-%20Bug:%20YOUR_TITLE_HERE";
     public static final String PROJECT_ISSUE_LINK = "https://github.com/nccgroup/LoggerPlusPlus/issues";
     public static final String CHANGELOG = "https://raw.githubusercontent.com/NCCGroup/LoggerPlusPlus/master/CHANGELOG";
     public static final String UPDATE_URL = "https://raw.githubusercontent.com/NCCGroup/LoggerPlusPlus/releases/burplogger++.jar";
