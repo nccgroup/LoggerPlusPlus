@@ -245,12 +245,12 @@ public class LogEntry
 //					int counter = 1;
 //					while (m.find()) {
 //						if(counter==2){
-//							allMatches.insert(0, "�");
-//							allMatches.append("�");
+//							allMatches.insert(0, "X");
+//							allMatches.append("X");
 //						}
 //						if(counter > 1){
-//							allMatches.append("�"+m.group()+"�");
-//						}else{
+//							allMatches.append("X"+m.group()+"X"); //TODO Investigate unicode use
+// 						}else{
 //							allMatches.append(m.group());
 //						}
 //						counter++;
@@ -372,11 +372,11 @@ public class LogEntry
 //						int counter = 1;
 //						while (m.find()) {
 //							if(counter==2){
-//								allMatches.insert(0, "�");
-//								allMatches.append("�");
+//								allMatches.insert(0, "X");
+//								allMatches.append("X");
 //							}
 //							if(counter > 1){
-//								allMatches.append("�"+m.group()+"�");
+//								allMatches.append("X"+m.group()+"X"); //TODO investigate unicode use
 //							}else{
 //								allMatches.append(m.group());
 //							}
