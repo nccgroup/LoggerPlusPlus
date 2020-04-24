@@ -45,13 +45,13 @@ public class ColorFilterDialog extends JFrame {
         gbcFilterWrapper.weightx = 1;
         gbcFilterWrapper.fill = GridBagConstraints.HORIZONTAL;
         final JPanel priorityControls = new JPanel(new GridLayout(0,1));
-        priorityControls.add(new JButton(new AbstractAction("▲") {
+        priorityControls.add(new JButton(new AbstractAction("\u25B2") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 filterTable.moveSelectedUp();
             }
         }));
-        priorityControls.add(new JButton(new AbstractAction("▼") {
+        priorityControls.add(new JButton(new AbstractAction("\u25BC") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 filterTable.moveSelectedDown();
