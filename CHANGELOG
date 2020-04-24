@@ -1,3 +1,24 @@
+v 3.17
+=========================================================================
+After 2 years of writing and rewriting the code over and over again, the dev branch has finally been pushed to master.
+This includes:
+- New filter parser implemented with JavaCC.
+- New operators for use in filters: IN, CONTAINS, XOR, NOT
+- Filter snippets, define and reuse within more complex filters.
+- New import features:
+  - WStalker
+  - ZAP Proxy
+- New export features:
+  - JSON
+- Export selected items from context menu
+- Multi-selection context menu
+- Overhauled log processor, with better (and faster!) multithreading.
+
+v 3.16
+=========================================================================
+BETA
+- Reimplement elasticsearch integration
+
 v 3.15
 =========================================================================
 BETA
