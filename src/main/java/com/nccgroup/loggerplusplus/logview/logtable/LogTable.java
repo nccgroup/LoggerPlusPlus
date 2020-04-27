@@ -68,7 +68,11 @@ public class LogTable extends JTable
         Integer sortColumn = this.preferences.getSetting(Globals.PREF_SORT_COLUMN);
         SortOrder sortOrder = this.preferences.getSetting(Globals.PREF_SORT_ORDER);
         if(sortColumn >= 0 && sortOrder != SortOrder.UNSORTED){
-            this.sorter.setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
+            try {
+                this.sorter.setSortKeys(Collections.singletonList(new RowSorter.SortKey(sortColumn, sortOrder)));
+            }catch (IllegalArgumentException exception){
+                //If we can't set the sort key because its invalid, just ignore it.
+            }
         }
 
         this.getSelectionModel().addListSelectionListener(e -> {
