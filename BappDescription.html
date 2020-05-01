@@ -1,4 +1,31 @@
-<p>This extension can be used to log the requests and responses made by all Burp 
-tools, and display them in a sortable table. It can also save the logged data in CSV format.</p>
+<p>Logger++ is a multithreaded logging extension for Burp Suite. In addition to logging requests and responses from all Burp Suite tools, the extension allows advanced filters to be defined to highlight interesting entries or filter logs to only those which match the filter.</p>
 
-<p>Requires Java version 7.</p>
+<p>A built in grep tool allows the logs to be searched to locate entries which match a specified pattern, and extract the values of the capture groups.</p>
+
+<p>To enable logs to be used in other systems, the table can also be uploaded to elasticsearch or exported to CSV.</p>
+
+<p>Features:</p>
+
+<ul>
+	<li>Works with the latest version of Burp Suite (tested on 1.7.27)</li>
+	<li>Logs all the tools that are sending requests and receiving responses</li>
+	<li>Ability to log from a specific tool</li>
+	<li>Ability to log from a specific tool</li>
+	<li>Ability to save the results in CSV format</li>
+	<li>Ability to show results of custom regular expressions in request/response</li>
+	<li>User can customise the column headers</li>
+	<li>Advanced Filters can be created to display only requests matching a specific string or regex pattern</li>
+	<li>Row highlighting can be added using advanced filters to make interesting requests more visible</li>
+	<li>Grep through logs</li>
+	<li>Live requests and responses</li>
+	<li>Multiple view options</li>
+	<li>Pop out view panel</li>
+	<li>Multithreaded</li>
+</ul>
+
+<p>Current Limitations:</p>
+
+<ul>
+	<li>Cannot log the requests' actual time unless originating from proxy tool</li>
+	<li>Cannot calculate the actual delay between a request and its response unless originating from proxy tool</li>
+</ul>
