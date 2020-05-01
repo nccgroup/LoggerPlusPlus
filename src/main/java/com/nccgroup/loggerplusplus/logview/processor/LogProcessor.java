@@ -21,7 +21,7 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 /**
  * Created by corey on 07/09/17.
  */
-public class LogProcessor implements IHttpListener, IProxyListener {
+public class LogProcessor implements IHttpListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 
@@ -62,11 +62,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30, 30, TimeUnit.SECONDS);
 
         LoggerPlusPlus.callbacks.registerHttpListener(this);
-        LoggerPlusPlus.callbacks.registerProxyListener(this);
+//        LoggerPlusPlus.callbacks.registerProxyListener(this);
     }
 
     /**
-     * Process messages from all tools but proxy.
+     * Process messages from all tools.
      * Adds to queue for later processing.
      * @param toolFlag Tool used to make request
      * @param isRequestOnly If the message is request only or complete with response
@@ -74,18 +74,17 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
-        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
         if(httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
-        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
-            //Submit normally, we're not tracking requests and responses separately.
-            if(!isRequestOnly) { //But only add entries complete with a response.
-                final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-                submitNewEntryProcessingRunnable(logEntry);
-            }
-            return;
-        }
+//        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
+//            //Submit normally, we're not tracking requests and responses separately.
+//            if(!isRequestOnly) { //But only add entries complete with a response.
+//                final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
+//                submitNewEntryProcessingRunnable(logEntry);
+//            }
+//            return;
+//        }
 
         if(isRequestOnly){
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
@@ -100,38 +99,38 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         }
     }
 
-    /**
-     * Process messages received from the proxy tool.
-     * For requests, a new processing job is added to the executor.
-     * @param isRequestOnly
-     * @param proxyMessage
-     */
-    @Override
-    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
-        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
-        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
-        Date arrivalTime = new Date();
-
-        if(isRequestOnly){
-            //The request is not yet sent, process the request object
-            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, proxyMessage.getMessageInfo());
-            //Store our proxy specific info now.
-            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
-            logEntry.listenerInterface = proxyMessage.getListenerInterface();
-
-            //Make a note of the entry UUID corresponding to the message identifier.
-            proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
-            submitNewEntryProcessingRunnable(logEntry);
-        }else{
-            //We're handling a response.
-            UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
-            if(uuid != null){
-                updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
-            }else{
-                System.out.println("LOST");
-            }
-        }
-    }
+//    /**
+//     * Process messages received from the proxy tool.
+//     * For requests, a new processing job is added to the executor.
+//     * @param isRequestOnly
+//     * @param proxyMessage
+//     */
+//    @Override
+//    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
+//        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
+//        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+//        Date arrivalTime = new Date();
+//
+//        if(isRequestOnly){
+//            //The request is not yet sent, process the request object
+//            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, proxyMessage.getMessageInfo());
+//            //Store our proxy specific info now.
+//            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
+//            logEntry.listenerInterface = proxyMessage.getListenerInterface();
+//
+//            //Make a note of the entry UUID corresponding to the message identifier.
+//            proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
+//            submitNewEntryProcessingRunnable(logEntry);
+//        }else{
+//            //We're handling a response.
+//            UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
+//            if(uuid != null){
+//                updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
+//            }else{
+//                System.out.println("LOST");
+//            }
+//        }
+//    }
 
     /**
      * When a response comes in, determine if the request has already been processed or not.

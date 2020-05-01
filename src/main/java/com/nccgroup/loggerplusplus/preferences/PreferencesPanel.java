@@ -85,7 +85,7 @@ public class PreferencesPanel extends JScrollPane{
         strutConstraints = logFromPanel.generateNextConstraints(true);
         strutConstraints.weighty = strutConstraints.weightx = 0;
         logFromPanel.add(Box.createVerticalStrut(10), strutConstraints);
-        logFromPanel.addPreferenceComponent(preferences, PREF_LOG_OTHER_LIVE, "Log Non-Proxy Tools Live");
+//        logFromPanel.addPreferenceComponent(preferences, PREF_LOG_OTHER_LIVE, "Log Non-Proxy Tools Live");
 
         {   //Disable check boxes if global logging is enabled.
             boolean globalDisabled = !logAllTools.isSelected();
