@@ -28,14 +28,10 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 
 	private String name;
     private int order;
-	private boolean enabled;
 	private String visibleName;
-	private String type;
 	private boolean visible;
 	private boolean readOnly;
 	private String description;
-	private boolean isRegEx;
-	private RegExData regExData;
 	private String defaultVisibleName;
 
 	@Override
@@ -62,9 +58,6 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public void setVisibleName(String visibleName) {
 		this.visibleName = visibleName;
 	}
-	public String getType() {
-		return type;
-	}
 
 	public boolean isReadOnly() {
 		return readOnly;
@@ -90,38 +83,9 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 	public String getDescription() {
 		return description;
 	}
-	public boolean isRegEx() {
-		return isRegEx;
-	}
-	public RegExData getRegExData() {
-		return regExData;
-	}
-	public void setRegExData(RegExData regExData) {
-		this.regExData = regExData;
-	}
 
 	public String getDefaultVisibleName() {
 		return defaultVisibleName;
-	}
-
-	public static class RegExData{
-		private String regExString;
-		private boolean regExCaseSensitive;
-
-		public String getRegExString() {
-			return regExString;
-		}
-		public boolean isRegExCaseSensitive() {
-			return regExCaseSensitive;
-		}
-
-		public void setRegExCaseSensitive(boolean caseSensitive) {
-			regExCaseSensitive = caseSensitive;
-		}
-
-		public void setRegExString(String regExString) {
-			this.regExString = regExString;
-		}
 	}
 
 
@@ -146,13 +110,9 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			object.addProperty("defaultVisibleName", column.defaultVisibleName);
 			object.addProperty("visibleName", column.visibleName);
 			object.addProperty("preferredWidth", column.width);
-			object.addProperty("type", column.type);
 			object.addProperty("readonly", column.readOnly);
 			object.addProperty("visible", column.visible);
 			object.addProperty("description", column.description);
-			object.addProperty("isRegEx", column.isRegEx);
-			object.addProperty("regExString", column.regExData.regExString);
-			object.addProperty("regExCaseSensitive", column.regExData.regExCaseSensitive);
 			return object;
 		}
 
@@ -167,25 +127,10 @@ public class LogTableColumn extends TableColumn implements Comparable<LogTableCo
 			column.defaultVisibleName = object.get("defaultVisibleName").getAsString();
 			column.visibleName = object.get("visibleName").getAsString();
 			column.setWidth(object.get("preferredWidth").getAsInt());
-			column.type = object.get("type").getAsString();
 			column.readOnly = object.get("readonly").getAsBoolean();
 			column.visible = object.get("visible").getAsBoolean();
 			column.description = object.get("description").getAsString();
-			column.isRegEx = object.get("isRegEx").getAsBoolean();
-			LogTableColumn.RegExData regExData = new LogTableColumn.RegExData();
-			if(object.has("regExData")) {
-				regExData.regExString = object.getAsJsonObject("regExData").get("regExString").getAsString();
-				regExData.regExCaseSensitive = object.getAsJsonObject("regExData").get("regExCaseSensitive").getAsBoolean();
-			}else{
-				regExData.regExString = object.get("regExString").getAsString();
-				regExData.regExCaseSensitive = object.get("regExCaseSensitive").getAsBoolean();
-			}
-			column.setRegExData(regExData);
 
-			if(column.getType().equals("int") || column.getType().equals("short")
-					|| column.getType().equals("double") || column.getType().equals("long")){
-				column.setCellRenderer(new LeftTableCellRenderer());
-			}
 			return column;
 		}
 	}

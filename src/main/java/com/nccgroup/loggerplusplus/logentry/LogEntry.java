@@ -14,6 +14,7 @@
 package com.nccgroup.loggerplusplus.logentry;
 
 import burp.*;
+import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 public class LogEntry
 {
+
 	Status previousStatus;
 	Status status = Status.UNPROCESSED;
 	public transient IHttpRequestResponse requestResponse;
@@ -66,14 +68,15 @@ public class LogEntry
 //	public String[] regexAllResp = {"","","","",""};
 
 	public List<UUID> matchingColorFilters;
-	public int requestBodyOffset;
-	public int responseBodyOffset;
 	public String formattedRequestTime;
 	public Date responseDateTime;
 	public Date requestDateTime;
 	public int requestResponseDelay = -1;
 	public List<String> responseHeaders;
 	public List<String> requestHeaders;
+	private List<IParameter> tempParameters;
+	private List<String> parameters;
+	private List<String> reflectedParameters;
 
 	private LogEntry(){
 		this.identifier = UUID.randomUUID();
@@ -126,6 +129,11 @@ public class LogEntry
 		}
 	}
 
+	public void reprocess(){
+		this.status = Status.UNPROCESSED;
+		process();
+	}
+
 	public Status getStatus() {
 		return status;
 	}
@@ -142,6 +150,10 @@ public class LogEntry
 		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		requestHeaders = tempAnalyzedReq.getHeaders();
 
+		this.tempParameters = tempAnalyzedReq.getParameters().stream()
+				.filter(iParameter -> iParameter.getType() != IParameter.PARAM_COOKIE).collect(Collectors.toList());
+		this.parameters = tempParameters.stream().map(IParameter::getName).collect(Collectors.toList());
+
 		this.url = tempAnalyzedReq.getUrl();
 		this.hostname = tempRequestResponseHttpService.getHost();
 		this.protocol = tempRequestResponseHttpService.getProtocol();
@@ -152,7 +164,6 @@ public class LogEntry
 				|| (this.protocol.equals("http") && this.targetPort == 80);
 
 		this.host = this.protocol+"://"+this.hostname+(isDefaultPort ? "" : ":" + this.targetPort);
-
 
 		this.method = tempAnalyzedReq.getMethod();
 		try{
@@ -166,8 +177,7 @@ public class LogEntry
 			this.urlExtension = "";
 		}
 
-		this.requestBodyOffset = tempAnalyzedReq.getBodyOffset();
-		this.requestLength = requestResponse.getRequest().length - requestBodyOffset;
+		this.requestLength = requestResponse.getRequest().length - tempAnalyzedReq.getBodyOffset();
 		this.hasBodyParam = requestLength > 0;
 		this.params = this.url.getQuery() != null || this.hasBodyParam;
 		this.hasCookieParam = false;
@@ -279,10 +289,10 @@ public class LogEntry
 	}
 
 	private Status processResponse() {
+		reflectedParameters = new ArrayList<>();
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(requestResponse.getResponse());
 		String strFullResponse = new String(requestResponse.getResponse());
-		this.responseBodyOffset = tempAnalyzedResp.getBodyOffset();
-		this.responseLength= requestResponse.getResponse().length - responseBodyOffset;
+		this.responseLength= requestResponse.getResponse().length - tempAnalyzedResp.getBodyOffset();
 
 		Map<String, List<String>> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":")).collect(Collectors.toMap(
 				s -> {
@@ -318,6 +328,15 @@ public class LogEntry
 		if(titleMatcher.find()){
 			this.title = titleMatcher.group(1);
 		}
+
+		String responseBody = new String(requestResponse.getResponse()).substring(requestResponse.getResponse().length - responseLength);
+
+		ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+		reflectedParameters = tempParameters.parallelStream().filter(iParameter ->
+				!reflectionController.isParameterFiltered(iParameter)
+						&& reflectionController.validReflection(responseBody, iParameter)
+		).map(IParameter::getName).collect(Collectors.toList());
+		tempParameters = null; //We're done with these. Allow them to be cleaned.
 
 		if(this.responseDateTime == null){
 			//If it didn't have an arrival time set, parse the response for it.
@@ -463,6 +482,10 @@ public class LogEntry
 					return this.urlExtension;
 				case REFERRER:
 					return this.referrerURL;
+				case PARAMETERS:
+					return this.parameters;
+				case PARAMETER_COUNT:
+					return this.parameters.size();
 				case HASGETPARAM:
 					return this.url.getQuery() != null;
 				case HASPOSTPARAM:
@@ -515,6 +538,10 @@ public class LogEntry
 //					return this.regexAllResp[3];
 //				case REGEX5RESP:
 //					return this.regexAllResp[4];
+				case REFLECTED_PARAMS:
+					return reflectedParameters;
+				case REFLECTION_COUNT:
+					return reflectedParameters.size();
 				case REQUEST_BODY: //request
 					return new String(requestResponse.getRequest()).substring(requestResponse.getRequest().length - requestLength);
 				case RESPONSE_BODY: //response

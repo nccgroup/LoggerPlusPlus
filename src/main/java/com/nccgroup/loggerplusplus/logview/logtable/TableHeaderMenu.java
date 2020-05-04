@@ -31,7 +31,6 @@ public class TableHeaderMenu extends JPopupMenu{
 	}
 
 	public void showMenu(MouseEvent e){
-		boolean isRegex=columnObj.isRegEx();
 
 		JPopupMenu menu = new JPopupMenu("Popup");
 		JMenuItem item = new JMenuItem(columnObj.getVisibleName() + " (" + columnObj.getIdentifier().getFullLabel() + ")");
@@ -39,49 +38,6 @@ public class TableHeaderMenu extends JPopupMenu{
 		item.setEnabled(false);
 		menu.add(item);
 		menu.addSeparator();
-
-		if(isRegex){
-			JMenu submenu = new JMenu("Regex");
-
-			item = new JMenuItem("Edit");
-			item.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					SwingUtilities.invokeLater(new Runnable() {
-						public void run() {
-							String newValue = MoreHelp.showPlainInputMessage("Regular expression for the \"" + columnObj.getVisibleName()+
-									"\" column", "Edit Regex", columnObj.getRegExData().getRegExString());
-							// Save it only if it is different! no need to refresh the columns
-							if(!newValue.equals(columnObj.getRegExData().getRegExString())){
-								// a mew RegEx string has been provided - we need to ensure that it is a valid regular expression to prevent confusion!
-								try {
-						            Pattern.compile(newValue);
-						            columnObj.getRegExData().setRegExString(newValue);
-						        } catch (PatternSyntaxException exception) {
-						            LoggerPlusPlus.callbacks.printError("Regular expression was invalid. It cannot be saved.");
-						            MoreHelp.showWarningMessage("The provided regular expression string was invalid. It cannot be saved.");
-						        }
-							}
-						}
-					});
-				}
-			});
-
-			submenu.add(item);		
-
-			item = new JCheckBoxMenuItem("Case sensitive");
-			item.setSelected(columnObj.getRegExData().isRegExCaseSensitive());
-			item.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					columnObj.getRegExData().setRegExCaseSensitive(!columnObj.getRegExData().isRegExCaseSensitive());
-				}
-			});
-
-			submenu.add(item);
-
-			menu.add(submenu);
-
-
-		}
 
 		item = new JMenuItem("Rename");
 		item.addActionListener(new ActionListener() {

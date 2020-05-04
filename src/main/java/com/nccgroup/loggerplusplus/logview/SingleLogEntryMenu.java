@@ -217,6 +217,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 public void actionPerformed(ActionEvent actionEvent) {
                     new Thread(() -> {
                         //TODO ADD IMPLEMENTATION
+                        entry.reprocess();
                     }).start();
                 }
             });

@@ -217,6 +217,20 @@ public class PreferencesPanel extends JScrollPane{
             }
         }));
 
+        ComponentGroup reflectionsPanel = new ComponentGroup(Orientation.HORIZONTAL, "Reflections");
+        reflectionsPanel.add(new JButton(new AbstractAction("Configure Filters") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                LoggerPlusPlus.instance.getReflectionController().showFilterConfigDialog();
+            }
+        }));
+        reflectionsPanel.add(new JButton(new AbstractAction("Configure Transformation Detectors") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                LoggerPlusPlus.instance.getReflectionController().showValueTransformerDialog();
+            }
+        }));
+
         ComponentGroup resetPanel = new ComponentGroup(Orientation.VERTICAL, "Reset");
         resetPanel.add(new JButton(new AbstractAction("Reset All Settings") {
             @Override
@@ -249,6 +263,7 @@ public class PreferencesPanel extends JScrollPane{
                 new JPanel[]{logFromPanel, importGroup, importGroup, importGroup},
                 new JPanel[]{logFromPanel, exportGroup, exportGroup, exportGroup},
                 new JPanel[]{savedFilterSharing, savedFilterSharing, colorFilterSharing, colorFilterSharing},
+                new JPanel[]{reflectionsPanel, reflectionsPanel, reflectionsPanel, reflectionsPanel},
                 new JPanel[]{otherPanel, otherPanel, otherPanel, otherPanel},
                 new JPanel[]{resetPanel, resetPanel, resetPanel, resetPanel},
                 new JPanel[]{notesPanel, notesPanel, notesPanel, notesPanel},
