@@ -34,6 +34,7 @@ public class ReflectionController {
         filterList.add(new BlacklistFilter(preferences));
         filterList.add(new LengthFilter(preferences));
 
+        transformerList.add(new HexEncodeTransformer(preferences));
         transformerList.add(new URLEncodeTransformer(preferences));
         transformerList.add(new URLDecodeTransformer(preferences));
         transformerList.add(new Base64EncodeTransformer(preferences));
