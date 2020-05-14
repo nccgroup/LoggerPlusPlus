@@ -156,7 +156,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
                     if(entry.complete) { //Do not add entries without a response
-                        LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getRequest());
+                        LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getResponse());
                     }
                 }
             }

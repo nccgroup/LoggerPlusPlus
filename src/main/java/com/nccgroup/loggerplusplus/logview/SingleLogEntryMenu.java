@@ -204,7 +204,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem comparerResponse = new JMenuItem(new AbstractAction("Response") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getResponse());
             }
         });
         sendToComparer.add(comparerResponse);
