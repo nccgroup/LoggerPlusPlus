@@ -20,7 +20,9 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -40,6 +42,7 @@ public class ElasticExporter extends AutomaticLogExporter {
     private List<LogEntryField> fields;
     private String indexName;
     private ScheduledFuture indexTask;
+    private int connectFailedCounter;
 
     private final ScheduledExecutorService executorService;
     private final ElasticExporterControlPanel controlPanel;
@@ -121,11 +124,15 @@ public class ElasticExporter extends AutomaticLogExporter {
     public IndexRequest buildIndexRequest(LogEntry logEntry) throws IOException {
         XContentBuilder builder = jsonBuilder().startObject();
         for (LogEntryField field : this.fields) {
-            builder = builder.field(field.getFullLabel(), formatValue(logEntry.getValueByKey(field)));
+            try {
+                builder = builder.field(field.getFullLabel(), formatValue(logEntry.getValueByKey(field)));
+            }catch (Exception e){
+                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + e.getMessage());
+            }
         }
         builder.endObject();
 
-        return new IndexRequest(this.indexName).source(builder);
+        return new IndexRequest(this.indexName, "doc").source(builder); //TODO Remove deprecated ES6 methods.
     }
 
     private void indexPendingEntries(){
@@ -154,10 +161,19 @@ public class ElasticExporter extends AutomaticLogExporter {
                 BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
                 if (bulkResponse.hasFailures()) {
                     for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
-                        System.err.println(bulkItemResponse.getFailureMessage());
+                        LoggerPlusPlus.callbacks.printError(bulkItemResponse.getFailureMessage());
                     }
                 }
-            } catch (IOException e) {
+                connectFailedCounter = 0;
+            } catch (ConnectException e) {
+                connectFailedCounter++;
+                if(connectFailedCounter > 5) {
+                    JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
+                            "Elastic exporter could not connect after 5 attempts. Elastic exporter shutting down...",
+                            "Elastic Exporter - Connection Failed", JOptionPane.ERROR_MESSAGE);
+                    shutdown();
+                }
+            }catch (IOException e) {
                 e.printStackTrace();
             }
         }catch (Exception e){
@@ -167,6 +183,7 @@ public class ElasticExporter extends AutomaticLogExporter {
 
     private Object formatValue(Object value){
         if(value instanceof Date) return ((Date) value).getTime();
+        else if(value instanceof java.net.URL) return String.valueOf((java.net.URL) value);
         else return value;
     }
 
