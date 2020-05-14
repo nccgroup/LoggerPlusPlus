@@ -55,7 +55,6 @@ public class FieldSelectorDialog extends JDialog {
         okButton.addActionListener(actionEvent -> {
             this.dispose();
         });
-        okButton.setEnabled(selectedFields.containsValue(true));
 
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(actionEvent -> {
@@ -93,7 +92,6 @@ public class FieldSelectorDialog extends JDialog {
                     String preset = getMatchedPreset();
                     if(preset != null) {
                         savedSelectionSelector.setSelectedItem(preset);
-                        setPresetState();
                     }
                 }else {
                     Map<LogEntryField, Boolean> selection = savedPresets.get(key);
@@ -106,8 +104,10 @@ public class FieldSelectorDialog extends JDialog {
                         else
                             selectedFields.put(field, false);
                     });
-                    setPresetState();
+
                 }
+                setPresetState();
+                okButton.setEnabled(selectedFields.containsValue(true));
                 ((TableModel) fieldTable.getModel()).fireTableDataChanged();
             }
         });
@@ -154,6 +154,7 @@ public class FieldSelectorDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled(selectedFields.containsValue(true));
         setPresetState();
 
 
