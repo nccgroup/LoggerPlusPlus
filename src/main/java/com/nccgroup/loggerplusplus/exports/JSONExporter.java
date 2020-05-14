@@ -66,7 +66,6 @@ public class JSONExporter extends LogExporter {
 
         }catch (Exception e){
             //Cancelled.
-            e.printStackTrace();
         }
     }
 

@@ -40,6 +40,7 @@ public class CSVExporter extends AutomaticLogExporter {
     @Override
     public void setup() throws Exception {
         fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+        if(fields.isEmpty()) throw new Exception("Operation cancelled.");
         autoSaveFile = MoreHelp.getSaveFile("LoggerPlusPlus_Autosave.csv", "CSV File", "csv");
         boolean append;
         if(autoSaveFile.exists()){
@@ -183,6 +184,7 @@ public class CSVExporter extends AutomaticLogExporter {
     public void exportEntries(List<LogEntry> entries) {
         try {
             List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+            if(fields.isEmpty()) throw new Exception("Operation cancelled.");
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.csv", "CSV File", "csv");
             final boolean append;
             if (file.exists()) {
@@ -228,7 +230,6 @@ public class CSVExporter extends AutomaticLogExporter {
 
         }catch (Exception e){
             //Cancelled.
-            e.printStackTrace();
         }
     }
 

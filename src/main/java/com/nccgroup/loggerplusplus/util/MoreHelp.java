@@ -244,11 +244,6 @@ public class MoreHelp {
 		FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(owner), title, defaultFields);
 		fieldSelectorDialog.setVisible(true);
 
-		List<LogEntryField> selectedFields = fieldSelectorDialog.getSelectedFields();
-		if(selectedFields.isEmpty()) {
-			return null;
-		}
-
-		return selectedFields;
+		return fieldSelectorDialog.getSelectedFields();
 	}
 }
