@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.util;
 
 import burp.BurpExtender;
 import burp.IExtensionHelpers;
+import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
@@ -240,9 +241,10 @@ public class MoreHelp {
 		throw new Exception("Operation cancelled.");
 	}
 
-	public static List<LogEntryField> showFieldChooserDialog(JComponent owner, String title, List<LogEntryField> defaultFields) throws Exception {
-		FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(owner), title, defaultFields);
+	public static List<LogEntryField> showFieldChooserDialog(JComponent owner, Preferences preferences, String title, List<LogEntryField> defaultFields) {
+		FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(JOptionPane.getFrameForComponent(owner), preferences, title, defaultFields);
 		fieldSelectorDialog.setVisible(true);
+		fieldSelectorDialog.dispose();
 
 		return fieldSelectorDialog.getSelectedFields();
 	}

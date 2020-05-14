@@ -5,10 +5,12 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.grepper.GrepperController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
@@ -18,8 +20,12 @@ import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
 
 import javax.swing.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 

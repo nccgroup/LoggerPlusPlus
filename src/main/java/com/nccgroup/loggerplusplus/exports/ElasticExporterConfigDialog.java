@@ -1,18 +1,17 @@
 package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
-import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.util.MoreHelp;
 
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
-import static com.nccgroup.loggerplusplus.util.Globals.PREF_ELASTIC_INCLUDE_REQ_RESP;
 
 public class ElasticExporterConfigDialog extends JDialog {
 
@@ -45,12 +44,17 @@ public class ElasticExporterConfigDialog extends JDialog {
         JButton configureFieldsButton = new JButton(new AbstractAction("Configure") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                FieldSelectorDialog fieldSelectorDialog = new FieldSelectorDialog(
-                        JOptionPane.getFrameForComponent(ElasticExporterConfigDialog.this),
-                        "Elastic Exporter", elasticExporter.getFields());
-                fieldSelectorDialog.setVisible(true);
-                if(fieldSelectorDialog.getSelectedFields() != null){
-                    elasticExporter.setFields(fieldSelectorDialog.getSelectedFields());
+                List<LogEntryField> selectedFields = MoreHelp.showFieldChooserDialog(indexNameField,
+                        preferences, "Elastic Exporter", elasticExporter.getFields());
+
+                if(selectedFields == null){
+                    //Cancelled.
+                }else if(!selectedFields.isEmpty()){
+                    elasticExporter.setFields(selectedFields);
+                }else{
+                    JOptionPane.showMessageDialog(indexNameField,
+                            "No fields were selected. No changes have been made.",
+                            "Elastic Exporter", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
         });

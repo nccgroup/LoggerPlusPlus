@@ -8,6 +8,7 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
@@ -44,6 +45,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     @Override
     protected void registerTypeAdapters(){
+        this.gsonProvider.registerTypeAdapter(LogEntryField.class, new LogEntryFieldSerializer());
         this.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
         this.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
         this.gsonProvider.registerTypeAdapter(LogEntry.class, new LogEntrySerializer());
@@ -83,6 +85,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_PREVIOUS_EXPORT_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_PREVIOUS_ELASTIC_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_SAVED_FIELD_SELECTIONS, new TypeToken<LinkedHashMap<String, LinkedHashMap<LogEntryField, Boolean>>>(){}.getType(), new LinkedHashMap<>(), Preferences.Visibility.GLOBAL);
 
         prefs.registerSetting(PREF_AUTO_SAVE, Boolean.class, false, Preferences.Visibility.VOLATILE);
         prefs.registerSetting(PREF_AUTO_SCROLL, Boolean.class, true, Preferences.Visibility.VOLATILE);

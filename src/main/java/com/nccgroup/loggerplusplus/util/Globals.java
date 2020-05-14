@@ -57,6 +57,7 @@ public class Globals {
     public static final String PREF_GREP_HISTORY = "grepHistory";
     public static final String PREF_PREVIOUS_EXPORT_FIELDS = "previousExportFields";
     public static final String PREF_PREVIOUS_ELASTIC_FIELDS = "previousElasticFields";
+    public static final String PREF_SAVED_FIELD_SELECTIONS = "savedFieldSelections";
 
     public enum Protocol {HTTP, HTTPS}
 
