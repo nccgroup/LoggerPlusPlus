@@ -15,11 +15,13 @@ import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
+import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -46,6 +48,7 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
     private LoggerContextMenuFactory contextMenuFactory;
     private GrepperController grepperController;
     private MainViewController mainViewController;
+    private ReflectionController reflectionController;
 
     //UX
     private LoggerMenu loggerMenu;
@@ -75,6 +78,7 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
         loggingController = new LoggingController(this);
         preferencesController = new PreferencesController(this, loggingController);
+        reflectionController = new ReflectionController(preferencesController.getPreferences());
         exportController = new ExportController(this, preferencesController.getPreferences());
         libraryController = new FilterLibraryController(this, preferencesController);
         logViewController = new LogViewController(this, libraryController);
@@ -166,6 +170,10 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         return logProcessor;
     }
 
+    public ReflectionController getReflectionController() {
+        return reflectionController;
+    }
+
     public LoggerMenu getLoggerMenu() {
         return loggerMenu;
     }
@@ -176,5 +184,9 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
     public ExportController getExportController() {
         return exportController;
+    }
+
+    public Frame getLoggerFrame(){
+        return JOptionPane.getFrameForComponent(mainViewController.getTabbedPanel());
     }
 }

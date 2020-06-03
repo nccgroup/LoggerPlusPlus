@@ -25,7 +25,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     private HashMap<UUID, ColorFilter> defaultColorFilters;
     private ArrayList<LogTableColumn> defaultlogTableColumns;
-    private List<LogEntryField> defaultExportFields;
+    private Set<String> defaultBlacklistedReflections;
 
     public LoggerPreferenceFactory(IGsonProvider gsonProvider, ILogProvider logProvider, IBurpExtenderCallbacks callbacks){
         super("LoggerPlusPlus", gsonProvider, logProvider, callbacks);
@@ -41,6 +41,8 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
+        defaultBlacklistedReflections = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+        defaultBlacklistedReflections.addAll(Arrays.asList("0", "1", "true", "false"));
     }
 
     @Override
@@ -53,42 +55,49 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     @Override
     protected void registerSettings() {
-        prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_IS_DEBUG, Boolean.class, false, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ENABLED, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_GLOBAL, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_PROXY, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_SPIDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_INTRUDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_SCANNER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_REPEATER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns);
+        prefs.registerSetting(PREF_IS_DEBUG, Boolean.class, false);
+        prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
+        prefs.registerSetting(PREF_ENABLED, Boolean.class, true);
+        prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false);
+        prefs.registerSetting(PREF_LOG_GLOBAL, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_PROXY, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_SPIDER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_INTRUDER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_SCANNER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_REPEATER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
         prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {}.getType(), defaultColorFilters);
         prefs.registerSetting(PREF_SAVED_FILTERS, new TypeToken<List<SavedFilter>>() {}.getType(), new ArrayList<SavedFilter>());
-        prefs.registerSetting(PREF_SORT_COLUMN, Integer.class, -1, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_SORT_ORDER, SortOrder.class, SortOrder.UNSORTED, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 1000000, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_SEARCH_THREADS, Integer.class, 5, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_ADDRESS, String.class, "127.0.0.1", Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_PORT, Integer.class, 9200, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_PROTOCOL, Protocol.class, Protocol.HTTP, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch", Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger", Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false, Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_PREVIOUS_EXPORT_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
-        prefs.registerSetting(PREF_PREVIOUS_ELASTIC_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>(), Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_SORT_COLUMN, Integer.class, -1);
+        prefs.registerSetting(PREF_SORT_ORDER, SortOrder.class, SortOrder.UNSORTED);
+        prefs.registerSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60);
+        prefs.registerSetting(PREF_MAXIMUM_ENTRIES, Integer.class, 1000000);
+        prefs.registerSetting(PREF_SEARCH_THREADS, Integer.class, 5);
+        prefs.registerSetting(PREF_AUTO_IMPORT_PROXY_HISTORY, Boolean.class, false);
+        prefs.registerSetting(PREF_LOG_OTHER_LIVE, Boolean.class, true);
+        prefs.registerSetting(PREF_ELASTIC_ADDRESS, String.class, "127.0.0.1");
+        prefs.registerSetting(PREF_ELASTIC_PORT, Integer.class, 9200);
+        prefs.registerSetting(PREF_ELASTIC_PROTOCOL, Protocol.class, Protocol.HTTP);
+        prefs.registerSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch");
+        prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger");
+        prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120);
+        prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false);
+        prefs.registerSetting(PREF_PREVIOUS_EXPORT_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>());
+        prefs.registerSetting(PREF_PREVIOUS_ELASTIC_FIELDS, new TypeToken<List<LogEntryField>>(){}.getType(), new ArrayList<LogEntry>());
+        prefs.registerSetting(PREF_COLUMNS_VERSION, Integer.class, null, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_SAVED_FIELD_SELECTIONS, new TypeToken<LinkedHashMap<String, LinkedHashMap<LogEntryField, Boolean>>>(){}.getType(), new LinkedHashMap<>(), Preferences.Visibility.GLOBAL);
 
         prefs.registerSetting(PREF_AUTO_SAVE, Boolean.class, false, Preferences.Visibility.VOLATILE);
         prefs.registerSetting(PREF_AUTO_SCROLL, Boolean.class, true, Preferences.Visibility.VOLATILE);
+
+        //Reset table columns if they have been modified by an update.
+        if(prefs.getSetting(PREF_COLUMNS_VERSION) == null || (int) prefs.getSetting(PREF_COLUMNS_VERSION) != CURRENT_COLUMN_VERSION){
+            prefs.resetSetting(PREF_LOG_TABLE_SETTINGS);
+            prefs.setSetting(PREF_COLUMNS_VERSION, CURRENT_COLUMN_VERSION);
+        }
     }
 
 }

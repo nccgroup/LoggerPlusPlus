@@ -12,7 +12,7 @@ public enum LogEntryField {
     PROXY_TOOL(FieldGroup.PROXY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
     LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
     CLIENT_IP(FieldGroup.PROXY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
-    COMMENT(FieldGroup.PROXY, String.class, "Comments set on the entry.", "Comment"),
+    COMMENT(FieldGroup.REQUEST, String.class, "Comments set on the entry.", "Comment"),
 
     //Request + Response
     REQUEST_HEADERS(FieldGroup.REQUEST, String.class, "The request line and associated headers.", "Headers", "Header"),
@@ -34,7 +34,7 @@ public enum LogEntryField {
     QUERY(FieldGroup.REQUEST, String.class, "The query parameters of the requested URL.", "Query", "GetParams", "QueryParams"),
     PROTOCOL(FieldGroup.REQUEST, String.class, "The protocol component of the requested URL.", "Protocol"),
     ISSSL(FieldGroup.REQUEST, Boolean.class, "Did the request use SSL?", "IsSSL", "ssl"),
-    USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"),
+    USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar to see if any of them are in use.", "UsesCookieJar", "CookieJar"),
     HOSTNAME(FieldGroup.REQUEST, String.class, "The hostname component of the requested URL.", "Hostname"),
     HOST(FieldGroup.REQUEST, String.class, "The protocol and hostname of the requested URL.", "Host"),
     PORT(FieldGroup.REQUEST, Short.class, "The port the request was sent to.", "Port"),
@@ -46,6 +46,8 @@ public enum LogEntryField {
     HASPOSTPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain post parameters?", "HasPostParam", "HasPayload", "Payload"),
     HASCOOKIEPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain cookies?", "HasSentCookies"),
     SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "The value of the cookies header sent to the server.", "CookieString", "SentCookies", "Cookies"),
+    PARAMETER_COUNT(FieldGroup.REQUEST, Integer.class, "The number of parameters in the request.", "ParameterCount", "ParamCount"),
+    PARAMETERS(FieldGroup.REQUEST, String.class, "The parameters in the request.", "Parameters", "Params"),
 
 
     //Response
@@ -56,7 +58,9 @@ public enum LogEntryField {
     INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "The type inferred by the response content.", "InferredType", "Inferred_Type"),
     MIME_TYPE(FieldGroup.RESPONSE, String.class, "The mime-type stated by the server.", "MimeType", "Mime"),
     HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "Did the response set cookies?", "HasSetCookies", "DidSetCookies"),
-    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies");
+    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies", "SetCookies"),
+    REFLECTED_PARAMS(FieldGroup.RESPONSE, String.class, "Values reflected in the response", "ReflectedParams", "ReflectedParameters"),
+    REFLECTION_COUNT(FieldGroup.RESPONSE, Integer.class, "Number of values reflected in the response", "Reflections", "ReflectionCount", "ReflectedCount");
 
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();
@@ -122,6 +126,10 @@ public enum LogEntryField {
         String[] split = fqn.split("\\.");
         FieldGroup group = FieldGroup.findByLabel(split[0]);
         return getByLabel(group, split[1]);
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getDescriptiveMessage(){
