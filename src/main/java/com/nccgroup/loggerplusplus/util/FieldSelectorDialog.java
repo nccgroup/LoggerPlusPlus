@@ -13,8 +13,8 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class FieldSelectorDialog extends JDialog {
 
@@ -33,7 +33,7 @@ public class FieldSelectorDialog extends JDialog {
         this.setLayout(new BorderLayout());
         fieldList = new ArrayList<>();
         selectedFields = new LinkedTreeMap<>();
-        if(defaults == null) defaults = Collections.EMPTY_LIST;
+        if (defaults == null) defaults = Collections.emptyList();
         for (LogEntryField field : LogEntryField.values()) {
             if(field == LogEntryField.NUMBER) continue;
             fieldList.add(field);
@@ -52,9 +52,7 @@ public class FieldSelectorDialog extends JDialog {
         fieldTable.setDefaultRenderer(Boolean.class, new BooleanRenderer());
         JScrollPane fieldScrollPane = new JScrollPane(fieldTable);
         okButton = new JButton("OK");
-        okButton.addActionListener(actionEvent -> {
-            this.dispose();
-        });
+        okButton.addActionListener(actionEvent -> this.dispose());
 
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(actionEvent -> {
@@ -64,17 +62,13 @@ public class FieldSelectorDialog extends JDialog {
 
         JButton selectAllButton = new JButton("Select All");
         selectAllButton.addActionListener(e -> {
-            for (LogEntryField logEntryField : selectedFields.keySet()) {
-                selectedFields.put(logEntryField, true);
-            }
+            selectedFields.replaceAll((f, v) -> true);
             ((TableModel) fieldTable.getModel()).fireTableDataChanged();
             setPresetState();
         });
         JButton selectNoneButton = new JButton("Select None");
         selectNoneButton.addActionListener(e -> {
-            for (LogEntryField logEntryField : selectedFields.keySet()) {
-                selectedFields.put(logEntryField, false);
-            }
+            selectedFields.replaceAll((f, v) -> false);
             ((TableModel) fieldTable.getModel()).fireTableDataChanged();
             setPresetState();
         });
@@ -83,7 +77,7 @@ public class FieldSelectorDialog extends JDialog {
         List<String> savedKeys = new ArrayList<>();
         savedKeys.add("Unsaved");
         savedKeys.addAll(savedPresets.keySet());
-        savedSelectionSelector = new JComboBox(savedKeys.toArray());
+        savedSelectionSelector = new JComboBox<>((String[]) savedKeys.toArray());
 
         savedSelectionSelector.addItemListener(e -> {
             if(e.getStateChange() == ItemEvent.SELECTED) {
@@ -99,10 +93,7 @@ public class FieldSelectorDialog extends JDialog {
                         //Should new fields be added after a user has saved a selection,
                         //We must do this in a way that will preserve the new fields so cannot simply
                         //Clear selectedFields and add all from saved selection. Instead default not found keys to false.
-                        if (selection.containsKey(field))
-                            selectedFields.put(field, selection.get(field));
-                        else
-                            selectedFields.put(field, false);
+                        selectedFields.put(field, selection.getOrDefault(field, false));
                     });
 
                 }
@@ -116,12 +107,11 @@ public class FieldSelectorDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String key = JOptionPane.showInputDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
-                        "Enter name for saved selection preset:", (String) "Saving Selection Preset", JOptionPane.PLAIN_MESSAGE);
+                        "Enter name for saved selection preset:", "Saving Selection Preset", JOptionPane.PLAIN_MESSAGE);
 
                 if(key == null || key.isEmpty()){
                     JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
                             "Saving cancelled.", "Selection Preset", JOptionPane.INFORMATION_MESSAGE);
-                    return;
                 }else{
                     if(savedPresets.containsKey(key.toLowerCase())){
                         JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
@@ -142,6 +132,7 @@ public class FieldSelectorDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selectedKey = (String) savedSelectionSelector.getSelectedItem();
+                if (selectedKey == null) return;
                 int outcome = JOptionPane.showConfirmDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
                         "Are you sure you wish to delete the preset \"" + selectedKey + "\"?", "Delete Selection Preset?", JOptionPane.YES_NO_OPTION);
                 if(outcome == JOptionPane.OK_OPTION){
@@ -165,9 +156,9 @@ public class FieldSelectorDialog extends JDialog {
                         new JComponent[]{fieldScrollPane, fieldScrollPane, fieldScrollPane, fieldScrollPane, fieldScrollPane},
                         new JComponent[]{selectAllButton, selectNoneButton, null, okButton, cancelButton}
                 }, new int[][]{
+                        new int[]{0, 0, 0, 0, 0},
+                        new int[]{0, 0, 0, 0, 0},
                         new int[]{1, 1, 10, 1, 1},
-                        new int[]{0, 0, 0, 0, 0},
-                        new int[]{0, 0, 0, 0, 0},
                         new int[]{0, 0, 1, 0, 0},
                 }, Alignment.FILL, 1.0, 1.0);
         panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
