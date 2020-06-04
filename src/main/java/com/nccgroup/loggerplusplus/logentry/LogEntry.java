@@ -14,11 +14,11 @@
 package com.nccgroup.loggerplusplus.logentry;
 
 import burp.*;
-import com.nccgroup.loggerplusplus.reflection.ReflectionController;
-import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
-import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
+import com.nccgroup.loggerplusplus.reflection.ReflectionController;
+import com.nccgroup.loggerplusplus.util.Globals;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -552,6 +552,10 @@ public class LogEntry
 					return requestHeaders != null ? requestHeaders : "";
 				case RESPONSE_HEADERS:
 					return responseHeaders != null ? responseHeaders : "";
+				case BASE64_REQUEST:
+					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
+				case BASE64_RESPONSE:
+					return Base64.getEncoder().encodeToString(requestResponse.getResponse());
 				default:
 					return "";
 			}

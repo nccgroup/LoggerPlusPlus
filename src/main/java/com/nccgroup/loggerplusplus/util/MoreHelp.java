@@ -1,25 +1,15 @@
 package com.nccgroup.loggerplusplus.util;
 
-import burp.BurpExtender;
-import burp.IExtensionHelpers;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.DefaultCaret;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.io.File;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -239,6 +229,13 @@ public class MoreHelp {
 		}
 
 		throw new Exception("Operation cancelled.");
+	}
+
+	public static boolean shouldOverwriteExistingFilePrompt() throws Exception {
+		int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
+				JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+		return val == JOptionPane.YES_OPTION;
 	}
 
 	public static List<LogEntryField> showFieldChooserDialog(JComponent owner, Preferences preferences, String title, List<LogEntryField> defaultFields) {

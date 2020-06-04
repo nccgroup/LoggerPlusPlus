@@ -1,6 +1,7 @@
 package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
@@ -11,7 +12,10 @@ import javax.swing.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -74,8 +78,10 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenu exportMenu = new JMenu("Export entries as...");
         ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
         for (LogExporter exporter : exportController.getExporters().values()) {
-            JMenuItem item = exporter.getExportEntriesMenuItem(selectedEntries);
-            if(item != null) exportMenu.add(item);
+            if (exporter instanceof ContextMenuExportProvider) {
+                JMenuItem item = ((ContextMenuExportProvider) exporter).getExportEntriesMenuItem(selectedEntries);
+                if (item != null) exportMenu.add(item);
+            }
         }
 
         if(exportMenu.getItemCount() > 0){

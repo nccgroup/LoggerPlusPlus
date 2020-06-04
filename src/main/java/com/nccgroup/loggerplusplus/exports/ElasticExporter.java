@@ -22,9 +22,7 @@ import javax.swing.*;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -32,10 +30,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class ElasticExporter extends AutomaticLogExporter {
+public class ElasticExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;
@@ -52,11 +49,16 @@ public class ElasticExporter extends AutomaticLogExporter {
         this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
         executorService = Executors.newScheduledThreadPool(1);
         controlPanel = new ElasticExporterControlPanel(this);
-    }
 
-    @Override
-    public void exportEntries(List<LogEntry> entries) throws Exception {
-        throw new Exception("Manual export not supported");
+        if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
+                || (boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_PROJECT)) {
+            try {
+                setup();
+            } catch (Exception e) {
+                exportController.getLoggerPlusPlus().getLoggingController().logError(
+                        String.format("Could not automatically start elastic exporter: %s", e.getMessage()));
+            }
+        }
     }
 
     @Override

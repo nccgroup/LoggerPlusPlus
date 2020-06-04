@@ -4,14 +4,12 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
-import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
 import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.List;
@@ -20,7 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Created by corey on 21/08/17.
  */
-public class CSVExporter extends AutomaticLogExporter {
+public class CSVExporter extends AutomaticLogExporter implements ContextMenuExportProvider, ExportPanelProvider {
 
     private final CSVExporterControlPanel controlPanel;
 
@@ -99,7 +97,8 @@ public class CSVExporter extends AutomaticLogExporter {
 
     @Override
     public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
-        return new JMenuItem(new AbstractAction(String.format("Export %s as CSV", entries.size() != 1 ? "entries" : "entry")) {
+        return new JMenuItem(new AbstractAction(String.format("Export %d %s as CSV",
+                entries.size(), entries.size() != 1 ? "entries" : "entry")) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 exportEntries(entries);
@@ -115,9 +114,9 @@ public class CSVExporter extends AutomaticLogExporter {
             return promptAppendToExistingFileDialog();
         } else {
             //Prompt the user if they wish to overwrite
-            if(shouldOverwriteExistingFilePrompt()){
+            if (MoreHelp.shouldOverwriteExistingFilePrompt()) {
                 return false; //i.e. Do not append
-            }else{
+            } else {
                 throw new Exception("Operation cancelled.");
             }
         }
@@ -137,17 +136,6 @@ public class CSVExporter extends AutomaticLogExporter {
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {
             return true;
-        }
-    }
-
-    private static boolean shouldOverwriteExistingFilePrompt() throws Exception {
-        int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (val == JOptionPane.YES_OPTION) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -180,7 +168,6 @@ public class CSVExporter extends AutomaticLogExporter {
         }
     }
 
-    @Override
     public void exportEntries(List<LogEntry> entries) {
         try {
             List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, preferences, "CSV Export", this.fields);
@@ -231,6 +218,7 @@ public class CSVExporter extends AutomaticLogExporter {
 
         }catch (Exception e){
             //Cancelled.
+            e.printStackTrace();
         }
     }
 

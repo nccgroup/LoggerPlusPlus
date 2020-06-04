@@ -3,28 +3,23 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.Gson;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.Status;
-import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
-import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
-import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 
 /**
  * Created by corey on 21/08/17.
  */
-public class JSONExporter extends LogExporter {
+public class JSONExporter extends LogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
     private final JSONExporterControlPanel controlPanel;
 
-    public JSONExporter(ExportController exportController, Preferences preferences){
+    public JSONExporter(ExportController exportController, Preferences preferences) {
         super(exportController, preferences);
         this.controlPanel = new JSONExporterControlPanel(this);
     }
@@ -34,11 +29,10 @@ public class JSONExporter extends LogExporter {
         return this.controlPanel;
     }
 
-    @Override
     public void exportEntries(List<LogEntry> entries) {
         try {
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.json", "JSON Format", "json");
-            if(file.exists() && !shouldOverwriteExistingFilePrompt()) return;
+            if (file.exists() && !MoreHelp.shouldOverwriteExistingFilePrompt()) return;
 
             SwingWorkerWithProgressDialog<Void> importWorker = new SwingWorkerWithProgressDialog<Void>(
                     JOptionPane.getFrameForComponent(this.controlPanel),
@@ -71,23 +65,13 @@ public class JSONExporter extends LogExporter {
 
     @Override
     public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
-        return new JMenuItem(new AbstractAction(String.format("Export %s as JSON", entries.size() != 1 ? "entries" : "entry")) {
+        return new JMenuItem(new AbstractAction(String.format("Export %d %s as JSON",
+                entries.size(), entries.size() != 1 ? "entries" : "entry")) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 exportEntries(entries);
             }
         });
-    }
-
-    private static boolean shouldOverwriteExistingFilePrompt() throws Exception {
-        int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (val == JOptionPane.YES_OPTION) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public ExportController getExportController() {

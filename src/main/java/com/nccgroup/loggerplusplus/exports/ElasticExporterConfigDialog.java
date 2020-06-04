@@ -49,15 +49,30 @@ public class ElasticExporterConfigDialog extends JDialog {
 
                 if(selectedFields == null){
                     //Cancelled.
-                }else if(!selectedFields.isEmpty()){
+                } else if (!selectedFields.isEmpty()) {
                     elasticExporter.setFields(selectedFields);
-                }else{
+                } else {
                     JOptionPane.showMessageDialog(indexNameField,
                             "No fields were selected. No changes have been made.",
                             "Elastic Exporter", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
         });
+
+        JCheckBox autostartGlobal = PanelBuilder.createPreferenceCheckBox(preferences, PREF_ELASTIC_AUTOSTART_GLOBAL);
+        JCheckBox autostartProject = PanelBuilder.createPreferenceCheckBox(preferences, PREF_ELASTIC_AUTOSTART_PROJECT);
+
+        //If global autostart is on, it overrides the per-project setting.
+        autostartProject.setEnabled(!(boolean) preferences.getSetting(PREF_ELASTIC_AUTOSTART_GLOBAL));
+        preferences.addSettingListener((source, settingName, newValue) -> {
+            if (settingName == PREF_ELASTIC_AUTOSTART_GLOBAL) {
+                autostartProject.setEnabled(!(boolean) newValue);
+                if ((boolean) newValue) {
+                    preferences.setSetting(PREF_ELASTIC_AUTOSTART_PROJECT, true);
+                }
+            }
+        });
+
 
         this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{new JLabel("Address: "), addressField},
@@ -67,6 +82,8 @@ public class ElasticExporterConfigDialog extends JDialog {
                 new JComponent[]{new JLabel("Index: "), indexNameField},
                 new JComponent[]{new JLabel("Upload Delay (Seconds): "), elasticDelaySpinner},
                 new JComponent[]{new JLabel("Exported Fields: "), configureFieldsButton},
+                new JComponent[]{new JLabel("Autostart Exporter (All Projects): "), autostartGlobal},
+                new JComponent[]{new JLabel("Autostart Exporter (This Project): "), autostartProject},
         }, new int[][]{
                 new int[]{0, 1},
                 new int[]{0, 1},

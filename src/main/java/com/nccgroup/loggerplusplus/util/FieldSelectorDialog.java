@@ -22,7 +22,7 @@ public class FieldSelectorDialog extends JDialog {
     private LinkedTreeMap<LogEntryField, Boolean> selectedFields;
     private final Preferences preferences;
     private final LinkedHashMap<String, Map<LogEntryField, Boolean>> savedPresets;
-    private JComboBox<String> savedSelectionSelector;
+    private JComboBox savedSelectionSelector;
     private JButton saveSelectionButton;
     private JButton deleteSelectionButton;
     private JButton okButton;
@@ -77,7 +77,7 @@ public class FieldSelectorDialog extends JDialog {
         List<String> savedKeys = new ArrayList<>();
         savedKeys.add("Unsaved");
         savedKeys.addAll(savedPresets.keySet());
-        savedSelectionSelector = new JComboBox<>((String[]) savedKeys.toArray());
+        savedSelectionSelector = new JComboBox(savedKeys.toArray());
 
         savedSelectionSelector.addItemListener(e -> {
             if(e.getStateChange() == ItemEvent.SELECTED) {

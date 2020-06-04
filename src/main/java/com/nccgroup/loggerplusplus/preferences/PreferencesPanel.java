@@ -20,10 +20,7 @@ import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.exports.CSVExporter;
-import com.nccgroup.loggerplusplus.exports.ElasticExporter;
-import com.nccgroup.loggerplusplus.exports.JSONExporter;
-import com.nccgroup.loggerplusplus.exports.LogExporter;
+import com.nccgroup.loggerplusplus.exports.*;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
@@ -151,9 +148,9 @@ public class PreferencesPanel extends JScrollPane{
 
         ComponentGroup exportGroup = new ComponentGroup(Orientation.HORIZONTAL);
         HashMap<Class<? extends LogExporter>, LogExporter> exporters = preferencesController.getLoggerPlusPlus().getExportController().getExporters();
-        exportGroup.add(exporters.get(CSVExporter.class).getExportPanel());
-        exportGroup.add(exporters.get(JSONExporter.class).getExportPanel());
-        exportGroup.add(exporters.get(ElasticExporter.class).getExportPanel());
+        exportGroup.add(((ExportPanelProvider) exporters.get(CSVExporter.class)).getExportPanel());
+        exportGroup.add(((ExportPanelProvider) exporters.get(JSONExporter.class)).getExportPanel());
+        exportGroup.add(((ExportPanelProvider) exporters.get(ElasticExporter.class)).getExportPanel());
 
         ComponentGroup otherPanel = new ComponentGroup(Orientation.VERTICAL, "Other");
         JSpinner spnRespTimeout = otherPanel.addPreferenceComponent(preferences, PREF_RESPONSE_TIMEOUT, "Response Timeout (Seconds): ");

@@ -3,7 +3,6 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +29,7 @@ public class ExportController {
     private void initializeExporters(){
         this.exporters.put(CSVExporter.class, new CSVExporter(this, preferences));
         this.exporters.put(JSONExporter.class, new JSONExporter(this, preferences));
+        this.exporters.put(Base64Exporter.class, new Base64Exporter(this, preferences));
         this.exporters.put(ElasticExporter.class, new ElasticExporter(this, preferences));
     }
 

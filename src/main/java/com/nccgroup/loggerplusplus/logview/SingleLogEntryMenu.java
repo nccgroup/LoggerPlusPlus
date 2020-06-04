@@ -1,6 +1,7 @@
 package com.nccgroup.loggerplusplus.logview;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.filter.BooleanOperator;
@@ -13,19 +14,15 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
-import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.UUID;
-
-import static com.nccgroup.loggerplusplus.util.Globals.PREF_COLOR_FILTERS;
 
 /**
  * Created by corey on 24/08/17.
@@ -138,8 +135,10 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenu exportMenu = new JMenu("Export as...");
         ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
         for (LogExporter exporter : exportController.getExporters().values()) {
-            JMenuItem item = exporter.getExportEntriesMenuItem(Arrays.asList(entry));
-            if(item != null) exportMenu.add(item);
+            if (exporter instanceof ContextMenuExportProvider) {
+                JMenuItem item = ((ContextMenuExportProvider) exporter).getExportEntriesMenuItem(Collections.singletonList(entry));
+                if (item != null) exportMenu.add(item);
+            }
         }
 
         if(exportMenu.getItemCount() > 0){
