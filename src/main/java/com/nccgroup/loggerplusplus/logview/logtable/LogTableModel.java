@@ -52,7 +52,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
     @Override
     public Class<?> getColumnClass(int columnModelIndex) {
         Object val = getValueAt(0, columnModelIndex);
-        return val == null ? String.class : val.getClass();
+        return val == null ? Object.class : val.getClass();
     }
 
     private int getMaxEntries(){
