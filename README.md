@@ -1,16 +1,12 @@
 <h1 align="center">Logger++</h1>
 <h4 align="center">Advanced Logging for Burp Suite</h4>
 <p align="center">
-  <img src="https://img.shields.io/github/workflow/status/CoreyD97/Stepper/Java%20CI%20with%20Gradle?style=for-the-badge" alt="GitHub Workflow Status">
-  <img src="https://img.shields.io/github/watchers/CoreyD97/Stepper?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
-  <img src="https://img.shields.io/github/stars/CoreyD97/Stepper?style=for-the-badge" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/downloads/CoreyD97/Stepper/total?style=for-the-badge" alt="GitHub All Releases">
-  <img src="https://img.shields.io/github/license/CoreyD97/Stepper?style=for-the-badge" alt="GitHub License">
+  <img src="https://img.shields.io/github/workflow/status/nccgroup/LoggerPlusPlus/Java%20CI%20with%20Gradle?style=for-the-badge" alt="GitHub Workflow Status">
+  <img src="https://img.shields.io/github/watchers/nccgroup/LoggerPlusPlus?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
+  <img src="https://img.shields.io/github/stars/nccgroup/LoggerPlusPlus?style=for-the-badge" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/downloads/nccgroup/LoggerPlusPlus/total?style=for-the-badge" alt="GitHub All Releases">
+  <img src="https://img.shields.io/github/license/nccgroup/LoggerPlusPlus?style=for-the-badge" alt="GitHub License">
 </p>
-
-
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/nccgroup/LoggerPlusPlus/Java%20CI%20with%20Gradle?style=for-the-badge) ![GitHub watchers](https://img.shields.io/github/watchers/nccgroup/loggerplusplus?label=Watchers&style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/nccgroup/loggerplusplus?style=for-the-badge) ![GitHub All Releases](https://img.shields.io/github/downloads/nccgroup/loggerplusplus/total?style=for-the-badge)
-![GitHub](https://img.shields.io/github/license/nccgroup/loggerplusplus?style=for-the-badge)
 
 Developed by Corey Arthur  [![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)  
 Original by Soroush Dalili  [![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)](https://twitter.com/irsdl/)
