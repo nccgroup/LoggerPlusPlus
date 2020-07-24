@@ -47,6 +47,7 @@ public enum LogEntryField {
     BASE64_RESPONSE(FieldGroup.RESPONSE, String.class, "The entire response encoded in Base64", "AsBase64"),
     RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "The status line and associated headers.", "Headers", "Header"),
     RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "The response body.", "Body"),
+    RESPONSE_HASH(FieldGroup.RESPONSE, String.class, "SHA1 Hash of the response", "hash", "sha1"),
     RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Date and time of receiving the response (as received by L++).", "Time"),
     RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "The length of the received response.", "Length"),
     STATUS(FieldGroup.RESPONSE, Short.class, "The status code received in the response.", "Status", "StatusCode"),

@@ -71,7 +71,7 @@ public class Globals {
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
 
-    public static final int CURRENT_COLUMN_VERSION = 2;
+    public static final int CURRENT_COLUMN_VERSION = 3;
     private static int colOrder = 0;
     public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = new StringBuilder().append("[")
             .append("{'id':" + NUMBER + ",'name':'Number','defaultVisibleName':'#','visibleName':'#','preferredWidth':65,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(NUMBER.getDescription()) + "'},")
@@ -102,6 +102,7 @@ public class Globals {
             .append("{'id':" + NEW_COOKIES + ",'name':'NewCookies','defaultVisibleName':'New Cookies','visibleName':'New Cookies','preferredWidth':125,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(NEW_COOKIES.getDescription()) + "'},")
             .append("{'id':" + REQUEST_TIME + ",'name':'RequestTime','defaultVisibleName':'Request Time','visibleName':'Request Time','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(REQUEST_TIME.getDescription()) + "'},")
             .append("{'id':" + RESPONSE_TIME + ",'name':'ResponseTime','defaultVisibleName':'Response Time','visibleName':'Response Time','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(RESPONSE_TIME.getDescription()) + "'},")
+            .append("{'id':" + RESPONSE_HASH + ",'name':'ResponseHash','defaultVisibleName':'Response Hash','visibleName':'Response Hash','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(RESPONSE_HASH.getDescription()) + "'},")
             .append("{'id':" + RTT + ",'name':'RTT','defaultVisibleName':'RTT (ms)','visibleName':'RTT (ms)','preferredWidth':100,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(RTT.getDescription()) + "'},")
             .append("{'id':" + LISTENER_INTERFACE + ",'name':'ListenerInterface','defaultVisibleName':'Proxy Listener Interface','visibleName':'Proxy Listener Interface','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(LISTENER_INTERFACE.getDescription()) + "'},")
             .append("{'id':" + CLIENT_IP + ",'name':'ClientIP','defaultVisibleName':'Proxy Client IP','visibleName':'Proxy Client IP','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(CLIENT_IP.getDescription()) + "'},")

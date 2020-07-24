@@ -19,6 +19,7 @@ import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -64,6 +65,7 @@ public class LogEntry
 	public String responseContentType="";
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
+	public String responseHash;
 //	public String[] regexAllReq = {"","","","",""};
 //	public String[] regexAllResp = {"","","","",""};
 
@@ -556,6 +558,12 @@ public class LogEntry
 					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
 				case BASE64_RESPONSE:
 					return Base64.getEncoder().encodeToString(requestResponse.getResponse());
+				case RESPONSE_HASH: {
+					if(responseHash == null){
+						responseHash = DigestUtils.sha1Hex(((String) getValueByKey(LogEntryField.RESPONSE_BODY)).getBytes());
+					}
+					return responseHash;
+				}
 				default:
 					return "";
 			}
