@@ -175,10 +175,7 @@ public class LogProcessor implements IHttpListener {
                 entryProcessingFutures.remove(logEntry.getIdentifier());
                 return null; //Ignored entry. Skip it.
             }else{
-                //Ensure capacity and add the entry
-                SwingUtilities.invokeLater(() -> {
-                    logTableController.getLogTableModel().addEntry(logEntry);
-                });
+                addProcessedEntry(logEntry);
 
                 if(result.getStatus() == Status.PROCESSED){
                     //If the entry was fully processed, remove it from the processing list.
