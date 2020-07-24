@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -68,12 +69,10 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Enumeration<TableColumn> columnEnumeration = logTable.getColumnModel().getColumns();
+				Enumeration<LogTableColumn> columnEnumeration = logTable.getColumnModel().getAllColumns();
 				while (columnEnumeration.hasMoreElements()) {
-					LogTableColumn logTableColumn = (LogTableColumn) columnEnumeration.nextElement();
-					if(!logTableColumn.isVisible()){
-						logTable.getColumnModel().toggleHidden(logTableColumn);
-					}
+					LogTableColumn logTableColumn = columnEnumeration.nextElement();
+					logTable.getColumnModel().showColumn(logTableColumn);
 				}
 				logTableController.getLogTableColumnModel().saveLayout();
 			}

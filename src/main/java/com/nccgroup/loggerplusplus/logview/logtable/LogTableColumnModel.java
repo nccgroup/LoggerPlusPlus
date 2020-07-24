@@ -154,6 +154,20 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         saveLayout();
     }
 
+    public void showColumn(LogTableColumn column){
+        if(!column.isVisible()){
+            column.setVisible(true);
+            addColumn(column);
+        }
+    }
+
+    public void hideColumn(LogTableColumn column){
+        if(column.isVisible()){
+            column.setVisible(false);
+            removeColumn(column);
+        }
+    }
+
     public Enumeration<LogTableColumn> getAllColumns() {
         return Collections.enumeration(this.allColumns);
     }
