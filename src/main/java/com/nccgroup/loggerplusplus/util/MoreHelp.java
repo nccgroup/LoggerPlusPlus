@@ -22,7 +22,7 @@ public class MoreHelp {
 	public static String findHeaderContentType(String strHeader){
 		String contentType="";
 		if(!strHeader.equals("")){
-			Pattern MY_PATTERN = Pattern.compile("(?im)^content-type:([\\ \\w\\/\\-\\_\\,]*)"); // just in case, it also includes ",_ " 
+			Pattern MY_PATTERN = Pattern.compile("(?im)^content-type:([\\ \\w\\/\\-\\_\\,]*)", Pattern.CASE_INSENSITIVE); // just in case, it also includes ",_ " 
 			Matcher m = MY_PATTERN.matcher(strHeader);
 			if (m.find()) {
 				contentType = m.group(1);
@@ -36,7 +36,7 @@ public class MoreHelp {
 		String contentType="";
 		for(String strHeader : headers){
 			if(!strHeader.equals("")){
-				Pattern MY_PATTERN = Pattern.compile("(?im)^content-type:([\\ \\w\\/\\-\\_\\,]*)"); // just in case, it also includes ",_ " 
+				Pattern MY_PATTERN = Pattern.compile("(?im)^content-type:([\\ \\w\\/\\-\\_\\,]*)", Pattern.CASE_INSENSITIVE); // just in case, it also includes ",_ " 
 				Matcher m = MY_PATTERN.matcher(strHeader);
 				if (m.find()) {
 					contentType = m.group(1);
