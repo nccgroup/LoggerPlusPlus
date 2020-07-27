@@ -124,5 +124,5 @@ public class Globals {
 
 
     public static final Pattern UUID_COMMENT_PATTERN = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
-    public static final Pattern HTML_TITLE_PATTERN = Pattern.compile("<title>(.+?)</title>");
+    public static final Pattern HTML_TITLE_PATTERN = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
 }
