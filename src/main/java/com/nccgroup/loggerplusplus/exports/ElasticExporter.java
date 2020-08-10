@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -184,8 +183,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     }
 
     private Object formatValue(Object value){
-        if(value instanceof Date) return ((Date) value).getTime();
-        else if(value instanceof java.net.URL) return String.valueOf((java.net.URL) value);
+        if (value instanceof java.net.URL) return String.valueOf((java.net.URL) value);
         else return value;
     }
 
