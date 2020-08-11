@@ -17,12 +17,14 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentElasticsearchExtension;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -125,10 +127,20 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     public IndexRequest buildIndexRequest(LogEntry logEntry) throws IOException {
         XContentBuilder builder = jsonBuilder().startObject();
         for (LogEntryField field : this.fields) {
+            Object value = formatValue(logEntry.getValueByKey(field));
             try {
-                builder = builder.field(field.getFullLabel(), formatValue(logEntry.getValueByKey(field)));
+                //For some reason, the XContentElasticsearchExtension service cannot be loaded
+                //when in burp, so we must format dates manually ourselves :(
+                //TODO investigate further
+                if (value instanceof Date) {
+                    builder.field(field.getFullLabel(), XContentElasticsearchExtension.DEFAULT_DATE_PRINTER.print(((Date) value).getTime()));
+                } else {
+                    builder.field(field.getFullLabel(), value);
+                }
             }catch (Exception e){
+                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + value);
                 LoggerPlusPlus.callbacks.printError("ElasticExporter: " + e.getMessage());
+                throw e;
             }
         }
         builder.endObject();
@@ -152,7 +164,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                 try {
                     IndexRequest request = buildIndexRequest(logEntry);
                     httpBulkBuilder.add(request);
-                }catch (IOException e){
+                } catch (Exception e) {
                     LoggerPlusPlus.callbacks.printError("Could not build elastic export request for entry: " + e.getMessage());
                     //Could not build index request. Ignore it?
                 }
