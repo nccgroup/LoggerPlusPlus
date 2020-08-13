@@ -150,6 +150,7 @@ public class PreferencesPanel extends JScrollPane{
         HashMap<Class<? extends LogExporter>, LogExporter> exporters = preferencesController.getLoggerPlusPlus().getExportController().getExporters();
         exportGroup.add(((ExportPanelProvider) exporters.get(CSVExporter.class)).getExportPanel());
         exportGroup.add(((ExportPanelProvider) exporters.get(JSONExporter.class)).getExportPanel());
+        exportGroup.add(((ExportPanelProvider) exporters.get(HARExporter.class)).getExportPanel());
         exportGroup.add(((ExportPanelProvider) exporters.get(ElasticExporter.class)).getExportPanel());
 
         ComponentGroup otherPanel = new ComponentGroup(Orientation.VERTICAL, "Other");
