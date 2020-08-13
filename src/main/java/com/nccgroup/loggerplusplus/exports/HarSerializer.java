@@ -65,7 +65,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.name("method").value(logEntry.method);
             writer.name("url").value(logEntry.url.toString());
             writer.name("httpVersion").value(logEntry.requestHttpVersion);
-            
+
             writer.name("cookies").beginArray();
             if (logEntry.hasCookieParam) {
                 List<IParameter> cookies = getRequestParametersByType(logEntry.requestResponse.getRequest(),
@@ -85,7 +85,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
                     writer.beginObject();
                     String headerArray[] = headerString.split(":", 2);
                     writer.name("name").value(headerArray[0]);
-                    writer.name("value").value(headerArray[1].strip());
+                    writer.name("value").value(headerArray[1].trim());
                     writer.endObject();
                 }
             }
@@ -151,7 +151,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
                     writer.beginObject();
                     String headerArray[] = headerString.split(":", 2);
                     writer.name("name").value(headerArray[0]);
-                    writer.name("value").value(headerArray[1].strip());
+                    writer.name("value").value(headerArray[1].trim());
                     writer.endObject();
                 }
             }
