@@ -15,18 +15,19 @@ package com.nccgroup.loggerplusplus.about;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.util.userinterface.NoTextSelectionCaret;
 import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.userinterface.NoTextSelectionCaret;
 import com.nccgroup.loggerplusplus.util.userinterface.WrappedTextPane;
-import org.elasticsearch.common.Glob;
 
 import javax.swing.*;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -227,7 +228,7 @@ public class AboutPanel extends JPanel {
 					"Like the extension? Let me know by giving it a star on GitHub.\n\n";
 
 			String thanksTo = "Thanks To:\n";
-			String thanksText = "Shaddy, ours-code, jselvi, jaesbit, wotgl, StanHVA, theblackturtle, cnotin";
+			String thanksText = "Shaddy, ours-code, jselvi, jaesbit, wotgl, StanHVA, theblackturtle, cnotin, latacora-tomekr";
 
 			String[] sections = new String[]{featuresTitle, features, thanksTo, thanksText};
 			Style[] styles = new Style[]{bold, null, null, italics};
