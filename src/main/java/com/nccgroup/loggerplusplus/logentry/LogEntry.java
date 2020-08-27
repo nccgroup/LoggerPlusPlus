@@ -92,6 +92,7 @@ public class LogEntry {
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
+		this.requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	}
 
 	/**
