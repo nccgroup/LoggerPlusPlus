@@ -215,7 +215,7 @@ public class MoreHelp {
 
 	public static File getSaveFile(String filename, String formatDescription, String extension) throws Exception {
 		JFileChooser chooser = null;
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Format (JSON)", "json");
+		FileNameExtensionFilter filter = new FileNameExtensionFilter(formatDescription, extension);
 
 		chooser = new JFileChooser();
 		chooser.setDialogTitle("Saving Logger++ Entries");
