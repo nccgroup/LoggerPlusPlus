@@ -228,7 +228,7 @@ public class AboutPanel extends JPanel {
 					"Like the extension? Let me know by giving it a star on GitHub.\n\n";
 
 			String thanksTo = "Thanks To:\n";
-			String thanksText = "Shaddy, ours-code, jselvi, jaesbit, wotgl, StanHVA, theblackturtle, cnotin, latacora-tomekr";
+			String thanksText = "Shaddy, ours-code, jselvi, jaesbit, wotgl, StanHVA, theblackturtle, cnotin, latacora-tomekr, JulianVolodia";
 
 			String[] sections = new String[]{featuresTitle, features, thanksTo, thanksText};
 			Style[] styles = new Style[]{bold, null, null, italics};
