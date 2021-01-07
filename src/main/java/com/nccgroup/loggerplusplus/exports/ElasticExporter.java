@@ -49,17 +49,17 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         super(exportController, preferences);
         this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
         executorService = Executors.newScheduledThreadPool(1);
-        controlPanel = new ElasticExporterControlPanel(this);
 
         if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
                 || (boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_PROJECT)) {
             try {
-                setup();
+                this.exportController.enableExporter(this);
             } catch (Exception e) {
                 exportController.getLoggerPlusPlus().getLoggingController().logError(
                         String.format("Could not automatically start elastic exporter: %s", e.getMessage()));
             }
         }
+        controlPanel = new ElasticExporterControlPanel(this);
     }
 
     @Override
