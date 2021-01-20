@@ -78,6 +78,13 @@ public class ElasticExporterControlPanel extends JPanel {
             }
         });
 
+        if (isExporterEnabled()){
+            exportButton.setSelected(true);
+            exportButton.setText(STOP_TEXT);
+            showConfigDialogButton.setEnabled(false);
+        }
+
+
         this.add(PanelBuilder.build(new JComponent[][]{
                 new JComponent[]{showConfigDialogButton},
                 new JComponent[]{exportButton}
@@ -96,6 +103,10 @@ public class ElasticExporterControlPanel extends JPanel {
 
     private void disableExporter() throws Exception {
         this.elasticExporter.getExportController().disableExporter(this.elasticExporter);
+    }
+
+    private boolean isExporterEnabled() {
+        return this.elasticExporter.getExportController().getEnabledExporters().contains(this.elasticExporter);
     }
 
 }
