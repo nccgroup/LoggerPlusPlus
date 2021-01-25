@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.filter.logfilter;
 
-import burp.BurpExtender;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -118,14 +117,14 @@ public class LogFilterController {
                 JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(logTable),
                         new Component[]{header, wrapper}, "Parse Error", JOptionPane.ERROR_MESSAGE);
 
-                formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
+                formatFilter(filterString);
             }
         }
     }
 
     public void clearFilter() {
         logTable.setFilter(null);
-        formatFilter("", null, null);
+        formatFilter("");
     }
 
     private void setFilter(LogFilter filter) {
@@ -133,13 +132,12 @@ public class LogFilterController {
             clearFilter();
         } else {
             String filterString = filter.toString();
-            formatFilter(filterString, Color.BLACK, new Color(76, 255, 155));
-
+            formatFilter(filterString);
             logTable.setFilter(filter);
         }
     }
 
-    public void formatFilter(String string, Color foregroundColor, Color backgroundColor) {
+    public void formatFilter(String string) {
         SwingUtilities.invokeLater(() -> {
             if (!string.equalsIgnoreCase("")) {
                 ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(string);
@@ -147,8 +145,6 @@ public class LogFilterController {
             } else {
                 filterField.setSelectedItem(null);
             }
-            filterField.setForegroundColor(foregroundColor);
-            filterField.setBackgroundColor(backgroundColor);
         });
     }
 
