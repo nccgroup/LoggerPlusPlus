@@ -2,11 +2,11 @@ package com.nccgroup.loggerplusplus;
 
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
+import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 
 import javax.swing.*;
@@ -77,7 +77,8 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +  " CONTAINS \"" + selectedText + "\"");
+                loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +
+                        " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
             }
         });
 
@@ -89,14 +90,14 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
-                            + "" + context.getFullLabel() +  " CONTAINS \"" + selectedText + "\"");
+                            + "" + context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
                 }
             });
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
-                            + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
+                            + context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
                 }
             });
             addToCurrentFilter.add(andFilter);
@@ -110,7 +111,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new LogFilter(loggerPlusPlus.getLibraryController(),
-                            context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
+                            context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\""));
                     HashMap<UUID,ColorFilter> colorFilters = loggerPlusPlus.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUUID(), colorFilter);
                     new ColorFilterDialog(loggerPlusPlus.getLibraryController()).setVisible(true);
