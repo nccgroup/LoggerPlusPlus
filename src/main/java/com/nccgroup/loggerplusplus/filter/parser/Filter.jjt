@@ -5,6 +5,7 @@ options {
 //    VISITOR_RETURN_TYPE="VisitorData";
     VISITOR_DATA_TYPE="VisitorData";
     NODE_DEFAULT_VOID=true;
+    UNICODE_INPUT = true;
 //    DEBUG_PARSER = true;
 }
 
@@ -24,6 +25,7 @@ import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 
 public class FilterParser {
 
@@ -44,7 +46,6 @@ public class FilterParser {
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
-}}
 }
 
 PARSER_END(FilterParser)
@@ -350,7 +351,7 @@ Date Date() #void :
     )
     {
     try{
-        Date date = LogManager.LOGGER_DATE_FORMAT.parse(t.image);
+        Date date = LogProcessor.LOGGER_DATE_FORMAT.parse(t.image);
         return date;
     }catch (Exception e){
         throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
