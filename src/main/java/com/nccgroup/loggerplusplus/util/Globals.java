@@ -50,6 +50,8 @@ public class Globals {
     public static final String PREF_ELASTIC_PORT = "esPort";
     public static final String PREF_ELASTIC_PROTOCOL = "esProto";
     public static final String PREF_ELASTIC_CLUSTER_NAME = "esClusterName";
+    public static final String PREF_ELASTIC_API_KEY_ID = "esApiKeyId";
+    public static final String PREF_ELASTIC_API_KEY_SECRET = "esApiKeySecret";
     public static final String PREF_ELASTIC_INDEX = "esIndex";
     public static final String PREF_ELASTIC_DELAY = "esDelay";
     public static final String PREF_ELASTIC_INCLUDE_REQ_RESP = "esIncludeReqResp";

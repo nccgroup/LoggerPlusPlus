@@ -25,16 +25,18 @@ public class ElasticExporterConfigDialog extends JDialog {
         JSpinner elasticPortSpinner = PanelBuilder.createPreferenceSpinner(preferences, PREF_ELASTIC_PORT);
         ((SpinnerNumberModel) elasticPortSpinner.getModel()).setMaximum(65535);
         ((SpinnerNumberModel) elasticPortSpinner.getModel()).setMinimum(0);
-        elasticPortSpinner.setEditor(new JSpinner.NumberEditor(elasticPortSpinner,"#"));
+        elasticPortSpinner.setEditor(new JSpinner.NumberEditor(elasticPortSpinner, "#"));
 
         JComboBox<Protocol> protocolSelector = new JComboBox<>(Protocol.values());
         protocolSelector.addActionListener(actionEvent -> {
             elasticExporter.getPreferences().setSetting(PREF_ELASTIC_PROTOCOL, protocolSelector.getSelectedItem());
         });
 
+        JTextField apiKeyId = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_ID);
+        JTextField apiKeySecret = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_SECRET);
+
         //TODO Update PanelBuilder to allow labels with custom components
 
-        JTextField clusterNameField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_CLUSTER_NAME);
         JTextField indexNameField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_INDEX);
         JSpinner elasticDelaySpinner = PanelBuilder.createPreferenceSpinner(preferences, PREF_ELASTIC_DELAY);
         ((SpinnerNumberModel) elasticDelaySpinner.getModel()).setMaximum(99999);
@@ -78,9 +80,10 @@ public class ElasticExporterConfigDialog extends JDialog {
                 new JComponent[]{new JLabel("Address: "), addressField},
                 new JComponent[]{new JLabel("Port: "), elasticPortSpinner},
                 new JComponent[]{new JLabel("Protocol: "), protocolSelector},
-//                new JComponent[]{new JLabel("Cluster Name: "), clusterNameField},
+                new JComponent[]{new JLabel("API Key ID: "), apiKeyId},
+                new JComponent[]{new JLabel("API Key Secret: "), apiKeySecret},
                 new JComponent[]{new JLabel("Index: "), indexNameField},
-                new JComponent[]{new JLabel("Upload Delay (Seconds): "), elasticDelaySpinner},
+                new JComponent[]{new JLabel("Upload Frequency (Seconds): "), elasticDelaySpinner},
                 new JComponent[]{new JLabel("Exported Fields: "), configureFieldsButton},
                 new JComponent[]{new JLabel("Autostart Exporter (All Projects): "), autostartGlobal},
                 new JComponent[]{new JLabel("Autostart Exporter (This Project): "), autostartProject},

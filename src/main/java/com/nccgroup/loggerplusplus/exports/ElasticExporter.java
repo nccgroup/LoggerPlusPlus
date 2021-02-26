@@ -6,13 +6,16 @@ import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -23,7 +26,9 @@ import javax.swing.*;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -64,16 +69,23 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     @Override
     void setup() throws Exception {
-        if(this.fields == null || this.fields.isEmpty())
+        if (this.fields == null || this.fields.isEmpty())
             throw new Exception("No fields configured for export.");
 
         InetAddress address = InetAddress.getByName(preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
         int port = preferences.getSetting(Globals.PREF_ELASTIC_PORT);
         indexName = preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
         String protocol = preferences.getSetting(Globals.PREF_ELASTIC_PROTOCOL).toString();
+        String apiKeyId = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_ID);
+        String apiKeySecret = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_SECRET);
 
-        httpClient = new RestHighLevelClient(RestClient.builder(
-                new HttpHost(address, port, protocol)));
+        RestClientBuilder builder = RestClient.builder(new HttpHost(address, port, protocol));
+        if (!"".equals(apiKeyId) && !"".equalsIgnoreCase(apiKeySecret)) {
+            String apiKeyAuth = Base64.getEncoder().encodeToString((apiKeyId + ":" + apiKeySecret).getBytes(StandardCharsets.UTF_8));
+            builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", "ApiKey " + apiKeyAuth)});
+        }
+
+        httpClient = new RestHighLevelClient(builder);
 
         createIndices();
         pendingEntries = new ArrayList<>();

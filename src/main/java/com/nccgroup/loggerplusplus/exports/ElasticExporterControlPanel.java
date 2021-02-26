@@ -6,6 +6,8 @@ import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.ExecutionException;
 
 public class ElasticExporterControlPanel extends JPanel {
@@ -58,9 +60,12 @@ public class ElasticExporterControlPanel extends JPanel {
                     @Override
                     protected void done() {
                         try {
-                            if(exception != null){
+                            if(exception != null) {
                                 JOptionPane.showMessageDialog(exportButton, "Could not start elastic exporter: " +
-                                        exception.getMessage(), "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
+                                        exception.getMessage() + "\nSee the logs for more information.", "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
+                                StringWriter sw = new StringWriter();
+                                exception.printStackTrace(new PrintWriter(sw));
+                                elasticExporter.getExportController().getLoggerPlusPlus().getLoggingController().logError(sw.toString());
                             }
                             Boolean success = get();
                             boolean isRunning = buttonNowActive ^ !success;
