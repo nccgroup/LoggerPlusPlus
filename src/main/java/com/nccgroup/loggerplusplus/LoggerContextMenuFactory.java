@@ -8,6 +8,7 @@ import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -72,13 +73,13 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
         }
 
         final LogTable logTable = loggerPlusPlus.getLogViewController().getLogTableController().getLogTable();
-        String selectedText = new String(selectedBytes);
+        String selectedText = StringEscapeUtils.escapeJava(new String(selectedBytes));
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +
-                        " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
+                        " CONTAINS \"" + selectedText + "\"");
             }
         });
 
@@ -90,14 +91,14 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
-                            + "" + context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
+                            + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
-                            + context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\"");
+                            + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
             addToCurrentFilter.add(andFilter);
@@ -111,7 +112,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
                     colorFilter.setFilter(new LogFilter(loggerPlusPlus.getLibraryController(),
-                            context.getFullLabel() + " CONTAINS \"" + selectedText.replace("\"", "\\\"") + "\""));
+                            context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
                     HashMap<UUID,ColorFilter> colorFilters = loggerPlusPlus.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUUID(), colorFilter);
                     new ColorFilterDialog(loggerPlusPlus.getLibraryController()).setVisible(true);
