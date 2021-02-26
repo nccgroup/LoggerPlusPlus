@@ -11,8 +11,7 @@ import com.nccgroup.loggerplusplus.util.userinterface.renderer.BooleanRenderer;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ItemEvent;
+import java.awt.event.*;
 import java.util.List;
 import java.util.*;
 
@@ -45,11 +44,78 @@ public class FieldSelectorDialog extends JDialog {
         buildDialog();
     }
 
-    private void buildDialog(){
+    private void buildDialog() {
 
         JLabel message = new JLabel("Select fields to be exported:");
-        JTable fieldTable = new JTable(new TableModel());
+        JTable fieldTable = new JTable(new FieldSelectorTableModel());
         fieldTable.setDefaultRenderer(Boolean.class, new BooleanRenderer());
+        fieldTable.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    Boolean initial = null;
+                    for (int selectedRow : fieldTable.getSelectedRows()) {
+                        if (initial == null) initial = !(Boolean) fieldTable.getValueAt(selectedRow, 1);
+                        fieldTable.setValueAt(initial, selectedRow, 0);
+                    }
+                }
+            }
+        });
+        fieldTable.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                showContextMenu(e);
+            }
+
+            public void mouseReleased(MouseEvent e) {
+                showContextMenu(e);
+            }
+
+            private void showContextMenu(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    JTable source = (JTable) e.getSource();
+                    JPopupMenu popupMenu = new JPopupMenu("Field Selection");
+
+                    if (source.getSelectedRowCount() > 1) {
+                        popupMenu.add(new JMenuItem(new AbstractAction("Enable Selected") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                for (int selectedRow : source.getSelectedRows()) {
+                                    source.setValueAt(true, selectedRow, 0);
+                                }
+                            }
+                        }));
+                        popupMenu.add(new JMenuItem(new AbstractAction("Disable Selected") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                for (int selectedRow : source.getSelectedRows()) {
+                                    source.setValueAt(false, selectedRow, 0);
+                                }
+                            }
+                        }));
+                        popupMenu.add(new JSeparator());
+                    }
+                    popupMenu.add(new JMenuItem(new AbstractAction("Enable All") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            for (int i = 0; i < source.getRowCount(); i++) {
+                                source.setValueAt(true, i, 0);
+                            }
+                        }
+                    }));
+                    popupMenu.add(new JMenuItem(new AbstractAction("Disable All") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            for (int i = 0; i < source.getRowCount(); i++) {
+                                source.setValueAt(false, i, 0);
+                            }
+                        }
+                    }));
+
+
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
         JScrollPane fieldScrollPane = new JScrollPane(fieldTable);
         okButton = new JButton("OK");
         okButton.addActionListener(actionEvent -> this.dispose());
@@ -63,13 +129,13 @@ public class FieldSelectorDialog extends JDialog {
         JButton selectAllButton = new JButton("Select All");
         selectAllButton.addActionListener(e -> {
             selectedFields.replaceAll((f, v) -> true);
-            ((TableModel) fieldTable.getModel()).fireTableDataChanged();
+            ((FieldSelectorTableModel) fieldTable.getModel()).fireTableDataChanged();
             setPresetState();
         });
         JButton selectNoneButton = new JButton("Select None");
         selectNoneButton.addActionListener(e -> {
             selectedFields.replaceAll((f, v) -> false);
-            ((TableModel) fieldTable.getModel()).fireTableDataChanged();
+            ((FieldSelectorTableModel) fieldTable.getModel()).fireTableDataChanged();
             setPresetState();
         });
 
@@ -99,7 +165,7 @@ public class FieldSelectorDialog extends JDialog {
                 }
                 setPresetState();
                 okButton.setEnabled(selectedFields.containsValue(true));
-                ((TableModel) fieldTable.getModel()).fireTableDataChanged();
+                ((FieldSelectorTableModel) fieldTable.getModel()).fireTableDataChanged();
             }
         });
 
@@ -166,7 +232,7 @@ public class FieldSelectorDialog extends JDialog {
         this.pack();
     }
 
-    private class TableModel extends AbstractTableModel {
+    private class FieldSelectorTableModel extends AbstractTableModel {
 
         @Override
         public int getRowCount() {
@@ -202,6 +268,7 @@ public class FieldSelectorDialog extends JDialog {
             setPresetState();
 
             okButton.setEnabled(selectedFields.containsValue(true));
+            this.fireTableRowsUpdated(rowIndex, rowIndex);
         }
 
         @Override
