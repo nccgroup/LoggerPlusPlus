@@ -82,6 +82,8 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_ELASTIC_PORT, Integer.class, 9200);
         prefs.registerSetting(PREF_ELASTIC_PROTOCOL, Protocol.class, Protocol.HTTP);
         prefs.registerSetting(PREF_ELASTIC_CLUSTER_NAME, String.class, "elasticsearch");
+        prefs.registerSetting(PREF_ELASTIC_API_KEY_ID, String.class, "");
+        prefs.registerSetting(PREF_ELASTIC_API_KEY_SECRET, String.class, "");
         prefs.registerSetting(PREF_ELASTIC_INDEX, String.class, "logger");
         prefs.registerSetting(PREF_ELASTIC_DELAY, Integer.class, 120);
         prefs.registerSetting(PREF_ELASTIC_INCLUDE_REQ_RESP, Boolean.class, false);
