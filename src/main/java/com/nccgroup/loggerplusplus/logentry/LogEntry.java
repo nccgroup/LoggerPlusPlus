@@ -65,6 +65,7 @@ public class LogEntry {
 	public String responseInferredMimeType = "";
 	public int responseLength = -1;
 	public String responseContentType = "";
+	public String responseBody = "";
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	public String responseHash;
@@ -357,6 +358,7 @@ public class LogEntry {
 				.substring(requestResponse.getResponse().length - responseLength);
 
 		ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+		this.responseBody=responseBody;
 		reflectedParameters = tempParameters.parallelStream()
 				.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
 						&& reflectionController.validReflection(responseBody, iParameter))
