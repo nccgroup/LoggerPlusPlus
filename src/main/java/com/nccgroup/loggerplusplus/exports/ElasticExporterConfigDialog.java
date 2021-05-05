@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.Objects;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
@@ -32,8 +33,48 @@ public class ElasticExporterConfigDialog extends JDialog {
             elasticExporter.getPreferences().setSetting(PREF_ELASTIC_PROTOCOL, protocolSelector.getSelectedItem());
         });
 
+        JLabel authUserLabel = new JLabel(), authPassLabel = new JLabel();
+        JPanel userPanel = new JPanel(new BorderLayout());
+        JPanel passPanel = new JPanel(new BorderLayout());
+
         JTextField apiKeyId = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_ID);
         JTextField apiKeySecret = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_SECRET);
+        JTextField username = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_USERNAME);
+        JTextField password = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_PASSWORD);
+
+        JComboBox<ElasticAuthType> elasticAuthType = new JComboBox<>(ElasticAuthType.values());
+
+        Runnable setAuthFields = () -> {
+            if (ElasticAuthType.ApiKey.equals(elasticAuthType.getSelectedItem())) {
+                authUserLabel.setText("Key ID: ");
+                authPassLabel.setText("Key Secret: ");
+                userPanel.add(apiKeyId, BorderLayout.CENTER);
+                passPanel.add(apiKeySecret, BorderLayout.CENTER);
+            } else if (ElasticAuthType.Basic.equals(elasticAuthType.getSelectedItem())) {
+                authUserLabel.setText("Username: ");
+                authPassLabel.setText("Password: ");
+                userPanel.add(username, BorderLayout.CENTER);
+                passPanel.add(password, BorderLayout.CENTER);
+            }
+
+            if (ElasticAuthType.None.equals(elasticAuthType.getSelectedItem())) {
+                authUserLabel.setVisible(false);
+                authPassLabel.setVisible(false);
+                userPanel.setVisible(false);
+                passPanel.setVisible(false);
+            } else {
+                authUserLabel.setVisible(true);
+                authPassLabel.setVisible(true);
+                userPanel.setVisible(true);
+                passPanel.setVisible(true);
+            }
+        };
+
+        elasticAuthType.addActionListener(actionEvent -> {
+            elasticExporter.getPreferences().setSetting(PREF_ELASTIC_AUTH, elasticAuthType.getSelectedItem());
+            setAuthFields.run();
+        });
+
 
         //TODO Update PanelBuilder to allow labels with custom components
 
@@ -67,7 +108,7 @@ public class ElasticExporterConfigDialog extends JDialog {
         //If global autostart is on, it overrides the per-project setting.
         autostartProject.setEnabled(!(boolean) preferences.getSetting(PREF_ELASTIC_AUTOSTART_GLOBAL));
         preferences.addSettingListener((source, settingName, newValue) -> {
-            if (settingName == PREF_ELASTIC_AUTOSTART_GLOBAL) {
+            if (Objects.equals(settingName, PREF_ELASTIC_AUTOSTART_GLOBAL)) {
                 autostartProject.setEnabled(!(boolean) newValue);
                 if ((boolean) newValue) {
                     preferences.setSetting(PREF_ELASTIC_AUTOSTART_PROJECT, true);
@@ -80,8 +121,9 @@ public class ElasticExporterConfigDialog extends JDialog {
                 new JComponent[]{new JLabel("Address: "), addressField},
                 new JComponent[]{new JLabel("Port: "), elasticPortSpinner},
                 new JComponent[]{new JLabel("Protocol: "), protocolSelector},
-                new JComponent[]{new JLabel("API Key ID: "), apiKeyId},
-                new JComponent[]{new JLabel("API Key Secret: "), apiKeySecret},
+                new JComponent[]{new JLabel("Auth: "), elasticAuthType},
+                new JComponent[]{authUserLabel, userPanel},
+                new JComponent[]{authPassLabel, passPanel},
                 new JComponent[]{new JLabel("Index: "), indexNameField},
                 new JComponent[]{new JLabel("Upload Frequency (Seconds): "), elasticDelaySpinner},
                 new JComponent[]{new JLabel("Exported Fields: "), configureFieldsButton},
@@ -94,7 +136,9 @@ public class ElasticExporterConfigDialog extends JDialog {
                 new int[]{0, 1},
                 new int[]{0, 1},
                 new int[]{0, 1},
-        }, Alignment.CENTER, 1.0, 1.0), BorderLayout.CENTER);
+        }, Alignment.CENTER, 1.0, 1.0, 5, 5), BorderLayout.CENTER);
+
+        setAuthFields.run();
 
         this.pack();
         this.setResizable(true);

@@ -23,7 +23,9 @@ public class Globals {
 
     //Preferences Keys
     public static final String PREF_LOG_TABLE_SETTINGS = "tabledetailsjson";
-    public static final String PREF_IS_DEBUG = "isDebug";
+    public static final String PREF_LOG_LEVEL = "logLevel";
+    public static final String PREF_LOG_TO_CONSOLE = "logToConsole";
+    public static final String PREF_DEPRECATED_IS_DEBUG = "isDebug";
     public static final String PREF_UPDATE_ON_STARTUP = "updateonstartup";
     public static final String PREF_ENABLED = "enabled";
     public static final String PREF_RESTRICT_TO_SCOPE = "restricttoscope";
@@ -50,8 +52,11 @@ public class Globals {
     public static final String PREF_ELASTIC_PORT = "esPort";
     public static final String PREF_ELASTIC_PROTOCOL = "esProto";
     public static final String PREF_ELASTIC_CLUSTER_NAME = "esClusterName";
+    public static final String PREF_ELASTIC_AUTH = "esAuth";
     public static final String PREF_ELASTIC_API_KEY_ID = "esApiKeyId";
     public static final String PREF_ELASTIC_API_KEY_SECRET = "esApiKeySecret";
+    public static final String PREF_ELASTIC_USERNAME = "esUsername";
+    public static final String PREF_ELASTIC_PASSWORD = "esPassword";
     public static final String PREF_ELASTIC_INDEX = "esIndex";
     public static final String PREF_ELASTIC_DELAY = "esDelay";
     public static final String PREF_ELASTIC_INCLUDE_REQ_RESP = "esIncludeReqResp";
@@ -67,6 +72,7 @@ public class Globals {
     public static final String PREF_SAVED_FIELD_SELECTIONS = "savedFieldSelections";
     public static final String PREF_COLUMNS_VERSION = "columnsVersion";
 
+    public enum ElasticAuthType {ApiKey, Basic, None}
 
     public enum Protocol {HTTP, HTTPS}
     public static final String DEFAULT_COLOR_FILTERS_JSON = "{\"2add8ace-b652-416a-af08-4d78c5d22bc7\":{\"uid\":\"2add8ace-b652-416a-af08-4d78c5d22bc7\"," +

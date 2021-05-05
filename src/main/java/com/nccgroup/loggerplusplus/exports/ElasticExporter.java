@@ -81,13 +81,27 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         int port = preferences.getSetting(Globals.PREF_ELASTIC_PORT);
         indexName = preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
         String protocol = preferences.getSetting(Globals.PREF_ELASTIC_PROTOCOL).toString();
-        String apiKeyId = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_ID);
-        String apiKeySecret = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_SECRET);
-
         RestClientBuilder builder = RestClient.builder(new HttpHost(address, port, protocol));
-        if (!"".equals(apiKeyId) && !"".equalsIgnoreCase(apiKeySecret)) {
-            String apiKeyAuth = Base64.getEncoder().encodeToString((apiKeyId + ":" + apiKeySecret).getBytes(StandardCharsets.UTF_8));
-            builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", "ApiKey " + apiKeyAuth)});
+
+        Globals.ElasticAuthType authType = preferences.getSetting(Globals.PREF_ELASTIC_AUTH);
+        String user = "", pass = "";
+        switch (authType) {
+            case ApiKey:
+                user = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_ID);
+                pass = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_SECRET);
+                break;
+            case Basic:
+                user = preferences.getSetting(Globals.PREF_ELASTIC_USERNAME);
+                pass = preferences.getSetting(Globals.PREF_ELASTIC_PASSWORD);
+                break;
+
+            default:
+                break;
+        }
+
+        if (!"".equals(user) && !"".equalsIgnoreCase(pass)) {
+            String authValue = Base64.getEncoder().encodeToString((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
+            builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", String.format("%s %s", authType, authValue))});
         }
 
         httpClient = new RestHighLevelClient(builder);
