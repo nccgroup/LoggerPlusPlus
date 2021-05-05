@@ -2,12 +2,12 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.concurrent.ExecutionException;
 
 public class ElasticExporterControlPanel extends JPanel {
@@ -18,7 +18,9 @@ public class ElasticExporterControlPanel extends JPanel {
     private static final String START_TEXT = "Start Elastic Exporter";
     private static final String STOP_TEXT = "Stop Elastic Exporter";
 
-    public ElasticExporterControlPanel(ElasticExporter elasticExporter){
+    Logger logger = LogManager.getLogger(this);
+
+    public ElasticExporterControlPanel(ElasticExporter elasticExporter) {
         this.elasticExporter = elasticExporter;
         this.setLayout(new BorderLayout());
 
@@ -63,9 +65,7 @@ public class ElasticExporterControlPanel extends JPanel {
                             if(exception != null) {
                                 JOptionPane.showMessageDialog(exportButton, "Could not start elastic exporter: " +
                                         exception.getMessage() + "\nSee the logs for more information.", "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
-                                StringWriter sw = new StringWriter();
-                                exception.printStackTrace(new PrintWriter(sw));
-                                elasticExporter.getExportController().getLoggerPlusPlus().getLoggingController().logError(sw.toString());
+                                logger.error("Could not start elastic exporter.", exception);
                             }
                             Boolean success = get();
                             boolean isRunning = buttonNowActive ^ !success;

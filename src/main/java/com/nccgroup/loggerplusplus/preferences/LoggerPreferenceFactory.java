@@ -15,6 +15,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.util.*;
@@ -55,8 +56,10 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     @Override
     protected void registerSettings() {
-        prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {}.getType(), defaultlogTableColumns);
-        prefs.registerSetting(PREF_IS_DEBUG, Boolean.class, false);
+        prefs.registerSetting(PREF_LOG_LEVEL, Level.class, Level.INFO);
+        prefs.registerSetting(PREF_LOG_TO_CONSOLE, Boolean.class, false);
+        prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {
+        }.getType(), defaultlogTableColumns);
         prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
         prefs.registerSetting(PREF_ENABLED, Boolean.class, true);
         prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false);

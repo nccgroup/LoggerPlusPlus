@@ -5,6 +5,7 @@ import com.coreyd97.BurpExtenderUtilities.VariableViewPanel;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
+import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -97,18 +98,23 @@ public class LoggerMenu extends javax.swing.JMenu {
         viewMenuItem.setSelected(currentReqRespView == VariableViewPanel.View.TABS);
         this.add(viewMenu);
 
-        JCheckBoxMenuItem debugOption = new JCheckBoxMenuItem("Debug");
-        if(preferences.getSetting(Globals.PREF_IS_DEBUG) != null) {
-            debugOption.setSelected(preferences.getSetting(Globals.PREF_IS_DEBUG));
-        }
-        debugOption.addActionListener((e) -> {
-            Boolean currentSetting = preferences.getSetting(Globals.PREF_IS_DEBUG);
-            if(currentSetting == null) {
-                preferences.setSetting(Globals.PREF_IS_DEBUG, true);
-            }else{
-                preferences.setSetting(Globals.PREF_IS_DEBUG, !currentSetting);
-            }
+        ButtonGroup logLevelGroup = new ButtonGroup();
+        Level logLevel = preferences.getSetting(Globals.PREF_LOG_LEVEL);
+        AbstractButton debug = new JRadioButtonMenuItem(String.valueOf(Level.DEBUG), logLevel.compareTo(Level.DEBUG) == 0);
+        debug.addActionListener(actionEvent -> {
+            preferences.setSetting(Globals.PREF_LOG_LEVEL, Level.DEBUG);
         });
-        this.add(debugOption);
+        AbstractButton info = new JRadioButtonMenuItem(String.valueOf(Level.INFO), logLevel.compareTo(Level.INFO) == 0);
+        info.addActionListener(actionEvent -> {
+            preferences.setSetting(Globals.PREF_LOG_LEVEL, Level.INFO);
+        });
+
+        logLevelGroup.add(debug);
+        logLevelGroup.add(info);
+        JMenu logLevelMenu = new JMenu("Log Level");
+        logLevelMenu.add(debug);
+        logLevelMenu.add(info);
+
+        this.add(logLevelMenu);
     }
 }

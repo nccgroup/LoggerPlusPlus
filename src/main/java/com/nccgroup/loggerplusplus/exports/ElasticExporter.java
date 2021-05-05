@@ -9,6 +9,8 @@ import com.nccgroup.loggerplusplus.util.Globals;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.message.BasicHeader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -50,6 +52,8 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     private final ScheduledExecutorService executorService;
     private final ElasticExporterControlPanel controlPanel;
 
+    private Logger logger = LogManager.getLogger(this);
+
     protected ElasticExporter(ExportController exportController, Preferences preferences) {
         super(exportController, preferences);
         this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
@@ -60,8 +64,9 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
             try {
                 this.exportController.enableExporter(this);
             } catch (Exception e) {
-                exportController.getLoggerPlusPlus().getLoggingController().logError(
-                        String.format("Could not automatically start elastic exporter: %s", e.getMessage()));
+                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getLoggerFrame(), "Could not start elastic exporter: " +
+                        e.getMessage() + "\nSee the logs for more information.", "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
+                logger.error("Could not automatically start elastic exporter:", e);
             }
         }
         controlPanel = new ElasticExporterControlPanel(this);

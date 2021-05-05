@@ -5,29 +5,23 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
-import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.grepper.GrepperController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
+import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
@@ -76,8 +70,13 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
 
-        loggingController = new LoggingController(this);
-        preferencesController = new PreferencesController(this, loggingController);
+        loggingController = new LoggingController(gsonProvider);
+        preferencesController = new PreferencesController(this);
+        preferencesController.getPreferences().addSettingListener((source, settingName, newValue) -> {
+            if (settingName.equals(Globals.PREF_LOG_LEVEL)) {
+                loggingController.setLogLevel((Level) newValue);
+            }
+        });
         reflectionController = new ReflectionController(preferencesController.getPreferences());
         exportController = new ExportController(this, preferencesController.getPreferences());
         libraryController = new FilterLibraryController(this, preferencesController);

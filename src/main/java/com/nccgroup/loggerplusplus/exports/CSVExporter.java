@@ -8,6 +8,8 @@ import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -28,6 +30,7 @@ public class CSVExporter extends AutomaticLogExporter implements ContextMenuExpo
     private Thread exporterThread;
     private LinkedBlockingQueue<LogEntry> awaitingExport;
 
+    Logger logger = LogManager.getLogger(this);
 
     public CSVExporter(ExportController exportController, Preferences preferences){
         super(exportController, preferences);
@@ -171,7 +174,7 @@ public class CSVExporter extends AutomaticLogExporter implements ContextMenuExpo
     public void exportEntries(List<LogEntry> entries) {
         try {
             List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, preferences, "CSV Export", this.fields);
-            if(fields == null || fields.isEmpty()) throw new Exception("Operation cancelled.");
+            if (fields == null || fields.isEmpty()) return; //Operation cancelled.
             this.fields = fields;
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.csv", "CSV File", "csv");
             final boolean append;
@@ -217,8 +220,7 @@ public class CSVExporter extends AutomaticLogExporter implements ContextMenuExpo
             importWorker.execute();
 
         }catch (Exception e){
-            //Cancelled.
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 

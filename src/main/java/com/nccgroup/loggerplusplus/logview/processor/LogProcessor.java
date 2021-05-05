@@ -1,6 +1,8 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
-import burp.*;
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpListener;
+import burp.IHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -10,6 +12,8 @@ import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.text.SimpleDateFormat;
@@ -35,7 +39,9 @@ public class LogProcessor implements IHttpListener {
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
-    private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
+    private final String instanceIdentifier = String.format("%02d", (int) Math.floor((Math.random() * 100)));
+
+    Logger logger = LogManager.getLogger(this);
 
     /**
      * Capture incoming requests and responses.
@@ -43,7 +49,7 @@ public class LogProcessor implements IHttpListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController){
+    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController) {
         this.loggerPlusPlus = loggerPlusPlus;
         this.logTableController = logTableController;
         this.exportController = exportController;
@@ -348,7 +354,7 @@ public class LogProcessor implements IHttpListener {
                     }
 
                     if (removedUUIDs.size() > 0) {
-                        loggerPlusPlus.getLoggingController().logOutput("Cleaned Up " + removedUUIDs.size()
+                        logger.debug("Cleaned Up " + removedUUIDs.size()
                                 + " proxy requests without a response after the specified timeout.");
                     }
                 }catch (Exception e){

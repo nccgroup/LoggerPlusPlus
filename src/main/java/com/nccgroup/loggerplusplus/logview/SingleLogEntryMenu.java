@@ -209,7 +209,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         sendToComparer.add(comparerResponse);
         this.add(sendToComparer);
 
-        if((Boolean) logTableController.getPreferences().getSetting(Globals.PREF_IS_DEBUG) && entry.requestResponse != null){
+        if ((Boolean) logTableController.getPreferences().getSetting(Globals.PREF_DEPRECATED_IS_DEBUG) && entry.requestResponse != null) {
             this.add(new JPopupMenu.Separator());
             JMenuItem reprocessItem = new JMenuItem(new AbstractAction("Reprocess Entry") {
                 @Override

@@ -2,60 +2,66 @@ package com.nccgroup.loggerplusplus.logging;
 
 import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
-import com.coreyd97.BurpExtenderUtilities.ILogProvider;
-import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
-public class LoggingController implements ILogProvider {
+public class LoggingController {
 
-    private final LoggerPlusPlus loggerPlusPlus;
     private final IGsonProvider gsonProvider;
     private IBurpExtenderCallbacks callbacks;
+    private Level logLevel;
 
-    public LoggingController(LoggerPlusPlus loggerPlusPlus){
-        this.loggerPlusPlus = loggerPlusPlus;
-        this.gsonProvider = loggerPlusPlus.getGsonProvider();
+    public LoggingController(IGsonProvider gsonProvider) {
+        this.gsonProvider = gsonProvider;
         this.callbacks = LoggerPlusPlus.callbacks;
+        configureLogger();
     }
 
-    @Override
-    public void logOutput(String message) {
-        callbacks.printOutput(message);
+    private void configureLogger() {
+        logLevel = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_LOG_LEVEL), Level.class);
 
-        Preferences preferences = loggerPlusPlus.getPreferencesController() != null ?
-                loggerPlusPlus.getPreferencesController().getPreferences() : null;
-
-        if(preferences == null) {
-            Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
-            if(isDebug != null && isDebug){
-                System.out.println(message);
-            }
-        }else{
-            if (preferences.getSetting(Globals.PREF_IS_DEBUG) != null
-                    && (boolean) preferences.getSetting(Globals.PREF_IS_DEBUG)) {
-                System.out.println(message);
-            }
+        if (logLevel == null) { //Handle change from debug boolean to log level.
+            boolean deprecatedDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_DEPRECATED_IS_DEBUG), Boolean.class);
+            logLevel = deprecatedDebug ? Level.DEBUG : Level.INFO;
+            callbacks.saveExtensionSetting(Globals.PREF_LOG_LEVEL, gsonProvider.getGson().toJson(logLevel));
         }
+
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        Configuration config = context.getConfiguration();
+        PatternLayout logLayout = PatternLayout.newBuilder()
+                .withConfiguration(config)
+                .withPattern("[%-5level] %d{yyyy-MM-dd HH:mm:ss} %msg%n")
+                .build();
+
+        Appender burpAppender = new AbstractAppender("Burp Appender", null, logLayout, false, null) {
+            @Override
+            public void append(LogEvent event) {
+                String message = new String(this.getLayout().toByteArray(event));
+                if (event.getLevel().isMoreSpecificThan(Level.ERROR)) {
+                    callbacks.printError(message);
+                } else {
+                    callbacks.printOutput(message);
+                }
+            }
+        };
+        burpAppender.start();
+
+        context.getConfiguration().getRootLogger().addAppender(burpAppender, Level.INFO, null);
+        context.updateLoggers();
     }
 
-    @Override
-    public void logError(String errorMessage) {
-        callbacks.printError(errorMessage);
-
-        Preferences preferences = loggerPlusPlus.getPreferencesController() != null ?
-                loggerPlusPlus.getPreferencesController().getPreferences() : null;
-
-        if(preferences == null) {
-            Boolean isDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_IS_DEBUG), Boolean.class);
-            if(isDebug != null && isDebug){
-                System.err.println(errorMessage);
-            }
-        }else{
-            if (preferences.getSetting(Globals.PREF_IS_DEBUG) != null
-                    && (boolean) preferences.getSetting(Globals.PREF_IS_DEBUG)) {
-                System.err.println(errorMessage);
-            }
-        }
+    public void setLogLevel(Level logLevel) {
+        this.logLevel = logLevel;
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        context.getConfiguration().getRootLogger().setLevel(logLevel);
+        context.updateLoggers();
     }
 }
