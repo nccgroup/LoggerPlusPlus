@@ -67,7 +67,6 @@ public class CobaltExporter extends AutomaticLogExporter implements ExportPanelP
         if (this.fields == null || this.fields.isEmpty())
             throw new Exception("No fields configured for export.");
 
-        InetAddress address = InetAddress.getByName(preferences.getSetting(Globals.PREF_COBALT_ADDRESS));
         httpClient = HttpClients.createDefault();
         pendingEntries = new ArrayList<>();
         LoggerPlusPlus.callbacks.printOutput("Cobalt Logger++ initialized successfully");
@@ -136,11 +135,12 @@ public class CobaltExporter extends AutomaticLogExporter implements ExportPanelP
                 }
                 connectFailedCounter = 0;
             } catch (ConnectException e) {
+                LoggerPlusPlus.callbacks.printError("Connection error, upload failed");
                 connectFailedCounter++;
                 if(connectFailedCounter > 5) {
                     JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getLoggerMenu()),
-                            "Elastic exporter could not connect after 5 attempts. Elastic exporter shutting down...",
-                            "Elastic Exporter - Connection Failed", JOptionPane.ERROR_MESSAGE);
+                            "Cobalt exporter could not connect after 5 attempts. Elastic exporter shutting down...",
+                            "Cobalt Exporter - Connection Failed", JOptionPane.ERROR_MESSAGE);
                     shutdown();
                 }
             }
