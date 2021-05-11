@@ -83,3 +83,36 @@ If you have found an issue, please report it in the GitHub project.
 <b>Latest version:</b>
 
 Please review the ["CHANGELOG"](CHANGELOG)
+
+Development
+----------
+ In case you want to check what would be received, you can start a local server with:
+
+ ```bash
+ node app.js
+ ```
+
+ And configure the exporter address `http://localhost:3000`
+
+ ```javascript
+ # app.js
+ const http = require('http');
+ const server = http.createServer();
+
+ server.on('request', (request, response) => {
+     let body = [];
+     request.on('data', (chunk) => {
+         body.push(chunk);
+     }).on('end', () => {
+         body = Buffer.concat(body).toString();
+
+ 	console.log(`==== ${request.method} ${request.url}`);
+ 	console.log('> Headers');
+         console.log(request.headers);
+
+ 	console.log('> Body');
+ 	console.log(body);
+         response.end();
+     });
+ }).listen(3000);
+ ```

@@ -10,30 +10,30 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.concurrent.ExecutionException;
 
-public class ElasticExporterControlPanel extends JPanel {
+public class CobaltExporterControlPanel extends JPanel {
 
-    private final ElasticExporter elasticExporter;
-    private static final String STARTING_TEXT = "Starting Elastic Exporter...";
-    private static final String STOPPING_TEXT = "Stopping Elastic Exporter...";
-    private static final String START_TEXT = "Start Elastic Exporter";
-    private static final String STOP_TEXT = "Stop Elastic Exporter";
+    private final CobaltExporter cobaltExporter;
+    private static final String STARTING_TEXT = "Starting Cobalt Exporter...";
+    private static final String STOPPING_TEXT = "Stopping Cobalt Exporter...";
+    private static final String START_TEXT = "Start Cobalt Exporter";
+    private static final String STOP_TEXT = "Stop Cobalt Exporter";
 
     Logger logger = LogManager.getLogger(this);
 
-    public ElasticExporterControlPanel(ElasticExporter elasticExporter) {
-        this.elasticExporter = elasticExporter;
+    public CobaltExporterControlPanel(CobaltExporter cobaltExporter) {
+        this.cobaltExporter = cobaltExporter;
         this.setLayout(new BorderLayout());
 
-        JButton showConfigDialogButton = new JButton(new AbstractAction("Configure Elastic Exporter") {
+        JButton showConfigDialogButton = new JButton(new AbstractAction("Configure Cobalt Exporter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                new ElasticExporterConfigDialog(JOptionPane.getFrameForComponent(
-                        ElasticExporterControlPanel.this), elasticExporter)
+                new CobaltExporterConfigDialog(JOptionPane.getFrameForComponent(
+                        CobaltExporterControlPanel.this), cobaltExporter)
                         .setVisible(true);
             }
         });
 
-        JToggleButton exportButton = new JToggleButton("Start Elastic Exporter");
+        JToggleButton exportButton = new JToggleButton("Start Cobalt Exporter");
         exportButton.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -63,9 +63,9 @@ public class ElasticExporterControlPanel extends JPanel {
                     protected void done() {
                         try {
                             if(exception != null) {
-                                JOptionPane.showMessageDialog(exportButton, "Could not start elastic exporter: " +
-                                        exception.getMessage() + "\nSee the logs for more information.", "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
-                                logger.error("Could not start elastic exporter.", exception);
+                                JOptionPane.showMessageDialog(exportButton, "Could not start cobalt exporter: " +
+                                        exception.getMessage() + "\nSee the logs for more information.", "Cobalt Exporter", JOptionPane.ERROR_MESSAGE);
+                                logger.error("Could not start cobalt exporter.", exception);
                             }
                             Boolean success = get();
                             boolean isRunning = buttonNowActive ^ !success;
@@ -99,19 +99,19 @@ public class ElasticExporterControlPanel extends JPanel {
         }, Alignment.FILL, 1.0, 1.0), BorderLayout.CENTER);
 
 
-        this.setBorder(BorderFactory.createTitledBorder("Elastic Exporter"));
+        this.setBorder(BorderFactory.createTitledBorder("Cobalt Exporter"));
     }
 
     private void enableExporter() throws Exception {
-        this.elasticExporter.getExportController().enableExporter(this.elasticExporter);
+        this.cobaltExporter.getExportController().enableExporter(this.cobaltExporter);
     }
 
     private void disableExporter() throws Exception {
-        this.elasticExporter.getExportController().disableExporter(this.elasticExporter);
+        this.cobaltExporter.getExportController().disableExporter(this.cobaltExporter);
     }
 
     private boolean isExporterEnabled() {
-        return this.elasticExporter.getExportController().getEnabledExporters().contains(this.elasticExporter);
+        return this.cobaltExporter.getExportController().getEnabledExporters().contains(this.cobaltExporter);
     }
 
 }

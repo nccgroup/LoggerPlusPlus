@@ -1,66 +1,56 @@
 package com.nccgroup.loggerplusplus.exports;
 
-import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import com.nccgroup.loggerplusplus.logentry.Status;
-import com.nccgroup.loggerplusplus.util.Globals;
-import org.apache.http.Header;
-import org.apache.http.HttpHost;
-import org.apache.http.message.BasicHeader;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentElasticsearchExtension;
-
-import javax.swing.*;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 
-public class ElasticExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
+import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.google.gson.Gson;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logentry.Status;
+import com.nccgroup.loggerplusplus.util.Globals;
 
-    RestHighLevelClient httpClient;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class CobaltExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
+
+    CloseableHttpClient httpClient;
     ArrayList<LogEntry> pendingEntries;
     private List<LogEntryField> fields;
-    private String indexName;
-    private ScheduledFuture indexTask;
+    private ScheduledFuture syncTask;
     private int connectFailedCounter;
 
     private final ScheduledExecutorService executorService;
-    private final ElasticExporterControlPanel controlPanel;
+    private final CobaltExporterControlPanel controlPanel;
 
     private Logger logger = LogManager.getLogger(this);
 
-    protected ElasticExporter(ExportController exportController, Preferences preferences) {
+    protected CobaltExporter(ExportController exportController, Preferences preferences) {
         super(exportController, preferences);
-        this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
+        this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_COBALT_FIELDS));
         executorService = Executors.newScheduledThreadPool(1);
 
-        if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
-                || (boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_PROJECT)) {
+        if ((boolean) preferences.getSetting(Globals.PREF_COBALT_AUTOSTART_GLOBAL)
+                || (boolean) preferences.getSetting(Globals.PREF_COBALT_AUTOSTART_PROJECT)) {
             try {
                 this.exportController.enableExporter(this);
             } catch (Exception e) {
@@ -69,7 +59,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                 logger.error("Could not automatically start elastic exporter:", e);
             }
         }
-        controlPanel = new ElasticExporterControlPanel(this);
+        controlPanel = new CobaltExporterControlPanel(this);
     }
 
     @Override
@@ -77,39 +67,12 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         if (this.fields == null || this.fields.isEmpty())
             throw new Exception("No fields configured for export.");
 
-        InetAddress address = InetAddress.getByName(preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
-        int port = preferences.getSetting(Globals.PREF_ELASTIC_PORT);
-        indexName = preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
-        String protocol = preferences.getSetting(Globals.PREF_ELASTIC_PROTOCOL).toString();
-        RestClientBuilder builder = RestClient.builder(new HttpHost(address, port, protocol));
-
-        Globals.ElasticAuthType authType = preferences.getSetting(Globals.PREF_ELASTIC_AUTH);
-        String user = "", pass = "";
-        switch (authType) {
-            case ApiKey:
-                user = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_ID);
-                pass = preferences.getSetting(Globals.PREF_ELASTIC_API_KEY_SECRET);
-                break;
-            case Basic:
-                user = preferences.getSetting(Globals.PREF_ELASTIC_USERNAME);
-                pass = preferences.getSetting(Globals.PREF_ELASTIC_PASSWORD);
-                break;
-
-            default:
-                break;
-        }
-
-        if (!"".equals(user) && !"".equalsIgnoreCase(pass)) {
-            String authValue = Base64.getEncoder().encodeToString((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
-            builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", String.format("%s %s", authType, authValue))});
-        }
-
-        httpClient = new RestHighLevelClient(builder);
-
-        createIndices();
+        InetAddress address = InetAddress.getByName(preferences.getSetting(Globals.PREF_COBALT_ADDRESS));
+        httpClient = HttpClients.createDefault();
         pendingEntries = new ArrayList<>();
-        int delay = preferences.getSetting(Globals.PREF_ELASTIC_DELAY);
-        indexTask = executorService.scheduleAtFixedRate(this::indexPendingEntries, delay, delay, TimeUnit.SECONDS);
+        LoggerPlusPlus.callbacks.printOutput("Cobalt Logger++ initialized successfully");
+        int delay = preferences.getSetting(Globals.PREF_COBALT_DELAY);
+        syncTask = executorService.scheduleAtFixedRate(this::exportPendingEntries, delay, delay, TimeUnit.SECONDS);
     }
 
     @Override
@@ -128,8 +91,8 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     @Override
     void shutdown() throws Exception {
-        if(this.indexTask != null){
-            indexTask.cancel(true);
+        if(this.syncTask != null){
+            syncTask.cancel(true);
         }
         this.pendingEntries = null;
     }
@@ -144,46 +107,11 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         return null;
     }
 
-    private void createIndices() throws IOException {
-        GetIndexRequest request = new GetIndexRequest(this.indexName);
+    private void exportPendingEntries(){
+        LoggerPlusPlus.callbacks.printOutput("Uploading pending log entries ("+this.pendingEntries.size()+")...");
 
-        boolean exists = httpClient.indices().exists(request, RequestOptions.DEFAULT);
-
-        if(!exists) {
-            CreateIndexRequest _request = new CreateIndexRequest(this.indexName);
-            httpClient.indices().create(_request, RequestOptions.DEFAULT);
-        }
-    }
-
-    public IndexRequest buildIndexRequest(LogEntry logEntry) throws IOException {
-        XContentBuilder builder = jsonBuilder().startObject();
-        for (LogEntryField field : this.fields) {
-            Object value = formatValue(logEntry.getValueByKey(field));
-            try {
-                //For some reason, the XContentElasticsearchExtension service cannot be loaded
-                //when in burp, so we must format dates manually ourselves :(
-                //TODO investigate further
-                if (value instanceof Date) {
-                    builder.field(field.getFullLabel(), XContentElasticsearchExtension.DEFAULT_DATE_PRINTER.print(((Date) value).getTime()));
-                } else {
-                    builder.field(field.getFullLabel(), value);
-                }
-            }catch (Exception e){
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + value);
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + e.getMessage());
-                throw e;
-            }
-        }
-        builder.endObject();
-
-        return new IndexRequest(this.indexName, "doc").source(builder); //TODO Remove deprecated ES6 methods.
-    }
-
-    private void indexPendingEntries(){
         try {
             if (this.pendingEntries.size() == 0) return;
-
-            BulkRequest httpBulkBuilder = new BulkRequest();
 
             ArrayList<LogEntry> entriesInBulk;
             synchronized (pendingEntries) {
@@ -191,22 +119,20 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                 pendingEntries.clear();
             }
 
-            for (LogEntry logEntry : entriesInBulk) {
-                try {
-                    IndexRequest request = buildIndexRequest(logEntry);
-                    httpBulkBuilder.add(request);
-                } catch (Exception e) {
-                    LoggerPlusPlus.callbacks.printError("Could not build elastic export request for entry: " + e.getMessage());
-                    //Could not build index request. Ignore it?
-                }
-            }
+            Gson gson = exportController.getLoggerPlusPlus().getGsonProvider().getGson();
+            StringEntity body = new StringEntity(gson.toJson(entriesInBulk));
+
+            String address = preferences.getSetting(Globals.PREF_COBALT_ADDRESS);
+            HttpPost post = new HttpPost(address);
+            post.setEntity(body);
 
             try {
-                BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
-                if (bulkResponse.hasFailures()) {
-                    for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
-                        LoggerPlusPlus.callbacks.printError(bulkItemResponse.getFailureMessage());
-                    }
+                CloseableHttpResponse response = httpClient.execute(post);
+                int statusCode = response.getStatusLine().getStatusCode();
+
+                LoggerPlusPlus.callbacks.printOutput("Upload finished with status code " + statusCode);
+                if (statusCode >=400) {
+                    LoggerPlusPlus.callbacks.printOutput(EntityUtils.toString(response.getEntity()));
                 }
                 connectFailedCounter = 0;
             } catch (ConnectException e) {
@@ -217,17 +143,10 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                             "Elastic Exporter - Connection Failed", JOptionPane.ERROR_MESSAGE);
                     shutdown();
                 }
-            }catch (IOException e) {
-                e.printStackTrace();
             }
         }catch (Exception e){
-            e.printStackTrace();
+                LoggerPlusPlus.callbacks.printError("Upload failed: " + ExceptionUtils.getStackTrace(e));
         }
-    }
-
-    private Object formatValue(Object value){
-        if (value instanceof java.net.URL) return String.valueOf((java.net.URL) value);
-        else return value;
     }
 
     public ExportController getExportController() {
@@ -239,7 +158,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     }
 
     public void setFields(List<LogEntryField> fields) {
-        preferences.setSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS, fields);
+        preferences.setSetting(Globals.PREF_PREVIOUS_COBALT_FIELDS, fields);
         this.fields = fields;
     }
 }
