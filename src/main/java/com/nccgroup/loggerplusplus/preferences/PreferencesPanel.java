@@ -129,7 +129,7 @@ public class PreferencesPanel extends JScrollPane {
 
                 if (result == JOptionPane.OK_OPTION) {
                     boolean sendToAutoExporters = false;
-                    if (LoggerPlusPlus.instance.getExportController().getExporters().size() > 0) {
+                    if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                         int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                                 "One or more auto-exporters are currently enabled. " +
                                         "Do you want the imported entries to also be sent to the auto-exporters?",
@@ -146,7 +146,7 @@ public class PreferencesPanel extends JScrollPane {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ArrayList<IHttpRequestResponse> requests = LoggerImport.importWStalker();
-                if (LoggerPlusPlus.instance.getExportController().getExporters().size() > 0) {
+                if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +
                                     "Do you want the imported entries to also be sent to the auto-exporters?",
@@ -163,7 +163,7 @@ public class PreferencesPanel extends JScrollPane {
             public void actionPerformed(ActionEvent e) {
                 ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
 
-                if (LoggerPlusPlus.instance.getExportController().getExporters().size() > 0) {
+                if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +
                                     "Do you want the imported entries to also be sent to the auto-exporters?",
