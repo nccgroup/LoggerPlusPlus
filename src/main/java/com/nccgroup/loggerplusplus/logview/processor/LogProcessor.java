@@ -181,7 +181,7 @@ public class LogProcessor implements IHttpListener {
                 entryProcessingFutures.remove(logEntry.getIdentifier());
                 return null; //Ignored entry. Skip it.
             }else{
-                addProcessedEntry(logEntry);
+                addProcessedEntry(logEntry, true);
 
                 if(result.getStatus() == Status.PROCESSED){
                     //If the entry was fully processed, remove it from the processing list.
@@ -273,24 +273,24 @@ public class LogProcessor implements IHttpListener {
                 ((Boolean) preferences.getSetting(PREF_LOG_SCANNER) && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
                 ((Boolean) preferences.getSetting(PREF_LOG_SEQUENCER) && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
                 ((Boolean) preferences.getSetting(PREF_LOG_SPIDER) && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
-                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
-                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
+                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag == IBurpExtenderCallbacks.TOOL_EXTENDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag == IBurpExtenderCallbacks.TOOL_TARGET));
     }
 
-    public void shutdown(){
+    public void shutdown() {
         this.cleanupExecutor.shutdownNow();
         this.entryProcessExecutor.shutdownNow();
         this.entryImportExecutor.shutdownNow();
     }
 
-    void addProcessedEntry(LogEntry logEntry){
-        exportController.exportNewEntry(logEntry);
+    void addProcessedEntry(LogEntry logEntry, boolean exportEntry) {
+        if (exportEntry) exportController.exportNewEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().addEntry(logEntry);
         });
     }
 
-    void updateExistingEntry(LogEntry logEntry){
+    void updateExistingEntry(LogEntry logEntry) {
         exportController.exportUpdatedEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().updateEntry(logEntry);
