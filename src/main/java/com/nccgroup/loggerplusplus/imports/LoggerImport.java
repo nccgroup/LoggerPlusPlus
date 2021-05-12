@@ -190,17 +190,17 @@ public class LoggerImport {
         return requests;
     }
 
-    public static boolean loadImported(ArrayList<IHttpRequestResponse> requests) {
+    public static boolean loadImported(ArrayList<IHttpRequestResponse> requests, Boolean sendToAutoExporters) {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
-            .setOriginatingTool(IBurpExtenderCallbacks.TOOL_EXTENDER)
-            .setEntries(requests)
-            .setInterimConsumer(integers -> {
-                //Optional
-                //Outputs chunks of integers representing imported indices
-                //May be used to update progress bar for example
-            })
-            .setCallback(() -> {
-                //Optional
+                .setOriginatingTool(IBurpExtenderCallbacks.TOOL_EXTENDER)
+                .setEntries(requests)
+                .setInterimConsumer(integers -> {
+                    //Optional
+                    //Outputs chunks of integers representing imported indices
+                    //May be used to update progress bar for example
+                })
+                .setCallback(() -> {
+                    //Optional
                 //Called when all entries have been imported.
             }).build();
         importWorker.execute();

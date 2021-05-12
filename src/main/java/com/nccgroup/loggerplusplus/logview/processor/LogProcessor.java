@@ -247,7 +247,7 @@ public class LogProcessor implements IHttpListener {
         return new EntryImportWorker.Builder(this);
     }
 
-    public void importProxyHistory(){
+    public void importProxyHistory(boolean sendToAutoExporters) {
         //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
         //TODO Remove to more suitable UI class and show dialog
 
@@ -260,7 +260,8 @@ public class LogProcessor implements IHttpListener {
         //Build and start import worker
         EntryImportWorker importWorker = new EntryImportWorker.Builder(this)
                 .setOriginatingTool(IBurpExtenderCallbacks.TOOL_PROXY)
-                .setEntries(entriesToImport).build();
+                .setEntries(entriesToImport)
+                .setSendToAutoExporters(sendToAutoExporters).build();
 
         importWorker.execute();
     }
@@ -283,8 +284,8 @@ public class LogProcessor implements IHttpListener {
         this.entryImportExecutor.shutdownNow();
     }
 
-    void addProcessedEntry(LogEntry logEntry, boolean exportEntry) {
-        if (exportEntry) exportController.exportNewEntry(logEntry);
+    void addProcessedEntry(LogEntry logEntry, boolean sendToAutoExporters) {
+        if (sendToAutoExporters) exportController.exportNewEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().addEntry(logEntry);
         });
