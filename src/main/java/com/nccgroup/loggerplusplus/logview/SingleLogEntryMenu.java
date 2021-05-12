@@ -16,6 +16,7 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
+import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -209,7 +210,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         sendToComparer.add(comparerResponse);
         this.add(sendToComparer);
 
-        if ((Boolean) logTableController.getPreferences().getSetting(Globals.PREF_DEPRECATED_IS_DEBUG) && entry.requestResponse != null) {
+        if (logTableController.getPreferences().getSetting(Globals.PREF_LOG_LEVEL) == Level.DEBUG && entry.requestResponse != null) {
             this.add(new JPopupMenu.Separator());
             JMenuItem reprocessItem = new JMenuItem(new AbstractAction("Reprocess Entry") {
                 @Override
