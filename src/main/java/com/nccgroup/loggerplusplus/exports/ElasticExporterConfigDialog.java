@@ -43,14 +43,17 @@ public class ElasticExporterConfigDialog extends JDialog {
         JTextField password = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_PASSWORD);
 
         JComboBox<ElasticAuthType> elasticAuthType = new JComboBox<>(ElasticAuthType.values());
+        elasticAuthType.setSelectedItem(preferences.getSetting(PREF_ELASTIC_AUTH));
 
         Runnable setAuthFields = () -> {
-            if (ElasticAuthType.ApiKey.equals(elasticAuthType.getSelectedItem())) {
+            ElasticAuthType authType = preferences.getSetting(PREF_ELASTIC_AUTH);
+
+            if (ElasticAuthType.ApiKey.equals(authType)) {
                 authUserLabel.setText("Key ID: ");
                 authPassLabel.setText("Key Secret: ");
                 userPanel.add(apiKeyId, BorderLayout.CENTER);
                 passPanel.add(apiKeySecret, BorderLayout.CENTER);
-            } else if (ElasticAuthType.Basic.equals(elasticAuthType.getSelectedItem())) {
+            } else if (ElasticAuthType.Basic.equals(authType)) {
                 authUserLabel.setText("Username: ");
                 authPassLabel.setText("Password: ");
                 userPanel.add(username, BorderLayout.CENTER);
