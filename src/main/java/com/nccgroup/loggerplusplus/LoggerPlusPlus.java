@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Level;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
@@ -185,7 +186,12 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         return exportController;
     }
 
-    public Frame getLoggerFrame(){
+    public Frame getLoggerFrame() {
+        if (mainViewController == null) {
+            return Arrays.stream(JFrame.getFrames()).filter(frame -> {
+                return frame.getTitle().startsWith("Burp Suite") && frame.isVisible();
+            }).findFirst().orElse(null);
+        }
         return JOptionPane.getFrameForComponent(mainViewController.getTabbedPanel());
     }
 }
