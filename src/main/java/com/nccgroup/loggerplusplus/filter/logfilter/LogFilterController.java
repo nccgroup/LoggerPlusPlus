@@ -11,6 +11,8 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
+import javax.swing.text.Document;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
@@ -53,6 +55,26 @@ public class LogFilterController {
                 }
             }
         });
+
+        Document filterFieldDoc = ((JTextField) filterField.getEditor().getEditorComponent()).getDocument();
+        final UndoManager undoManager = new UndoManager();
+        filterFieldDoc.addUndoableEditListener(undoableEditEvent -> undoManager.addEdit(undoableEditEvent.getEdit()));
+        filterField.getActionMap().put("Undo", new AbstractAction("Undo") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (undoManager.canUndo()) undoManager.undo();
+            }
+        });
+
+        filterField.getActionMap().put("Redo", new AbstractAction("Redo") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (undoManager.canRedo()) undoManager.redo();
+            }
+        });
+
+        filterField.getInputMap().put(KeyStroke.getKeyStroke("control Z"), "Undo");
+        filterField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), "Redo");
 
         //Update when clicking an item in the list, but not when using arrow keys to move
         filterField.addActionListener(e -> {
