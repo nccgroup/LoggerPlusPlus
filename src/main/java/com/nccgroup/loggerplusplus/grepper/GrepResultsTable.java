@@ -1,7 +1,5 @@
 package com.nccgroup.loggerplusplus.grepper;
 
-import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import org.jdesktop.swingx.JXTree;
 import org.jdesktop.swingx.JXTreeTable;
@@ -141,7 +139,7 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
         }
 
         public void addEntry(GrepResults matches){
-            if(matches.getResults().size() == 0) return;
+            if (matches.getMatches().size() == 0) return;
             synchronized (this.matchingEntries) {
                 this.matchingEntries.add(matches);
             }
@@ -171,11 +169,11 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
 
         @Override
         public Object getValueAt(Object node, int column) {
-            if(node instanceof GrepResults){
-                if(column == 0) return ((GrepResults) node).getLogEntry().toString();
-                if(column == 1) return ((GrepResults) node).getRequestMatches();
-                if(column == 2) return ((GrepResults) node).getResponseMatches();
-                if(column == 3) return ((GrepResults) node).getResults().size();
+            if(node instanceof GrepResults) {
+                if (column == 0) return ((GrepResults) node).getLogEntry().toString();
+                if (column == 1) return ((GrepResults) node).getRequestMatches();
+                if (column == 2) return ((GrepResults) node).getResponseMatches();
+                if (column == 3) return ((GrepResults) node).getMatches().size();
                 else return "";
             }
             if(node instanceof GrepResults.Match){
@@ -189,7 +187,7 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
         @Override
         public Object getChild(Object parent, int i) {
             if(parent instanceof GrepResults)
-                return ((GrepResults) parent).getResults().get(i);
+                return ((GrepResults) parent).getMatches().get(i);
             if(this.matchingEntries == null) return null;
             return this.matchingEntries.get(i);
         }
@@ -197,7 +195,7 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
         @Override
         public int getChildCount(Object parent) {
             if(parent instanceof GrepResults){
-                return ((GrepResults) parent).getResults().size();
+                return ((GrepResults) parent).getMatches().size();
             }
             synchronized (matchingEntries) {
                 return this.matchingEntries.size();
@@ -207,7 +205,7 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
         @Override
         public int getIndexOfChild(Object parent, Object child) {
             if(parent instanceof GrepResults){
-                return ((GrepResults) parent).getResults().indexOf(child);
+                return ((GrepResults) parent).getMatches().indexOf(child);
             }
             return -1;
         }

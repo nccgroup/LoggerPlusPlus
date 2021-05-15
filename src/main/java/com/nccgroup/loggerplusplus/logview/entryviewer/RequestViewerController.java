@@ -1,13 +1,14 @@
 package com.nccgroup.loggerplusplus.logview.entryviewer;
 
-import burp.*;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IMessageEditor;
+import burp.IMessageEditorController;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.logview.LogViewController;
 
 public class RequestViewerController implements IMessageEditorController {
 
-    private final LogViewController logViewController;
     private final Preferences preferences;
     private final IMessageEditor requestEditor;
     private final IMessageEditor responseEditor;
@@ -15,9 +16,8 @@ public class RequestViewerController implements IMessageEditorController {
 
     private IHttpRequestResponse currentItem;
 
-    public RequestViewerController(LogViewController logViewController, boolean requestEditable, boolean responseEditable){
-        this.logViewController = logViewController;
-        this.preferences = logViewController.getPreferences();
+    public RequestViewerController(Preferences preferences, boolean requestEditable, boolean responseEditable) {
+        this.preferences = preferences;
         this.requestEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, requestEditable);
         this.responseEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, responseEditable);
         this.requestViewerPanel = new RequestViewerPanel(this);

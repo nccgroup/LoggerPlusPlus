@@ -7,9 +7,6 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
-import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
-
-import static com.nccgroup.loggerplusplus.util.Globals.PREF_AUTO_IMPORT_PROXY_HISTORY;
 
 public class LogViewController {
 
@@ -29,7 +26,7 @@ public class LogViewController {
 
         this.logTableController = new LogTableController(this, filterLibraryController);
         this.logFilterController = new LogFilterController(this);
-        this.requestViewerController = new RequestViewerController(this, false, false);
+        this.requestViewerController = new RequestViewerController(preferences, false, false);
 
         //Build UI
         this.logViewPanel = new LogViewPanel(this);

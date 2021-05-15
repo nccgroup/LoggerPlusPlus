@@ -20,11 +20,11 @@ public class GrepResults {
         processEntry(pattern);
     }
 
-    public ArrayList<Match> getResults() {
+    public ArrayList<Match> getMatches() {
         return results;
     }
 
-    public Object getLogEntry() {
+    public LogEntry getLogEntry() {
         return this.entry;
     }
 
@@ -60,17 +60,21 @@ public class GrepResults {
             }else {
                 responseMatches++;
             }
-            results.add(new Match(groups, isRequest));
+            results.add(new Match(groups, isRequest, respMatcher.start(), respMatcher.end()));
         }
     }
 
     public static class Match {
         public final String[] groups;
+        public final int startIndex;
+        public final int endIndex;
         public final boolean isRequest;
 
-        Match(String[] groups, boolean isRequest){
+        Match(String[] groups, boolean isRequest, int startIndex, int endIndex) {
             this.groups = groups;
             this.isRequest = isRequest;
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
         }
     }
 }

@@ -1,17 +1,22 @@
 package com.nccgroup.loggerplusplus.grepper;
 
-import burp.BurpExtender;
+import burp.IHttpRequestResponse;
+import burp.IHttpRequestResponseWithMarkers;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -26,6 +31,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
     private final JCheckBox inScopeOnly;
     private final JTabbedPane resultsPane;
     private final GrepResultsTable grepResultsTable;
+    private final RequestViewerController requestViewerController;
     private final UniquePatternMatchTable uniqueTable;
 
     GrepperPanel(GrepperController controller, Preferences preferences){
@@ -64,10 +70,37 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         });
 
         this.grepResultsTable = new GrepResultsTable(controller);
+        this.requestViewerController = new RequestViewerController(preferences, false, false);
+
+        grepResultsTable.addTreeSelectionListener(treeSelectionEvent -> {
+            TreePath selectedPath = treeSelectionEvent.getPath();
+            GrepResults grepResultEntry = (GrepResults) selectedPath.getPath()[1];
+            GrepResults.Match selectedMatch = null;
+            if (selectedPath.getPath().length > 2) {
+                selectedMatch = (GrepResults.Match) selectedPath.getPath()[2];
+            }
+
+            IHttpRequestResponse requestResponse = grepResultEntry.getLogEntry().getRequestResponse();
+            List<GrepResults.Match> matches;
+
+            if (selectedMatch != null) {
+                matches = Collections.singletonList(selectedMatch);
+            } else {
+                matches = grepResultEntry.getMatches();
+            }
+
+            IHttpRequestResponseWithMarkers markedRequestResponse = controller.addMarkers(requestResponse, matches);
+            requestViewerController.setDisplayedEntity(markedRequestResponse);
+
+            //TODO Setup message editor to support highlighting. Code is ready, waiting on API support.
+            //https://forum.portswigger.net/thread/eeditor-custom-highlighting-991b1a7e?CategoryId=burp-extensions
+        });
+
+        JSplitPane resultsSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(grepResultsTable), requestViewerController.getRequestViewerPanel());
         this.uniqueTable = new UniquePatternMatchTable(controller);
 
         this.resultsPane = new JTabbedPane();
-        this.resultsPane.addTab("Results", new JScrollPane(grepResultsTable));
+        this.resultsPane.addTab("Results", resultsSplitPane);
         this.resultsPane.addTab("Unique Results", new JScrollPane(uniqueTable));
 
         JPanel wrapperPanel = PanelBuilder.build(new JComponent[][]{

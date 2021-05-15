@@ -1,5 +1,7 @@
 package com.nccgroup.loggerplusplus.grepper;
 
+import burp.IHttpRequestResponse;
+import burp.IHttpRequestResponseWithMarkers;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
@@ -9,6 +11,7 @@ import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,15 +53,28 @@ public class GrepperController {
         return remainingEntries.get() > 0;
     }
 
-    public void reset(){ //TODO SwingWorker
+    public void reset() { //TODO SwingWorker
         for (GrepperListener listener : this.listeners) {
-            try{
+            try {
                 listener.onResetRequested();
-            }catch (Exception e){e.printStackTrace();}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public void beginSearch(final Pattern pattern, final boolean inScopeOnly){
+    public IHttpRequestResponseWithMarkers addMarkers(IHttpRequestResponse requestResponse, List<GrepResults.Match> matches) {
+        List<int[]> requestMarkers = new ArrayList<>(), responseMarkers = new ArrayList<>();
+        for (GrepResults.Match match : matches) {
+            int[] marker = new int[]{match.startIndex, match.endIndex};
+            if (match.isRequest) requestMarkers.add(marker);
+            else responseMarkers.add(marker);
+        }
+
+        return LoggerPlusPlus.callbacks.applyMarkers(requestResponse, requestMarkers, responseMarkers);
+    }
+
+    public void beginSearch(final Pattern pattern, final boolean inScopeOnly) {
         int searchThreads = this.preferences.getSetting(Globals.PREF_SEARCH_THREADS);
         this.searchExecutor = Executors.newFixedThreadPool(searchThreads, new NamedThreadFactory("LPP-Grepper"));
 
