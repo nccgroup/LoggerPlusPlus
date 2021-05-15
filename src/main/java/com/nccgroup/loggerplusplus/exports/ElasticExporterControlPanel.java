@@ -2,6 +2,8 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.util.Globals;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,9 +29,12 @@ public class ElasticExporterControlPanel extends JPanel {
         JButton showConfigDialogButton = new JButton(new AbstractAction("Configure Elastic Exporter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                new ElasticExporterConfigDialog(JOptionPane.getFrameForComponent(
-                        ElasticExporterControlPanel.this), elasticExporter)
+                new ElasticExporterConfigDialog(LoggerPlusPlus.instance.getLoggerFrame(), elasticExporter)
                         .setVisible(true);
+
+                //Dialog closed. Update previous project entry filter to current value.
+                String newFilter = elasticExporter.getPreferences().getSetting(Globals.PREF_ELASTIC_FILTER);
+                elasticExporter.getPreferences().setSetting(Globals.PREF_ELASTIC_FILTER_PROJECT_PREVIOUS, newFilter);
             }
         });
 

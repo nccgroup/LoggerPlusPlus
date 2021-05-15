@@ -59,7 +59,8 @@ public class Globals {
     public static final String PREF_ELASTIC_PASSWORD = "esPassword";
     public static final String PREF_ELASTIC_INDEX = "esIndex";
     public static final String PREF_ELASTIC_DELAY = "esDelay";
-    public static final String PREF_ELASTIC_INCLUDE_REQ_RESP = "esIncludeReqResp";
+    public static final String PREF_ELASTIC_FILTER = "esFilter";
+    public static final String PREF_ELASTIC_FILTER_PROJECT_PREVIOUS = "esFilterProjectPrevious";
     public static final String PREF_ELASTIC_AUTOSTART_GLOBAL = "elasticAutostartGlobal";
     public static final String PREF_ELASTIC_AUTOSTART_PROJECT = "elasticAutostartProject";
     public static final String PREF_LOG_OTHER_LIVE = "otherToolLiveLogging";

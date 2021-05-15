@@ -1,14 +1,23 @@
 package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
+import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
+import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,11 +60,15 @@ public class ElasticExporterConfigDialog extends JDialog {
             if (ElasticAuthType.ApiKey.equals(authType)) {
                 authUserLabel.setText("Key ID: ");
                 authPassLabel.setText("Key Secret: ");
+                userPanel.remove(username);
+                passPanel.remove(password);
                 userPanel.add(apiKeyId, BorderLayout.CENTER);
                 passPanel.add(apiKeySecret, BorderLayout.CENTER);
             } else if (ElasticAuthType.Basic.equals(authType)) {
                 authUserLabel.setText("Username: ");
                 authPassLabel.setText("Password: ");
+                userPanel.remove(apiKeyId);
+                passPanel.remove(apiKeySecret);
                 userPanel.add(username, BorderLayout.CENTER);
                 passPanel.add(password, BorderLayout.CENTER);
             }
@@ -105,6 +118,25 @@ public class ElasticExporterConfigDialog extends JDialog {
             }
         });
 
+
+        String projectPreviousFilterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER_PROJECT_PREVIOUS);
+        String filterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER);
+        if (projectPreviousFilterString != null && !Objects.equals(projectPreviousFilterString, filterString)) {
+            int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
+                    "Looks like the log filter has been changed since you last used this Burp project.\n" +
+                            "Do you want to restore the previous filter used by the project?\n" +
+                            "\n" +
+                            "Previously used filter: " + projectPreviousFilterString + "\n" +
+                            "Current filter: " + filterString, "ElasticSearch Exporter Log Filter",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (res == JOptionPane.YES_OPTION) {
+                preferences.setSetting(PREF_ELASTIC_FILTER, projectPreviousFilterString);
+            }
+        }
+
+        JTextField filterField = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_FILTER);
+        filterField.setMinimumSize(new Dimension(600, 0));
+
         JCheckBox autostartGlobal = PanelBuilder.createPreferenceCheckBox(preferences, PREF_ELASTIC_AUTOSTART_GLOBAL);
         JCheckBox autostartProject = PanelBuilder.createPreferenceCheckBox(preferences, PREF_ELASTIC_AUTOSTART_PROJECT);
 
@@ -119,17 +151,32 @@ public class ElasticExporterConfigDialog extends JDialog {
             }
         });
 
+//        new JComponent[]{new JLabel("Address: "), addressField},
+//                new JComponent[]{new JLabel("Port: "), elasticPortSpinner},
+//                new JComponent[]{new JLabel("Protocol: "), protocolSelector},
 
-        this.add(PanelBuilder.build(new JComponent[][]{
-                new JComponent[]{new JLabel("Address: "), addressField},
-                new JComponent[]{new JLabel("Port: "), elasticPortSpinner},
-                new JComponent[]{new JLabel("Protocol: "), protocolSelector},
+        ComponentGroup connectionGroup = new ComponentGroup(ComponentGroup.Orientation.VERTICAL, "Connection");
+        connectionGroup.addComponentWithLabel("Address: ", addressField);
+        connectionGroup.addComponentWithLabel("Port: ", elasticPortSpinner);
+        connectionGroup.addComponentWithLabel("Protocol: ", protocolSelector);
+        connectionGroup.addComponentWithLabel("Index: ", indexNameField);
+
+        ComponentGroup authGroup = new ComponentGroup(ComponentGroup.Orientation.VERTICAL, "Authentication");
+        authGroup.add(PanelBuilder.build(new Component[][]{
                 new JComponent[]{new JLabel("Auth: "), elasticAuthType},
                 new JComponent[]{authUserLabel, userPanel},
-                new JComponent[]{authPassLabel, passPanel},
-                new JComponent[]{new JLabel("Index: "), indexNameField},
+                new JComponent[]{authPassLabel, passPanel}
+        }, new int[][]{
+                new int[]{0, 1},
+                new int[]{0, 1},
+                new int[]{0, 1}
+        }, Alignment.FILL, 1, 1));
+
+        ComponentGroup miscGroup = new ComponentGroup(ComponentGroup.Orientation.VERTICAL, "Misc");
+        miscGroup.add(PanelBuilder.build(new Component[][]{
                 new JComponent[]{new JLabel("Upload Frequency (Seconds): "), elasticDelaySpinner},
                 new JComponent[]{new JLabel("Exported Fields: "), configureFieldsButton},
+                new JComponent[]{new JLabel("Log Filter: "), filterField},
                 new JComponent[]{new JLabel("Autostart Exporter (All Projects): "), autostartGlobal},
                 new JComponent[]{new JLabel("Autostart Exporter (This Project): "), autostartProject},
         }, new int[][]{
@@ -137,14 +184,48 @@ public class ElasticExporterConfigDialog extends JDialog {
                 new int[]{0, 1},
                 new int[]{0, 1},
                 new int[]{0, 1},
-                new int[]{0, 1},
-                new int[]{0, 1},
+                new int[]{0, 1}
+        }, Alignment.FILL, 1, 1));
+
+
+        this.add(PanelBuilder.build(new JComponent[][]{
+                new JComponent[]{connectionGroup},
+                new JComponent[]{authGroup},
+                new JComponent[]{miscGroup}
+        }, new int[][]{
+                new int[]{1},
+                new int[]{1},
+                new int[]{1},
         }, Alignment.CENTER, 1.0, 1.0, 5, 5), BorderLayout.CENTER);
 
         setAuthFields.run();
 
+        this.setMinimumSize(new Dimension(600, 200));
+
         this.pack();
         this.setResizable(true);
-        this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                String logFilter = preferences.getSetting(PREF_ELASTIC_FILTER);
+
+                if (!StringUtils.isBlank(logFilter)) {
+                    FilterLibraryController libraryController = elasticExporter.getExportController()
+                            .getLoggerPlusPlus().getLibraryController();
+                    try {
+                        new LogFilter(libraryController, logFilter);
+                    } catch (ParseException ex) {
+                        JOptionPane.showMessageDialog(ElasticExporterConfigDialog.this,
+                                "Cannot save Elastic Exporter configuration. The chosen log filter is invalid: \n" +
+                                        ex.getMessage(), "Invalid Elastic Exporter Configuration", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+                ElasticExporterConfigDialog.this.dispose();
+                super.windowClosing(e);
+            }
+        });
     }
 }

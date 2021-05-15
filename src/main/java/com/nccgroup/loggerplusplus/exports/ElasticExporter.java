@@ -2,10 +2,13 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.util.Globals;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.message.BasicHeader;
@@ -29,10 +32,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -44,6 +44,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;
+    LogFilter logFilter;
     private List<LogEntryField> fields;
     private String indexName;
     private ScheduledFuture indexTask;
@@ -61,6 +62,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
         if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
                 || (boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_PROJECT)) {
+            //Autostart exporter.
             try {
                 this.exportController.enableExporter(this);
             } catch (Exception e) {
@@ -77,11 +79,34 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         if (this.fields == null || this.fields.isEmpty())
             throw new Exception("No fields configured for export.");
 
+        String projectPreviousFilterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER_PROJECT_PREVIOUS);
+        String filterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER);
+
+        if (!Objects.equals(projectPreviousFilterString, filterString)) {
+            //The current filter isn't what we used to export last time.
+            int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
+                    "Heads up! Looks like the filter being used to select which logs to export to " +
+                            "ElasticSearch has changed since you last ran the exporter for this project.\n" +
+                            "Do you want to continue?", "ElasticSearch Export Log Filter", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (res == JOptionPane.NO_OPTION) {
+                throw new Exception("Export cancelled.");
+            }
+        }
+
+        if (!StringUtils.isBlank(filterString)) {
+            try {
+                logFilter = new LogFilter(exportController.getLoggerPlusPlus().getLibraryController(), filterString);
+            } catch (ParseException ex) {
+                logger.error("The log filter configured for the Elastic exporter is invalid!", ex);
+            }
+        }
+
         InetAddress address = InetAddress.getByName(preferences.getSetting(Globals.PREF_ELASTIC_ADDRESS));
         int port = preferences.getSetting(Globals.PREF_ELASTIC_PORT);
         indexName = preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
         String protocol = preferences.getSetting(Globals.PREF_ELASTIC_PROTOCOL).toString();
         RestClientBuilder builder = RestClient.builder(new HttpHost(address, port, protocol));
+        logger.info(String.format("Starting ElasticSearch exporter. %s://%s:%s/%s", protocol, address, port, indexName));
 
         Globals.ElasticAuthType authType = preferences.getSetting(Globals.PREF_ELASTIC_AUTH);
         String user = "", pass = "";
@@ -100,6 +125,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         }
 
         if (!"".equals(user) && !"".equalsIgnoreCase(pass)) {
+            logger.info(String.format("ElasticSearch using %s, Username: %s", authType, user));
             String authValue = Base64.getEncoder().encodeToString((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
             builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", String.format("%s %s", authType, authValue))});
         }
@@ -115,6 +141,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportNewEntry(final LogEntry logEntry) {
         if(logEntry.getStatus() == Status.PROCESSED) {
+            if (logFilter != null && !logFilter.matches(logEntry)) return;
             pendingEntries.add(logEntry);
         }
     }
@@ -122,6 +149,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportUpdatedEntry(final LogEntry updatedEntry) {
         if(updatedEntry.getStatus() == Status.PROCESSED) {
+            if (logFilter != null && !logFilter.matches(updatedEntry)) return;
             pendingEntries.add(updatedEntry);
         }
     }

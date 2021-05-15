@@ -13,7 +13,7 @@ repositories {
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     compile 'org.swinglabs:swingx:1.6.1'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:bd824bbd'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:3adaa74c'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.2'
     compile 'org.apache.httpcomponents:httpclient:4.5.6'

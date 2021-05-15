@@ -283,9 +283,11 @@ public class FieldSelectorDialog extends JDialog {
 
     public List<LogEntryField> getSelectedFields() {
         List<LogEntryField> selectedList = new ArrayList<>();
-        selectedFields.forEach((field, selected) -> {
-            if(selected) selectedList.add(field);
-        });
+        if (selectedFields != null) {
+            selectedFields.forEach((field, selected) -> {
+                if (selected) selectedList.add(field);
+            });
+        }
 
         return selectedList;
     }
