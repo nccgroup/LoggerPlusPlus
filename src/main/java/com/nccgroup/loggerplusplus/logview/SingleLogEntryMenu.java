@@ -4,7 +4,7 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.exports.LogExporter;
-import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
 import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
@@ -67,14 +67,14 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 JMenuItem andFilter = new JMenuItem(new AbstractAction(LogicalOperator.AND.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, BooleanOperator.EQUAL, columnValueString);
+                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.EQUAL, columnValueString);
                         logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
                     }
                 });
                 JMenuItem orFilter = new JMenuItem(new AbstractAction(LogicalOperator.OR.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.OR, selectedField, BooleanOperator.EQUAL, columnValueString);
+                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.OR, selectedField, ComparisonOperator.EQUAL, columnValueString);
                         logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
                     }
                 });

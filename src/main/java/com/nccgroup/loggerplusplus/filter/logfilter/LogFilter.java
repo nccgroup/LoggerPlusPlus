@@ -2,7 +2,7 @@ package com.nccgroup.loggerplusplus.filter.logfilter;
 
 import com.google.gson.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
 import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
 import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
@@ -31,12 +31,12 @@ public class LogFilter extends RowFilter<TableModel, Integer> {
     }
 
     public String addConditionToFilter(LogicalOperator logicalOperator, LogEntryField field,
-                                     BooleanOperator booleanOperator, String value) {
+                                       ComparisonOperator booleanOperator, String value) {
         //TODO Move functionality to LogFilter itself.
         String existing;
-        if(this.getAST().getLogicalOperator() != null && !this.getAST().getLogicalOperator().equals(logicalOperator)){
+        if (this.getAST().getLogicalOperator() != null && !this.getAST().getLogicalOperator().equals(logicalOperator)) {
             existing = "(" + this.filter.getFilterString() + ")";
-        }else{
+        } else {
             existing = this.filter.getFilterString();
         }
 
