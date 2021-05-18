@@ -5,9 +5,13 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
+import com.nccgroup.loggerplusplus.filter.tag.TagListener;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
-import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -23,14 +27,20 @@ public class FilterLibraryController {
     private final ArrayList<SavedFilter> savedFilters;
     private final HashMap<UUID, ColorFilter> colorFilters;
     private final ArrayList<ColorFilterListener> colorFilterListeners;
+    private final HashMap<UUID, Tag> tagFilters;
+    private final ArrayList<TagListener> tagListeners;
 
-    public FilterLibraryController(LoggerPlusPlus loggerPlusPlus, PreferencesController preferencesController){
+    Logger logger = LogManager.getLogger(this);
+
+    public FilterLibraryController(LoggerPlusPlus loggerPlusPlus, PreferencesController preferencesController) {
         this.loggerPlusPlus = loggerPlusPlus;
         this.preferences = preferencesController.getPreferences();
         this.listeners = new ArrayList<>();
         this.colorFilterListeners = new ArrayList<>();
+        this.tagListeners = new ArrayList<>();
         this.savedFilters = preferences.getSetting(Globals.PREF_SAVED_FILTERS);
         this.colorFilters = preferences.getSetting(Globals.PREF_COLOR_FILTERS);
+        this.tagFilters = preferences.getSetting(Globals.PREF_TAG_FILTERS);
         this.panel = new FilterLibraryPanel(this);
     }
 
@@ -107,8 +117,10 @@ public class FilterLibraryController {
 
         for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
             try {
-                colorFilterListener.onFilterAdd(colorFilter);
-            }catch (Exception ignored){}
+                colorFilterListener.onColorFilterAdd(colorFilter);
+            } catch (Exception e) {
+                logger.error(e);
+            }
         }
         saveColorFilters();
     }
@@ -119,9 +131,9 @@ public class FilterLibraryController {
         }
         for (ColorFilterListener listener : this.colorFilterListeners) {
             try{
-                listener.onFilterRemove(colorFilter);
+                listener.onColorFilterRemove(colorFilter);
             }catch (Exception e){
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         saveColorFilters();
@@ -131,9 +143,9 @@ public class FilterLibraryController {
     public void updateColorFilter(ColorFilter colorFilter){
         for (ColorFilterListener listener : this.colorFilterListeners) {
             try{
-                listener.onFilterChange(colorFilter);
+                listener.onColorFilterChange(colorFilter);
             }catch (Exception e){
-                e.printStackTrace();
+                logger.error(e);
             }
         }
         saveColorFilters();
@@ -143,13 +155,67 @@ public class FilterLibraryController {
         this.preferences.setSetting(Globals.PREF_COLOR_FILTERS, colorFilters);
     }
 
-    public void addColorFilterListener(ColorFilterListener listener){
+    public void addColorFilterListener(ColorFilterListener listener) {
         this.colorFilterListeners.add(listener);
     }
 
-    public void removeColorFilterListener(ColorFilterListener listener){
+    public void removeColorFilterListener(ColorFilterListener listener) {
         this.colorFilterListeners.remove(listener);
     }
 
+    public HashMap<UUID, Tag> getTags() {
+        return tagFilters;
+    }
+
+    public void addTag(Tag tag) {
+        this.tagFilters.put(tag.getUUID(), tag);
+
+        for (TagListener listener : this.tagListeners) {
+            try {
+                listener.onTagAdd(tag);
+            } catch (Exception error) {
+                logger.error(error);
+            }
+        }
+        saveTags();
+    }
+
+    public void removeTag(Tag tag) {
+        synchronized (this.tagFilters) {
+            this.tagFilters.remove(tag.getUUID());
+        }
+        for (TagListener listener : this.tagListeners) {
+            try {
+                listener.onTagRemove(tag);
+            } catch (Exception error) {
+                logger.error(error);
+            }
+        }
+        saveTags();
+    }
+
+    //Called when a filter is modified.
+    public void updateTag(Tag tag) {
+        for (TagListener listener : this.tagListeners) {
+            try {
+                listener.onTagChange(tag);
+            } catch (Exception e) {
+                logger.error(e);
+            }
+        }
+        saveTags();
+    }
+
+    public void saveTags() {
+        this.preferences.setSetting(Globals.PREF_TAG_FILTERS, tagFilters);
+    }
+
+    public void addTagListener(TagListener listener) {
+        this.tagListeners.add(listener);
+    }
+
+    public void removeTagListener(TagListener listener) {
+        this.tagListeners.remove(listener);
+    }
 
 }

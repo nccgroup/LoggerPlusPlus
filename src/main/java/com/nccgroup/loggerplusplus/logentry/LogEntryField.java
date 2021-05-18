@@ -8,10 +8,11 @@ import java.util.LinkedHashMap;
 public enum LogEntryField {
 
     //Proxy
-    NUMBER(FieldGroup.PROXY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
-    PROXY_TOOL(FieldGroup.PROXY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
-    LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
-    CLIENT_IP(FieldGroup.PROXY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
+    NUMBER(FieldGroup.ENTRY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
+    PROXY_TOOL(FieldGroup.ENTRY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
+    TAGS(FieldGroup.ENTRY, String.class, "The configured tags for which this entry match.", "Tags"),
+    LISTENER_INTERFACE(FieldGroup.ENTRY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
+    CLIENT_IP(FieldGroup.ENTRY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
 
     //Request,
     BASE64_REQUEST(FieldGroup.REQUEST, String.class, "The entire request encoded in Base64", "AsBase64"),

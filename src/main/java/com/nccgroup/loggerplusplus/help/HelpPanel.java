@@ -170,7 +170,7 @@ public class HelpPanel extends JPanel {
         fieldPane.setDocument(doc);
         fieldPane.setText("<body>" + getFormattedFields(FieldGroup.REQUEST) +
                 getFormattedFields(FieldGroup.RESPONSE) +
-                getFormattedFields(FieldGroup.PROXY) + "</body>");
+                getFormattedFields(FieldGroup.ENTRY) + "</body>");
 
         JScrollPane overviewScroll = new JScrollPane(overviewPane);
         JScrollPane fieldScroll = new JScrollPane(fieldPane);

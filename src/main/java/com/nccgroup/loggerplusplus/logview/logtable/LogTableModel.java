@@ -2,6 +2,8 @@ package com.nccgroup.loggerplusplus.logview.logtable;
 
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
+import com.nccgroup.loggerplusplus.filter.tag.TagListener;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
@@ -11,7 +13,7 @@ import javax.swing.table.AbstractTableModel;
 import java.util.*;
 
 /* Extending AbstractTableModel to design the logTable behaviour based on the array list */
-public class LogTableModel extends AbstractTableModel implements ColorFilterListener {
+public class LogTableModel extends AbstractTableModel implements ColorFilterListener, TagListener {
 
     private final LogTableController controller;
     private final List<LogEntry> entries;
@@ -124,19 +126,19 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
 
     // FilterListeners
     @Override
-    public void onFilterChange(final ColorFilter filter) {
+    public void onColorFilterChange(final ColorFilter filter) {
         createFilterTestingWorker(filter, filter.shouldRetest()).execute();
     }
 
     @Override
-    public void onFilterAdd(final ColorFilter filter) {
+    public void onColorFilterAdd(final ColorFilter filter) {
         if (!filter.isEnabled() || filter.getFilter() == null)
             return;
         createFilterTestingWorker(filter, false);
     }
 
     @Override
-    public void onFilterRemove(final ColorFilter filter) {
+    public void onColorFilterRemove(final ColorFilter filter) {
         if (!filter.isEnabled() || filter.getFilter() == null)
             return;
         new SwingWorker<Void, Integer>() {
@@ -167,6 +169,68 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
             protected Void doInBackground() {
                 for (int i = 0; i < entries.size(); i++) {
                     boolean testResultChanged = entries.get(i).testColorFilter(filter, retestExisting);
+                    if (testResultChanged) {
+                        publish(i);
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> updatedRows) {
+                for (Integer row : updatedRows) {
+                    fireTableRowsUpdated(row, row);
+                }
+            }
+        };
+    }
+
+    //TagListeners
+    @Override
+    public void onTagChange(final Tag filter) {
+        createFilterTestingWorker(filter, filter.shouldRetest()).execute();
+    }
+
+    @Override
+    public void onTagAdd(final Tag filter) {
+        if (!filter.isEnabled() || filter.getFilter() == null)
+            return;
+        createFilterTestingWorker(filter, false);
+    }
+
+    @Override
+    public void onTagRemove(final Tag filter) {
+        if (!filter.isEnabled() || filter.getFilter() == null)
+            return;
+        new SwingWorker<Void, Integer>() {
+            @Override
+            protected Void doInBackground() {
+                for (int i = 0; i < entries.size(); i++) {
+                    boolean wasPresent = entries.get(i).matchingTags.remove(filter);
+                    if (wasPresent) {
+                        publish(i);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<Integer> rows) {
+                for (Integer row : rows) {
+                    fireTableRowsUpdated(row, row);
+                }
+            }
+        }.execute();
+    }
+
+    private SwingWorker<Void, Integer> createFilterTestingWorker(final Tag filter, boolean retestExisting) {
+        return new SwingWorker<Void, Integer>() {
+
+            @Override
+            protected Void doInBackground() {
+                for (int i = 0; i < entries.size(); i++) {
+                    boolean testResultChanged = entries.get(i).testTag(filter, retestExisting);
                     if (testResultChanged) {
                         publish(i);
                     }

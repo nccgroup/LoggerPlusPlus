@@ -16,6 +16,7 @@ package com.nccgroup.loggerplusplus.logentry;
 import burp.*;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
@@ -72,6 +73,7 @@ public class LogEntry {
 	// public String[] regexAllResp = {"","","","",""};
 
 	public List<UUID> matchingColorFilters;
+	public List<Tag> matchingTags;
 	public String formattedRequestTime;
 	public Date responseDateTime;
 	public Date requestDateTime;
@@ -85,6 +87,7 @@ public class LogEntry {
 	private LogEntry() {
 		this.identifier = UUID.randomUUID();
 		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<UUID>());
+		this.matchingTags = Collections.synchronizedList(new ArrayList<Tag>());
 	}
 
 	public LogEntry(int tool, IHttpRequestResponse requestResponse) {
@@ -476,6 +479,8 @@ public class LogEntry {
 				case PROXY_TOOL:
 				case REQUEST_TOOL:
 					return toolName;
+				case TAGS:
+					return this.matchingTags.stream().map(Tag::getName).collect(Collectors.toList());
 				case URL:
 					return this.url;
 				case PATH:
@@ -585,9 +590,9 @@ public class LogEntry {
 				case RTT:
 					return requestResponseDelay;
 				case REQUEST_HEADERS:
-					return requestHeaders != null ? requestHeaders : "";
+					return requestHeaders != null ? String.join("\r\n", requestHeaders) : "";
 				case RESPONSE_HEADERS:
-					return responseHeaders != null ? responseHeaders : "";
+					return responseHeaders != null ? String.join("\r\n", responseHeaders) : "";
 				case BASE64_REQUEST:
 					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
 				case BASE64_RESPONSE:
@@ -609,6 +614,10 @@ public class LogEntry {
 
 	public List<UUID> getMatchingColorFilters() {
 		return matchingColorFilters;
+	}
+
+	public List<Tag> getMatchingTags() {
+		return matchingTags;
 	}
 
 	public enum CookieJarStatus {
@@ -657,8 +666,37 @@ public class LogEntry {
 		}
 	}
 
+	/*
+	 * @param Tag
+	 * @param retest
+	 * @return If the list of matching color filters was updated
+	 */
+	public boolean testTag(Tag tag, boolean retest) {
+		if (!tag.isEnabled() || tag.getFilter() == null) {
+			return this.getMatchingTags().remove(tag);
+		}
+
+		// If we don't already know if the color filter matches (e.g. haven't checked it
+		// before)
+		if (!this.matchingTags.contains(tag)) {
+			if (tag.getFilter().matches(this)) {
+				this.matchingTags.add(tag);
+				return true;
+			} else {
+				return false;
+			}
+		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
+			if (!tag.getFilter().matches(this)) {
+				this.matchingTags.remove(tag);
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	@Override
 	public String toString() {
-		return this.url.toString();
+		return this.status + " " + this.url.toString();
 	}
 }

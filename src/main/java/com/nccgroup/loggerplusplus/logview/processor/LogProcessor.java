@@ -7,6 +7,7 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
@@ -214,6 +215,12 @@ public class LogProcessor implements IHttpListener {
                 HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
                 for (ColorFilter colorFilter : colorFilters.values()) {
                     logEntry.testColorFilter(colorFilter, true);
+                }
+
+                //Check against tags
+                HashMap<UUID, Tag> tagMap = preferences.getSetting(PREF_TAG_FILTERS);
+                for (Tag tag : tagMap.values()) {
+                    logEntry.testTag(tag, true);
                 }
             }
         }

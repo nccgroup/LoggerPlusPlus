@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
@@ -72,8 +73,12 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
-        prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {}.getType(), defaultColorFilters);
-        prefs.registerSetting(PREF_SAVED_FILTERS, new TypeToken<List<SavedFilter>>() {}.getType(), new ArrayList<SavedFilter>());
+        prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {
+        }.getType(), defaultColorFilters);
+        prefs.registerSetting(PREF_TAG_FILTERS, new TypeToken<Map<UUID, Tag>>() {
+        }.getType(), new HashMap<>());
+        prefs.registerSetting(PREF_SAVED_FILTERS, new TypeToken<List<SavedFilter>>() {
+        }.getType(), new ArrayList<SavedFilter>());
         prefs.registerSetting(PREF_SORT_COLUMN, Integer.class, -1);
         prefs.registerSetting(PREF_SORT_ORDER, SortOrder.class, SortOrder.UNSORTED);
         prefs.registerSetting(PREF_RESPONSE_TIMEOUT, Integer.class, 60);
