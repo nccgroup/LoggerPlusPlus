@@ -7,6 +7,7 @@ import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import java.math.BigDecimal;
@@ -161,19 +162,16 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
           if (leftString.equalsIgnoreCase(String.valueOf(item))) return true;
         }
         return false;
-      } else if (op == ComparisonOperator.CONTAINS && Collection.class.isAssignableFrom(left.getClass())) {
+      } else if (op == ComparisonOperator.CONTAINS) {
         //Request.Parameters CONTAINS "A"
         Object finalRight = right;
-        return ((Collection) left).stream().anyMatch(o -> String.valueOf(o).equalsIgnoreCase(String.valueOf(finalRight)));
-      } else if (left instanceof String || right instanceof String) { //String comparison last.
-        switch (op) {
-          case EQUAL:
-            return String.valueOf(left).equalsIgnoreCase(String.valueOf(right));
-          case NOT_EQUAL:
-            return !String.valueOf(left).equalsIgnoreCase(String.valueOf(right));
-          case CONTAINS:
-            return (String.valueOf(left).toLowerCase()).contains(String.valueOf(right).toLowerCase());
+        if (Collection.class.isAssignableFrom(left.getClass())) {
+          return ((Collection) left).stream().anyMatch(o -> String.valueOf(o).equalsIgnoreCase(String.valueOf(finalRight)));
+        } else {
+          return StringUtils.containsIgnoreCase(String.valueOf(left), String.valueOf(right));
         }
+      } else if (left instanceof String || right instanceof String) { //String comparison last.
+        return String.valueOf(left).equalsIgnoreCase(String.valueOf(right)) ^ op != ComparisonOperator.EQUAL;
       } else {
         switch (op) {
           case EQUAL:
