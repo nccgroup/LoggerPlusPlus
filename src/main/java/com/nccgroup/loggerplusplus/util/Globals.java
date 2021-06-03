@@ -25,7 +25,6 @@ public class Globals {
     public static final String PREF_LOG_TABLE_SETTINGS = "tabledetailsjson";
     public static final String PREF_LOG_LEVEL = "logLevel";
     public static final String PREF_LOG_TO_CONSOLE = "logToConsole";
-    public static final String PREF_DEPRECATED_IS_DEBUG = "isDebug";
     public static final String PREF_UPDATE_ON_STARTUP = "updateonstartup";
     public static final String PREF_ENABLED = "enabled";
     public static final String PREF_RESTRICT_TO_SCOPE = "restricttoscope";

@@ -29,8 +29,7 @@ public class LoggingController {
         logLevel = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_LOG_LEVEL), Level.class);
 
         if (logLevel == null) { //Handle change from debug boolean to log level.
-            boolean deprecatedDebug = gsonProvider.getGson().fromJson(callbacks.loadExtensionSetting(Globals.PREF_DEPRECATED_IS_DEBUG), Boolean.class);
-            logLevel = deprecatedDebug ? Level.DEBUG : Level.INFO;
+            logLevel = Level.INFO;
             callbacks.saveExtensionSetting(Globals.PREF_LOG_LEVEL, gsonProvider.getGson().toJson(logLevel));
         }
 
