@@ -3,7 +3,6 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
-import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,8 +15,8 @@ public class ExportController {
     private final Preferences preferences;
     private final HashMap<Class<? extends LogExporter>, LogExporter> exporters;
     private final List<AutomaticLogExporter> enabledExporters;
-    
-    public ExportController(LoggerPlusPlus loggerPlusPlus, Preferences preferences){
+
+    public ExportController(LoggerPlusPlus loggerPlusPlus, Preferences preferences) {
         this.loggerPlusPlus = loggerPlusPlus;
         this.preferences = preferences;
 
@@ -27,9 +26,11 @@ public class ExportController {
         initializeExporters();
     }
 
-    private void initializeExporters(){
+    private void initializeExporters() {
         this.exporters.put(CSVExporter.class, new CSVExporter(this, preferences));
         this.exporters.put(JSONExporter.class, new JSONExporter(this, preferences));
+        this.exporters.put(HARExporter.class, new HARExporter(this, preferences));
+        this.exporters.put(Base64Exporter.class, new Base64Exporter(this, preferences));
         this.exporters.put(ElasticExporter.class, new ElasticExporter(this, preferences));
     }
 
@@ -51,13 +52,13 @@ public class ExportController {
         logExporter.shutdown();
     }
 
-    public void exportNewEntry(LogEntry logEntry){
+    public void exportNewEntry(LogEntry logEntry) {
         for (AutomaticLogExporter exporter : this.enabledExporters) {
             exporter.exportNewEntry(logEntry);
         }
     }
 
-    public void exportUpdatedEntry(LogEntry logEntry){
+    public void exportUpdatedEntry(LogEntry logEntry) {
         for (AutomaticLogExporter exporter : this.enabledExporters) {
             exporter.exportUpdatedEntry(logEntry);
         }

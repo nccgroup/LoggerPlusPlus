@@ -1,17 +1,22 @@
 package com.nccgroup.loggerplusplus.grepper;
 
-import burp.BurpExtender;
+import burp.IHttpRequestResponse;
+import burp.IHttpRequestResponseWithMarkers;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -23,12 +28,15 @@ public class GrepperPanel extends JPanel implements GrepperListener {
     private final JButton searchButton;
     private final JButton resetButton;
     private final JProgressBar progressBar;
+    private final JCheckBox searchRequests;
+    private final JCheckBox searchResponses;
     private final JCheckBox inScopeOnly;
     private final JTabbedPane resultsPane;
     private final GrepResultsTable grepResultsTable;
+    private final RequestViewerController requestViewerController;
     private final UniquePatternMatchTable uniqueTable;
 
-    GrepperPanel(GrepperController controller, Preferences preferences){
+    GrepperPanel(GrepperController controller, Preferences preferences) {
         this.controller = controller;
         this.preferences = preferences;
 
@@ -36,7 +44,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         searchField.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if(e.getKeyChar() == KeyEvent.VK_ENTER){
+                if (e.getKeyChar() == KeyEvent.VK_ENTER) {
                     startSearch();
                 }
             }
@@ -44,6 +52,8 @@ public class GrepperPanel extends JPanel implements GrepperListener {
 
         this.progressBar = new JProgressBar();
         this.inScopeOnly = new JCheckBox("In Scope Only");
+        this.searchRequests = new JCheckBox("Search Requests", true);
+        this.searchResponses = new JCheckBox("Search Responses", true);
 
         this.searchButton = new JButton(new AbstractAction("Search") {
             @Override
@@ -64,20 +74,48 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         });
 
         this.grepResultsTable = new GrepResultsTable(controller);
+        this.requestViewerController = new RequestViewerController(preferences, false, false);
+
+        grepResultsTable.addTreeSelectionListener(treeSelectionEvent -> {
+            TreePath selectedPath = treeSelectionEvent.getPath();
+            GrepResults grepResultEntry = (GrepResults) selectedPath.getPath()[1];
+            GrepResults.Match selectedMatch = null;
+            if (selectedPath.getPath().length > 2) {
+                selectedMatch = (GrepResults.Match) selectedPath.getPath()[2];
+            }
+
+            IHttpRequestResponse requestResponse = grepResultEntry.getLogEntry().getRequestResponse();
+            List<GrepResults.Match> matches;
+
+            if (selectedMatch != null) {
+                matches = Collections.singletonList(selectedMatch);
+            } else {
+                matches = grepResultEntry.getMatches();
+            }
+
+            IHttpRequestResponseWithMarkers markedRequestResponse = controller.addMarkers(requestResponse, matches);
+            requestViewerController.setDisplayedEntity(markedRequestResponse);
+
+            //TODO Setup message editor to support highlighting. Code is ready, waiting on API support.
+            //https://forum.portswigger.net/thread/eeditor-custom-highlighting-991b1a7e?CategoryId=burp-extensions
+        });
+
+        JSplitPane resultsSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(grepResultsTable), requestViewerController.getRequestViewerPanel());
         this.uniqueTable = new UniquePatternMatchTable(controller);
 
         this.resultsPane = new JTabbedPane();
-        this.resultsPane.addTab("Results", new JScrollPane(grepResultsTable));
+        this.resultsPane.addTab("Results", resultsSplitPane);
         this.resultsPane.addTab("Unique Results", new JScrollPane(uniqueTable));
 
+        JLabel regexLabel = new JLabel("Regex: ");
         JPanel wrapperPanel = PanelBuilder.build(new JComponent[][]{
-                new JComponent[]{new JLabel("Regex: "), searchField, inScopeOnly, searchButton, resetButton},
-                new JComponent[]{resultsPane, resultsPane, resultsPane, resultsPane, resultsPane},
-                new JComponent[]{progressBar, progressBar, progressBar, progressBar, progressBar}
+                new JComponent[]{regexLabel, searchField, searchRequests, searchResponses, inScopeOnly, searchButton, resetButton},
+                new JComponent[]{resultsPane, resultsPane, resultsPane, resultsPane, resultsPane, resultsPane, resultsPane},
+                new JComponent[]{progressBar, progressBar, progressBar, progressBar, progressBar, progressBar, progressBar}
         }, new int[][]{
-                new int[]{0, 1,   0, 0, 0},
-                new int[]{1, 100, 1, 1, 0},
-                new int[]{0, 0,   0, 0, 0}
+                new int[]{0, 1, 0, 0, 0, 0},
+                new int[]{1, 100, 1, 1, 1, 0},
+                new int[]{0, 0, 0, 0, 0, 0}
         }, Alignment.FILL, 1.0, 1.0);
 
         this.setLayout(new BorderLayout());
@@ -86,22 +124,25 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         this.controller.addListener(this);
     }
 
-    private void startSearch(){
+    private void startSearch() {
         String patternString = ((JTextField) this.searchField.getEditor().getEditorComponent()).getText();
         Pattern pattern;
         try {
             pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
-        }catch (PatternSyntaxException e){
+        } catch (PatternSyntaxException e) {
             JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(controller.getLoggerPlusPlus().getMainViewController().getUiComponent()), "Pattern Syntax Invalid", "Invalid Pattern", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        this.controller.beginSearch(pattern, this.inScopeOnly.isSelected());
+        this.controller.beginSearch(pattern, this.inScopeOnly.isSelected(),
+                this.searchRequests.isSelected(), this.searchResponses.isSelected());
     }
 
     @Override
     public void onSearchStarted(Pattern pattern, int totalRequests) {
         SwingUtilities.invokeLater(() -> {
+            this.searchRequests.setEnabled(false);
+            this.searchResponses.setEnabled(false);
             this.searchField.setEnabled(false);
             this.resetButton.setEnabled(false);
             this.searchButton.setText("Cancel");
@@ -119,12 +160,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
 
     @Override
     public void onSearchComplete() {
-        SwingUtilities.invokeLater(() -> {
-            this.searchButton.setText("Search");
-            this.progressBar.setValue(0);
-            this.searchField.setEnabled(true);
-            this.resetButton.setEnabled(true);
-        });
+        unlockUI();
     }
 
     @Override
@@ -141,11 +177,17 @@ public class GrepperPanel extends JPanel implements GrepperListener {
 
     @Override
     public void onShutdownComplete() {
+        unlockUI();
+    }
+
+    private void unlockUI() {
         SwingUtilities.invokeLater(() -> {
             this.searchButton.setText("Search");
             this.progressBar.setValue(0);
             this.searchField.setEnabled(true);
             this.resetButton.setEnabled(true);
+            this.searchRequests.setEnabled(true);
+            this.searchResponses.setEnabled(true);
         });
     }
 }

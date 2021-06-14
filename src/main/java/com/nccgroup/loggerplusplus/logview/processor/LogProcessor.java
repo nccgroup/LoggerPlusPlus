@@ -1,15 +1,20 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
-import burp.*;
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpListener;
+import burp.IHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.text.SimpleDateFormat;
@@ -21,7 +26,7 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 /**
  * Created by corey on 07/09/17.
  */
-public class LogProcessor implements IHttpListener, IProxyListener {
+public class LogProcessor implements IHttpListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 
@@ -35,7 +40,9 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
-    private final String instanceIdentifier = String.format("%02d", (int)Math.floor((Math.random()*100)));
+    private final String instanceIdentifier = String.format("%02d", (int) Math.floor((Math.random() * 100)));
+
+    Logger logger = LogManager.getLogger(this);
 
     /**
      * Capture incoming requests and responses.
@@ -43,7 +50,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * TODO SQLite integration
      * TODO Capture requests modified after logging using request obtained from response objects.
      */
-    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController){
+    public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController) {
         this.loggerPlusPlus = loggerPlusPlus;
         this.logTableController = logTableController;
         this.exportController = exportController;
@@ -62,11 +69,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30, 30, TimeUnit.SECONDS);
 
         LoggerPlusPlus.callbacks.registerHttpListener(this);
-        LoggerPlusPlus.callbacks.registerProxyListener(this);
+//        LoggerPlusPlus.callbacks.registerProxyListener(this);
     }
 
     /**
-     * Process messages from all tools but proxy.
+     * Process messages from all tools.
      * Adds to queue for later processing.
      * @param toolFlag Tool used to make request
      * @param isRequestOnly If the message is request only or complete with response
@@ -74,18 +81,17 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
-        if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) return; //Proxy messages handled by proxy method
         if(httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
-        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
-            //Submit normally, we're not tracking requests and responses separately.
-            if(!isRequestOnly) { //But only add entries complete with a response.
-                final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-                submitNewEntryProcessingRunnable(logEntry);
-            }
-            return;
-        }
+//        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
+//            //Submit normally, we're not tracking requests and responses separately.
+//            if(!isRequestOnly) { //But only add entries complete with a response.
+//                final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
+//                submitNewEntryProcessingRunnable(logEntry);
+//            }
+//            return;
+//        }
 
         if(isRequestOnly){
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
@@ -100,38 +106,38 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         }
     }
 
-    /**
-     * Process messages received from the proxy tool.
-     * For requests, a new processing job is added to the executor.
-     * @param isRequestOnly
-     * @param proxyMessage
-     */
-    @Override
-    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
-        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
-        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
-        Date arrivalTime = new Date();
-
-        if(isRequestOnly){
-            //The request is not yet sent, process the request object
-            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, proxyMessage.getMessageInfo());
-            //Store our proxy specific info now.
-            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
-            logEntry.listenerInterface = proxyMessage.getListenerInterface();
-
-            //Make a note of the entry UUID corresponding to the message identifier.
-            proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
-            submitNewEntryProcessingRunnable(logEntry);
-        }else{
-            //We're handling a response.
-            UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
-            if(uuid != null){
-                updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
-            }else{
-                System.out.println("LOST");
-            }
-        }
-    }
+//    /**
+//     * Process messages received from the proxy tool.
+//     * For requests, a new processing job is added to the executor.
+//     * @param isRequestOnly
+//     * @param proxyMessage
+//     */
+//    @Override
+//    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
+//        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
+//        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+//        Date arrivalTime = new Date();
+//
+//        if(isRequestOnly){
+//            //The request is not yet sent, process the request object
+//            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, proxyMessage.getMessageInfo());
+//            //Store our proxy specific info now.
+//            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
+//            logEntry.listenerInterface = proxyMessage.getListenerInterface();
+//
+//            //Make a note of the entry UUID corresponding to the message identifier.
+//            proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
+//            submitNewEntryProcessingRunnable(logEntry);
+//        }else{
+//            //We're handling a response.
+//            UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
+//            if(uuid != null){
+//                updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
+//            }else{
+//                System.out.println("LOST");
+//            }
+//        }
+//    }
 
     /**
      * When a response comes in, determine if the request has already been processed or not.
@@ -176,10 +182,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 entryProcessingFutures.remove(logEntry.getIdentifier());
                 return null; //Ignored entry. Skip it.
             }else{
-                //Ensure capacity and add the entry
-                SwingUtilities.invokeLater(() -> {
-                    logTableController.getLogTableModel().addEntry(logEntry);
-                });
+                addProcessedEntry(logEntry, true);
 
                 if(result.getStatus() == Status.PROCESSED){
                     //If the entry was fully processed, remove it from the processing list.
@@ -213,6 +216,12 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 for (ColorFilter colorFilter : colorFilters.values()) {
                     logEntry.testColorFilter(colorFilter, true);
                 }
+
+                //Check against tags
+                HashMap<UUID, Tag> tagMap = preferences.getSetting(PREF_TAG_FILTERS);
+                for (Tag tag : tagMap.values()) {
+                    logEntry.testTag(tag, true);
+                }
             }
         }
         return logEntry;
@@ -245,7 +254,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         return new EntryImportWorker.Builder(this);
     }
 
-    public void importProxyHistory(){
+    public void importProxyHistory(boolean sendToAutoExporters) {
         //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
         //TODO Remove to more suitable UI class and show dialog
 
@@ -258,7 +267,8 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         //Build and start import worker
         EntryImportWorker importWorker = new EntryImportWorker.Builder(this)
                 .setOriginatingTool(IBurpExtenderCallbacks.TOOL_PROXY)
-                .setEntries(entriesToImport).build();
+                .setEntries(entriesToImport)
+                .setSendToAutoExporters(sendToAutoExporters).build();
 
         importWorker.execute();
     }
@@ -271,24 +281,24 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 ((Boolean) preferences.getSetting(PREF_LOG_SCANNER) && toolFlag== IBurpExtenderCallbacks.TOOL_SCANNER) ||
                 ((Boolean) preferences.getSetting(PREF_LOG_SEQUENCER) && toolFlag== IBurpExtenderCallbacks.TOOL_SEQUENCER) ||
                 ((Boolean) preferences.getSetting(PREF_LOG_SPIDER) && toolFlag== IBurpExtenderCallbacks.TOOL_SPIDER) ||
-                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag== IBurpExtenderCallbacks.TOOL_EXTENDER) ||
-                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag== IBurpExtenderCallbacks.TOOL_TARGET));
+                ((Boolean) preferences.getSetting(PREF_LOG_EXTENDER) && toolFlag == IBurpExtenderCallbacks.TOOL_EXTENDER) ||
+                ((Boolean) preferences.getSetting(PREF_LOG_TARGET_TAB) && toolFlag == IBurpExtenderCallbacks.TOOL_TARGET));
     }
 
-    public void shutdown(){
+    public void shutdown() {
         this.cleanupExecutor.shutdownNow();
         this.entryProcessExecutor.shutdownNow();
         this.entryImportExecutor.shutdownNow();
     }
 
-    void addProcessedEntry(LogEntry logEntry){
-        exportController.exportNewEntry(logEntry);
+    void addProcessedEntry(LogEntry logEntry, boolean sendToAutoExporters) {
+        if (sendToAutoExporters) exportController.exportNewEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().addEntry(logEntry);
         });
     }
 
-    void updateExistingEntry(LogEntry logEntry){
+    void updateExistingEntry(LogEntry logEntry) {
         exportController.exportUpdatedEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().updateEntry(logEntry);
@@ -352,7 +362,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                     }
 
                     if (removedUUIDs.size() > 0) {
-                        loggerPlusPlus.getLoggingController().logOutput("Cleaned Up " + removedUUIDs.size()
+                        logger.debug("Cleaned Up " + removedUUIDs.size()
                                 + " proxy requests without a response after the specified timeout.");
                     }
                 }catch (Exception e){

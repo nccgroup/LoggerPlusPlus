@@ -2,7 +2,7 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=true,TRACK_TOKENS=false,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package com.nccgroup.loggerplusplus.filter.parser;
 
-import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import org.apache.commons.text.StringEscapeUtils;
@@ -16,7 +16,7 @@ public
 class ASTComparison extends SimpleNode {
 
   Object left, right;
-  BooleanOperator booleanOperator;
+  ComparisonOperator comparisonOperator;
 
   public ASTComparison(int id) {
     super(id);
@@ -26,14 +26,16 @@ class ASTComparison extends SimpleNode {
     super(p, id);
   }
 
-  /** Accept the visitor. **/
+  /**
+   * Accept the visitor.
+   **/
   public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
 
     return visitor.visit(this, data);
   }
 
-  public BooleanOperator getBooleanOperator() {
-    return booleanOperator;
+  public ComparisonOperator getComparisonOperator() {
+    return comparisonOperator;
   }
 
   public Object getLeft() {
@@ -48,17 +50,17 @@ class ASTComparison extends SimpleNode {
   public String toString() {
     Class<?> leftClass = left instanceof LogEntryField ? ((LogEntryField) left).getType() : left.getClass();
     Class<?> rightClass = right instanceof LogEntryField ? ((LogEntryField) right).getType() : right.getClass();
-    return String.format("ASTComparison[left=%s (%s), op=%s, right=%s (%s)]", left, leftClass, booleanOperator, right, rightClass);
+    return String.format("ASTComparison[left=%s (%s), op=%s, right=%s (%s)]", left, leftClass, comparisonOperator, right, rightClass);
   }
 
   @Override
   public String getFilterString() {
-    return String.format("%s %s %s", convertObjectToString(left), booleanOperator.getLabel(), convertObjectToString(right));
+    return String.format("%s %s %s", convertObjectToString(left), comparisonOperator.getLabel(), convertObjectToString(right));
   }
 
   private String convertObjectToString(Object obj){
-    if(obj instanceof Pattern){
-      if(booleanOperator == BooleanOperator.MATCHES) return "\"" + obj + "\"";
+    if(obj instanceof Pattern) {
+      if (comparisonOperator == ComparisonOperator.MATCHES) return "\"" + obj + "\"";
       else return "/" + obj + "/";
     }else if(obj instanceof String){
       return "\"" + StringEscapeUtils.escapeJava((String) obj) + "\"";

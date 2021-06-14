@@ -17,6 +17,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
     private final List<IHttpRequestResponse> entries;
     private final Consumer<List<Integer>> interimConsumer;
     private final Runnable callback;
+    private final boolean sendToAutoExporters;
 
     private EntryImportWorker(Builder builder){
         this.logProcessor = builder.logProcessor;
@@ -24,6 +25,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
         this.entries = builder.entries;
         this.interimConsumer = builder.interimConsumer;
         this.callback = builder.callback;
+        this.sendToAutoExporters = builder.sendToAutoExporters;
     }
 
     @Override
@@ -40,7 +42,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
                 if(this.isCancelled()) return;
                 LogEntry result = logProcessor.processEntry(logEntry);
                 if(result != null) {
-                    logProcessor.addProcessedEntry(logEntry);
+                    logProcessor.addProcessedEntry(logEntry, sendToAutoExporters);
                 }
                 publish(finalIndex);
                 countDownLatch.countDown();
@@ -70,6 +72,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
         private List<IHttpRequestResponse> entries;
         private Consumer<List<Integer>> interimConsumer;
         private Runnable callback;
+        private boolean sendToAutoExporters = false;
 
         Builder(LogProcessor logProcessor){
             this.logProcessor = logProcessor;
@@ -95,7 +98,14 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
             return this;
         }
 
-        public EntryImportWorker build(){
+        //Control if the imported entries should also be sent to exporters (e.g. ElasticSearch)
+        //Prevents existing entries being re-exported
+        public Builder setSendToAutoExporters(boolean autoExport) {
+            this.sendToAutoExporters = autoExport;
+            return this;
+        }
+
+        public EntryImportWorker build() {
             return new EntryImportWorker(this);
         }
     }

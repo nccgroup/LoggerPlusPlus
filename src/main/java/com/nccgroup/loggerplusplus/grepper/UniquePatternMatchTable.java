@@ -1,13 +1,11 @@
 package com.nccgroup.loggerplusplus.grepper;
 
 
-import com.nccgroup.loggerplusplus.grepper.GrepResults;
-import com.nccgroup.loggerplusplus.grepper.GrepperController;
-import com.nccgroup.loggerplusplus.grepper.GrepperListener;
-
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 public class UniquePatternMatchTable extends JTable implements GrepperListener {
@@ -40,7 +38,7 @@ public class UniquePatternMatchTable extends JTable implements GrepperListener {
     public void addEntry(GrepResults entry) {
         synchronized (valueCountMap) {
             synchronized (entryKeys) {
-                for (GrepResults.Match result : entry.getResults()) {
+                for (GrepResults.Match result : entry.getMatches()) {
                     String key = result.groups[0];
                     int index = entryKeys.indexOf(key);
                     if (index == -1) {

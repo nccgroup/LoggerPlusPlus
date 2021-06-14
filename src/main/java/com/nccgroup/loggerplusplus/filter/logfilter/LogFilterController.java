@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.filter.logfilter;
 
-import burp.BurpExtender;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
@@ -12,6 +11,8 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 import javax.swing.*;
+import javax.swing.text.Document;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
@@ -54,6 +55,26 @@ public class LogFilterController {
                 }
             }
         });
+
+        Document filterFieldDoc = ((JTextField) filterField.getEditor().getEditorComponent()).getDocument();
+        final UndoManager undoManager = new UndoManager();
+        filterFieldDoc.addUndoableEditListener(undoableEditEvent -> undoManager.addEdit(undoableEditEvent.getEdit()));
+        filterField.getActionMap().put("Undo", new AbstractAction("Undo") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (undoManager.canUndo()) undoManager.undo();
+            }
+        });
+
+        filterField.getActionMap().put("Redo", new AbstractAction("Redo") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (undoManager.canRedo()) undoManager.redo();
+            }
+        });
+
+        filterField.getInputMap().put(KeyStroke.getKeyStroke("control Z"), "Undo");
+        filterField.getInputMap().put(KeyStroke.getKeyStroke("control Y"), "Redo");
 
         //Update when clicking an item in the list, but not when using arrow keys to move
         filterField.addActionListener(e -> {
@@ -118,14 +139,14 @@ public class LogFilterController {
                 JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(logTable),
                         new Component[]{header, wrapper}, "Parse Error", JOptionPane.ERROR_MESSAGE);
 
-                formatFilter(filterString, Color.WHITE, new Color(221, 70, 57));
+                formatFilter(filterString);
             }
         }
     }
 
     public void clearFilter() {
         logTable.setFilter(null);
-        formatFilter("", null, null);
+        formatFilter("");
     }
 
     private void setFilter(LogFilter filter) {
@@ -133,13 +154,12 @@ public class LogFilterController {
             clearFilter();
         } else {
             String filterString = filter.toString();
-            formatFilter(filterString, Color.BLACK, new Color(76, 255, 155));
-
+            formatFilter(filterString);
             logTable.setFilter(filter);
         }
     }
 
-    public void formatFilter(String string, Color foregroundColor, Color backgroundColor) {
+    public void formatFilter(String string) {
         SwingUtilities.invokeLater(() -> {
             if (!string.equalsIgnoreCase("")) {
                 ((HistoryField.HistoryComboModel) filterField.getModel()).addToHistory(string);
@@ -147,8 +167,6 @@ public class LogFilterController {
             } else {
                 filterField.setSelectedItem(null);
             }
-            filterField.setForegroundColor(foregroundColor);
-            filterField.setBackgroundColor(backgroundColor);
         });
     }
 

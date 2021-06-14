@@ -26,6 +26,7 @@ public class LogTableController {
         this.logTable = new LogTable(this);
 
         this.filterLibraryController.addColorFilterListener(logTableModel);
+        this.filterLibraryController.addTagListener(logTableModel);
     }
 
     public LogViewController getLogViewController() {

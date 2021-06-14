@@ -13,12 +13,15 @@ import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
+import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
+import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
+import java.awt.*;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
@@ -40,6 +43,7 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
     private LoggerContextMenuFactory contextMenuFactory;
     private GrepperController grepperController;
     private MainViewController mainViewController;
+    private ReflectionController reflectionController;
 
     //UX
     private LoggerMenu loggerMenu;
@@ -67,8 +71,14 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
 
-        loggingController = new LoggingController(this);
-        preferencesController = new PreferencesController(this, loggingController);
+        loggingController = new LoggingController(gsonProvider);
+        preferencesController = new PreferencesController(this);
+        preferencesController.getPreferences().addSettingListener((source, settingName, newValue) -> {
+            if (settingName.equals(Globals.PREF_LOG_LEVEL)) {
+                loggingController.setLogLevel((Level) newValue);
+            }
+        });
+        reflectionController = new ReflectionController(preferencesController.getPreferences());
         exportController = new ExportController(this, preferencesController.getPreferences());
         libraryController = new FilterLibraryController(this, preferencesController);
         logViewController = new LogViewController(this, libraryController);
@@ -160,6 +170,10 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         return logProcessor;
     }
 
+    public ReflectionController getReflectionController() {
+        return reflectionController;
+    }
+
     public LoggerMenu getLoggerMenu() {
         return loggerMenu;
     }
@@ -170,5 +184,14 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
     public ExportController getExportController() {
         return exportController;
+    }
+
+    public Frame getLoggerFrame() {
+        if (mainViewController == null) {
+            return Arrays.stream(JFrame.getFrames()).filter(frame -> {
+                return frame.getTitle().startsWith("Burp Suite") && frame.isVisible();
+            }).findFirst().orElse(null);
+        }
+        return JOptionPane.getFrameForComponent(mainViewController.getTabbedPanel());
     }
 }

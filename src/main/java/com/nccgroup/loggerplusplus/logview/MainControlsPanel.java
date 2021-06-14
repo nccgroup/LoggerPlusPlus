@@ -3,6 +3,7 @@ package com.nccgroup.loggerplusplus.logview;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
+import com.nccgroup.loggerplusplus.util.userinterface.dialog.TagDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +27,13 @@ public class MainControlsPanel extends JPanel {
         gbc.gridx = 1;
         gbc.weightx = 99.0;
         this.add(logFilterController.getFilterField(), gbc);
+
+        final JButton tagsButton = new JButton("Tags");
+        tagsButton.addActionListener(actionEvent -> new TagDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true));
+
+        gbc.gridx = 2;
+        gbc.weightx = 0;
+        this.add(tagsButton, gbc);
 
         final JButton colorFilterButton = new JButton("Colorize");
         colorFilterButton.addActionListener(actionEvent -> new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true));

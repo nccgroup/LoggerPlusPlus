@@ -1,13 +1,11 @@
 package com.nccgroup.loggerplusplus.preferences;
 
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.logging.LoggingController;
-import com.nccgroup.loggerplusplus.util.Globals;
-
-import java.util.Arrays;
-import java.util.HashSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PreferencesController {
     private final LoggerPlusPlus loggerPlusPlus;
@@ -16,12 +14,24 @@ public class PreferencesController {
 
     private PreferencesPanel preferencesPanel;
 
-    public PreferencesController(LoggerPlusPlus loggerPlusPlus, LoggingController loggingController) {
+    private Logger logger = LogManager.getLogger(this.getClass());
+
+    public PreferencesController(LoggerPlusPlus loggerPlusPlus) {
         this.loggerPlusPlus = loggerPlusPlus;
         this.gsonProvider = loggerPlusPlus.getGsonProvider();
         this.preferences = new LoggerPreferenceFactory(
                 gsonProvider,
-                loggingController,
+                new ILogProvider() {
+                    @Override
+                    public void logOutput(String message) {
+                        logger.debug(message);
+                    }
+
+                    @Override
+                    public void logError(String errorMessage) {
+                        logger.error(errorMessage);
+                    }
+                },
                 LoggerPlusPlus.callbacks
         ).buildPreferences();
     }

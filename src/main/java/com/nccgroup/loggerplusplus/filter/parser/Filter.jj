@@ -6,13 +6,14 @@
                                         
                                     
                            
+    UNICODE_INPUT = true;
 //    DEBUG_PARSER = true;
 }
 
 PARSER_BEGIN(FilterParser)
 package com.nccgroup.loggerplusplus.filter.parser;
-import com.nccgroup.loggerplusplus.filter.LogicalOperator;
-import com.nccgroup.loggerplusplus.filter.BooleanOperator;
+import com.nccgroup.loggerplusplus.filter.ComparisonOperator;import com.nccgroup.loggerplusplus.filter.LogicalOperator;
+import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.util.regex.Pattern;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import static com.nccgroup.loggerplusplus.logentry.LogEntryField.getFieldsInGroup;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 
 public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
   protected JJTFilterParserState jjtree = new JJTFilterParserState();
@@ -48,7 +50,6 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
-}}
 }
 
 PARSER_END(FilterParser)
@@ -200,87 +201,89 @@ void Comparison()            :
  boolean jjtc000 = true;
  jjtree.openNodeScope(jjtn000);
 /*@egen*/
- BooleanOperator op = BooleanOperator.EQUAL;
+ ComparisonOperator op = ComparisonOperator.EQUAL;
  Object left, right = true;
 }
 {/*@bgen(jjtree) Comparison */
     try {
 /*@egen*/
-    (left = Identifier() | {throw new ParseException("The left side of a comparison must be a field identifier.");})
-
-    (
-        op = EqualityOperator() {
-            if(((LogEntryField) left).getType().isAssignableFrom(Date.class)){
-                right = Date();
-            }else{
-                try{
-                    right = Value();
-                }catch (Exception e){
-                    throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");
-                }
-            }
-
-            if(right instanceof Pattern && !String.class.isAssignableFrom(((LogEntryField) left).getType())){
-                throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));
-            }
-        }
-    |
-        op = NumericOperator()
-        {
-            if(!Number.class.isAssignableFrom(((LogEntryField) left).getType()) && !Date.class.isAssignableFrom(((LogEntryField) left).getType())){
-                throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));
-            }
-        }
+    (left = Identifier()
         (
-            right = Number()
-        |
-            right = Identifier()
-            {
-                if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
-                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));
+            op = EqualityOperator() {
+                if(((LogEntryField) left).getType().isAssignableFrom(Date.class)){
+                    right = Date();
+                }else{
+                    try{
+                        right = Value();
+                    }catch (Exception e){
+                        throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");
+                    }
                 }
-            }
-        |
-            right = Date()
-            {
-                if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
-                    throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
-                }
-            }
-        |
-            {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
-        )
-    |
-        op = ContainsOperator() (
-            right = String()
-        |
-            right = Number()
-        |
-            right = Identifier()
-        |
-            {throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
-        )
 
-    |
-        op = InOperator() (
-            right = Array()
-        |
-            {throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
-        )
-    | op = MatchesOperator() (
-                                 right = RegexInString()
-                             |
-                                 right = RegexInForwardSlashes()
-                             |
-                                {throw new ParseException("The matches operator must have a pattern as its right hand value."); }
-                             )
-    | //NO OPERATOR OR RIGHT VALUE Default to EQ TRUE
-        {
-            if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
-                //If left isn't a boolean value or field with boolean type
-                throw new ParseException(left + " cannot be evaluated as a boolean.");
+                if(right instanceof Pattern && !String.class.isAssignableFrom(((LogEntryField) left).getType())){
+                    throw new ParseException(String.format("Regex patterns can only be used on fields which can be converted to a string. Field \"%s\" of type \"%s\" cannot be converted.", left, ((LogEntryField) left).getType()));
+                }
             }
-        }
+        |
+            op = NumericOperator()
+            {
+                if(!Number.class.isAssignableFrom(((LogEntryField) left).getType()) && !Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                    throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", left, ((LogEntryField) left).getType()));
+                }
+            }
+            (
+                right = Number()
+            |
+                right = Identifier()
+                {
+                    if(!Number.class.isAssignableFrom(((LogEntryField) right).getType())){
+                        throw new ParseException(String.format("Numeric operators cannot be used for field \"%s\" of type \"%s\"", right, ((LogEntryField) right).getType()));
+                    }
+                }
+            |
+                right = Date()
+                {
+                    if(!Date.class.isAssignableFrom(((LogEntryField) left).getType())){
+                        throw new ParseException(String.format("Value of type Date cannot be compared against field \"%s\" of type \"%s\"", left, ((LogEntryField)left).getType()));
+                    }
+                }
+            |
+                {throw new ParseException("Invalid right hand value for comparison \"" + op + "\"");}
+            )
+        |
+            op = ContainsOperator() (
+                right = String()
+            |
+                right = Number()
+            |
+                right = Identifier()
+            |
+                {throw new ParseException("The contains operator can only be used on string and numeric values and identifiers.");}
+            )
+
+        |
+            op = InOperator() (
+                right = Array()
+            |
+                {throw new ParseException("The in operator must be used on an array. E.g. \"Response.status IN [200, 302, 500]\"");}
+            )
+        | op = MatchesOperator() (
+                                     right = RegexInString()
+                                 |
+                                     right = RegexInForwardSlashes()
+                                 |
+                                    {throw new ParseException("The matches operator must have a pattern as its right hand value."); }
+                                 )
+        | //NO OPERATOR OR RIGHT VALUE Default to EQ TRUE
+            {
+                if(!(left instanceof Boolean || (left instanceof LogEntryField && ((LogEntryField) left).getType().isAssignableFrom(Boolean.class)))){
+                    //If left isn't a boolean value or field with boolean type
+                    throw new ParseException(left + " cannot be evaluated as a boolean.");
+                }
+            }
+        )
+    |
+        (left = String() (op = InOperator() | {throw new ParseException("Only the IN operator is currently supported for arrays.");}) (right = Identifier() | right = Array() ))
     )/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
@@ -289,10 +292,10 @@ void Comparison()            :
 /*@egen*/
 
     {
-        jjtn000.left = left;
-        jjtn000.right = right;
-        jjtn000.booleanOperator = op;
-    }/*@bgen(jjtree)*/
+    jjtn000.left = left;
+    jjtn000.right = right;
+    jjtn000.comparisonOperator = op;
+}/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -433,7 +436,7 @@ Date Date()       :
     )
     {
     try{
-        Date date = LogManager.LOGGER_DATE_FORMAT.parse(t.image);
+        Date date = LogProcessor.LOGGER_DATE_FORMAT.parse(t.image);
         return date;
     }catch (Exception e){
         throw new ParseException("Invalid date format. Please use the format YYYY/MM/DD HH:MM:SS");
@@ -525,38 +528,38 @@ Boolean Boolean()       :
 
 //BASIC OPERATORS
 
-BooleanOperator EqualityOperator()       :
+ComparisonOperator EqualityOperator()       :
 {}
 {
-      <EQ>  {return BooleanOperator.EQUAL;}
-    | <NEQ> {return BooleanOperator.NOT_EQUAL;}
+      <EQ>  {return ComparisonOperator.EQUAL;}
+    | <NEQ> {return ComparisonOperator.NOT_EQUAL;}
 }
 
-BooleanOperator NumericOperator()       :
+ComparisonOperator NumericOperator()       :
 {}
 {
-    <GT>  {return BooleanOperator.GREATER_THAN;}
-    | <LT>  {return BooleanOperator.LESS_THAN;}
-    | <GEQ> {return BooleanOperator.GREATER_THAN_EQUAL;}
-    | <LEQ> {return BooleanOperator.LESS_THAN_EQUAL;}
+    <GT>  {return ComparisonOperator.GREATER_THAN;}
+    | <LT>  {return ComparisonOperator.LESS_THAN;}
+    | <GEQ> {return ComparisonOperator.GREATER_THAN_EQUAL;}
+    | <LEQ> {return ComparisonOperator.LESS_THAN_EQUAL;}
 }
 
-BooleanOperator ContainsOperator()       :
+ComparisonOperator ContainsOperator()       :
 {}
 {
-    <CONTAINS> {return BooleanOperator.CONTAINS;}
+    <CONTAINS> {return ComparisonOperator.CONTAINS;}
 }
 
-BooleanOperator MatchesOperator()       :
+ComparisonOperator MatchesOperator()       :
 {}
 {
-    <MATCHES> {return BooleanOperator.MATCHES;}
+    <MATCHES> {return ComparisonOperator.MATCHES;}
 }
 
-BooleanOperator InOperator()       :
+ComparisonOperator InOperator()       :
 {}
 {
-    <IN> {return BooleanOperator.IN;}
+    <IN> {return ComparisonOperator.IN;}
 }
 
 boolean Inverse()       :

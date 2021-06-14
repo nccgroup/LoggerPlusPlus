@@ -9,8 +9,8 @@ import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
  * Created by corey on 19/07/17.
@@ -174,9 +174,10 @@ public class ColorFilterTableModel extends AbstractTableModel {
     }
 
     public void removeAll() {
-        for (ColorFilter filter : filterLibraryController.getColorFilters().values()) {
+        for (ColorFilter filter : new ArrayList<>(filterLibraryController.getColorFilters().values())) {
             filterLibraryController.removeColorFilter(filter);
         }
+
         this.rowUUIDs.clear();
         this.fireTableDataChanged();
     }

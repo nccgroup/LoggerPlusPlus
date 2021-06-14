@@ -13,13 +13,14 @@ repositories {
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     compile 'org.swinglabs:swingx:1.6.1'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:409993f'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:2ed0d897'
     compile 'com.google.code.gson:gson:2.8.2'
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.2'
     compile 'org.apache.httpcomponents:httpclient:4.5.6'
     compile 'org.apache.commons:commons-text:1.7'
+    compile 'org.apache.logging.log4j:log4j-core:2.12.1'
     // Test on unix system
-     testRuntime files('/opt/BurpSuitePro/burpsuite_pro.jar')
+     testRuntime files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
     // Test on Windows System
 //    testRuntime files('C:/Program Files/BurpSuitePro/burpsuite_pro.jar')
 }

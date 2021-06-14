@@ -4,14 +4,14 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
-import com.nccgroup.loggerplusplus.util.FieldSelectorDialog;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Created by corey on 21/08/17.
  */
-public class CSVExporter extends AutomaticLogExporter {
+public class CSVExporter extends AutomaticLogExporter implements ContextMenuExportProvider, ExportPanelProvider {
 
     private final CSVExporterControlPanel controlPanel;
 
@@ -30,6 +30,7 @@ public class CSVExporter extends AutomaticLogExporter {
     private Thread exporterThread;
     private LinkedBlockingQueue<LogEntry> awaitingExport;
 
+    Logger logger = LogManager.getLogger(this);
 
     public CSVExporter(ExportController exportController, Preferences preferences){
         super(exportController, preferences);
@@ -39,7 +40,8 @@ public class CSVExporter extends AutomaticLogExporter {
 
     @Override
     public void setup() throws Exception {
-        fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+        fields = MoreHelp.showFieldChooserDialog(controlPanel, preferences, "CSV Export", this.fields);
+        if(fields == null || fields.isEmpty()) throw new Exception("Operation cancelled.");
         autoSaveFile = MoreHelp.getSaveFile("LoggerPlusPlus_Autosave.csv", "CSV File", "csv");
         boolean append;
         if(autoSaveFile.exists()){
@@ -98,7 +100,8 @@ public class CSVExporter extends AutomaticLogExporter {
 
     @Override
     public JMenuItem getExportEntriesMenuItem(List<LogEntry> entries) {
-        return new JMenuItem(new AbstractAction(String.format("Export %s as CSV", entries.size() != 1 ? "entries" : "entry")) {
+        return new JMenuItem(new AbstractAction(String.format("Export %d %s as CSV",
+                entries.size(), entries.size() != 1 ? "entries" : "entry")) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 exportEntries(entries);
@@ -114,9 +117,9 @@ public class CSVExporter extends AutomaticLogExporter {
             return promptAppendToExistingFileDialog();
         } else {
             //Prompt the user if they wish to overwrite
-            if(shouldOverwriteExistingFilePrompt()){
+            if (MoreHelp.shouldOverwriteExistingFilePrompt()) {
                 return false; //i.e. Do not append
-            }else{
+            } else {
                 throw new Exception("Operation cancelled.");
             }
         }
@@ -136,17 +139,6 @@ public class CSVExporter extends AutomaticLogExporter {
             return oldHeader == null || oldHeader.equalsIgnoreCase(thisHeader);
         } catch (IOException e) {
             return true;
-        }
-    }
-
-    private static boolean shouldOverwriteExistingFilePrompt() throws Exception {
-        int val = JOptionPane.showConfirmDialog(null, "Replace Existing File?", "File Exists",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-
-        if (val == JOptionPane.YES_OPTION) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -179,10 +171,11 @@ public class CSVExporter extends AutomaticLogExporter {
         }
     }
 
-    @Override
     public void exportEntries(List<LogEntry> entries) {
         try {
-            List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, "CSV Export", this.fields);
+            List<LogEntryField> fields = MoreHelp.showFieldChooserDialog(controlPanel, preferences, "CSV Export", this.fields);
+            if (fields == null || fields.isEmpty()) return; //Operation cancelled.
+            this.fields = fields;
             File file = MoreHelp.getSaveFile("LoggerPlusPlus.csv", "CSV File", "csv");
             final boolean append;
             if (file.exists()) {
@@ -227,8 +220,7 @@ public class CSVExporter extends AutomaticLogExporter {
             importWorker.execute();
 
         }catch (Exception e){
-            //Cancelled.
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 

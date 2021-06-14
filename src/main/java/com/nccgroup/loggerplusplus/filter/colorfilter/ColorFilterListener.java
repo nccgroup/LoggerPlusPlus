@@ -5,7 +5,9 @@ package com.nccgroup.loggerplusplus.filter.colorfilter;
  */
 public interface ColorFilterListener {
 
-    void onFilterChange(ColorFilter filter);
-    void onFilterAdd(ColorFilter filter);
-    void onFilterRemove(ColorFilter filter);
+    void onColorFilterChange(ColorFilter filter);
+
+    void onColorFilterAdd(ColorFilter filter);
+
+    void onColorFilterRemove(ColorFilter filter);
 }

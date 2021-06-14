@@ -8,25 +8,20 @@ import java.util.LinkedHashMap;
 public enum LogEntryField {
 
     //Proxy
-    NUMBER(FieldGroup.PROXY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
-    PROXY_TOOL(FieldGroup.PROXY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
-    LISTENER_INTERFACE(FieldGroup.PROXY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
-    CLIENT_IP(FieldGroup.PROXY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
-    COMMENT(FieldGroup.PROXY, String.class, "Comments set on the entry.", "Comment"),
+    NUMBER(FieldGroup.ENTRY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
+    PROXY_TOOL(FieldGroup.ENTRY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
+    TAGS(FieldGroup.ENTRY, String.class, "The configured tags for which this entry match.", "Tags"),
+    LISTENER_INTERFACE(FieldGroup.ENTRY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
+    CLIENT_IP(FieldGroup.ENTRY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
 
-    //Request + Response
+    //Request,
+    BASE64_REQUEST(FieldGroup.REQUEST, String.class, "The entire request encoded in Base64", "AsBase64"),
     REQUEST_HEADERS(FieldGroup.REQUEST, String.class, "The request line and associated headers.", "Headers", "Header"),
-    RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "The status line and associated headers.", "Headers", "Header"),
     REQUEST_BODY(FieldGroup.REQUEST, String.class, "The request body.", "Body"),
-    RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "The response body.", "Body"),
     REQUEST_TIME(FieldGroup.REQUEST, Date.class, "Date and time of inital request (as received by L++).", "Time"),
-    RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Date and time of receiving the response (as received by L++).", "Time"),
     REQUEST_LENGTH(FieldGroup.REQUEST, Integer.class, "The length of the received request.", "Length"),
-    RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "The length of the received response.", "Length"),
-
-
-    //Request
-    REQUEST_TOOL(FieldGroup.REQUEST, String.class, "The tool used to initiate the request.", "Tool"), //Alias for proxy.tool
+    REQUEST_TOOL(FieldGroup.REQUEST, String.class, "The tool used to initiate the request.", "Tool"), //Alias for proxy.tool,
+    COMMENT(FieldGroup.REQUEST, String.class, "Comments set on the entry.", "Comment"),
     COMPLETE(FieldGroup.REQUEST, Boolean.class, "Has a response been received?", "Complete", "isComplete"),
     URL(FieldGroup.REQUEST, String.class, "The entire URL of the request.", "URL", "URI"),
     METHOD(FieldGroup.REQUEST, String.class, "The request method used.", "Method"),
@@ -34,11 +29,12 @@ public enum LogEntryField {
     QUERY(FieldGroup.REQUEST, String.class, "The query parameters of the requested URL.", "Query", "GetParams", "QueryParams"),
     PROTOCOL(FieldGroup.REQUEST, String.class, "The protocol component of the requested URL.", "Protocol"),
     ISSSL(FieldGroup.REQUEST, Boolean.class, "Did the request use SSL?", "IsSSL", "ssl"),
-    USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar ones to see if any of them in use.", "UsesCookieJar", "CookieJar"),
+    USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar to see if any of them are in use.", "UsesCookieJar", "CookieJar"),
     HOSTNAME(FieldGroup.REQUEST, String.class, "The hostname component of the requested URL.", "Hostname"),
     HOST(FieldGroup.REQUEST, String.class, "The protocol and hostname of the requested URL.", "Host"),
     PORT(FieldGroup.REQUEST, Short.class, "The port the request was sent to.", "Port"),
     REQUEST_CONTENT_TYPE(FieldGroup.REQUEST, String.class, "The content-type header sent to the server.", "ContentType", "Content_Type"),
+    REQUEST_HTTP_VERSION(FieldGroup.REQUEST, Short.class, "The HTTP version sent in the request.", "RequestHttpVersion", "RequestHttpVersion"),
     EXTENSION(FieldGroup.REQUEST, String.class, "The URL extension used in the request.", "Extension"),
     REFERRER(FieldGroup.REQUEST, String.class, "The referrer header value of the request.", "Referrer"),
     HASPARAMS(FieldGroup.REQUEST, Boolean.class, "Did the request contain parameters?", "HasParams"),
@@ -46,17 +42,28 @@ public enum LogEntryField {
     HASPOSTPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain post parameters?", "HasPostParam", "HasPayload", "Payload"),
     HASCOOKIEPARAM(FieldGroup.REQUEST, Boolean.class, "Did the request contain cookies?", "HasSentCookies"),
     SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "The value of the cookies header sent to the server.", "CookieString", "SentCookies", "Cookies"),
-
+    PARAMETER_COUNT(FieldGroup.REQUEST, Integer.class, "The number of parameters in the request.", "ParameterCount", "ParamCount"),
+    PARAMETERS(FieldGroup.REQUEST, String.class, "The parameters in the request.", "Parameters", "Params"),
 
     //Response
+    BASE64_RESPONSE(FieldGroup.RESPONSE, String.class, "The entire response encoded in Base64", "AsBase64"),
+    RESPONSE_HEADERS(FieldGroup.RESPONSE, String.class, "The status line and associated headers.", "Headers", "Header"),
+    RESPONSE_BODY(FieldGroup.RESPONSE, String.class, "The response body.", "Body"),
+    RESPONSE_HASH(FieldGroup.RESPONSE, String.class, "SHA1 Hash of the response", "hash", "sha1"),
+    RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Date and time of receiving the response (as received by L++).", "Time"),
+    RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "The length of the received response.", "Length"),
     STATUS(FieldGroup.RESPONSE, Short.class, "The status code received in the response.", "Status", "StatusCode"),
+    STATUS_TEXT(FieldGroup.RESPONSE, Short.class, "The status text received in the response.", "StatusText", "StatusText"),
+    RESPONSE_HTTP_VERSION(FieldGroup.RESPONSE, Short.class, "The HTTP version received in the response.", "ResponseHttpVersion", "ResponseHttpVersion"),
     RTT(FieldGroup.RESPONSE, Integer.class, "The round trip time (as calculated by L++, not 100% accurate).", "RTT", "TimeTaken"),
     TITLE(FieldGroup.RESPONSE, String.class, "The HTTP response title.", "Title"),
     RESPONSE_CONTENT_TYPE(FieldGroup.RESPONSE, String.class, "The content-type header sent by the server.", "ContentType", "Content_Type"),
     INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "The type inferred by the response content.", "InferredType", "Inferred_Type"),
     MIME_TYPE(FieldGroup.RESPONSE, String.class, "The mime-type stated by the server.", "MimeType", "Mime"),
     HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "Did the response set cookies?", "HasSetCookies", "DidSetCookies"),
-    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies");
+    NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies", "SetCookies"),
+    REFLECTED_PARAMS(FieldGroup.RESPONSE, String.class, "Values reflected in the response", "ReflectedParams", "ReflectedParameters"),
+    REFLECTION_COUNT(FieldGroup.RESPONSE, Integer.class, "Number of values reflected in the response", "Reflections", "ReflectionCount", "ReflectedCount");
 
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> completeGroupFieldMap = new HashMap<>();
     private static final HashMap<FieldGroup, HashMap<String, LogEntryField>> shortGroupFieldMap = new HashMap<>();
@@ -122,6 +129,10 @@ public enum LogEntryField {
         String[] split = fqn.split("\\.");
         FieldGroup group = FieldGroup.findByLabel(split[0]);
         return getByLabel(group, split[1]);
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getDescriptiveMessage(){
