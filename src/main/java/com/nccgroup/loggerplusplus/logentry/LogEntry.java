@@ -75,8 +75,8 @@ public class LogEntry {
 	public List<UUID> matchingColorFilters;
 	public List<Tag> matchingTags;
 	public String formattedRequestTime;
-	public Date responseDateTime;
-	public Date requestDateTime;
+	public Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	public Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	public int requestResponseDelay = -1;
 	public List<String> responseHeaders;
 	public List<String> requestHeaders;
@@ -95,7 +95,6 @@ public class LogEntry {
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
-		this.requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	}
 
 	/**
