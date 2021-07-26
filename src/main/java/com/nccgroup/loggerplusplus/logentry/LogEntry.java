@@ -21,6 +21,7 @@ import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -69,14 +70,15 @@ public class LogEntry {
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	public String responseHash;
+	public String redirectURL;
 	// public String[] regexAllReq = {"","","","",""};
 	// public String[] regexAllResp = {"","","","",""};
 
 	public List<UUID> matchingColorFilters;
 	public List<Tag> matchingTags;
 	public String formattedRequestTime;
-	public Date responseDateTime;
-	public Date requestDateTime;
+	public Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	public Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	public int requestResponseDelay = -1;
 	public List<String> responseHeaders;
 	public List<String> requestHeaders;
@@ -95,7 +97,6 @@ public class LogEntry {
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
-		this.requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	}
 
 	/**
@@ -316,24 +317,26 @@ public class LogEntry {
 		String strFullResponse = new String(requestResponse.getResponse());
 		this.responseLength = requestResponse.getResponse().length - tempAnalyzedResp.getBodyOffset();
 
-		Map<String, List<String>> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":"))
+		Map<String, String> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":"))
 				.collect(Collectors.toMap(s -> {
 					String[] split = s.split(": ", 2);
 					return split.length > 0 ? split[0] : "";
 				}, s -> {
-					List<String> values = new ArrayList<>();
 					String[] split = s.split(": ", 2);
 					if (split.length > 1) {
-						values.add(split[1]);
+						return split[1];
 					}
-					return values;
+					return "";
 				}, (s, s2) -> {
-					s.addAll(s2);
+					s += ", " + s2;
 					return s;
 				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
 
 		responseHeaders = tempAnalyzedResp.getHeaders();
 		this.responseStatus = tempAnalyzedResp.getStatusCode();
+		if (headers.containsKey("Location")) {
+			this.redirectURL = headers.get("Location");
+		}
 
 		// Extract HTTP Status message
 		String[] httpStatusTokens = responseHeaders.get(0).split(" ");
@@ -348,7 +351,7 @@ public class LogEntry {
 		this.hasSetCookies = !newCookies.isEmpty();
 
 		if (headers.containsKey("content-type")) {
-			this.responseContentType = headers.get("content-type").get(0);
+			this.responseContentType = headers.get("content-type");
 		}
 
 		Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
@@ -368,10 +371,10 @@ public class LogEntry {
 
 		if (this.responseDateTime == null) {
 			// If it didn't have an arrival time set, parse the response for it.
-			if (headers.get("date") != null && headers.get("date").size() > 0) {
+			if (headers.get("date") != null && !StringUtils.isBlank(headers.get("date"))) {
 				try {
 					synchronized (LogProcessor.SERVER_DATE_FORMAT) {
-						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date").get(0));
+						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date"));
 					}
 				} catch (ParseException e) {
 					this.responseDateTime = null;
@@ -593,6 +596,8 @@ public class LogEntry {
 					return requestHeaders != null ? String.join("\r\n", requestHeaders) : "";
 				case RESPONSE_HEADERS:
 					return responseHeaders != null ? String.join("\r\n", responseHeaders) : "";
+				case REDIRECT_URL:
+					return redirectURL;
 				case BASE64_REQUEST:
 					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
 				case BASE64_RESPONSE:

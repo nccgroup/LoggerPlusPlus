@@ -80,7 +80,7 @@ public class Globals {
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
 
-    public static final int CURRENT_COLUMN_VERSION = 5;
+    public static final int CURRENT_COLUMN_VERSION = 6;
     private static int colOrder = 0;
     public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = new StringBuilder().append("[")
             .append("{'id':" + NUMBER + ",'name':'Number','defaultVisibleName':'#','visibleName':'#','preferredWidth':65,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(NUMBER.getDescription()) + "'},")
@@ -124,6 +124,7 @@ public class Globals {
             .append("{'id':" + USES_COOKIE_JAR + ",'name':'UsesCookieJar','defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(USES_COOKIE_JAR.getDescription()) + "'},")
             .append("{'id':" + REQUEST_CONTENT_TYPE + ",'name':'RequestContentType','defaultVisibleName':'Request Content Type','visibleName':'Request Type','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_CONTENT_TYPE.getDescription()) + "'},")
             .append("{'id':" + REFERRER + ",'name':'Referrer','defaultVisibleName':'Referrer','visibleName':'Referrer','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REFERRER.getDescription()) + "'},")
+            .append("{'id':" + REDIRECT_URL + ",'name':'Redirect','defaultVisibleName':'Redirect','visibleName':'Redirect','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REDIRECT_URL.getDescription()) + "'},")
             .append("{'id':" + HAS_SET_COOKIES + ",'name':'HasSetCookies','defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HAS_SET_COOKIES.getDescription()) + "'},")
             .append("{'id':" + REQUEST_BODY + ",'name':'Request','defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_BODY.getDescription()) + "'},")
             .append("{'id':" + REQUEST_HEADERS + ",'name':'RequestHeaders','defaultVisibleName':'Request Headers','visibleName':'Request Headers','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_HEADERS.getDescription()) + "'},")
