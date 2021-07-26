@@ -1,15 +1,9 @@
 package com.nccgroup.loggerplusplus.exports;
 
-import java.io.IOException;
-import java.net.HttpCookie;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.swing.Icon;
-
+import burp.ICookie;
+import burp.IParameter;
+import burp.IRequestInfo;
+import burp.IResponseInfo;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -17,12 +11,10 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
-import org.apache.commons.lang3.StringUtils;
-
-import burp.ICookie;
-import burp.IParameter;
-import burp.IRequestInfo;
-import burp.IResponseInfo;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
@@ -157,10 +149,26 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             }
             writer.endArray(); // end response headers array
 
+            writer.name("redirectURL").value(String.valueOf(logEntry.getValueByKey(LogEntryField.REDIRECT_URL)));
             writer.name("headersSize").value(logEntry.requestResponse.getResponse().length - logEntry.responseLength);
             writer.name("bodySize").value(logEntry.responseLength);
 
+            writer.name("content").beginObject(); // start content object
+            writer.name("size").value(logEntry.responseLength);
+            writer.name("mimeType").value(logEntry.responseMimeType);
+            writer.name("text").value(String.valueOf(logEntry.getValueByKey(LogEntryField.RESPONSE_BODY)));
+            writer.endObject(); //end content object
+
             writer.endObject(); // end response object
+
+            writer.name("cache").beginObject();
+            writer.endObject();
+
+            writer.name("timings").beginObject();
+            writer.name("send").value(0);
+            writer.name("wait").value((Integer) logEntry.getValueByKey(LogEntryField.RTT));
+            writer.name("receive").value(0);
+            writer.endObject();
 
             writer.endObject(); // end entry object
         }
