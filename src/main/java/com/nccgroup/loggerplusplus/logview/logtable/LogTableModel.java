@@ -97,11 +97,12 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
     public Object getValueAt(int rowIndex, int colModelIndex) {
         if (rowIndex >= entries.size())
             return null;
-        if (colModelIndex == 0) {
-            return rowIndex + 1;
-        }
 
         LogTableColumn column = (LogTableColumn) columnModel.getColumn(colModelIndex);
+
+        if (column.getIdentifier() == LogEntryField.NUMBER) {
+            return rowIndex + 1;
+        }
 
         Object value = entries.get(rowIndex).getValueByKey(column.getIdentifier());
 
