@@ -73,6 +73,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
+        prefs.registerSetting(PREF_MAX_RESP_SIZE, Integer.class, 10); //Default 10MB
         prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {
         }.getType(), defaultColorFilters);
         prefs.registerSetting(PREF_TAG_FILTERS, new TypeToken<Map<UUID, Tag>>() {

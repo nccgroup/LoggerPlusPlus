@@ -202,6 +202,12 @@ public class PreferencesPanel extends JScrollPane {
         ((SpinnerNumberModel) spnSearchThreads.getModel()).setMaximum(50);
         ((SpinnerNumberModel) spnSearchThreads.getModel()).setStepSize(1);
 
+        JSpinner maxResponseSize = otherPanel.addPreferenceComponent(preferences, PREF_MAX_RESP_SIZE,
+                "Maximum Response Size (MB): ");
+        ((SpinnerNumberModel) maxResponseSize.getModel()).setMinimum(0);
+        ((SpinnerNumberModel) maxResponseSize.getModel()).setMaximum(1000000);
+        ((SpinnerNumberModel) maxResponseSize.getModel()).setStepSize(1);
+
         ComponentGroup savedFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Saved Filter Sharing");
         savedFilterSharing.add(new JButton(new AbstractAction("Import Saved Filters") {
             @Override

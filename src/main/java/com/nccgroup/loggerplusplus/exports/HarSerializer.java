@@ -112,8 +112,8 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
                 writer.endObject(); // end postData object
             }
 
-            writer.name("headersSize").value(logEntry.requestResponse.getRequest().length - logEntry.requestLength);
-            writer.name("bodySize").value(logEntry.requestLength);
+            writer.name("headersSize").value(logEntry.requestResponse.getRequest().length - logEntry.requestBodyLength);
+            writer.name("bodySize").value(logEntry.requestBodyLength);
 
             writer.endObject(); // end request object
 
@@ -150,11 +150,11 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.endArray(); // end response headers array
 
             writer.name("redirectURL").value(String.valueOf(logEntry.getValueByKey(LogEntryField.REDIRECT_URL)));
-            writer.name("headersSize").value(logEntry.requestResponse.getResponse().length - logEntry.responseLength);
-            writer.name("bodySize").value(logEntry.responseLength);
+            writer.name("headersSize").value(logEntry.requestResponse.getResponse().length - logEntry.responseBodyLength);
+            writer.name("bodySize").value(logEntry.responseBodyLength);
 
             writer.name("content").beginObject(); // start content object
-            writer.name("size").value(logEntry.responseLength);
+            writer.name("size").value(logEntry.responseBodyLength);
             writer.name("mimeType").value(logEntry.responseMimeType);
             writer.name("text").value(String.valueOf(logEntry.getValueByKey(LogEntryField.RESPONSE_BODY)));
             writer.endObject(); //end content object
