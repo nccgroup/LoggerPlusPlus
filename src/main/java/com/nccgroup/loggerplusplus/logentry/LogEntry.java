@@ -392,7 +392,7 @@ public class LogEntry {
 		 **************************************/
 
 		Long maxRespSize = ((Integer) LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(Globals.PREF_MAX_RESP_SIZE)) * 1000000L;
-
+		int bodyOffset = requestResponse.getResponse().length - responseBodyLength;
 		if (responseBodyLength < maxRespSize) {
 			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
 			if (this.responseInferredMimeType.equalsIgnoreCase("HTML")) {
@@ -403,18 +403,22 @@ public class LogEntry {
 				}
 			}
 
-			int bodyOffset = requestResponse.getResponse().length - responseBodyLength;
-			if (responseBodyLength > 0) {
-				String responseBody = new String(requestResponse.getResponse(), bodyOffset, responseBodyLength);
-				ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-				reflectedParameters = tempParameters.parallelStream()
-						.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
-								&& reflectionController.validReflection(responseBody, iParameter))
-						.map(IParameter::getName).collect(Collectors.toList());
-			}
+			String responseBody = new String(requestResponse.getResponse(), bodyOffset, responseBodyLength);
+			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+			reflectedParameters = tempParameters.parallelStream()
+					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
+							&& reflectionController.validReflection(responseBody, iParameter))
+					.map(IParameter::getName).collect(Collectors.toList());
 
 			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
 		} else {
+			//Just look for reflections in the headers.
+			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+			reflectedParameters = tempParameters.parallelStream()
+					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
+							&& reflectionController.validReflection(new String(requestResponse.getResponse(), 0, bodyOffset), iParameter))
+					.map(IParameter::getName).collect(Collectors.toList());
+
 			//Trim the response down to a maximum size, but at least keep the headers!
 			//Then save the buffers to temp files
 			//And finally restore the original body to the original IHttpRequestResponse object so we don't modify the content sent to the browser.
