@@ -135,13 +135,9 @@ public class AboutPanel extends JPanel {
 				(UIManager.getLookAndFeel().getName().equalsIgnoreCase("darcula") ? "White" : "Black")
 				+ ".png";
 		BufferedImage githubImage = loadImage(githubLogoFilename);
-//		JButton viewOnGithubButton;
 		JButton submitFeatureRequestButton;
 		JButton reportBugButton;
 		if(githubImage != null){
-//			viewOnGithubButton = new JButton("View Project on GitHub", new ImageIcon(scaleImageToWidth(githubImage, 20)));
-//			viewOnGithubButton.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-//			viewOnGithubButton.setIconTextGap(7);
 			submitFeatureRequestButton = new JButton("Submit Feature Request", new ImageIcon(scaleImageToWidth(githubImage, 20)));
 			submitFeatureRequestButton.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 			submitFeatureRequestButton.setIconTextGap(7);
@@ -149,30 +145,26 @@ public class AboutPanel extends JPanel {
 			reportBugButton.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 			reportBugButton.setIconTextGap(7);
 		}else{
-//			viewOnGithubButton = new JButton("View Project on GitHub");
-			submitFeatureRequestButton = new JButton("Submit Feature Request", new ImageIcon(scaleImageToWidth(githubImage, 20)));
-			reportBugButton = new JButton("Report an Issue", new ImageIcon(scaleImageToWidth(githubImage, 20)));
+			submitFeatureRequestButton = new JButton("Submit Feature Request");
+			reportBugButton = new JButton("Report an Issue");
 		}
-//		viewOnGithubButton.addActionListener(actionEvent -> {
-//			try {
-//				Desktop.getDesktop().browse(new URI(Globals.GITHUB_URL));
-//			} catch (IOException | URISyntaxException e) {}
-//		});
 
 		submitFeatureRequestButton.addActionListener(actionEvent -> {
 			try {
 				Desktop.getDesktop().browse(new URI(Globals.GITHUB_FEATURE_URL));
-			} catch (IOException | URISyntaxException e) {}
+			} catch (IOException | URISyntaxException e) {
+			}
 		});
 		reportBugButton.addActionListener(actionEvent -> {
 			try {
 				Desktop.getDesktop().browse(new URI(Globals.GITHUB_BUG_URL));
-			} catch (IOException | URISyntaxException e) {}
+			} catch (IOException | URISyntaxException e) {
+			}
 		});
 
 
 		BufferedImage nccLargeImage = loadImage("NCCLarge.png");
-		ImageIcon nccLargeImageIcon = new ImageIcon(scaleImageToWidth(nccLargeImage, 300));
+		ImageIcon nccLargeImageIcon = new ImageIcon(scaleImageToWidth(nccLargeImage, 280));
 		JLabel nccBranding = new JLabel(nccLargeImageIcon);
 		nccBranding.addComponentListener(new ComponentAdapter() {
 			@Override
@@ -184,20 +176,24 @@ public class AboutPanel extends JPanel {
 
 		JLabel createdBy = new JLabel("Developed by: Corey Arthur ( @CoreyD97 )");
 		createdBy.setHorizontalAlignment(SwingConstants.CENTER);
-		createdBy.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
+		createdBy.setBorder(BorderFactory.createEmptyBorder(0, 0, 7, 0));
 		JLabel ideaBy = new JLabel("Originally by: Soroush Dalili ( @irsdl )");
 		ideaBy.setHorizontalAlignment(SwingConstants.CENTER);
-		ideaBy.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
+		ideaBy.setBorder(BorderFactory.createEmptyBorder(0, 0, 7, 0));
 		JLabel version = new JLabel("Version: " + Globals.VERSION);
-		version.setBorder(BorderFactory.createEmptyBorder(0,0,7,0));
+		version.setBorder(BorderFactory.createEmptyBorder(0, 0, 7, 0));
 		version.setHorizontalAlignment(SwingConstants.CENTER);
-		JComponent creditsPanel = PanelBuilder.build(new JComponent[][]{
-					new JComponent[]{createdBy},
-					new JComponent[]{ideaBy},
-					new JComponent[]{version},
-					new JComponent[]{nccBranding},
-					new JComponent[]{nccBranding}
-			}, Alignment.FILL, 1, 1);
+		JPanel creditsPanel = new PanelBuilder().setComponentGrid(new JComponent[][]{
+				new JComponent[]{createdBy},
+				new JComponent[]{ideaBy},
+				new JComponent[]{version},
+				new JComponent[]{nccBranding}
+		}).setGridWeightsY(new int[][]{
+				new int[]{0},
+				new int[]{0},
+				new int[]{0},
+				new int[]{1}
+		}).setAlignment(Alignment.FILL).build();
 
 		WrappedTextPane aboutContent = new WrappedTextPane();
 		aboutContent.setLayout(new BorderLayout());
@@ -244,11 +240,12 @@ public class AboutPanel extends JPanel {
 			e.printStackTrace(new PrintWriter(writer));
 		}
 
-		aboutContent.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+		aboutContent.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		JScrollPane aboutContentScrollPane = new JScrollPane(aboutContent);
 		aboutContentScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
-		JPanel panel = PanelBuilder.build(new JComponent[][]{
+		PanelBuilder panelBuilder = new PanelBuilder();
+		panelBuilder.setComponentGrid(new JComponent[][]{
 				new JComponent[]{headerLabel, headerLabel},
 				new JComponent[]{subtitle, subtitle},
 				new JComponent[]{separator, separator},
@@ -259,17 +256,33 @@ public class AboutPanel extends JPanel {
 				new JComponent[]{creditsPanel, submitFeatureRequestButton},
 				new JComponent[]{creditsPanel, reportBugButton},
 				new JComponent[]{aboutContentScrollPane, aboutContentScrollPane},
-		}, new int[][]{
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{1,1},
-				new int[]{0,0},
-		}, Alignment.TOPMIDDLE, 0.5, 0.9);
+		});
+		panelBuilder.setGridWeightsX(new int[][]{
+				new int[]{1, 1},
+				new int[]{1, 1},
+				new int[]{1, 1},
+				new int[]{1, 1},
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{100, 100},
+		});
+
+		panelBuilder.setGridWeightsY(new int[][]{
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{0, 0},
+				new int[]{0, 1},
+				new int[]{0, 1},
+				new int[]{0, 1},
+				new int[]{0, 1},
+				new int[]{10, 10},
+		});
+		panelBuilder.setAlignment(Alignment.TOPMIDDLE);
+		panelBuilder.setScaleX(0.5).setScaleY(0.9);
+		panel = panelBuilder.build();
 		return panel;
 	}
 
