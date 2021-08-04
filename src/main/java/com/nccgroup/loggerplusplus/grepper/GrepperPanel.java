@@ -2,7 +2,6 @@ package com.nccgroup.loggerplusplus.grepper;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpRequestResponseWithMarkers;
-import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
@@ -108,18 +107,27 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         this.resultsPane.addTab("Unique Results", new JScrollPane(uniqueTable));
 
         JLabel regexLabel = new JLabel("Regex: ");
-        JPanel wrapperPanel = PanelBuilder.build(new JComponent[][]{
+
+        PanelBuilder panelBuilder = new PanelBuilder();
+        panelBuilder.setComponentGrid(new JComponent[][]{
                 new JComponent[]{regexLabel, searchField, searchRequests, searchResponses, inScopeOnly, searchButton, resetButton},
                 new JComponent[]{resultsPane, resultsPane, resultsPane, resultsPane, resultsPane, resultsPane, resultsPane},
                 new JComponent[]{progressBar, progressBar, progressBar, progressBar, progressBar, progressBar, progressBar}
-        }, new int[][]{
-                new int[]{0, 1, 0, 0, 0, 0},
-                new int[]{1, 100, 1, 1, 1, 0},
+        });
+        panelBuilder.setGridWeightsY(new int[][]{
+                new int[]{0, 0, 0, 0, 0, 0},
+                new int[]{1, 1, 1, 1, 1, 1},
                 new int[]{0, 0, 0, 0, 0, 0}
-        }, Alignment.FILL, 1.0, 1.0);
+        });
+        panelBuilder.setGridWeightsX(new int[][]{
+                new int[]{0, 1, 0, 0, 0, 0},
+                new int[]{0, 0, 0, 0, 0, 0},
+                new int[]{0, 0, 0, 0, 0, 0}
+        });
+
 
         this.setLayout(new BorderLayout());
-        this.add(wrapperPanel, BorderLayout.CENTER);
+        this.add(panelBuilder.build(), BorderLayout.CENTER);
 
         this.controller.addListener(this);
     }

@@ -47,9 +47,9 @@ public class ElasticExporterConfigDialog extends JDialog {
         JPanel passPanel = new JPanel(new BorderLayout());
 
         JTextField apiKeyId = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_ID);
-        JTextField apiKeySecret = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_API_KEY_SECRET);
+        JTextField apiKeySecret = PanelBuilder.createPreferencePasswordField(preferences, PREF_ELASTIC_API_KEY_SECRET);
         JTextField username = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_USERNAME);
-        JTextField password = PanelBuilder.createPreferenceTextField(preferences, PREF_ELASTIC_PASSWORD);
+        JTextField password = PanelBuilder.createPreferencePasswordField(preferences, PREF_ELASTIC_PASSWORD);
 
         JComboBox<ElasticAuthType> elasticAuthType = new JComboBox<>(ElasticAuthType.values());
         elasticAuthType.setSelectedItem(preferences.getSetting(PREF_ELASTIC_AUTH));
@@ -188,15 +188,24 @@ public class ElasticExporterConfigDialog extends JDialog {
         }, Alignment.FILL, 1, 1));
 
 
-        this.add(PanelBuilder.build(new JComponent[][]{
+        PanelBuilder panelBuilder = new PanelBuilder();
+        panelBuilder.setComponentGrid(new JComponent[][]{
                 new JComponent[]{connectionGroup},
                 new JComponent[]{authGroup},
                 new JComponent[]{miscGroup}
-        }, new int[][]{
+        });
+        int[][] weights = new int[][]{
                 new int[]{1},
                 new int[]{1},
                 new int[]{1},
-        }, Alignment.CENTER, 1.0, 1.0, 5, 5), BorderLayout.CENTER);
+        };
+        panelBuilder.setGridWeightsY(weights)
+                    .setGridWeightsX(weights)
+                    .setAlignment(Alignment.CENTER)
+                    .setInsetsX(5)
+                    .setInsetsY(5);
+
+        this.add(panelBuilder.build(), BorderLayout.CENTER);
 
         setAuthFields.run();
 

@@ -157,6 +157,10 @@ public class LogFilterController {
             formatFilter(filterString);
             logTable.setFilter(filter);
         }
+
+        if (logTable.getSelectedRow() != -1) {
+            logTable.scrollRectToVisible(logTable.getCellRect(logTable.getSelectedRow(), 0, true));
+        }
     }
 
     public void formatFilter(String string) {

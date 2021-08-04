@@ -1,8 +1,6 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IHttpListener;
-import burp.IHttpRequestResponse;
+import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -26,7 +24,7 @@ import static com.nccgroup.loggerplusplus.util.Globals.*;
 /**
  * Created by corey on 07/09/17.
  */
-public class LogProcessor implements IHttpListener {
+public class LogProcessor implements IHttpListener, IProxyListener {
     public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 
@@ -48,7 +46,6 @@ public class LogProcessor implements IHttpListener {
      * Capture incoming requests and responses.
      * Logic to allow requests independently and match them to responses once received.
      * TODO SQLite integration
-     * TODO Capture requests modified after logging using request obtained from response objects.
      */
     public LogProcessor(LoggerPlusPlus loggerPlusPlus, LogTableController logTableController, ExportController exportController) {
         this.loggerPlusPlus = loggerPlusPlus;
@@ -69,15 +66,17 @@ public class LogProcessor implements IHttpListener {
         this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30, 30, TimeUnit.SECONDS);
 
         LoggerPlusPlus.callbacks.registerHttpListener(this);
-//        LoggerPlusPlus.callbacks.registerProxyListener(this);
+        LoggerPlusPlus.callbacks.registerProxyListener(this);
     }
 
     /**
      * Process messages from all tools.
      * Adds to queue for later processing.
-     * @param toolFlag Tool used to make request
+     * Note: processProxyMessage runs *after* processHttpMessage, responses from the proxy tool are left for that method.
+     *
+     * @param toolFlag      Tool used to make request
      * @param isRequestOnly If the message is request only or complete with response
-     * @param httpMessage The request and potentially response received.
+     * @param httpMessage   The request and potentially response received.
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
@@ -98,46 +97,39 @@ public class LogProcessor implements IHttpListener {
             //Tag the request with the UUID in the comment field, as this persists for when we get the response back!
             LogProcessorHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getIdentifier(), httpMessage);
             submitNewEntryProcessingRunnable(logEntry);
-        }else{
+        } else {
+            if (toolFlag == IBurpExtenderCallbacks.TOOL_PROXY)
+                return; //Process proxy responses using processProxyMessage
+
             UUID uuid = LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
-            if(uuid != null) {
+            if (uuid != null) {
                 updateRequestWithResponse(uuid, arrivalTime, httpMessage);
             }
         }
     }
 
-//    /**
-//     * Process messages received from the proxy tool.
-//     * For requests, a new processing job is added to the executor.
-//     * @param isRequestOnly
-//     * @param proxyMessage
-//     */
-//    @Override
-//    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
-//        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
-//        if(proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
-//        Date arrivalTime = new Date();
-//
-//        if(isRequestOnly){
-//            //The request is not yet sent, process the request object
-//            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, proxyMessage.getMessageInfo());
-//            //Store our proxy specific info now.
-//            logEntry.clientIP = String.valueOf(proxyMessage.getClientIpAddress());
-//            logEntry.listenerInterface = proxyMessage.getListenerInterface();
-//
-//            //Make a note of the entry UUID corresponding to the message identifier.
-//            proxyIdToUUIDMap.put(proxyMessage.getMessageReference(), logEntry.getIdentifier());
-//            submitNewEntryProcessingRunnable(logEntry);
-//        }else{
-//            //We're handling a response.
-//            UUID uuid = proxyIdToUUIDMap.remove(proxyMessage.getMessageReference());
-//            if(uuid != null){
-//                updateRequestWithResponse(uuid, arrivalTime, proxyMessage.getMessageInfo());
-//            }else{
-//                System.out.println("LOST");
-//            }
-//        }
-//    }
+    /**
+     * Since this method runs after processHttpMessage, we must use it to get the final response for proxy tool requests
+     * otherwise, changes to the message by other tools using processProxyMessage would not be seen!
+     *
+     * @param isRequestOnly
+     * @param proxyMessage
+     */
+    @Override
+    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
+        final int toolFlag = IBurpExtenderCallbacks.TOOL_PROXY;
+        if (proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        Date arrivalTime = new Date();
+
+        if (!isRequestOnly) { //We only want to handle responses.
+            //We're handling a response.
+            IHttpRequestResponse httpMessage = proxyMessage.getMessageInfo();
+            UUID uuid = LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
+            if (uuid != null) {
+                updateRequestWithResponse(uuid, arrivalTime, httpMessage);
+            }
+        }
+    }
 
     /**
      * When a response comes in, determine if the request has already been processed or not.

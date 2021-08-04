@@ -21,8 +21,10 @@ import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -58,25 +60,26 @@ public class LogEntry {
 	public String requestContentType = "";
 	public String protocol = "";
 	public int targetPort = -1;
-	public int requestLength = -1;
+	public int requestBodyLength = -1;
 	public String clientIP = "";
 	public boolean hasSetCookies = false;
 	public String formattedResponseTime = "";
 	public String responseMimeType = "";
 	public String responseInferredMimeType = "";
-	public int responseLength = -1;
+	public int responseBodyLength = -1;
 	public String responseContentType = "";
 	public boolean complete = false;
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	public String responseHash;
+	public String redirectURL;
 	// public String[] regexAllReq = {"","","","",""};
 	// public String[] regexAllResp = {"","","","",""};
 
 	public List<UUID> matchingColorFilters;
 	public List<Tag> matchingTags;
 	public String formattedRequestTime;
-	public Date responseDateTime;
-	public Date requestDateTime;
+	public Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	public Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	public int requestResponseDelay = -1;
 	public List<String> responseHeaders;
 	public List<String> requestHeaders;
@@ -95,7 +98,6 @@ public class LogEntry {
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
-		this.requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	}
 
 	/**
@@ -193,17 +195,16 @@ public class LogEntry {
 			this.urlExtension = "";
 		}
 
-		this.requestLength = requestResponse.getRequest().length - tempAnalyzedReq.getBodyOffset();
-		this.hasBodyParam = requestLength > 0;
+		this.requestBodyLength = requestResponse.getRequest().length - tempAnalyzedReq.getBodyOffset();
+		this.hasBodyParam = requestBodyLength > 0;
 		this.params = this.url.getQuery() != null || this.hasBodyParam;
 		this.hasCookieParam = false;
 
 		// reading request headers like a boss!
 		for (String item : requestHeaders) {
-			if (item.indexOf(":") >= 0) {
+			if (item.contains(":")) {
 				String[] headerItem = item.split(":\\s", 2);
-				headerItem[0] = headerItem[0].toLowerCase();
-				if (headerItem[0].equals("cookie")) {
+				if (headerItem[0].equalsIgnoreCase("cookie")) {
 					this.sentCookies = headerItem[1];
 					if (!this.sentCookies.isEmpty()) {
 						this.hasCookieParam = true;
@@ -313,65 +314,60 @@ public class LogEntry {
 		reflectedParameters = new ArrayList<>();
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers()
 				.analyzeResponse(requestResponse.getResponse());
-		String strFullResponse = new String(requestResponse.getResponse());
-		this.responseLength = requestResponse.getResponse().length - tempAnalyzedResp.getBodyOffset();
 
-		Map<String, List<String>> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":"))
+		this.responseStatus = tempAnalyzedResp.getStatusCode();
+		this.responseBodyLength = requestResponse.getResponse().length - tempAnalyzedResp.getBodyOffset();
+		this.responseMimeType = tempAnalyzedResp.getStatedMimeType();
+		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
+
+		/**************************************
+		 ************HEADER PROCESSING*********
+		 **************************************/
+
+		//Fancy handling to combine duplicate headers into CSVs.
+		Map<String, String> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":"))
 				.collect(Collectors.toMap(s -> {
 					String[] split = s.split(": ", 2);
 					return split.length > 0 ? split[0] : "";
 				}, s -> {
-					List<String> values = new ArrayList<>();
 					String[] split = s.split(": ", 2);
 					if (split.length > 1) {
-						values.add(split[1]);
+						return split[1];
 					}
-					return values;
+					return "";
 				}, (s, s2) -> {
-					s.addAll(s2);
+					s += ", " + s2;
 					return s;
 				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
 
 		responseHeaders = tempAnalyzedResp.getHeaders();
-		this.responseStatus = tempAnalyzedResp.getStatusCode();
+
+		if (headers.containsKey("Location")) {
+			this.redirectURL = headers.get("Location");
+		}
 
 		// Extract HTTP Status message
 		String[] httpStatusTokens = responseHeaders.get(0).split(" ");
 		this.responseStatusText = httpStatusTokens[httpStatusTokens.length - 1];
 		this.responseHttpVersion = httpStatusTokens[0];
 
-		this.responseMimeType = tempAnalyzedResp.getStatedMimeType();
-		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
+		if (headers.containsKey("content-type")) {
+			this.responseContentType = headers.get("content-type");
+		}
+
+		//Cookies
 		for (ICookie cookieItem : tempAnalyzedResp.getCookies()) {
-			this.newCookies += cookieItem.getName() + "=" + cookieItem.getValue() + "; ";
+			this.newCookies += cookieItem.getName() + "=" + cookieItem.getValue() + "; "; //TODO convert to map, and add filter support for maps
 		}
 		this.hasSetCookies = !newCookies.isEmpty();
 
-		if (headers.containsKey("content-type")) {
-			this.responseContentType = headers.get("content-type").get(0);
-		}
-
-		Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
-		if (titleMatcher.find()) {
-			this.title = titleMatcher.group(1);
-		}
-
-		String responseBody = new String(requestResponse.getResponse())
-				.substring(requestResponse.getResponse().length - responseLength);
-
-		ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-		reflectedParameters = tempParameters.parallelStream()
-				.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
-						&& reflectionController.validReflection(responseBody, iParameter))
-				.map(IParameter::getName).collect(Collectors.toList());
-		tempParameters = null; // We're done with these. Allow them to be cleaned.
 
 		if (this.responseDateTime == null) {
 			// If it didn't have an arrival time set, parse the response for it.
-			if (headers.get("date") != null && headers.get("date").size() > 0) {
+			if (headers.get("date") != null && !StringUtils.isBlank(headers.get("date"))) {
 				try {
 					synchronized (LogProcessor.SERVER_DATE_FORMAT) {
-						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date").get(0));
+						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date"));
 					}
 				} catch (ParseException e) {
 					this.responseDateTime = null;
@@ -390,6 +386,51 @@ public class LogEntry {
 		if (requestDateTime != null && responseDateTime != null) {
 			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
 		}
+
+		/**************************************
+		 *************BODY PROCESSING**********
+		 **************************************/
+
+		Long maxRespSize = ((Integer) LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(Globals.PREF_MAX_RESP_SIZE)) * 1000000L;
+		int bodyOffset = requestResponse.getResponse().length - responseBodyLength;
+		if (responseBodyLength < maxRespSize) {
+			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
+			if (this.responseInferredMimeType.equalsIgnoreCase("HTML")) {
+				String strFullResponse = new String(requestResponse.getResponse());
+				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
+				if (titleMatcher.find()) {
+					this.title = titleMatcher.group(1);
+				}
+			}
+
+			String responseBody = new String(requestResponse.getResponse(), bodyOffset, responseBodyLength);
+			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+			reflectedParameters = tempParameters.parallelStream()
+					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
+							&& reflectionController.validReflection(responseBody, iParameter))
+					.map(IParameter::getName).collect(Collectors.toList());
+
+			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
+		} else {
+			//Just look for reflections in the headers.
+			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
+			reflectedParameters = tempParameters.parallelStream()
+					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
+							&& reflectionController.validReflection(new String(requestResponse.getResponse(), 0, bodyOffset), iParameter))
+					.map(IParameter::getName).collect(Collectors.toList());
+
+			//Trim the response down to a maximum size, but at least keep the headers!
+			//Then save the buffers to temp files
+			//And finally restore the original body to the original IHttpRequestResponse object so we don't modify the content sent to the browser.
+			IHttpRequestResponse original = this.requestResponse;
+			byte[] originalResponse = this.requestResponse.getResponse();
+			requestResponse.setResponse((new String(this.requestResponse.getResponse(), 0, requestResponse.getResponse().length - responseBodyLength) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8));
+			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
+			original.setResponse(originalResponse);
+		}
+
+
+		tempParameters = null; // We're done with these. Allow them to be cleaned.
 
 		this.complete = true;
 
@@ -502,7 +543,7 @@ public class LogEntry {
 				case MIME_TYPE:
 					return this.responseMimeType;
 				case RESPONSE_LENGTH:
-					return this.responseLength;
+					return this.responseBodyLength;
 				case PORT:
 					return this.targetPort;
 				case METHOD:
@@ -532,7 +573,7 @@ public class LogEntry {
 				case HASCOOKIEPARAM:
 					return this.hasCookieParam;
 				case REQUEST_LENGTH:
-					return this.requestLength;
+					return this.requestBodyLength;
 				case RESPONSE_CONTENT_TYPE:
 					return this.responseContentType;
 				case INFERRED_TYPE:
@@ -582,17 +623,21 @@ public class LogEntry {
 				case REFLECTION_COUNT:
 					return reflectedParameters.size();
 				case REQUEST_BODY: // request
-					return new String(requestResponse.getRequest())
-							.substring(requestResponse.getRequest().length - requestLength);
+					if (requestBodyLength == 0) return "";
+					return new String(requestResponse.getRequest(), requestResponse.getRequest().length - requestBodyLength, requestBodyLength);
+//							.substring(requestResponse.getRequest().length - requestBodyLength);
 				case RESPONSE_BODY: // response
-					return new String(requestResponse.getResponse())
-							.substring(requestResponse.getResponse().length - responseLength);
+					if (responseBodyLength == 0) return "";
+					return new String(requestResponse.getResponse(), requestResponse.getResponse().length - responseBodyLength, responseBodyLength);
+//							.substring(requestResponse.getResponse().length - responseBodyLength);
 				case RTT:
 					return requestResponseDelay;
 				case REQUEST_HEADERS:
 					return requestHeaders != null ? String.join("\r\n", requestHeaders) : "";
 				case RESPONSE_HEADERS:
 					return responseHeaders != null ? String.join("\r\n", responseHeaders) : "";
+				case REDIRECT_URL:
+					return redirectURL;
 				case BASE64_REQUEST:
 					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
 				case BASE64_RESPONSE:

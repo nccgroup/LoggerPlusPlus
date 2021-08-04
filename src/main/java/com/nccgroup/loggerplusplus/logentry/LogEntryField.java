@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.logentry;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ public enum LogEntryField {
     RESPONSE_HASH(FieldGroup.RESPONSE, String.class, "SHA1 Hash of the response", "hash", "sha1"),
     RESPONSE_TIME(FieldGroup.RESPONSE, Date.class, "Date and time of receiving the response (as received by L++).", "Time"),
     RESPONSE_LENGTH(FieldGroup.RESPONSE, Integer.class, "The length of the received response.", "Length"),
+    REDIRECT_URL(FieldGroup.RESPONSE, URL.class, "The URL the response redirects to.", "Redirect", "RedirectURL"),
     STATUS(FieldGroup.RESPONSE, Short.class, "The status code received in the response.", "Status", "StatusCode"),
     STATUS_TEXT(FieldGroup.RESPONSE, Short.class, "The status text received in the response.", "StatusText", "StatusText"),
     RESPONSE_HTTP_VERSION(FieldGroup.RESPONSE, Short.class, "The HTTP version received in the response.", "ResponseHttpVersion", "ResponseHttpVersion"),

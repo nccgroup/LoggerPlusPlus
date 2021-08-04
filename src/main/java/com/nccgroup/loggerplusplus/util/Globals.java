@@ -8,7 +8,7 @@ import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 
 public class Globals {
     public static final String APP_NAME = "Logger++";
-    public static final String VERSION = "3.19.1";
+    public static final String VERSION = "3.19.2";
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String TWITTER_URL = "https://twitter.com/CoreyD97";
     public static final String IRSDL_TWITTER_URL = "https://twitter.com/irsdl";
@@ -72,6 +72,7 @@ public class Globals {
     public static final String PREF_PREVIOUS_ELASTIC_FIELDS = "previousElasticFields";
     public static final String PREF_SAVED_FIELD_SELECTIONS = "savedFieldSelections";
     public static final String PREF_COLUMNS_VERSION = "columnsVersion";
+    public static final String PREF_MAX_RESP_SIZE = "maxRespBodySize";
 
     public enum ElasticAuthType {ApiKey, Basic, None}
 
@@ -80,7 +81,7 @@ public class Globals {
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
 
-    public static final int CURRENT_COLUMN_VERSION = 5;
+    public static final int CURRENT_COLUMN_VERSION = 6;
     private static int colOrder = 0;
     public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = new StringBuilder().append("[")
             .append("{'id':" + NUMBER + ",'name':'Number','defaultVisibleName':'#','visibleName':'#','preferredWidth':65,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(NUMBER.getDescription()) + "'},")
@@ -117,13 +118,14 @@ public class Globals {
             .append("{'id':" + LISTENER_INTERFACE + ",'name':'ListenerInterface','defaultVisibleName':'Proxy Listener Interface','visibleName':'Proxy Listener Interface','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(LISTENER_INTERFACE.getDescription()) + "'},")
             .append("{'id':" + CLIENT_IP + ",'name':'ClientIP','defaultVisibleName':'Proxy Client IP','visibleName':'Proxy Client IP','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(CLIENT_IP.getDescription()) + "'},")
             .append("{'id':" + RESPONSE_CONTENT_TYPE + ",'name':'ResponseContentType','defaultVisibleName':'Response Content-Type','visibleName':'Response Content-Type','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(RESPONSE_CONTENT_TYPE.getDescription()) + "'},")
-            .append("{'id':" + HASGETPARAM + ",'name':'HasQueryStringParam','defaultVisibleName':'QueryString?','visibleName':'QueryString?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HASGETPARAM.getDescription()) + "'},")
+            .append("{'id':" + HASGETPARAM + ",'name':'HasQueryStringParam','defaultVisibleName':'Query String?','visibleName':'Query String?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HASGETPARAM.getDescription()) + "'},")
             .append("{'id':" + HASPOSTPARAM + ",'name':'HasBodyParam','defaultVisibleName':'Body Params?','visibleName':'Body Params?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HASPOSTPARAM.getDescription()) + "'},")
             .append("{'id':" + HASCOOKIEPARAM + ",'name':'HasCookieParam','defaultVisibleName':'Sent Cookie?','visibleName':'Sent Cookie?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HASCOOKIEPARAM.getDescription()) + "'},")
             .append("{'id':" + SENTCOOKIES + ",'name':'SentCookies','defaultVisibleName':'Sent Cookies','visibleName':'Sent Cookies','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(SENTCOOKIES.getDescription()) + "'},")
             .append("{'id':" + USES_COOKIE_JAR + ",'name':'UsesCookieJar','defaultVisibleName':'Contains cookie jar?','visibleName':'Contains cookie jar?','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(USES_COOKIE_JAR.getDescription()) + "'},")
             .append("{'id':" + REQUEST_CONTENT_TYPE + ",'name':'RequestContentType','defaultVisibleName':'Request Content Type','visibleName':'Request Type','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_CONTENT_TYPE.getDescription()) + "'},")
             .append("{'id':" + REFERRER + ",'name':'Referrer','defaultVisibleName':'Referrer','visibleName':'Referrer','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REFERRER.getDescription()) + "'},")
+            .append("{'id':" + REDIRECT_URL + ",'name':'Redirect','defaultVisibleName':'Redirect','visibleName':'Redirect','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REDIRECT_URL.getDescription()) + "'},")
             .append("{'id':" + HAS_SET_COOKIES + ",'name':'HasSetCookies','defaultVisibleName':'Set-Cookie?','visibleName':'Set-Cookie?','preferredWidth':50,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HAS_SET_COOKIES.getDescription()) + "'},")
             .append("{'id':" + REQUEST_BODY + ",'name':'Request','defaultVisibleName':'Request Body','visibleName':'Request Body','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_BODY.getDescription()) + "'},")
             .append("{'id':" + REQUEST_HEADERS + ",'name':'RequestHeaders','defaultVisibleName':'Request Headers','visibleName':'Request Headers','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(REQUEST_HEADERS.getDescription()) + "'},")
