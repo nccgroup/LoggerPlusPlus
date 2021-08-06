@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
@@ -160,8 +159,8 @@ public class TagTableModel extends AbstractTableModel {
     }
 
     public void removeAll() {
-        for (ColorFilter filter : new ArrayList<>(filterLibraryController.getColorFilters().values())) {
-            filterLibraryController.removeColorFilter(filter);
+        for (Tag tag : new ArrayList<>(filterLibraryController.getTags().values())) {
+            filterLibraryController.removeTag(tag);
         }
 
         this.rowUUIDs.clear();
