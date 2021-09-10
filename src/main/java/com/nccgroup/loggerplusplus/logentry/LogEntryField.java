@@ -45,6 +45,7 @@ public enum LogEntryField {
     SENTCOOKIES(FieldGroup.REQUEST, Boolean.class, "The value of the cookies header sent to the server.", "CookieString", "SentCookies", "Cookies"),
     PARAMETER_COUNT(FieldGroup.REQUEST, Integer.class, "The number of parameters in the request.", "ParameterCount", "ParamCount"),
     PARAMETERS(FieldGroup.REQUEST, String.class, "The parameters in the request.", "Parameters", "Params"),
+    ORIGIN(FieldGroup.REQUEST, String.class, "The Origin header", "Origin"),
 
     //Response
     BASE64_RESPONSE(FieldGroup.RESPONSE, String.class, "The entire response encoded in Base64", "AsBase64"),

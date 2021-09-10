@@ -72,6 +72,7 @@ public class LogEntry {
 	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
 	public String responseHash;
 	public String redirectURL;
+	public String origin = "";
 	// public String[] regexAllReq = {"","","","",""};
 	// public String[] regexAllResp = {"","","","",""};
 
@@ -235,10 +236,12 @@ public class LogEntry {
 							this.usesCookieJar = CookieJarStatus.YES;
 						}
 					}
-				} else if (headerItem[0].equals("referer")) {
+				} else if (headerItem[0].equalsIgnoreCase("referer")) {
 					this.referrerURL = headerItem[1];
-				} else if (headerItem[0].equals("content-type")) {
+				} else if (headerItem[0].equalsIgnoreCase("content-type")) {
 					this.requestContentType = headerItem[1];
+				} else if (headerItem[0].equalsIgnoreCase("origin")) {
+					this.origin = headerItem[1];
 				}
 			}
 		}
@@ -598,6 +601,8 @@ public class LogEntry {
 					return this.sentCookies;
 				case USES_COOKIE_JAR:
 					return this.usesCookieJar.toString();
+				case ORIGIN:
+					return this.origin;
 				// case REGEX1REQ:
 				// return this.regexAllReq[0];
 				// case REGEX2REQ:
