@@ -62,6 +62,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.name("method").value(logEntry.method);
             writer.name("url").value(logEntry.url.toString());
             writer.name("httpVersion").value(logEntry.requestHttpVersion);
+            writer.name("origin").value(logEntry.origin);
 
             writer.name("cookies").beginArray();
             if (logEntry.hasCookieParam) {
