@@ -44,7 +44,7 @@ public class LoggingController {
             @Override
             public void append(LogEvent event) {
                 String message = new String(this.getLayout().toByteArray(event));
-                if (event.getLevel().isMoreSpecificThan(Level.ERROR)) {
+                if (event.getLevel().isMoreSpecificThan(Level.INFO)) {
                     callbacks.printError(message);
                 } else {
                     callbacks.printOutput(message);
@@ -53,7 +53,7 @@ public class LoggingController {
         };
         burpAppender.start();
 
-        context.getConfiguration().getRootLogger().addAppender(burpAppender, Level.INFO, null);
+        context.getConfiguration().getRootLogger().addAppender(burpAppender, logLevel, null);
         context.updateLoggers();
     }
 

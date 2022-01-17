@@ -30,7 +30,7 @@ public class FilterLibraryController {
     private final HashMap<UUID, Tag> tagFilters;
     private final ArrayList<TagListener> tagListeners;
 
-    Logger logger = LogManager.getLogger(this);
+    Logger logger = LogManager.getRootLogger();
 
     public FilterLibraryController(LoggerPlusPlus loggerPlusPlus, PreferencesController preferencesController) {
         this.loggerPlusPlus = loggerPlusPlus;

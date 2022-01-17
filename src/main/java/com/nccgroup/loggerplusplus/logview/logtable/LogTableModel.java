@@ -190,14 +190,14 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
     //TagListeners
     @Override
     public void onTagChange(final Tag filter) {
-        createFilterTestingWorker(filter, filter.shouldRetest()).execute();
+        createTagTestingWorker(filter, filter.shouldRetest()).execute();
     }
 
     @Override
     public void onTagAdd(final Tag filter) {
         if (!filter.isEnabled() || filter.getFilter() == null)
             return;
-        createFilterTestingWorker(filter, false);
+        createTagTestingWorker(filter, false);
     }
 
     @Override
@@ -225,7 +225,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
         }.execute();
     }
 
-    private SwingWorker<Void, Integer> createFilterTestingWorker(final Tag filter, boolean retestExisting) {
+    private SwingWorker<Void, Integer> createTagTestingWorker(final Tag filter, boolean retestExisting) {
         return new SwingWorker<Void, Integer>() {
 
             @Override

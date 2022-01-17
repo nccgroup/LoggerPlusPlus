@@ -70,6 +70,8 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         //Burp Specific
         LoggerPlusPlus.instance = this;
         LoggerPlusPlus.callbacks = callbacks;
+        callbacks.setExtensionName("Logger++");
+        LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
         loggingController = new LoggingController(gsonProvider);
         preferencesController = new PreferencesController(this);
@@ -88,11 +90,7 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
         mainViewController = new MainViewController(this);
 
-
-        callbacks.setExtensionName("Logger++");
-
         LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
-        LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
 
 
         SwingUtilities.invokeLater(() -> {
