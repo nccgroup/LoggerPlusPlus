@@ -54,6 +54,7 @@ public class HelpPanel extends JPanel {
 
 
         JTextPane overviewTitle = new JTextPane();
+        overviewTitle.putClientProperty("html.disable", null);
         overviewTitle.setContentType("text/html");
         overviewTitle.setDocument(doc);
         overviewTitle.setEditable(false);
@@ -64,6 +65,7 @@ public class HelpPanel extends JPanel {
                 "filters from various fields and row coloring to highlight interesting entries which match a specific filter.</body>");
 
         JTextPane overviewPane = new JTextPane();
+        overviewPane.putClientProperty("html.disable", null);
         overviewPane.setContentType("text/html");
         overviewPane.setEditable(false);
         doc = (HTMLDocument) editorKit.createDefaultDocument();
@@ -154,6 +156,7 @@ public class HelpPanel extends JPanel {
         });
 
         JTextPane fieldTitle = new JTextPane();
+        fieldTitle.putClientProperty("html.disable", null);
         fieldTitle.setContentType("text/html");
         fieldTitle.setEditable(false);
         doc = (HTMLDocument) editorKit.createDefaultDocument();
@@ -163,6 +166,7 @@ public class HelpPanel extends JPanel {
                 "A number of fields are available to use from the requests within your filters. These are listed below.<body>");
 
         JTextPane fieldPane = new JTextPane();
+        fieldPane.putClientProperty("html.disable", null);
         fieldPane.setContentType("text/html");
         fieldPane.setEditable(false);
         doc = (HTMLDocument) editorKit.createDefaultDocument();
