@@ -1,0 +1,35 @@
+---
+name: releases
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2.3.4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt
+          java-version: '8'
+
+      # burpsuite_pro.jar is not available, disable tests
+      - name: Build
+        run: ./gradlew build -x test
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            releases/*.jar
+        id: "automatic_releases"
