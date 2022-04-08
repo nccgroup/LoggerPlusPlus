@@ -94,6 +94,15 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                             + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
+
+            JMenuItem andNotFilter = new JMenuItem(new AbstractAction("AND NOT") {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && !("
+                            + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\")");
+                }
+            });
+
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
@@ -102,6 +111,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 }
             });
             addToCurrentFilter.add(andFilter);
+            addToCurrentFilter.add(andNotFilter);
             addToCurrentFilter.add(orFilter);
             filterMenu.add(addToCurrentFilter);
         }

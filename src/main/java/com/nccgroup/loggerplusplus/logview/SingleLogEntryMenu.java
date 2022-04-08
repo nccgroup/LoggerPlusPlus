@@ -71,6 +71,15 @@ public class SingleLogEntryMenu extends JPopupMenu {
                         logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
                     }
                 });
+
+                JMenuItem andNotFilter = new JMenuItem(new AbstractAction("AND NOT") {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.NOT_EQUAL, columnValueString);
+                        logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
+                    }
+                });
+
                 JMenuItem orFilter = new JMenuItem(new AbstractAction(LogicalOperator.OR.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
@@ -79,6 +88,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                     }
                 });
                 addToCurrentFilter.add(andFilter);
+                addToCurrentFilter.add(andNotFilter);
                 addToCurrentFilter.add(orFilter);
                 this.add(addToCurrentFilter);
             }
