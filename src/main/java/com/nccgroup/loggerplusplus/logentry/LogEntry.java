@@ -413,7 +413,7 @@ public class LogEntry {
 							&& reflectionController.validReflection(responseBody, iParameter))
 					.map(IParameter::getName).collect(Collectors.toList());
 
-			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
+//			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
 		} else {
 			//Just look for reflections in the headers.
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
@@ -428,7 +428,7 @@ public class LogEntry {
 			IHttpRequestResponse original = this.requestResponse;
 			byte[] originalResponse = this.requestResponse.getResponse();
 			requestResponse.setResponse((new String(this.requestResponse.getResponse(), 0, requestResponse.getResponse().length - responseBodyLength) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8));
-			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
+//			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
 			original.setResponse(originalResponse);
 		}
 
