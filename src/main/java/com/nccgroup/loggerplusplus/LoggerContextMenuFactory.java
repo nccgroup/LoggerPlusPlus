@@ -44,9 +44,9 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
                 try {
                     byte[] msg = invocation.getSelectedMessages()[0].getRequest();
-                    if(LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
+                    if (LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() > invocation.getSelectionBounds()[0]) {
                         context = LogEntryField.REQUEST_HEADERS;
-                    }else{
+                    } else {
                         context = LogEntryField.REQUEST_BODY;
                     }
                     selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getRequest(),
@@ -57,20 +57,25 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
 
             case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
             case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
-                try{
+                try {
                     byte[] msg = invocation.getSelectedMessages()[0].getResponse();
-                    if(LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() >= invocation.getSelectionBounds()[0]){
+                    if (LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() > invocation.getSelectionBounds()[0]) {
                         context = LogEntryField.RESPONSE_HEADERS;
-                    }else{
+                    } else {
                         context = LogEntryField.RESPONSE_BODY;
                     }
                     selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getResponse(),
-                            invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
-                }catch (NullPointerException nPException){ return null; }
+                            invocation.getSelectionBounds()[0], invocation.getSelectionBounds()[1]);
+                } catch (NullPointerException nPException) {
+                    return null;
+                }
                 break;
             }
-            default: return null;
+            default:
+                return null;
         }
+
+        if (selectedBytes != null) System.out.println(new String(selectedBytes));
 
         final LogTable logTable = loggerPlusPlus.getLogViewController().getLogTableController().getLogTable();
         String selectedText = StringEscapeUtils.escapeJava(new String(selectedBytes));
