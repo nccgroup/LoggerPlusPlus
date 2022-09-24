@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+//sourceCompatibility = 1.8
+//targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
+    compileOnly 'net.portswigger.burp.extender:burp-extender-api:2.3'
+//    compileOnly 'net.portswigger.burp.extender:montoya-api:0.9.5'
     implementation 'org.swinglabs:swingx:1.6.1'
     implementation 'com.github.CoreyD97:BurpExtenderUtilities:e800fd2d'
     implementation 'com.google.code.gson:gson:2.8.2'
@@ -19,10 +20,6 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpclient:4.5.6'
     implementation 'org.apache.commons:commons-text:1.7'
     implementation 'org.apache.logging.log4j:log4j-core:2.17.0'
-    // Test on unix system
-     testRuntime files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
-    // Test on Windows System
-//    testRuntime files('C:/Program Files/BurpSuitePro/burpsuite_pro.jar')
 }
 
 jar{
