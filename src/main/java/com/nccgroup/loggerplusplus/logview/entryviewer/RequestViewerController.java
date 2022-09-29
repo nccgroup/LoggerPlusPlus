@@ -1,11 +1,11 @@
 package com.nccgroup.loggerplusplus.logview.entryviewer;
 
-import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IMessageEditor;
 import burp.IMessageEditorController;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 public class RequestViewerController implements IMessageEditorController {
 
@@ -14,7 +14,7 @@ public class RequestViewerController implements IMessageEditorController {
     private final IMessageEditor responseEditor;
     private final RequestViewerPanel requestViewerPanel;
 
-    private IHttpRequestResponse currentItem;
+    private LogEntry currentEntry;
 
     public RequestViewerController(Preferences preferences, boolean requestEditable, boolean responseEditable) {
         this.preferences = preferences;
@@ -23,23 +23,18 @@ public class RequestViewerController implements IMessageEditorController {
         this.requestViewerPanel = new RequestViewerPanel(this);
     }
 
-    public IHttpRequestResponse getDisplayedEntity() {
-        return this.currentItem;
-    }
+    public void setDisplayedEntity(LogEntry logEntry) {
+        this.currentEntry = logEntry;
 
-    public void setDisplayedEntity(IHttpRequestResponse requestResponse) {
-        if(requestResponse != null && requestResponse.equals(currentItem)) return;
-
-        this.currentItem = requestResponse;
-        if (requestResponse != null && requestResponse.getRequest() != null) {
-            requestEditor.setMessage(requestResponse.getRequest(), true);
-        }else{
+        if (logEntry.getRequest() != null) {
+            requestEditor.setMessage(logEntry.getRequest(), true);
+        } else {
             requestEditor.setMessage(new byte[0], false);
         }
 
-        if (requestResponse != null && requestResponse.getResponse() != null) {
-            responseEditor.setMessage(requestResponse.getResponse(), false);
-        }else {
+        if (logEntry.getResponse() != null) {
+            responseEditor.setMessage(logEntry.getResponse(), false);
+        } else {
             responseEditor.setMessage(new byte[0], false);
         }
     }
@@ -61,27 +56,26 @@ public class RequestViewerController implements IMessageEditorController {
     }
 
     @Override
-    public byte[] getRequest()
-    {
-        if(currentItem == null || currentItem.getRequest() == null)
+    public byte[] getRequest() {
+        if (currentEntry != null && currentEntry.getRequest() != null) {
+            return currentEntry.getRequest();
+        } else {
             return new byte[0];
-        else
-            return currentItem.getRequest();
+        }
     }
 
     @Override
-    public byte[] getResponse()
-    {
-        if(currentItem == null || currentItem.getResponse() == null)
+    public byte[] getResponse() {
+        if (currentEntry != null && currentEntry.getResponse() != null) {
+            return currentEntry.getResponse();
+        } else {
             return new byte[0];
-        else
-            return currentItem.getResponse();
+        }
     }
 
     @Override
-    public IHttpService getHttpService()
-    {
-        if(currentItem == null) return null;
-        return currentItem.getHttpService();
+    public IHttpService getHttpService() {
+        if (currentEntry == null) return null;
+        return currentEntry.getHttpService();
     }
 }

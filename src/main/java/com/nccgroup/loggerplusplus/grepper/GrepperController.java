@@ -95,13 +95,13 @@ public class GrepperController {
 
     private GrepResults processEntry(LogEntry entry, Pattern pattern, final boolean searchRequests, final boolean searchResponses) {
         GrepResults grepResults = null;
-        if (entry.requestResponse != null) {
+        if (entry != null) {
             grepResults = new GrepResults(entry);
-            if (entry.requestResponse.getRequest() != null && searchRequests) {
-                processMatches(grepResults, pattern, entry.requestResponse.getRequest(), true);
+            if (entry.getRequest() != null && searchRequests) {
+                processMatches(grepResults, pattern, entry.getRequest(), true);
             }
-            if (entry.requestResponse.getResponse() != null && searchResponses) {
-                processMatches(grepResults, pattern, entry.requestResponse.getResponse(), false);
+            if (entry.getResponse() != null && searchResponses) {
+                processMatches(grepResults, pattern, entry.getResponse(), false);
             }
         }
         return grepResults;
@@ -128,7 +128,7 @@ public class GrepperController {
         return () -> {
             if (Thread.currentThread().isInterrupted()) return;
             GrepResults grepResults = null;
-            if (!inScopeOnly || LoggerPlusPlus.callbacks.isInScope(logEntry.url)) {
+            if (!inScopeOnly || LoggerPlusPlus.callbacks.isInScope(logEntry.getUrl())) {
                 grepResults = processEntry(logEntry, pattern, searchRequests, searchResponses);
             }
             for (GrepperListener listener : this.listeners) {

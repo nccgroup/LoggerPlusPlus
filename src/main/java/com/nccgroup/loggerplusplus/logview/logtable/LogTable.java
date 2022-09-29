@@ -12,20 +12,21 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.MultipleLogEntryMenu;
 import com.nccgroup.loggerplusplus.logview.SingleLogEntryMenu;
 import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
-import com.nccgroup.loggerplusplus.util.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.Globals;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.BooleanRenderer;
 
 import javax.swing.*;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -84,8 +85,8 @@ public class LogTable extends JTable
             }else {
                 // Use a relative instead of an absolute index (This prevents an issue when a filter is set)
                 LogEntry logEntry = getModel().getData().get(convertRowIndexToModel(selectedRow));
-                if (logEntry.requestResponse != null) {
-                    requestViewerController.setDisplayedEntity(logEntry.requestResponse);
+                if (logEntry != null) {
+                    requestViewerController.setDisplayedEntity(logEntry);
                 }
             }
         });

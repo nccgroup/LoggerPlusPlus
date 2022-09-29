@@ -46,12 +46,12 @@ public class Base64Exporter extends LogExporter implements ContextMenuExportProv
                             JsonObject jsonEntry = new JsonObject();
                             if (includeRequest) {
                                 jsonEntry.addProperty("request",
-                                        encoder.encodeToString(entry.requestResponse.getRequest()));
+                                        encoder.encodeToString(entry.getRequest()));
                             }
 
                             if (includeResponse) {
                                 jsonEntry.addProperty("response",
-                                        encoder.encodeToString(entry.requestResponse.getResponse()));
+                                        encoder.encodeToString(entry.getResponse()));
                             }
                             jsonEntries.add(jsonEntry);
                         }

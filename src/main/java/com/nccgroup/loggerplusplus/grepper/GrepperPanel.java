@@ -1,10 +1,9 @@
 package com.nccgroup.loggerplusplus.grepper;
 
-import burp.IHttpRequestResponse;
-import burp.IHttpRequestResponseWithMarkers;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.util.Globals;
 
@@ -83,7 +82,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
                 selectedMatch = (GrepResults.Match) selectedPath.getPath()[2];
             }
 
-            IHttpRequestResponse requestResponse = grepResultEntry.getLogEntry().getRequestResponse();
+            LogEntry requestResponse = grepResultEntry.getLogEntry();
             List<GrepResults.Match> matches;
 
             if (selectedMatch != null) {
@@ -92,10 +91,10 @@ public class GrepperPanel extends JPanel implements GrepperListener {
                 matches = grepResultEntry.getMatches();
             }
 
-            IHttpRequestResponseWithMarkers markedRequestResponse = controller.addMarkers(requestResponse, matches);
-            requestViewerController.setDisplayedEntity(markedRequestResponse);
+            requestViewerController.setDisplayedEntity(requestResponse);
 
             //TODO Setup message editor to support highlighting. Code is ready, waiting on API support.
+//            IHttpRequestResponseWithMarkers markedRequestResponse = controller.addMarkers(requestResponse, matches);
             //https://forum.portswigger.net/thread/eeditor-custom-highlighting-991b1a7e?CategoryId=burp-extensions
         });
 

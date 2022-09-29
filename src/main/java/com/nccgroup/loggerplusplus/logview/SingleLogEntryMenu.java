@@ -14,9 +14,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
-import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
-import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -112,7 +110,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         }
 
         this.add(new JPopupMenu.Separator());
-        final boolean inScope = LoggerPlusPlus.callbacks.isInScope(entry.url);
+        final boolean inScope = LoggerPlusPlus.callbacks.isInScope(entry.getUrl());
         JMenuItem scopeItem;
         if(!inScope){
             scopeItem = new JMenu("Add to scope");
@@ -120,7 +118,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
-                        URL domainURL = new URL(entry.protocol, entry.hostname, entry.targetPort, "");
+                        URL domainURL = new URL(entry.getProtocol(), entry.getHostname(), entry.getTargetPort(), "");
                         LoggerPlusPlus.callbacks.includeInScope(domainURL);
                     } catch (MalformedURLException e) {
                         JOptionPane.showMessageDialog(scopeItem, "Could not build URL for scope entry. Sorry!", "Add to scope", JOptionPane.ERROR_MESSAGE);
@@ -130,14 +128,14 @@ public class SingleLogEntryMenu extends JPopupMenu {
             scopeItem.add(new JMenuItem(new AbstractAction("Domain + Path") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.callbacks.includeInScope(entry.url);
+                    LoggerPlusPlus.callbacks.includeInScope(entry.getUrl());
                 }
             }));
         }else{
             scopeItem = new JMenuItem(new AbstractAction("Remove from scope") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.callbacks.excludeFromScope(entry.url);
+                    LoggerPlusPlus.callbacks.excludeFromScope(entry.getUrl());
                 }
             });
         }
@@ -162,7 +160,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem spider = new JMenuItem(new AbstractAction("Spider from here") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToSpider(entry.url);
+                LoggerPlusPlus.callbacks.sendToSpider(entry.getUrl());
             }
         });
         this.add(spider);
@@ -170,7 +168,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Do an active scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doActiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.doActiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
             }
         });
         this.add(activeScan);
@@ -179,10 +177,10 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Do a passive scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doPassiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
+                LoggerPlusPlus.callbacks.doPassiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), entry.getResponse());
             }
         });
-        passiveScan.setEnabled(entry.complete && isPro);
+        passiveScan.setEnabled(entry.isComplete() && isPro);
         this.add(passiveScan);
 
         this.add(new JPopupMenu.Separator());
@@ -190,7 +188,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem sendToRepeater = new JMenuItem(new AbstractAction("Send to Repeater") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToRepeater(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
+                LoggerPlusPlus.callbacks.sendToRepeater(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), "L++");
             }
         });
         this.add(sendToRepeater);
@@ -198,7 +196,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem sendToIntruder = new JMenuItem(new AbstractAction("Send to Intruder") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToIntruder(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.sendToIntruder(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
             }
         });
         this.add(sendToIntruder);
@@ -207,33 +205,18 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem comparerRequest = new JMenuItem(new AbstractAction("Request") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getRequest());
+                LoggerPlusPlus.callbacks.sendToComparer(entry.getRequest());
             }
         });
         sendToComparer.add(comparerRequest);
         JMenuItem comparerResponse = new JMenuItem(new AbstractAction("Response") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getResponse());
+                LoggerPlusPlus.callbacks.sendToComparer(entry.getResponse());
             }
         });
         sendToComparer.add(comparerResponse);
         this.add(sendToComparer);
-
-        if (logTableController.getPreferences().getSetting(Globals.PREF_LOG_LEVEL) == Level.DEBUG && entry.requestResponse != null) {
-            this.add(new JPopupMenu.Separator());
-            JMenuItem reprocessItem = new JMenuItem(new AbstractAction("Reprocess Entry") {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    new Thread(() -> {
-                        //TODO ADD IMPLEMENTATION
-                        entry.reprocess();
-                    }).start();
-                }
-            });
-            this.add(reprocessItem);
-        }
-
 
         this.add(new JPopupMenu.Separator());
 

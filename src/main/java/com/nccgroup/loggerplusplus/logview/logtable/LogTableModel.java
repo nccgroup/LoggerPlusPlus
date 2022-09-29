@@ -146,7 +146,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
             @Override
             protected Void doInBackground() {
                 for (int i = 0; i < entries.size(); i++) {
-                    boolean wasPresent = entries.get(i).matchingColorFilters.remove(filter.getUUID());
+                    boolean wasPresent = entries.get(i).getMatchingColorFilters().remove(filter.getUUID());
                     if (wasPresent) {
                         publish(i);
                     }
@@ -208,7 +208,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
             @Override
             protected Void doInBackground() {
                 for (int i = 0; i < entries.size(); i++) {
-                    boolean wasPresent = entries.get(i).matchingTags.remove(filter);
+                    boolean wasPresent = entries.get(i).getMatchingTags().remove(filter);
                     if (wasPresent) {
                         publish(i);
                     }

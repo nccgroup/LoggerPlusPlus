@@ -327,18 +327,18 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                         Map.Entry<UUID, Future<LogEntry>> abandonedEntry = iter.next();
                         if(abandonedEntry.getValue().isDone()){
                             LogEntry logEntry = abandonedEntry.getValue().get();
-                            if(logEntry.requestDateTime == null){
+                            if (logEntry.getRequestDateTime() == null) {
                                 //Should never be the case.
                                 //Entries should always have request times unless they are imported,
                                 //In which case they will never be awaiting a response so never in this list.
                                 continue;
                             }
-                            long entryTime = logEntry.requestDateTime.getTime();
+                            long entryTime = logEntry.getRequestDateTime().getTime();
                             long responseTimeout = 1000 * ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
                             if (timeNow - entryTime > responseTimeout) {
                                 iter.remove();
-                                LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);
-                                logEntry.requestResponse.setComment("Timed Out " + logEntry.requestResponse.getComment());
+                                LogEntry.extractAndRemoveUUIDFromComment(instanceIdentifier, logEntry);
+                                logEntry.setComment("Timed Out " + logEntry.getComment());
                                 removedUUIDs.add(abandonedEntry.getKey());
                             }
                         }

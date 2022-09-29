@@ -95,7 +95,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToSpider(entry.url);
+                    LoggerPlusPlus.callbacks.sendToSpider(entry.getUrl());
                 }
             }
         });
@@ -105,7 +105,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.doActiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                    LoggerPlusPlus.callbacks.doActiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
                 }
             }
         });
@@ -116,8 +116,8 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    if(entry.complete) { //Cannot scan entries without response
-                        LoggerPlusPlus.callbacks.doPassiveScan(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), entry.requestResponse.getResponse());
+                    if (entry.isComplete()) { //Cannot scan entries without response
+                        LoggerPlusPlus.callbacks.doPassiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), entry.getResponse());
                     }
                 }
             }
@@ -131,7 +131,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToRepeater(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest(), "L++");
+                    LoggerPlusPlus.callbacks.sendToRepeater(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), "L++");
                 }
             }
         });
@@ -141,7 +141,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToIntruder(entry.hostname, entry.targetPort, entry.isSSL, entry.requestResponse.getRequest());
+                    LoggerPlusPlus.callbacks.sendToIntruder(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
                 }
             }
         });
@@ -152,7 +152,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getRequest());
+                    LoggerPlusPlus.callbacks.sendToComparer(entry.getRequest());
                 }
             }
         });
@@ -161,8 +161,8 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    if(entry.complete) { //Do not add entries without a response
-                        LoggerPlusPlus.callbacks.sendToComparer(entry.requestResponse.getResponse());
+                    if (entry.isComplete()) { //Do not add entries without a response
+                        LoggerPlusPlus.callbacks.sendToComparer(entry.getResponse());
                     }
                 }
             }
@@ -191,10 +191,16 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         if(onlyUnique) values = new LinkedHashSet<String>();
         else values = new LinkedList<>();
         for (LogEntry item : items) {
-            switch (scope){
-                case URL: values.add(String.valueOf(item.url)); break;
-                case PATH: values.add(item.url.getPath()); break;
-                case DOMAIN: values.add(item.hostname); break;
+            switch (scope) {
+                case URL:
+                    values.add(String.valueOf(item.getUrl()));
+                    break;
+                case PATH:
+                    values.add(item.getUrl().getPath());
+                    break;
+                case DOMAIN:
+                    values.add(item.getHostname());
+                    break;
             }
         }
 

@@ -18,8 +18,12 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
+import com.nccgroup.loggerplusplus.logview.processor.LogProcessorHelper;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,60 +34,66 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+@Getter
+@Setter
 public class LogEntry {
 
 	Status previousStatus;
 	Status status = Status.UNPROCESSED;
-	public transient IHttpRequestResponse requestResponse;
 
-	public UUID identifier;
-	public int tool;
-	public String toolName;
-	public String hostname = "";
-	public String host = ""; // TODO better name?
-	public String method = "";
-	public URL url;
-	public boolean params = false;
-	public Short responseStatus = -1;
-	public String responseStatusText = "";
-	public String responseHttpVersion = "";
-	public boolean hasBodyParam = false;
-	public boolean hasCookieParam = false;
-	public String title = "";
-	public String newCookies = "";
-	public String sentCookies = "";
-	public String listenerInterface = "";
-	public boolean isSSL = false;
-	public String urlExtension = "";
-	public String referrerURL = "";
-	public String requestHttpVersion = "";
-	public String requestContentType = "";
-	public String protocol = "";
-	public int targetPort = -1;
-	public int requestBodyLength = -1;
-	public String clientIP = "";
-	public boolean hasSetCookies = false;
-	public String formattedResponseTime = "";
-	public String responseMimeType = "";
-	public String responseInferredMimeType = "";
-	public int responseBodyLength = -1;
-	public String responseContentType = "";
-	public boolean complete = false;
-	public CookieJarStatus usesCookieJar = CookieJarStatus.NO;
-	public String responseHash;
-	public String redirectURL;
-	public String origin = "";
-	// public String[] regexAllReq = {"","","","",""};
-	// public String[] regexAllResp = {"","","","",""};
+	@Getter(AccessLevel.NONE)
+	@Setter(AccessLevel.NONE)
+	private IHttpRequestResponse requestResponse; //Only used for request, comment and HTTP Service.
+	private byte[] response;
 
-	public List<UUID> matchingColorFilters;
-	public List<Tag> matchingTags;
-	public String formattedRequestTime;
-	public Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
-	public Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
-	public int requestResponseDelay = -1;
-	public List<String> responseHeaders;
-	public List<String> requestHeaders;
+	private UUID identifier;
+	private int tool;
+	private String toolName;
+	private String hostname = "";
+	private String host = ""; // TODO better name?
+	private String method = "";
+	private URL url;
+	private boolean params = false;
+	private Short responseStatus = -1;
+	private String responseStatusText = "";
+	private String responseHttpVersion = "";
+	private boolean hasBodyParam = false;
+	private boolean hasCookieParam = false;
+	private String title = "";
+	private String newCookies = "";
+	private String sentCookies = "";
+	private String listenerInterface = "";
+	private boolean isSSL = false;
+	private String urlExtension = "";
+	private String referrerURL = "";
+	private String requestHttpVersion = "";
+	private String requestContentType = "";
+	private String protocol = "";
+	private int targetPort = -1;
+	private int requestBodyLength = -1;
+	private String clientIP = "";
+	private boolean hasSetCookies = false;
+	private String formattedResponseTime = "";
+	private String responseMimeType = "";
+	private String responseInferredMimeType = "";
+	private int responseBodyLength = -1;
+	private String responseContentType = "";
+	private boolean complete = false;
+	private CookieJarStatus usesCookieJar = CookieJarStatus.NO;
+	private String responseHash;
+	private String redirectURL;
+	private String origin = "";
+	// private String[] regexAllReq = {"","","","",""};
+	// private String[] regexAllResp = {"","","","",""};
+
+	private List<UUID> matchingColorFilters;
+	private List<Tag> matchingTags;
+	private String formattedRequestTime;
+	private Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	private Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	private int requestResponseDelay = -1;
+	private List<String> responseHeaders;
+	private List<String> requestHeaders;
 	private List<IParameter> tempParameters;
 	private List<String> parameters;
 	private List<String> reflectedParameters;
@@ -99,6 +109,7 @@ public class LogEntry {
 		this.tool = tool;
 		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
 		this.requestResponse = requestResponse;
+		this.response = requestResponse.getResponse();
 	}
 
 	/**
@@ -126,7 +137,7 @@ public class LogEntry {
 				// Else continue, fall through to process response
 			}
 			case AWAITING_RESPONSE: {
-				if (this.requestResponse.getResponse() == null) {
+				if (this.response == null) {
 					this.status = Status.AWAITING_RESPONSE;
 					break;
 				}
@@ -161,7 +172,6 @@ public class LogEntry {
 		if (!LoggerPlusPlus.isUrlInScope(uUrl))
 			return Status.IGNORED;
 
-		IHttpService tempRequestResponseHttpService = requestResponse.getHttpService();
 		requestHeaders = tempAnalyzedReq.getHeaders();
 
 		// Get HTTP Version, which would be the last token in "GET /admin/login/?next\u003d/admin/ HTTP/1.1"
@@ -173,10 +183,10 @@ public class LogEntry {
 		this.parameters = tempParameters.stream().map(IParameter::getName).collect(Collectors.toList());
 
 		this.url = tempAnalyzedReq.getUrl();
-		this.hostname = tempRequestResponseHttpService.getHost();
-		this.protocol = tempRequestResponseHttpService.getProtocol();
+		this.hostname = this.requestResponse.getHttpService().getHost();
+		this.protocol = this.requestResponse.getHttpService().getProtocol();
 		this.isSSL = this.protocol.equals("https");
-		this.targetPort = tempRequestResponseHttpService.getPort();
+		this.targetPort = this.requestResponse.getHttpService().getPort();
 
 		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
 				|| (this.protocol.equals("http") && this.targetPort == 80);
@@ -196,7 +206,7 @@ public class LogEntry {
 			this.urlExtension = "";
 		}
 
-		this.requestBodyLength = requestResponse.getRequest().length - tempAnalyzedReq.getBodyOffset();
+		this.requestBodyLength = this.getRequest().length - tempAnalyzedReq.getBodyOffset();
 		this.hasBodyParam = requestBodyLength > 0;
 		this.params = this.url.getQuery() != null || this.hasBodyParam;
 		this.hasCookieParam = false;
@@ -310,16 +320,20 @@ public class LogEntry {
 	 */
 	public void addResponse(IHttpRequestResponse requestResponse, Date arrivalTime) {
 		this.responseDateTime = arrivalTime;
-		this.requestResponse = requestResponse;
+
+		//IHttpRequestResponse objects received by the proxy listener do not contain the latest request.
+		//So we must store the content separately.
+		this.response = requestResponse.getResponse();
+		this.setComment(requestResponse.getComment()); //Update the comment with the current comment
 	}
 
 	private Status processResponse() {
 		reflectedParameters = new ArrayList<>();
 		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers()
-				.analyzeResponse(requestResponse.getResponse());
+				.analyzeResponse(response);
 
 		this.responseStatus = tempAnalyzedResp.getStatusCode();
-		this.responseBodyLength = requestResponse.getResponse().length - tempAnalyzedResp.getBodyOffset();
+		this.responseBodyLength = response.length - tempAnalyzedResp.getBodyOffset();
 		this.responseMimeType = tempAnalyzedResp.getStatedMimeType();
 		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
 
@@ -395,18 +409,18 @@ public class LogEntry {
 		 **************************************/
 
 		Long maxRespSize = ((Integer) LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(Globals.PREF_MAX_RESP_SIZE)) * 1000000L;
-		int bodyOffset = requestResponse.getResponse().length - responseBodyLength;
+		int bodyOffset = response.length - responseBodyLength;
 		if (responseBodyLength < maxRespSize) {
 			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
 			if (this.responseInferredMimeType.equalsIgnoreCase("HTML")) {
-				String strFullResponse = new String(requestResponse.getResponse());
+				String strFullResponse = new String(response);
 				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
 				if (titleMatcher.find()) {
 					this.title = titleMatcher.group(1);
 				}
 			}
 
-			String responseBody = new String(requestResponse.getResponse(), bodyOffset, responseBodyLength);
+			String responseBody = new String(response, bodyOffset, responseBodyLength);
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
 			reflectedParameters = tempParameters.parallelStream()
 					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
@@ -419,17 +433,11 @@ public class LogEntry {
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
 			reflectedParameters = tempParameters.parallelStream()
 					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
-							&& reflectionController.validReflection(new String(requestResponse.getResponse(), 0, bodyOffset), iParameter))
+							&& reflectionController.validReflection(new String(response, 0, bodyOffset), iParameter))
 					.map(IParameter::getName).collect(Collectors.toList());
 
 			//Trim the response down to a maximum size, but at least keep the headers!
-			//Then save the buffers to temp files
-			//And finally restore the original body to the original IHttpRequestResponse object so we don't modify the content sent to the browser.
-			IHttpRequestResponse original = this.requestResponse;
-			byte[] originalResponse = this.requestResponse.getResponse();
-			requestResponse.setResponse((new String(this.requestResponse.getResponse(), 0, requestResponse.getResponse().length - responseBodyLength) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8));
-//			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
-			original.setResponse(originalResponse);
+			this.response = (new String(this.response, 0, bodyOffset) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8);
 		}
 
 
@@ -494,8 +502,12 @@ public class LogEntry {
 		// }
 	}
 
-	public IHttpRequestResponse getRequestResponse() {
-		return requestResponse;
+	public byte[] getRequest() {
+		return this.requestResponse.getRequest();
+	}
+
+	public byte[] getResponse() {
+		return response;
 	}
 
 	public UUID getIdentifier() {
@@ -516,13 +528,18 @@ public class LogEntry {
 		this.requestResponse.setComment(comment);
 	}
 
+	public String getComment() {
+		return this.requestResponse.getComment();
+	}
+
+
 	public Object getValueByKey(LogEntryField columnName) {
 
 		try {
 			switch (columnName) {
 				case PROXY_TOOL:
 				case REQUEST_TOOL:
-					return toolName;
+					return getToolName();
 				case TAGS:
 					return this.matchingTags.stream().map(Tag::getName).collect(Collectors.toList());
 				case URL:
@@ -629,12 +646,12 @@ public class LogEntry {
 					return reflectedParameters.size();
 				case REQUEST_BODY: // request
 					if (requestBodyLength == 0) return "";
-					return new String(requestResponse.getRequest(), requestResponse.getRequest().length - requestBodyLength, requestBodyLength);
-//							.substring(requestResponse.getRequest().length - requestBodyLength);
+					return new String(getRequest(), getRequest().length - requestBodyLength, requestBodyLength);
+//							.substring(request.length - requestBodyLength);
 				case RESPONSE_BODY: // response
 					if (responseBodyLength == 0) return "";
-					return new String(requestResponse.getResponse(), requestResponse.getResponse().length - responseBodyLength, responseBodyLength);
-//							.substring(requestResponse.getResponse().length - responseBodyLength);
+					return new String(response, response.length - responseBodyLength, responseBodyLength);
+//							.substring(response.length - responseBodyLength);
 				case RTT:
 					return requestResponseDelay;
 				case REQUEST_HEADERS:
@@ -644,9 +661,9 @@ public class LogEntry {
 				case REDIRECT_URL:
 					return redirectURL;
 				case BASE64_REQUEST:
-					return Base64.getEncoder().encodeToString(requestResponse.getRequest());
+					return Base64.getEncoder().encodeToString(this.getRequest());
 				case BASE64_RESPONSE:
-					return Base64.getEncoder().encodeToString(requestResponse.getResponse());
+					return Base64.getEncoder().encodeToString(response);
 				case RESPONSE_HASH: {
 					if (responseHash == null) {
 						responseHash = DigestUtils
@@ -668,6 +685,10 @@ public class LogEntry {
 
 	public List<Tag> getMatchingTags() {
 		return matchingTags;
+	}
+
+	public IHttpService getHttpService() {
+		return this.requestResponse.getHttpService();
 	}
 
 	public enum CookieJarStatus {
@@ -747,6 +768,10 @@ public class LogEntry {
 
 	@Override
 	public String toString() {
-		return this.status + " " + this.url.toString();
+		return this.url.toString();
+	}
+
+	public static UUID extractAndRemoveUUIDFromComment(String instanceIdentifier, LogEntry logEntry) {
+		return LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);
 	}
 }
