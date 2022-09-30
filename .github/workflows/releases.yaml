@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: adopt
-          java-version: '8'
+          java-version: '15'
 
       # burpsuite_pro.jar is not available, disable tests
       - name: Build
