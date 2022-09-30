@@ -26,10 +26,16 @@ public class RequestViewerController implements IMessageEditorController {
     public void setDisplayedEntity(LogEntry logEntry) {
         this.currentEntry = logEntry;
 
+        if (logEntry == null) {
+            requestEditor.setMessage(new byte[0], true);
+            responseEditor.setMessage(new byte[0], false);
+            return;
+        }
+
         if (logEntry.getRequest() != null) {
             requestEditor.setMessage(logEntry.getRequest(), true);
         } else {
-            requestEditor.setMessage(new byte[0], false);
+            requestEditor.setMessage(new byte[0], true);
         }
 
         if (logEntry.getResponse() != null) {
