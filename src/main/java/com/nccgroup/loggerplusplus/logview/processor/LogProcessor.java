@@ -32,13 +32,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
     private final LogTableController logTableController;
     private final ExportController exportController;
     private final Preferences preferences;
-    private final ConcurrentHashMap<Integer, UUID> proxyIdToUUIDMap;
-    private final ConcurrentHashMap<UUID, LogEntry> entriesPendingProcessing;
-    private final ConcurrentHashMap<UUID, Future<LogEntry>> entryProcessingFutures;
+    private final ConcurrentHashMap<Integer, LogEntry> entriesPendingProcessing;
+    private final ConcurrentHashMap<Integer, Future<LogEntry>> entryProcessingFutures;
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
-    private final String instanceIdentifier = String.format("%02d", (int) Math.floor((Math.random() * 100)));
 
     Logger logger = LogManager.getLogger(this);
 
@@ -53,7 +51,6 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         this.exportController = exportController;
         this.preferences = this.loggerPlusPlus.getPreferencesController().getPreferences();
 
-        this.proxyIdToUUIDMap = new ConcurrentHashMap<>();
         this.entriesPendingProcessing = new ConcurrentHashMap<>();
         this.entryProcessingFutures = new ConcurrentHashMap<>();
         this.entryProcessExecutor = new PausableThreadPoolExecutor(0, 2147483647,
@@ -80,30 +77,30 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      */
     @Override
     public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
-        if(httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
+        if (httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
-//        if(!(Boolean) preferences.getSetting(PREF_LOG_OTHER_LIVE)){
-//            //Submit normally, we're not tracking requests and responses separately.
-//            if(!isRequestOnly) { //But only add entries complete with a response.
-//                final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-//                submitNewEntryProcessingRunnable(logEntry);
-//            }
-//            return;
-//        }
-
-        if(isRequestOnly){
+        if (isRequestOnly) {
+            //If we're handling a new request, create a log entry.
+            //We must also handle proxy messages here, since the HTTP listener operates after the proxy listener
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-            //Tag the request with the UUID in the comment field, as this persists for when we get the response back!
-            LogProcessorHelper.tagRequestResponseWithUUID(instanceIdentifier, logEntry.getIdentifier(), httpMessage);
+
+            //Set the entry's identifier to the HTTP request's hashcode.
+            // For non-proxy messages, this doesn't change when we receive the response
+            logEntry.setIdentifier(System.identityHashCode(httpMessage.getRequest()));
+            //Submit a new task to process the entry
             submitNewEntryProcessingRunnable(logEntry);
         } else {
-            if (toolFlag == IBurpExtenderCallbacks.TOOL_PROXY)
+            if (toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) {
+                //If the request came from the proxy, the response isn't final yet.
+                //Just tag the comment with the identifier so we can match it up later.
+                Integer identifier = System.identityHashCode(httpMessage.getRequest());
+                LogProcessorHelper.addIdentifierInComment(identifier, httpMessage);
                 return; //Process proxy responses using processProxyMessage
-
-            UUID uuid = LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
-            if (uuid != null) {
-                updateRequestWithResponse(uuid, arrivalTime, httpMessage);
+            } else {
+                //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
+                Integer identifier = System.identityHashCode(httpMessage.getRequest());
+                updateRequestWithResponse(identifier, arrivalTime, httpMessage);
             }
         }
     }
@@ -121,13 +118,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
         if (proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
         Date arrivalTime = new Date();
 
-        if (!isRequestOnly) { //We only want to handle responses.
-            //We're handling a response.
-            IHttpRequestResponse httpMessage = proxyMessage.getMessageInfo();
-            UUID uuid = LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, httpMessage);
-            if (uuid != null) {
-                updateRequestWithResponse(uuid, arrivalTime, httpMessage);
-            }
+        if (isRequestOnly) {
+
+        } else { //We only want to handle responses.
+            Integer identifier = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(proxyMessage.getMessageInfo());
+            updateRequestWithResponse(identifier, arrivalTime, proxyMessage.getMessageInfo());
         }
     }
 
@@ -136,12 +131,13 @@ public class LogProcessor implements IHttpListener, IProxyListener {
      * If it has not yet been processed, add the response information to the entry and let the original job handle it.
      * Otherwise, create a new job to process the response.
      * Unknown UUID's signify the response arrived after the pending request was cleaned up.
+     *
      * @param entryIdentifier The unique UUID for the log entry.
-     * @param arrivalTime The arrival time of the response.
+     * @param arrivalTime     The arrival time of the response.
      * @param requestResponse The HTTP request response object.
      */
-    private void updateRequestWithResponse(UUID entryIdentifier, Date arrivalTime, IHttpRequestResponse requestResponse){
-        if(entriesPendingProcessing.containsKey(entryIdentifier)){
+    private void updateRequestWithResponse(Integer entryIdentifier, Date arrivalTime, IHttpRequestResponse requestResponse) {
+        if (entriesPendingProcessing.containsKey(entryIdentifier)) {
             //Not yet started processing the entry, we can add the response so it is processed in the first pass
             final LogEntry logEntry = entriesPendingProcessing.get(entryIdentifier);
             //Update the requestResponse with the new one, and tell it when it arrived.
@@ -150,7 +146,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             //Do nothing now, there's already a runnable submitted to process it somewhere in the queue.
             return;
 
-        }else if(entryProcessingFutures.containsKey(entryIdentifier)){
+        } else if (entryProcessingFutures.containsKey(entryIdentifier)) {
             //Already started processing.
 
             //Get the processing thread
@@ -159,8 +155,8 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             //Submit a job for the processing of its response.
             //This will block on the request finishing processing, then update the response and process it separately.
             entryProcessExecutor.submit(createEntryUpdateRunnable(processingFuture, requestResponse, arrivalTime));
-        }else{
-            //Unknown UUID. Potentially for a request which was ignored or cleaned up already?
+        } else {
+            //Unknown Identifier. Potentially for a request which was ignored or cleaned up already?
         }
     }
 
@@ -319,12 +315,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             long timeNow = new Date().getTime();
             synchronized (entryProcessingFutures){
                 try {
-                    HashSet<UUID> removedUUIDs = new HashSet<>();
-                    Iterator<Map.Entry<UUID, Future<LogEntry>>> iter
+                    Iterator<Map.Entry<Integer, Future<LogEntry>>> iter
                             = entryProcessingFutures.entrySet().iterator();
 
                     while (iter.hasNext()) {
-                        Map.Entry<UUID, Future<LogEntry>> abandonedEntry = iter.next();
+                        Map.Entry<Integer, Future<LogEntry>> abandonedEntry = iter.next();
                         if(abandonedEntry.getValue().isDone()){
                             LogEntry logEntry = abandonedEntry.getValue().get();
                             if (logEntry.getRequestDateTime() == null) {
@@ -337,25 +332,13 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                             long responseTimeout = 1000 * ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
                             if (timeNow - entryTime > responseTimeout) {
                                 iter.remove();
-                                LogEntry.extractAndRemoveUUIDFromComment(instanceIdentifier, logEntry);
-                                logEntry.setComment("Timed Out " + logEntry.getComment());
-                                removedUUIDs.add(abandonedEntry.getKey());
+                                if (logEntry.getTool() == IBurpExtenderCallbacks.TOOL_PROXY) {
+                                    //Remove the identifier from the comment.
+                                    LogEntry.extractAndRemoveIdentifierFromComment(logEntry);
+                                }
+                                logEntry.setComment(logEntry.getComment() + " Timed Out");
                             }
                         }
-                    }
-
-                    //Clean the removed UUIDs from the proxy reference map also.
-                    Iterator<Map.Entry<Integer, UUID>> proxyMapIter = proxyIdToUUIDMap.entrySet().iterator();
-                    while (proxyMapIter.hasNext()) {
-                        Map.Entry<Integer, UUID> entry = proxyMapIter.next();
-                        if (removedUUIDs.contains(entry.getValue())) {
-                            iter.remove();
-                        }
-                    }
-
-                    if (removedUUIDs.size() > 0) {
-                        logger.debug("Cleaned Up " + removedUUIDs.size()
-                                + " proxy requests without a response after the specified timeout.");
                     }
                 }catch (Exception e){
                     e.printStackTrace();

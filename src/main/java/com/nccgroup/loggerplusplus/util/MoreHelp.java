@@ -3,7 +3,6 @@ package com.nccgroup.loggerplusplus.util;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -11,7 +10,6 @@ import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,7 +90,7 @@ public class MoreHelp {
 		final Object[] options = msgOptions;
 		final int[] choice = new int[1];
 		choice[0] = 0;
-		choice[0] = JOptionPane.showOptionDialog(null, strQuestion, strTitle, JOptionPane.YES_NO_CANCEL_OPTION,
+		choice[0] = JOptionPane.showOptionDialog(LoggerPlusPlus.instance.getLoggerFrame(), strQuestion, strTitle, JOptionPane.YES_NO_CANCEL_OPTION,
 				JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
 		return choice[0];
 	}

@@ -46,7 +46,7 @@ public class LogEntry {
 	private IHttpRequestResponse requestResponse; //Only used for request, comment and HTTP Service.
 	private byte[] response;
 
-	private UUID identifier;
+	private Integer identifier;
 	private int tool;
 	private String toolName;
 	private String hostname = "";
@@ -99,7 +99,6 @@ public class LogEntry {
 	private List<String> reflectedParameters;
 
 	private LogEntry() {
-		this.identifier = UUID.randomUUID();
 		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<UUID>());
 		this.matchingTags = Collections.synchronizedList(new ArrayList<Tag>());
 	}
@@ -510,10 +509,6 @@ public class LogEntry {
 		return response;
 	}
 
-	public UUID getIdentifier() {
-		return this.identifier;
-	}
-
 	public void setReqestTime(Date requestTime) {
 		this.requestDateTime = requestTime;
 		this.formattedRequestTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.requestDateTime);
@@ -771,7 +766,7 @@ public class LogEntry {
 		return this.url.toString();
 	}
 
-	public static UUID extractAndRemoveUUIDFromComment(String instanceIdentifier, LogEntry logEntry) {
-		return LogProcessorHelper.extractAndRemoveUUIDFromRequestResponseComment(instanceIdentifier, logEntry.requestResponse);
+	public static Integer extractAndRemoveIdentifierFromComment(LogEntry logEntry) {
+		return LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(logEntry.requestResponse);
 	}
 }

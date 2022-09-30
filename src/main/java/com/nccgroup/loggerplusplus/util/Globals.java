@@ -133,9 +133,8 @@ public class Globals {
             .append("{'id':" + RESPONSE_BODY + ",'name':'Response','defaultVisibleName':'Response Body','visibleName':'Response Body','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(RESPONSE_BODY.getDescription()) + "'},")
             .append("{'id':" + RESPONSE_HEADERS + ",'name':'ResponseHeaders','defaultVisibleName':'Response Headers','visibleName':'Response Headers','preferredWidth':150,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(RESPONSE_HEADERS.getDescription()) + "'}")
             .append("]").toString();
-             
 
 
-    public static final Pattern UUID_COMMENT_PATTERN = Pattern.compile("\\$LPP:(\\d\\d):(.*?)\\$");
+    public static final Pattern LOG_ENTRY_ID_PATTERN = Pattern.compile("\\$LPP:(\\d+)\\$");
     public static final Pattern HTML_TITLE_PATTERN = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
 }
