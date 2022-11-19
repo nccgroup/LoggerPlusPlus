@@ -28,6 +28,7 @@ public enum LogEntryField {
     METHOD(FieldGroup.REQUEST, String.class, "The request method used.", "Method"),
     PATH(FieldGroup.REQUEST, String.class, "The path component of the requested URL.", "Path"),
     QUERY(FieldGroup.REQUEST, String.class, "The query parameters of the requested URL.", "Query", "GetParams", "QueryParams"),
+    PATHQUERY(FieldGroup.REQUEST, String.class, "The path and query components of the requested URL.", "PathQuery"),
     PROTOCOL(FieldGroup.REQUEST, String.class, "The protocol component of the requested URL.", "Protocol"),
     ISSSL(FieldGroup.REQUEST, Boolean.class, "Did the request use SSL?", "IsSSL", "ssl"),
     USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar to see if any of them are in use.", "UsesCookieJar", "CookieJar"),
