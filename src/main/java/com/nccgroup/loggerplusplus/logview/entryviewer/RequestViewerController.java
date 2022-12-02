@@ -26,6 +26,9 @@ public class RequestViewerController {
     }
 
     public void setDisplayedEntity(LogEntry logEntry) {
+        // Only update message if it's new. This fixes issue #164 and improves performance during heavy scanning.
+        if (this.currentEntry == logEntry) { return; }
+
         this.currentEntry = logEntry;
 
         if (logEntry == null || logEntry.getRequest() == null) {

@@ -540,6 +540,8 @@ public class LogEntry {
 					return (this.url != null ? this.url.getPath() : "");
 				case QUERY:
 					return (this.url != null ? this.url.getQuery() : "");
+				case PATHQUERY:
+					return this.url.getFile();
 				case STATUS:
 					return this.responseStatus;
 				case STATUS_TEXT:

@@ -83,7 +83,7 @@ public class Globals {
             "\"filter\":{\"filter\":\"Request.Complete == False\"},\"filterString\":\"Request.Complete == False\",\"backgroundColor\":{\"value\":-16777216,\"falpha\":0.0}," +
             "\"foregroundColor\":{\"value\":-65536,\"falpha\":0.0},\"enabled\":true,\"modified\":false,\"shouldRetest\":true,\"priority\":1}}";
 
-    public static final int CURRENT_COLUMN_VERSION = 7;
+    public static final int CURRENT_COLUMN_VERSION = 8;
     private static int colOrder = 0;
     public static final String DEFAULT_LOG_TABLE_COLUMNS_JSON = new StringBuilder().append("[")
             .append("{'id':" + NUMBER + ",'name':'Number','defaultVisibleName':'#','visibleName':'#','preferredWidth':65,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(NUMBER.getDescription()) + "'},")
@@ -99,6 +99,7 @@ public class Globals {
             .append("{'id':" + PATH + ",'name':'Path','defaultVisibleName':'Path','visibleName':'Path','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(PATH.getDescription()) + "'},")
             .append("{'id':" + EXTENSION + ",'name':'UrlExtension','defaultVisibleName':'Extension','visibleName':'Extension','preferredWidth':70,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(EXTENSION.getDescription()) + "'},")
             .append("{'id':" + QUERY + ",'name':'Query','defaultVisibleName':'Query','visibleName':'Query','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(QUERY.getDescription()) + "'},")
+            .append("{'id':" + PATHQUERY + ",'name':'Path Query','defaultVisibleName':'Path Query','visibleName':'Path Query','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(PATHQUERY.getDescription()) + "'},")
             .append("{'id':" + URL + ",'name':'Url','defaultVisibleName':'URL','visibleName':'URL','preferredWidth':250,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(URL.getDescription()) + "'},")
             .append("{'id':" + HASPARAMS + ",'name':'Has Params','defaultVisibleName':'Has Params','visibleName':'Has Params','preferredWidth':75,'readonly':true,'order':" + colOrder++ + ",'visible':false,'description':'" + StringEscapeUtils.escapeJson(HASPARAMS.getDescription()) + "'},")
             .append("{'id':" + STATUS + ",'name':'Status','defaultVisibleName':'Status','visibleName':'Status','preferredWidth':55,'readonly':true,'order':" + colOrder++ + ",'visible':true,'description':'" + StringEscapeUtils.escapeJson(STATUS.getDescription()) + "'},")
