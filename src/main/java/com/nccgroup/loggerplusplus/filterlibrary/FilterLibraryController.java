@@ -10,6 +10,7 @@ import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filter.tag.TagListener;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,9 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
+@Log4j2
 public class FilterLibraryController {
 
-    private final LoggerPlusPlus loggerPlusPlus;
     private final Preferences preferences;
     private final FilterLibraryPanel panel;
     private final ArrayList<FilterLibraryListener> listeners;
@@ -30,10 +31,7 @@ public class FilterLibraryController {
     private final HashMap<UUID, Tag> tagFilters;
     private final ArrayList<TagListener> tagListeners;
 
-    Logger logger = LogManager.getRootLogger();
-
-    public FilterLibraryController(LoggerPlusPlus loggerPlusPlus, PreferencesController preferencesController) {
-        this.loggerPlusPlus = loggerPlusPlus;
+    public FilterLibraryController(PreferencesController preferencesController) {
         this.preferences = preferencesController.getPreferences();
         this.listeners = new ArrayList<>();
         this.colorFilterListeners = new ArrayList<>();
@@ -42,10 +40,6 @@ public class FilterLibraryController {
         this.colorFilters = preferences.getSetting(Globals.PREF_COLOR_FILTERS);
         this.tagFilters = preferences.getSetting(Globals.PREF_TAG_FILTERS);
         this.panel = new FilterLibraryPanel(this);
-    }
-
-    public LoggerPlusPlus getLoggerPlusPlus() {
-        return loggerPlusPlus;
     }
 
     public FilterLibraryPanel getFilterLibraryPanel() {
@@ -119,7 +113,7 @@ public class FilterLibraryController {
             try {
                 colorFilterListener.onColorFilterAdd(colorFilter);
             } catch (Exception e) {
-                logger.error(e);
+                log.error(e);
             }
         }
         saveColorFilters();
@@ -133,7 +127,7 @@ public class FilterLibraryController {
             try{
                 listener.onColorFilterRemove(colorFilter);
             }catch (Exception e){
-                logger.error(e);
+                log.error(e);
             }
         }
         saveColorFilters();
@@ -145,7 +139,7 @@ public class FilterLibraryController {
             try{
                 listener.onColorFilterChange(colorFilter);
             }catch (Exception e){
-                logger.error(e);
+                log.error(e);
             }
         }
         saveColorFilters();
@@ -174,7 +168,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagAdd(tag);
             } catch (Exception error) {
-                logger.error(error);
+                log.error(error);
             }
         }
         saveTags();
@@ -188,7 +182,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagRemove(tag);
             } catch (Exception error) {
-                logger.error(error);
+                log.error(error);
             }
         }
         saveTags();
@@ -200,7 +194,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagChange(tag);
             } catch (Exception e) {
-                logger.error(e);
+                log.error(e);
             }
         }
         saveTags();

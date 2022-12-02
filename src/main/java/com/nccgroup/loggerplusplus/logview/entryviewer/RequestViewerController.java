@@ -1,87 +1,47 @@
 package com.nccgroup.loggerplusplus.logview.entryviewer;
 
-import burp.IHttpService;
-import burp.IMessageEditor;
-import burp.IMessageEditorController;
+import burp.api.montoya.ui.editor.EditorOptions;
+import burp.api.montoya.ui.editor.HttpRequestEditor;
+import burp.api.montoya.ui.editor.HttpResponseEditor;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import lombok.Getter;
 
-public class RequestViewerController implements IMessageEditorController {
+@Getter
+public class RequestViewerController {
 
     private final Preferences preferences;
-    private final IMessageEditor requestEditor;
-    private final IMessageEditor responseEditor;
+    private final HttpRequestEditor requestEditor;
+    private final HttpResponseEditor responseEditor;
     private final RequestViewerPanel requestViewerPanel;
 
     private LogEntry currentEntry;
 
-    public RequestViewerController(Preferences preferences, boolean requestEditable, boolean responseEditable) {
+    public RequestViewerController(Preferences preferences) {
         this.preferences = preferences;
-        this.requestEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, requestEditable);
-        this.responseEditor = LoggerPlusPlus.callbacks.createMessageEditor(this, responseEditable);
+        this.requestEditor = LoggerPlusPlus.montoya.userInterface().createHttpRequestEditor(EditorOptions.READ_ONLY);
+        this.responseEditor = LoggerPlusPlus.montoya.userInterface().createHttpResponseEditor(EditorOptions.READ_ONLY);
         this.requestViewerPanel = new RequestViewerPanel(this);
     }
 
     public void setDisplayedEntity(LogEntry logEntry) {
         this.currentEntry = logEntry;
 
-        if (logEntry == null) {
-            requestEditor.setMessage(new byte[0], true);
-            responseEditor.setMessage(new byte[0], false);
-            return;
+        if (logEntry == null || logEntry.getRequest() == null) {
+            requestEditor.setRequest(null);
+        }else{
+            requestEditor.setRequest(logEntry.getRequest());
         }
 
-        if (logEntry.getRequest() != null) {
-            requestEditor.setMessage(logEntry.getRequest(), true);
-        } else {
-            requestEditor.setMessage(new byte[0], true);
-        }
-
-        if (logEntry.getResponse() != null) {
-            responseEditor.setMessage(logEntry.getResponse(), false);
-        } else {
-            responseEditor.setMessage(new byte[0], false);
+        if (logEntry == null || logEntry.getResponse() == null) {
+            responseEditor.setResponse(null);
+        }else{
+            responseEditor.setResponse(logEntry.getResponse());
         }
     }
 
-    public IMessageEditor getRequestEditor() {
-        return requestEditor;
-    }
+    public void setMarkers(){
 
-    public IMessageEditor getResponseEditor() {
-        return responseEditor;
-    }
-
-    public Preferences getPreferences() {
-        return preferences;
-    }
-
-    public RequestViewerPanel getRequestViewerPanel() {
-        return requestViewerPanel;
-    }
-
-    @Override
-    public byte[] getRequest() {
-        if (currentEntry != null && currentEntry.getRequest() != null) {
-            return currentEntry.getRequest();
-        } else {
-            return new byte[0];
-        }
-    }
-
-    @Override
-    public byte[] getResponse() {
-        if (currentEntry != null && currentEntry.getResponse() != null) {
-            return currentEntry.getResponse();
-        } else {
-            return new byte[0];
-        }
-    }
-
-    @Override
-    public IHttpService getHttpService() {
-        if (currentEntry == null) return null;
-        return currentEntry.getHttpService();
     }
 }

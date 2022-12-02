@@ -13,7 +13,6 @@
 package com.nccgroup.loggerplusplus.logview.logtable;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 

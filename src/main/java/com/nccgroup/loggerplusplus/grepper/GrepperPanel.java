@@ -3,6 +3,7 @@ package com.nccgroup.loggerplusplus.grepper;
 import com.coreyd97.BurpExtenderUtilities.HistoryField;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.util.Globals;
@@ -72,7 +73,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         });
 
         this.grepResultsTable = new GrepResultsTable(controller);
-        this.requestViewerController = new RequestViewerController(preferences, false, false);
+        this.requestViewerController = new RequestViewerController(preferences);
 
         grepResultsTable.addTreeSelectionListener(treeSelectionEvent -> {
             TreePath selectedPath = treeSelectionEvent.getPath();
@@ -137,7 +138,7 @@ public class GrepperPanel extends JPanel implements GrepperListener {
         try {
             pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         } catch (PatternSyntaxException e) {
-            JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(controller.getLoggerPlusPlus().getMainViewController().getUiComponent()), "Pattern Syntax Invalid", "Invalid Pattern", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(JOptionPane.getFrameForComponent(LoggerPlusPlus.instance.getMainViewController().getUiComponent()), "Pattern Syntax Invalid", "Invalid Pattern", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

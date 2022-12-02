@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus;
 
-import burp.ITab;
 import com.coreyd97.BurpExtenderUtilities.PopOutPanel;
 import com.nccgroup.loggerplusplus.about.AboutPanel;
 import com.nccgroup.loggerplusplus.help.HelpPanel;
@@ -9,15 +8,14 @@ import com.nccgroup.loggerplusplus.util.Globals;
 import javax.swing.*;
 import java.awt.*;
 
-public class MainViewController implements ITab {
-
-    private final LoggerPlusPlus loggerPlusPlus;
+public class MainViewController {
+    
     private final JTabbedPane tabbedPane;
     private final PopOutPanel popOutWrapper;
 
-    public MainViewController(LoggerPlusPlus loggerPlusPlus) {
-        this.loggerPlusPlus = loggerPlusPlus;
+    public MainViewController() {
         this.tabbedPane = new JTabbedPane();
+        LoggerPlusPlus loggerPlusPlus = LoggerPlusPlus.instance;
         tabbedPane.addTab("View Logs", null, loggerPlusPlus.getLogViewController().getLogViewPanel(), null);
         tabbedPane.addTab("Filter Library", null, loggerPlusPlus.getLibraryController().getFilterLibraryPanel(), null);
         tabbedPane.addTab("Grep Values", null, loggerPlusPlus.getGrepperController().getGrepperPanel(), null);
@@ -27,12 +25,6 @@ public class MainViewController implements ITab {
         this.popOutWrapper = new PopOutPanel(tabbedPane, Globals.APP_NAME);
     }
 
-    @Override
-    public String getTabCaption() {
-        return Globals.APP_NAME;
-    }
-
-    @Override
     public Component getUiComponent() {
         return popOutWrapper;
     }

@@ -1,13 +1,13 @@
 package com.nccgroup.loggerplusplus.exports;
 
-import burp.ICookie;
-import burp.IParameter;
-import burp.IRequestInfo;
-import burp.IResponseInfo;
+import burp.api.montoya.http.message.cookies.Cookie;
+import burp.api.montoya.http.message.headers.HttpHeader;
+import burp.api.montoya.http.message.params.HttpParameter;
+import burp.api.montoya.http.message.params.HttpParameterType;
+import burp.api.montoya.http.message.requests.HttpRequest;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
@@ -60,43 +60,37 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.name("time").value(time);
             writer.name("request").beginObject();
             writer.name("method").value(logEntry.getMethod());
-            writer.name("url").value(logEntry.getUrl().toString());
+            writer.name("url").value(logEntry.getUrlString().toString());
             writer.name("httpVersion").value(logEntry.getRequestHttpVersion());
             writer.name("origin").value(logEntry.getOrigin());
 
             writer.name("cookies").beginArray();
             if (logEntry.isHasCookieParam()) {
-                List<IParameter> cookies = getRequestParametersByType(logEntry.getRequest(),
-                        IParameter.PARAM_COOKIE);
-                for (IParameter cookie : cookies) {
+                List<HttpParameter> cookies = getRequestParametersByType(logEntry.getRequest(), HttpParameterType.COOKIE);
+                for (HttpParameter cookie : cookies) {
                     writer.beginObject();
-                    writer.name("name").value(cookie.getName());
-                    writer.name("value").value(cookie.getValue());
+                    writer.name("name").value(cookie.name());
+                    writer.name("value").value(cookie.value());
                     writer.endObject();
                 }
             }
             writer.endArray(); // end request cookies array
 
             writer.name("headers").beginArray();
-            for (String headerString : logEntry.getRequestHeaders()) {
-                if (headerString.contains(":")) {
-                    writer.beginObject();
-                    String headerArray[] = headerString.split(":", 2);
-                    writer.name("name").value(headerArray[0]);
-                    writer.name("value").value(headerArray[1].trim());
-                    writer.endObject();
-                }
+            for (HttpHeader header : logEntry.getRequestHeaders()) {
+                writer.beginObject();
+                writer.name("name").value(header.name());
+                writer.name("value").value(header.value());
+                writer.endObject();
             }
             writer.endArray(); // end request headers array
 
             writer.name("queryString").beginArray();
             if (logEntry.getUrl().getQuery() != null) {
-                List<IParameter> queryParams = getRequestParametersByType(logEntry.getRequest(),
-                        IParameter.PARAM_URL);
-                for (IParameter queryParam : queryParams) {
+                for (HttpParameter queryParam : getRequestParametersByType(logEntry.getRequest(), HttpParameterType.URL)) {
                     writer.beginObject();
-                    writer.name("name").value(queryParam.getName());
-                    writer.name("value").value(queryParam.getValue());
+                    writer.name("name").value(queryParam.name());
+                    writer.name("value").value(queryParam.value());
                     writer.endObject();
                 }
             }
@@ -105,12 +99,11 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             if (logEntry.isHasBodyParam()) {
                 writer.name("postData").beginObject();
                 writer.name("mimeType").value(logEntry.getRequestContentType());
-                List<IParameter> bodyParams = getRequestBodyParameters(logEntry.getRequest());
                 writer.name("params").beginArray();
-                for (IParameter bodyParam : bodyParams) {
+                for (HttpParameter bodyParam : getRequestParametersByType(logEntry.getRequest(), HttpParameterType.BODY)) {
                     writer.beginObject();
-                    writer.name("name").value(bodyParam.getName());
-                    writer.name("value").value(bodyParam.getValue());
+                    writer.name("name").value(bodyParam.name());
+                    writer.name("value").value(bodyParam.value());
                     writer.endObject();
                 }
                 writer.endArray(); // end params array
@@ -118,7 +111,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
                 writer.endObject(); // end postData object
             }
 
-            writer.name("headersSize").value(logEntry.getRequest().length - logEntry.getRequestBodyLength());
+            writer.name("headersSize").value(logEntry.getRequestBytes().length - logEntry.getRequestBodyLength());
             writer.name("bodySize").value(logEntry.getRequestBodyLength());
 
             writer.endObject(); // end request object
@@ -130,14 +123,14 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
             writer.name("cookies").beginArray();
             if (logEntry.isHasSetCookies()) {
-                List<ICookie> cookies = getResponseCookies(logEntry.getResponse());
+                List<Cookie> cookies = logEntry.getResponse().cookies();
 
-                for (ICookie cookie : cookies) {
+                for (Cookie cookie : cookies) {
                     writer.beginObject();
-                    writer.name("name").value(cookie.getName());
-                    writer.name("value").value(cookie.getValue());
-                    writer.name("path").value(cookie.getPath());
-                    writer.name("domain").value(cookie.getDomain());
+                    writer.name("name").value(cookie.name());
+                    writer.name("value").value(cookie.value());
+                    writer.name("path").value(cookie.path());
+                    writer.name("domain").value(cookie.domain());
                     writer.endObject();
                 }
             }
@@ -145,21 +138,18 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
             writer.name("headers").beginArray();
             if (logEntry.getResponseHeaders() != null) {
-                for (String headerString : logEntry.getResponseHeaders()) {
-                    if (headerString.contains(":")) {
-                        writer.beginObject();
-                        String headerArray[] = headerString.split(":", 2);
-                        writer.name("name").value(headerArray[0]);
-                        writer.name("value").value(headerArray[1].trim());
-                        writer.endObject();
-                    }
+                for (HttpHeader header : logEntry.getResponseHeaders()) {
+                    writer.beginObject();
+                    writer.name("name").value(header.name());
+                    writer.name("value").value(header.value());
+                    writer.endObject();
                 }
             }
             writer.endArray(); // end response headers array
 
             writer.name("redirectURL").value(String.valueOf(logEntry.getValueByKey(LogEntryField.REDIRECT_URL)));
-            if (logEntry.getResponse() != null) {
-                writer.name("headersSize").value(logEntry.getResponse().length - logEntry.getResponseBodyLength());
+            if (logEntry.getResponseBytes() != null) {
+                writer.name("headersSize").value(logEntry.getResponseBytes().length - logEntry.getResponseBodyLength());
                 writer.name("bodySize").value(logEntry.getResponseBodyLength());
             } else {
                 writer.name("headersSize").value(0);
@@ -169,7 +159,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
             writer.name("content").beginObject(); // start content object
             writer.name("size").value(logEntry.getResponseBodyLength());
-            writer.name("mimeType").value(logEntry.getResponseMimeType());
+            writer.name("mimeType").value(logEntry.getResponseContentType());
             writer.name("text").value(String.valueOf(logEntry.getValueByKey(LogEntryField.RESPONSE_BODY)));
             writer.endObject(); //end content object
 
@@ -195,32 +185,17 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
     }
 
-    private List<IParameter> getRequestParametersByType(byte[] request, byte paramType) {
-        IRequestInfo tempAnalyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(request);
-        List<IParameter> params = tempAnalyzedReq.getParameters().stream()
-                .filter(iParameter -> iParameter.getType() == paramType).collect(Collectors.toList());
-        return params;
+    private List<HttpParameter> getRequestParametersByType(HttpRequest request, HttpParameterType paramType) {
+        return request.parameters().stream()
+                .filter(iParameter -> iParameter.type().equals(paramType))
+                .collect(Collectors.toList());
     }
 
-    private List<IParameter> getRequestBodyParameters(byte[] request) {
-        IRequestInfo tempAnalyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(request);
-        List<IParameter> params = tempAnalyzedReq.getParameters().stream()
-                .filter(iParameter -> iParameter.getType() != IParameter.PARAM_COOKIE
-                        && iParameter.getType() != IParameter.PARAM_URL)
-                .collect(Collectors.toList());
-        return params;
-    }
 
     @Override
     public List<LogEntry> read(JsonReader reader) throws IOException {
         // TODO Implement HAR Import logic
         return null;
-    }
-
-    private List<ICookie> getResponseCookies(byte[] responseMessage) {
-        IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers().analyzeResponse(responseMessage);
-
-        return tempAnalyzedResp.getCookies();
     }
 
 }

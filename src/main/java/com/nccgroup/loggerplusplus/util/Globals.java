@@ -35,8 +35,10 @@ public class Globals {
     public static final String PREF_LOG_SCANNER = "logscanner";
     public static final String PREF_LOG_REPEATER = "logrepeater";
     public static final String PREF_LOG_SEQUENCER = "logsequencer";
-    public static final String PREF_LOG_EXTENDER = "logextender";
+    public static final String PREF_LOG_EXTENSIONS = "logextender";
     public static final String PREF_LOG_TARGET_TAB = "logtargettab";
+    public static final String PREF_LOG_RECORDED_LOGINS = "logrecordedlogins";
+    public static final String PREF_LOG_SUITE = "logsuite";
     public static final String PREF_COLOR_FILTERS = "colorfilters";
     public static final String PREF_TAG_FILTERS = "tagfilters";
     public static final String PREF_SAVED_FILTERS = "savedfilters";

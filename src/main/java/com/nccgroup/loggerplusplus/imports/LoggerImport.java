@@ -13,11 +13,15 @@
 
 package com.nccgroup.loggerplusplus.imports;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IExtensionHelpers;
-import burp.IHttpRequestResponse;
+import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.core.ToolType;
+import burp.api.montoya.http.HttpService;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.message.responses.HttpResponse;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
+import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -26,8 +30,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Iterator;
 
+@Log4j2
 public class LoggerImport {
 
     public static String getLoadFile() {
@@ -50,7 +56,7 @@ public class LoggerImport {
         try {
             reader = new BufferedReader(new FileReader(filename));
         } catch (FileNotFoundException e) {
-            LoggerPlusPlus.callbacks.printError("LoggerImport-readFile: Error Opening File " + filename);
+            log.error("LoggerImport-readFile: Error Opening File " + filename);
             return new ArrayList<String>();
         }
         try {
@@ -59,17 +65,16 @@ public class LoggerImport {
                 lines.add(line);
             }
         } catch (IOException e) {
-            LoggerPlusPlus.callbacks.printError("LoggerImport-readFile: Error Reading Line");
+            log.error("LoggerImport-readFile: Error Reading Line");
             return new ArrayList<String>();
         }
 
         return lines;
     }
 
-    public static ArrayList<IHttpRequestResponse> importWStalker() {
+    public static ArrayList<HttpRequestResponse> importWStalker() {
         ArrayList<String> lines;
-        ArrayList<IHttpRequestResponse> requests = new ArrayList<>();
-        IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
+        ArrayList<HttpRequestResponse> requests = new ArrayList<>();
         
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
@@ -84,30 +89,31 @@ public class LoggerImport {
                 String line = i.next();
                 String[] v = line.split(","); // Format: "base64(request),base64(response),url"
 
-                byte[] request = helpers.base64Decode(v[0]);
-                byte[] response = helpers.base64Decode(v[1]);
                 String url = v[3];
+                Base64.Decoder b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils().getDecoder();
+                HttpService httpService = HttpService.httpService(url);
+                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, ByteArray.byteArray(b64Decoder.decode(v[0])));
+                HttpResponse httpResponse = HttpResponse.httpResponse(ByteArray.byteArray(b64Decoder.decode(v[1])));
+                HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
-                ImportRequestResponse x = new ImportRequestResponse(url, request, response);
-                requests.add(x);
+                requests.add(requestResponse);
 
             } catch (Exception e) {
-                LoggerPlusPlus.callbacks.printError("LoggerImport-importWStalker: Error Parsing Content");
-                return new ArrayList<IHttpRequestResponse>();
+                log.error("LoggerImport-importWStalker: Error Parsing Content");
+                return new ArrayList<>();
             }
         }
 
         return requests;
     }
 
-    public static ArrayList<IHttpRequestResponse> importZAP() {
+    public static ArrayList<HttpRequestResponse> importZAP() {
         ArrayList<String> lines = new ArrayList<String>();
-        ArrayList<IHttpRequestResponse> requests = new ArrayList<IHttpRequestResponse>();
-        IExtensionHelpers helpers = LoggerPlusPlus.callbacks.getHelpers();
+        ArrayList<HttpRequestResponse> requests = new ArrayList<HttpRequestResponse>();
         
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
-            return new ArrayList<IHttpRequestResponse>();
+            return new ArrayList<HttpRequestResponse>();
         }
 
         lines = readFile(filename);
@@ -139,12 +145,12 @@ public class LoggerImport {
             if ( line.matches(reSeparator) || !i.hasNext() ) {
                 // TODO: Remove one or two \n at the end of requestBuffer
 
-                byte[] req = helpers.stringToBytes(requestBuffer);
-                byte[] res = helpers.stringToBytes(responseBuffer);
+                HttpService httpService = HttpService.httpService(url);
+                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, requestBuffer);
+                HttpResponse httpResponse = HttpResponse.httpResponse(responseBuffer);
+                HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
-                // Add IHttpRequestResponse Object
-                ImportRequestResponse x = new ImportRequestResponse(url, req, res);
-                requests.add(x);
+                requests.add(requestResponse);
 
                 // Reset content
                 isRequest = true;
@@ -167,7 +173,7 @@ public class LoggerImport {
                     line = x[0] + " " + path + " " + x[2]; // fix the path in the request
 
                 } catch (Exception e) {
-                    LoggerPlusPlus.callbacks.printError("importZAP: Wrong Path Format");
+                    log.error("importZAP: Wrong Path Format");
                     return new ArrayList<>();
                 } 
             }
@@ -190,10 +196,10 @@ public class LoggerImport {
         return requests;
     }
 
-    public static boolean loadImported(ArrayList<IHttpRequestResponse> requests, Boolean sendToAutoExporters) {
+    public static boolean loadImported(ArrayList<HttpRequestResponse> requests, Boolean sendToAutoExporters) {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
-                .setOriginatingTool(IBurpExtenderCallbacks.TOOL_EXTENDER)
-                .setEntries(requests)
+                .setOriginatingTool(ToolType.EXTENSIONS)
+                .setHttpEntries(requests)
                 .setInterimConsumer(integers -> {
                     //Optional
                     //Outputs chunks of integers representing imported indices

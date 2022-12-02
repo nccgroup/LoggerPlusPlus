@@ -1,0 +1,14 @@
+<Configuration xmlns:xi="http://www.w3.org/2001/XInclude" packages="com.nccgroup" status="WARN">
+    <Appenders>
+        <BurpAppender name="BurpAppender" />
+        <Console name="Out">
+            <PatternLayout pattern="%m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="DEBUG">
+            <AppenderRef ref="BurpAppender" />
+<!--            <AppenderRef ref="Out" />-->
+        </Root>
+    </Loggers>
+</Configuration>

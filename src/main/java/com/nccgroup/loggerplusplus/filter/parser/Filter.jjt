@@ -12,7 +12,6 @@ options {
 PARSER_BEGIN(FilterParser)
 package com.nccgroup.loggerplusplus.filter.parser;
 import com.nccgroup.loggerplusplus.filter.ComparisonOperator;import com.nccgroup.loggerplusplus.filter.LogicalOperator;
-import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -46,6 +45,7 @@ public class FilterParser {
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
+}}
 }
 
 PARSER_END(FilterParser)

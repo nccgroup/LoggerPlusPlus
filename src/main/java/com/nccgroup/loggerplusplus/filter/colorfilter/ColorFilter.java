@@ -1,7 +1,6 @@
 package com.nccgroup.loggerplusplus.filter.colorfilter;
 
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 

@@ -7,26 +7,35 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogFilterController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logview.entryviewer.RequestViewerController;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
+import lombok.Getter;
 
 public class LogViewController {
 
-    private final LoggerPlusPlus loggerPlusPlus;
+    @Getter
     private final FilterLibraryController filterLibraryController;
+
+    @Getter
     private final Preferences preferences;
+
+    @Getter
     private final LogFilterController logFilterController;
+
+    @Getter
     private final LogTableController logTableController;
+
+    @Getter
     private final RequestViewerController requestViewerController;
 
+    @Getter
     private final LogViewPanel logViewPanel;
 
-    public LogViewController(LoggerPlusPlus loggerPlusPlus, FilterLibraryController filterLibraryController){
-        this.loggerPlusPlus = loggerPlusPlus;
+    public LogViewController(FilterLibraryController filterLibraryController){
         this.filterLibraryController = filterLibraryController;
-        this.preferences = loggerPlusPlus.getPreferencesController().getPreferences();
+        this.preferences = LoggerPlusPlus.instance.getPreferencesController().getPreferences();
 
         this.logTableController = new LogTableController(this, filterLibraryController);
         this.logFilterController = new LogFilterController(this);
-        this.requestViewerController = new RequestViewerController(preferences, false, false);
+        this.requestViewerController = new RequestViewerController(preferences);
 
         //Build UI
         this.logViewPanel = new LogViewPanel(this);
@@ -38,29 +47,5 @@ public class LogViewController {
 
     public void setEntryViewerLayout(VariableViewPanel.View view){
         this.logViewPanel.getRequestViewerPanel().getVariableViewPanel().setView(view);
-    }
-
-    public LoggerPlusPlus getLoggerPlusPlus() {
-        return loggerPlusPlus;
-    }
-
-    public LogViewPanel getLogViewPanel() {
-        return logViewPanel;
-    }
-
-    public LogFilterController getLogFilterController() {
-        return logFilterController;
-    }
-
-    public LogTableController getLogTableController() {
-        return logTableController;
-    }
-
-    public RequestViewerController getRequestViewerController() {
-        return requestViewerController;
-    }
-
-    public Preferences getPreferences() {
-        return preferences;
     }
 }

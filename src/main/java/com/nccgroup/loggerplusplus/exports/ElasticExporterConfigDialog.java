@@ -221,8 +221,7 @@ public class ElasticExporterConfigDialog extends JDialog {
                 String logFilter = preferences.getSetting(PREF_ELASTIC_FILTER);
 
                 if (!StringUtils.isBlank(logFilter)) {
-                    FilterLibraryController libraryController = elasticExporter.getExportController()
-                            .getLoggerPlusPlus().getLibraryController();
+                    FilterLibraryController libraryController = LoggerPlusPlus.instance.getLibraryController();
                     try {
                         new LogFilter(libraryController, logFilter);
                     } catch (ParseException ex) {

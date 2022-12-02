@@ -1,13 +1,11 @@
 package com.nccgroup.loggerplusplus.reflection.filter;
 
-import burp.IParameter;
-import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import burp.api.montoya.http.message.params.HttpParameter;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.swing.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,8 +26,8 @@ public class BlacklistFilter extends ParameterFilter {
     }
 
     @Override
-    public boolean isFiltered(IParameter parameter) {
-        return blacklist.contains(parameter.getValue());
+    public boolean isFiltered(HttpParameter parameter) {
+        return blacklist.contains(parameter.value());
     }
 
     @Override

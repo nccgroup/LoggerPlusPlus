@@ -1,20 +1,12 @@
 package com.nccgroup.loggerplusplus.reflection.filter;
 
-import burp.IParameter;
+import burp.api.montoya.http.message.params.HttpParameter;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Logger;
 
 public class LengthFilter extends ParameterFilter {
 
@@ -33,8 +25,8 @@ public class LengthFilter extends ParameterFilter {
     }
 
     @Override
-    public boolean isFiltered(IParameter parameter) {
-        int len = parameter.getValue().length();
+    public boolean isFiltered(HttpParameter parameter) {
+        int len = parameter.value().length();
         return len < min_length || len > max_length;
 
     }

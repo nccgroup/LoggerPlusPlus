@@ -12,7 +12,7 @@
 
 package com.nccgroup.loggerplusplus.preferences;
 
-import burp.IHttpRequestResponse;
+import burp.api.montoya.http.message.HttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup.Orientation;
@@ -77,7 +77,7 @@ public class PreferencesPanel extends JScrollPane {
         JCheckBox logSequencer = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_SEQUENCER, "Sequencer");
         JCheckBox logProxy = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_PROXY, "Proxy");
         JCheckBox logTarget = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_TARGET_TAB, "Target");
-        JCheckBox logExtender = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_EXTENDER, "Extender");
+        JCheckBox logExtender = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_EXTENSIONS, "Extender");
 
         strutConstraints = logFromPanel.generateNextConstraints(true);
         strutConstraints.weighty = strutConstraints.weightx = 0;
@@ -115,7 +115,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import Burp Proxy History") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
+                int historySize = LoggerPlusPlus.montoya.proxy().history().size();
                 int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
                 String message = "Import " + historySize
                         + " items from burp suite proxy history? This will clear the current entries."
@@ -137,7 +137,7 @@ public class PreferencesPanel extends JScrollPane {
                         sendToAutoExporters = res == JOptionPane.YES_OPTION;
                     }
 
-                    preferencesController.getLoggerPlusPlus().getLogProcessor().importProxyHistory(sendToAutoExporters);
+                    LoggerPlusPlus.instance.getLogProcessor().importProxyHistory(sendToAutoExporters);
                 }
             }
         }));
@@ -145,7 +145,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From WStalker CSV") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<IHttpRequestResponse> requests = LoggerImport.importWStalker();
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importWStalker();
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +
@@ -161,7 +161,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From OWASP ZAP") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importZAP();
 
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
@@ -176,7 +176,7 @@ public class PreferencesPanel extends JScrollPane {
         }));
 
         ComponentGroup exportGroup = new ComponentGroup(Orientation.HORIZONTAL);
-        HashMap<Class<? extends LogExporter>, LogExporter> exporters = preferencesController.getLoggerPlusPlus()
+        HashMap<Class<? extends LogExporter>, LogExporter> exporters = LoggerPlusPlus.instance
                 .getExportController().getExporters();
         exportGroup.add(((ExportPanelProvider) exporters.get(CSVExporter.class)).getExportPanel());
         exportGroup.add(((ExportPanelProvider) exporters.get(JSONExporter.class)).getExportPanel());
@@ -280,7 +280,7 @@ public class PreferencesPanel extends JScrollPane {
                         JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
                     preferences.resetSettings(preferences.getRegisteredSettings().keySet());
-                    preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController()
+                    LoggerPlusPlus.instance.getLogViewController().getLogTableController()
                             .reinitialize();
                 }
             }
@@ -289,7 +289,7 @@ public class PreferencesPanel extends JScrollPane {
         resetPanel.add(new JButton(new AbstractAction("Clear The Logs") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController().reset();
+                LoggerPlusPlus.instance.getLogViewController().getLogTableController().reset();
             }
         }));
 

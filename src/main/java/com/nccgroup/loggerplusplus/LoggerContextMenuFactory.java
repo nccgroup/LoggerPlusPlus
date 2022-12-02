@@ -1,7 +1,10 @@
 package com.nccgroup.loggerplusplus;
 
-import burp.IContextMenuFactory;
-import burp.IContextMenuInvocation;
+import burp.api.montoya.core.Range;
+import burp.api.montoya.http.message.HttpMessage;
+import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
+import burp.api.montoya.ui.contextmenu.ContextMenuItemsProvider;
+import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
@@ -19,53 +22,50 @@ import java.util.UUID;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_COLOR_FILTERS;
 
-public class LoggerContextMenuFactory implements IContextMenuFactory {
-
-    private final LoggerPlusPlus loggerPlusPlus;
+public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
     
-    public LoggerContextMenuFactory(LoggerPlusPlus loggerPlusPlus){
-        this.loggerPlusPlus = loggerPlusPlus;
+    public LoggerContextMenuFactory(){
     }
-    
+
     @Override
-    public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
-        if(invocation == null) return null;
+    public List<JMenuItem> provideMenuItems(ContextMenuEvent event) {
         JMenuItem filterMenu = new JMenu("Logger++");
 
-        if (invocation.getSelectedMessages().length == 0 ||
-                invocation.getSelectionBounds()[0] == invocation.getSelectionBounds()[1]) {
-            return null;
-        }
+        //We're handling a message editor context menu
+        //And we have a selection
+        MessageEditorHttpRequestResponse requestResponse = event.messageEditorRequestResponse().orElseThrow();
+        Range selectedRange = requestResponse.selectionOffsets().orElseThrow();
+        HttpMessage target;
 
         final LogEntryField context;
         final byte[] selectedBytes;
-        switch (invocation.getInvocationContext()){
-            case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
-            case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
+        switch (event.invocationType()){
+            case MESSAGE_EDITOR_REQUEST:
+            case MESSAGE_VIEWER_REQUEST: {
+                target = requestResponse.getRequestResponse().httpRequest();
                 try {
-                    byte[] msg = invocation.getSelectedMessages()[0].getRequest();
-                    if (LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() > invocation.getSelectionBounds()[0]) {
+                    if (selectedRange.startIndexInclusive() <= target.bodyOffset()) {
                         context = LogEntryField.REQUEST_HEADERS;
                     } else {
                         context = LogEntryField.REQUEST_BODY;
                     }
-                    selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getRequest(),
-                            invocation.getSelectionBounds()[0],invocation.getSelectionBounds()[1]);
+                    selectedBytes = Arrays.copyOfRange(target.asBytes().getBytes(), selectedRange.startIndexInclusive(),
+                            selectedRange.endIndexExclusive());
                 }catch (NullPointerException nPException){ return null; }
                 break;
             }
 
-            case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
-            case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
+            case MESSAGE_EDITOR_RESPONSE:
+            case MESSAGE_VIEWER_RESPONSE: {
+                target = requestResponse.getRequestResponse().httpResponse();
                 try {
-                    byte[] msg = invocation.getSelectedMessages()[0].getResponse();
-                    if (LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(msg).getBodyOffset() > invocation.getSelectionBounds()[0]) {
+                    if (selectedRange.startIndexInclusive() <= target.bodyOffset()) {
                         context = LogEntryField.RESPONSE_HEADERS;
                     } else {
                         context = LogEntryField.RESPONSE_BODY;
                     }
-                    selectedBytes = Arrays.copyOfRange(invocation.getSelectedMessages()[0].getResponse(),
-                            invocation.getSelectionBounds()[0], invocation.getSelectionBounds()[1]);
+                    selectedBytes = Arrays.copyOfRange(target.asBytes().getBytes(), selectedRange.startIndexInclusive(),
+                            selectedRange.endIndexExclusive());
                 } catch (NullPointerException nPException) {
                     return null;
                 }
@@ -75,15 +75,13 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
                 return null;
         }
 
-        if (selectedBytes != null) System.out.println(new String(selectedBytes));
-
-        final LogTable logTable = loggerPlusPlus.getLogViewController().getLogTableController().getLogTable();
+        final LogTable logTable = LoggerPlusPlus.instance.getLogViewController().getLogTableController().getLogTable();
         String selectedText = StringEscapeUtils.escapeJava(new String(selectedBytes));
 
         JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use Selection As LogFilter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +
+                LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(context.getFullLabel() +
                         " CONTAINS \"" + selectedText + "\"");
             }
         });
@@ -95,7 +93,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
                             + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
@@ -103,7 +101,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             JMenuItem andNotFilter = new JMenuItem(new AbstractAction("AND NOT") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && !("
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && !("
                             + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\")");
                 }
             });
@@ -111,7 +109,7 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    loggerPlusPlus.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
                             + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
@@ -126,11 +124,11 @@ public class LoggerContextMenuFactory implements IContextMenuFactory {
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new LogFilter(loggerPlusPlus.getLibraryController(),
+                    colorFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(),
                             context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
-                    HashMap<UUID,ColorFilter> colorFilters = loggerPlusPlus.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
+                    HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
                     colorFilters.put(colorFilter.getUUID(), colorFilter);
-                    new ColorFilterDialog(loggerPlusPlus.getLibraryController()).setVisible(true);
+                    new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
                 } catch (ParseException e) {
                     return;
                 }

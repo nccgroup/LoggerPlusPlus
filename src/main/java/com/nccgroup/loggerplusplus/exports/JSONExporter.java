@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.Gson;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
@@ -41,7 +42,7 @@ public class JSONExporter extends LogExporter implements ExportPanelProvider, Co
                 protected Void doInBackground() throws Exception {
                     super.doInBackground();
                     try(FileWriter fileWriter = new FileWriter(file, false)) {
-                        Gson gson = exportController.getLoggerPlusPlus().getGsonProvider().getGson();
+                        Gson gson = LoggerPlusPlus.gsonProvider.getGson();
                         gson.toJson(entries, fileWriter);
                     }
 

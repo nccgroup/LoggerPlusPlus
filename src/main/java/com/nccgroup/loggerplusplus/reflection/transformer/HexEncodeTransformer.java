@@ -4,7 +4,6 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import org.apache.commons.codec.binary.Hex;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Base64;
 
 public class HexEncodeTransformer extends ParameterValueTransformer {
 

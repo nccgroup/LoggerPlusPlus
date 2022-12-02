@@ -1,7 +1,11 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id "io.freefair.lombok" version "6.5.1"
+}
 
-sourceCompatibility = 15
-targetCompatibility = 15
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
 
 repositories {
     mavenCentral()
@@ -11,18 +15,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'net.portswigger.burp.extender:burp-extender-api:2.3'
-//    compileOnly 'net.portswigger.burp.extender:montoya-api:0.9.5'
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
-
+    implementation 'net.portswigger.burp.extensions:montoya-api:0.10.1'
     implementation 'org.swinglabs:swingx:1.6.1'
-    implementation 'com.github.CoreyD97:BurpExtenderUtilities:e800fd2d'
-    implementation 'com.google.code.gson:gson:2.8.2'
-    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.2'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.6'
-    implementation 'org.apache.commons:commons-text:1.7'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+    implementation 'com.github.CoreyD97:BurpExtenderUtilities:896a540db7'
+    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.15.2'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'org.apache.commons:commons-text:1.10.0'
+
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
+    testCompileOnly files("${System.properties['user.home']}/BurpSuitePro/burpsuite_pro.jar")
 }
 
 jar {

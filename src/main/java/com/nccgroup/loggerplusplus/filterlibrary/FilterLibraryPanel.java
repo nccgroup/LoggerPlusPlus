@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;

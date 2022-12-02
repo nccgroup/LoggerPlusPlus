@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.preferences;
 
-import burp.IBurpExtenderCallbacks;
+import burp.api.montoya.MontoyaApi;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
@@ -29,12 +29,12 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     private ArrayList<LogTableColumn> defaultlogTableColumns;
     private Set<String> defaultBlacklistedReflections;
 
-    public LoggerPreferenceFactory(IGsonProvider gsonProvider, ILogProvider logProvider, IBurpExtenderCallbacks callbacks){
-        super("LoggerPlusPlus", gsonProvider, logProvider, callbacks);
+    public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider, ILogProvider logProvider){
+        super(montoya, "LoggerPlusPlus", gsonProvider, logProvider);
     }
 
-    public LoggerPreferenceFactory(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
-        super("LoggerPlusPlus", gsonProvider, callbacks);
+    public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider){
+        super(montoya, "LoggerPlusPlus", gsonProvider);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_LOG_SCANNER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_REPEATER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true);
-        prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_EXTENSIONS, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
         prefs.registerSetting(PREF_MAX_RESP_SIZE, Integer.class, 10); //Default 10MB
         prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {

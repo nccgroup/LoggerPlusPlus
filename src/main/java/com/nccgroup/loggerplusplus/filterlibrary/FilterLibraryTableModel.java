@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
-import burp.BurpExtender;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
@@ -90,8 +89,8 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         if(row < 0 || row >= controller.getSavedFilters().size()) return;
         SavedFilter savedFilter = controller.getSavedFilters().get(row);
         if(col == 2){
-            controller.getLoggerPlusPlus().getLogViewController().getLogFilterController().setFilter(savedFilter.getFilterString());
-            controller.getLoggerPlusPlus().getMainViewController().getTabbedPanel().setSelectedIndex(0);
+            LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(savedFilter.getFilterString());
+            LoggerPlusPlus.instance.getMainViewController().getTabbedPanel().setSelectedIndex(0);
             return;
         }
         if(col == 3){

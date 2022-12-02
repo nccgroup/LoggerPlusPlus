@@ -1,5 +1,10 @@
 package com.nccgroup.loggerplusplus.logview;
 
+import burp.api.montoya.core.BurpSuiteEdition;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.scanner.BuiltInScanConfiguration;
+import burp.api.montoya.scanner.InvalidLauncherConfigurationException;
+import burp.api.montoya.scanner.Scan;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -15,6 +20,7 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
+import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -26,6 +32,7 @@ import java.util.Date;
 /**
  * Created by corey on 24/08/17.
  */
+@Log4j2
 public class SingleLogEntryMenu extends JPopupMenu {
 
     public SingleLogEntryMenu(final LogTableController logTableController, final LogEntry entry, final LogEntryField selectedField){
@@ -45,7 +52,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
             columnValueString = "\"\"";
         }
 
-        final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
+        final boolean isPro = LoggerPlusPlus.montoya.burpSuite().version().edition() == BurpSuiteEdition.PROFESSIONAL;
         String title = entry.getValueByKey(LogEntryField.URL).toString();
         if(title.length() > 50) title = title.substring(0, 47) + "...";
         this.add(new JMenuItem(title));
@@ -98,7 +105,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                         ColorFilter colorFilter = new ColorFilter();
                         colorFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(),
                                 columnName + " == " + columnValueString));
-                        logTableController.getLogViewController().getLoggerPlusPlus().getLibraryController().addColorFilter(colorFilter);
+                        LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
                         ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
                         colorFilterDialog.setVisible(true);
                     } catch (ParseException e1) {
@@ -110,7 +117,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         }
 
         this.add(new JPopupMenu.Separator());
-        final boolean inScope = LoggerPlusPlus.callbacks.isInScope(entry.getUrl());
+        final boolean inScope = LoggerPlusPlus.isUrlInScope(entry.getUrlString());
         JMenuItem scopeItem;
         if(!inScope){
             scopeItem = new JMenu("Add to scope");
@@ -119,7 +126,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 public void actionPerformed(ActionEvent actionEvent) {
                     try {
                         URL domainURL = new URL(entry.getProtocol(), entry.getHostname(), entry.getTargetPort(), "");
-                        LoggerPlusPlus.callbacks.includeInScope(domainURL);
+                        LoggerPlusPlus.montoya.scope().includeInScope(domainURL.toExternalForm());
                     } catch (MalformedURLException e) {
                         JOptionPane.showMessageDialog(scopeItem, "Could not build URL for scope entry. Sorry!", "Add to scope", JOptionPane.ERROR_MESSAGE);
                     }
@@ -128,21 +135,21 @@ public class SingleLogEntryMenu extends JPopupMenu {
             scopeItem.add(new JMenuItem(new AbstractAction("Domain + Path") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.callbacks.includeInScope(entry.getUrl());
+                    LoggerPlusPlus.montoya.scope().isInScope(entry.getUrlString());
                 }
             }));
         }else{
             scopeItem = new JMenuItem(new AbstractAction("Remove from scope") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.callbacks.excludeFromScope(entry.getUrl());
+                    LoggerPlusPlus.montoya.scope().excludeFromScope(entry.getUrlString());
                 }
             });
         }
         this.add(scopeItem);
 
         JMenu exportMenu = new JMenu("Export as...");
-        ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
+        ExportController exportController = LoggerPlusPlus.instance.getExportController();
         for (LogExporter exporter : exportController.getExporters().values()) {
             if (exporter instanceof ContextMenuExportProvider) {
                 JMenuItem item = ((ContextMenuExportProvider) exporter).getExportEntriesMenuItem(Collections.singletonList(entry));
@@ -157,10 +164,17 @@ public class SingleLogEntryMenu extends JPopupMenu {
 
         this.add(new JPopupMenu.Separator());
 
-        JMenuItem spider = new JMenuItem(new AbstractAction("Spider from here") {
+        JMenuItem spider = new JMenuItem(new AbstractAction("Crawl from here") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToSpider(entry.getUrl());
+                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
+                scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
+
+                try {
+                    scan.startCrawl();
+                } catch (InvalidLauncherConfigurationException e) {
+                    log.error(e);
+                }
             }
         });
         this.add(spider);
@@ -168,7 +182,15 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Do an active scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doActiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
+                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
+                scan.addConfiguration(BuiltInScanConfiguration.ACTIVE_AUDIT_CHECKS);
+                scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
+
+                try {
+                    scan.startAudit();
+                } catch (InvalidLauncherConfigurationException e) {
+                    log.error(e);
+                }
             }
         });
         this.add(activeScan);
@@ -177,7 +199,15 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Do a passive scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.doPassiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), entry.getResponse());
+                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
+                scan.addConfiguration(BuiltInScanConfiguration.PASSIVE_AUDIT_CHECKS);
+                scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
+
+                try {
+                    scan.startAudit();
+                } catch (InvalidLauncherConfigurationException e) {
+                    log.error(e);
+                }
             }
         });
         passiveScan.setEnabled(entry.isComplete() && isPro);
@@ -188,7 +218,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem sendToRepeater = new JMenuItem(new AbstractAction("Send to Repeater") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToRepeater(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), "L++");
+                LoggerPlusPlus.montoya.repeater().sendToRepeater(entry.getRequest());
             }
         });
         this.add(sendToRepeater);
@@ -196,7 +226,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem sendToIntruder = new JMenuItem(new AbstractAction("Send to Intruder") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToIntruder(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
+                LoggerPlusPlus.montoya.intruder().sendToIntruder(entry.getRequest());
             }
         });
         this.add(sendToIntruder);
@@ -205,14 +235,14 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem comparerRequest = new JMenuItem(new AbstractAction("Request") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToComparer(entry.getRequest());
+                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().asBytes());
             }
         });
         sendToComparer.add(comparerRequest);
         JMenuItem comparerResponse = new JMenuItem(new AbstractAction("Response") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.callbacks.sendToComparer(entry.getResponse());
+                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().asBytes());
             }
         });
         sendToComparer.add(comparerResponse);
