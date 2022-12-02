@@ -23,6 +23,7 @@ import java.awt.*;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
@@ -51,6 +52,21 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
 
     public LoggerPlusPlus(){
         this.gsonProvider = new DefaultGsonProvider();
+    }
+
+    private JFrame getBurpFrame() throws Exception {
+        // Get all frames
+        Frame[] allFrames = JFrame.getFrames();
+        // Filter the stream find the main burp window frame, and convert to a list
+        List<Frame> filteredFrames = Arrays.stream(allFrames).filter(f ->
+                f.getTitle().startsWith("Burp Suite") && f.isVisible()
+        ).collect(Collectors.toList());
+        //  If size is 1, we have the main burp frame. Otherwise fails
+        if (filteredFrames.size() == 1) {
+            return (JFrame) filteredFrames.get(0);
+        } else {
+            throw new Exception("Expected one burp pane, but found " + filteredFrames.size());
+        }
     }
 
     @Override
@@ -98,7 +114,13 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
             LoggerPlusPlus.callbacks.addSuiteTab(mainViewController);
 
             //Add menu item to Burp's frame menu.
-            JFrame rootFrame = (JFrame) SwingUtilities.getWindowAncestor(mainViewController.getUiComponent());
+            JFrame rootFrame = null;
+            try {
+                rootFrame = getBurpFrame();
+            } catch (Exception e) {
+                callbacks.printError("Could not find root frame. Window JMenu will not be added");
+                throw new RuntimeException(e);
+            }
             try{
                 JMenuBar menuBar = rootFrame.getJMenuBar();
                 loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
