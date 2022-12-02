@@ -23,8 +23,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Collectors;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
@@ -93,31 +91,18 @@ public class LoggerPlusPlus implements BurpExtension {
         montoya.proxy().registerResponseHandler(logProcessor.getProxyHttpResponseHandler());
 
         //Add menu item to Burp's frame menu.
-        JFrame rootFrame = null;
+        Frame rootFrame = null;
         try {
-            rootFrame = getBurpFrame();
-            JMenuBar menuBar = rootFrame.getJMenuBar();
-            if(menuBar != null) {
-                loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
-                menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
+            rootFrame = montoya.userInterface().swingUtils().suiteFrame();
+            if (rootFrame instanceof JFrame) {
+                JMenuBar menuBar = ((JFrame) rootFrame).getJMenuBar();
+                if (menuBar != null) {
+                    loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
+                    menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
+                }
             }
         } catch (Exception e) {
             log.error("Could not find root frame. Window JMenu will not be added");
-        }
-    }
-
-    private JFrame getBurpFrame() throws Exception {
-        // Get all frames
-        Frame[] allFrames = JFrame.getFrames();
-        // Filter the stream find the main burp window frame, and convert to a list
-        List<Frame> filteredFrames = Arrays.stream(allFrames).filter(f ->
-                f.getTitle().startsWith("Burp Suite") && f.isVisible()
-        ).collect(Collectors.toList());
-        //  If size is 1, we have the main burp frame. Otherwise fails
-        if (filteredFrames.size() == 1) {
-            return (JFrame) filteredFrames.get(0);
-        } else {
-            throw new Exception("Expected one burp pane, but found " + filteredFrames.size());
         }
     }
 
