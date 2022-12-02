@@ -543,6 +543,8 @@ public class LogEntry {
 					return this.url.getPath();
 				case QUERY:
 					return this.url.getQuery();
+				case PATHQUERY:
+					return this.url.getFile();
 				case STATUS:
 					return this.responseStatus;
 				case STATUS_TEXT:
