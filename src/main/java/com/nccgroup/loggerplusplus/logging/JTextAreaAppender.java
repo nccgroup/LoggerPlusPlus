@@ -26,7 +26,7 @@ public class JTextAreaAppender extends AbstractAppender {
     private int maxLines;
 
     private JTextAreaAppender(String name, Layout<?> layout, Filter filter, int maxLines, boolean ignoreExceptions) {
-        super(name, filter, layout, ignoreExceptions, EMPTY_ARRAY);
+        super(name, filter, layout, ignoreExceptions);
         this.maxLines = maxLines;
     }
 
