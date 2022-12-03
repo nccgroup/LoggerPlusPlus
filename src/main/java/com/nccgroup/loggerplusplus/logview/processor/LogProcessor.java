@@ -88,6 +88,11 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             //Set the entry's identifier to the HTTP request's hashcode.
             // For non-proxy messages, this doesn't change when we receive the response
             logEntry.setIdentifier(System.identityHashCode(httpMessage.getRequest()));
+            //Repeater identifier will change on response, so we need to track it in comments
+            if (toolFlag == IBurpExtenderCallbacks.TOOL_REPEATER) {
+                Integer identifier = System.identityHashCode(httpMessage.getRequest());
+                LogProcessorHelper.addIdentifierInComment(identifier, httpMessage);
+            }
             //Submit a new task to process the entry
             submitNewEntryProcessingRunnable(logEntry);
         } else {
@@ -97,6 +102,10 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 Integer identifier = System.identityHashCode(httpMessage.getRequest());
                 LogProcessorHelper.addIdentifierInComment(identifier, httpMessage);
                 return; //Process proxy responses using processProxyMessage
+            } else if (toolFlag == IBurpExtenderCallbacks.TOOL_REPEATER) {
+                //Repeater message identifier has changed, grab from comments
+                Integer identifier = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(httpMessage);
+                updateRequestWithResponse(identifier, arrivalTime, httpMessage);
             } else {
                 //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
                 Integer identifier = System.identityHashCode(httpMessage.getRequest());
