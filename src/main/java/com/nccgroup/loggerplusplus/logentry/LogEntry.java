@@ -639,11 +639,14 @@ public class LogEntry {
 				case REFLECTION_COUNT:
 					return reflectedParameters.size();
 				case REQUEST_BODY: // request
-					if (requestBodyLength == 0) return "";
-					return new String(getRequestBytes(), getRequestBytes().length - requestBodyLength, requestBodyLength);
+					return request.bodyAsString();
+				case REQUEST_BODY_LENGTH:
+					return request.body().length();
 //							.substring(request.length - requestBodyLength);
 				case RESPONSE_BODY: // response
 					return response.bodyAsString();
+				case RESPONSE_BODY_LENGTH:
+					return response.body().length();
 				case RTT:
 					return requestResponseDelay;
 				case REQUEST_HEADERS:
