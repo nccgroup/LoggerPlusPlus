@@ -88,7 +88,7 @@ public class LoggerPlusPlus implements BurpExtension {
         montoya.userInterface().registerSuiteTab(NAME, mainViewController.getUiComponent());
 
         montoya.http().registerHttpHandler(logProcessor.getHttpHandler());
-        montoya.proxy().registerResponseHandler(logProcessor.getProxyHttpResponseHandler());
+        montoya.proxy().registerResponseHandler(logProcessor.getProxyResponseHandler());
 
         //Add menu item to Burp's frame menu.
         Frame rootFrame = null;

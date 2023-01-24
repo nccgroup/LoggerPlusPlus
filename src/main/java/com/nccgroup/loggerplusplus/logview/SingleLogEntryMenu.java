@@ -2,9 +2,11 @@ package com.nccgroup.loggerplusplus.logview;
 
 import burp.api.montoya.core.BurpSuiteEdition;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.scanner.BuiltInScanConfiguration;
-import burp.api.montoya.scanner.InvalidLauncherConfigurationException;
-import burp.api.montoya.scanner.Scan;
+import burp.api.montoya.scanner.AuditConfiguration;
+import burp.api.montoya.scanner.BuiltInAuditConfiguration;
+import burp.api.montoya.scanner.Crawl;
+import burp.api.montoya.scanner.CrawlConfiguration;
+import burp.api.montoya.scanner.audit.Audit;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -167,14 +169,8 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem spider = new JMenuItem(new AbstractAction("Crawl from here") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-                scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-
-                try {
-                    scan.startCrawl();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
-                }
+                CrawlConfiguration config = CrawlConfiguration.crawlConfiguration(entry.getUrl().toExternalForm());
+                Crawl crawl = LoggerPlusPlus.montoya.scanner().startCrawl(config);
             }
         });
         this.add(spider);
@@ -182,15 +178,9 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Do an active scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-                scan.addConfiguration(BuiltInScanConfiguration.ACTIVE_AUDIT_CHECKS);
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_ACTIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
                 scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-
-                try {
-                    scan.startAudit();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
-                }
             }
         });
         this.add(activeScan);
@@ -199,15 +189,9 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Do a passive scan") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-                scan.addConfiguration(BuiltInScanConfiguration.PASSIVE_AUDIT_CHECKS);
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_PASSIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
                 scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-
-                try {
-                    scan.startAudit();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
-                }
             }
         });
         passiveScan.setEnabled(entry.isComplete() && isPro);
@@ -235,14 +219,14 @@ public class SingleLogEntryMenu extends JPopupMenu {
         JMenuItem comparerRequest = new JMenuItem(new AbstractAction("Request") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().asBytes());
+                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().toByteArray());
             }
         });
         sendToComparer.add(comparerRequest);
         JMenuItem comparerResponse = new JMenuItem(new AbstractAction("Response") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().asBytes());
+                LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().toByteArray());
             }
         });
         sendToComparer.add(comparerResponse);

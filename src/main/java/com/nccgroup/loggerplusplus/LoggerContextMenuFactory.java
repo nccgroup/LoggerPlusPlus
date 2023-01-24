@@ -14,6 +14,7 @@ import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
 import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
     }
 
     @Override
-    public List<JMenuItem> provideMenuItems(ContextMenuEvent event) {
+    public List<Component> provideMenuItems(ContextMenuEvent event) {
         JMenuItem filterMenu = new JMenu("Logger++");
 
         //We're handling a message editor context menu
@@ -42,14 +43,14 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
         switch (event.invocationType()){
             case MESSAGE_EDITOR_REQUEST:
             case MESSAGE_VIEWER_REQUEST: {
-                target = requestResponse.getRequestResponse().httpRequest();
+                target = requestResponse.requestResponse().request();
                 try {
                     if (selectedRange.startIndexInclusive() <= target.bodyOffset()) {
                         context = LogEntryField.REQUEST_HEADERS;
                     } else {
                         context = LogEntryField.REQUEST_BODY;
                     }
-                    selectedBytes = Arrays.copyOfRange(target.asBytes().getBytes(), selectedRange.startIndexInclusive(),
+                    selectedBytes = Arrays.copyOfRange(target.toByteArray().getBytes(), selectedRange.startIndexInclusive(),
                             selectedRange.endIndexExclusive());
                 }catch (NullPointerException nPException){ return null; }
                 break;
@@ -57,14 +58,14 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
 
             case MESSAGE_EDITOR_RESPONSE:
             case MESSAGE_VIEWER_RESPONSE: {
-                target = requestResponse.getRequestResponse().httpResponse();
+                target = requestResponse.requestResponse().response();
                 try {
                     if (selectedRange.startIndexInclusive() <= target.bodyOffset()) {
                         context = LogEntryField.RESPONSE_HEADERS;
                     } else {
                         context = LogEntryField.RESPONSE_BODY;
                     }
-                    selectedBytes = Arrays.copyOfRange(target.asBytes().getBytes(), selectedRange.startIndexInclusive(),
+                    selectedBytes = Arrays.copyOfRange(target.toByteArray().getBytes(), selectedRange.startIndexInclusive(),
                             selectedRange.endIndexExclusive());
                 } catch (NullPointerException nPException) {
                     return null;

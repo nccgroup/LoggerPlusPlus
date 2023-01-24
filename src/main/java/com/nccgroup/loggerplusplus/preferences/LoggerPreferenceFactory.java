@@ -16,6 +16,8 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
@@ -23,6 +25,7 @@ import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
+@Log4j2
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
     private HashMap<UUID, ColorFilter> defaultColorFilters;
@@ -41,6 +44,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     protected void createDefaults(){
         defaultColorFilters = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
+        log.info(DEFAULT_LOG_TABLE_COLUMNS_JSON);
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
         defaultBlacklistedReflections = new TreeSet(String.CASE_INSENSITIVE_ORDER);

@@ -19,9 +19,12 @@ import burp.api.montoya.http.HttpService;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.http.message.responses.HttpResponse;
+import burp.api.montoya.utilities.Base64DecodingOptions;
+import burp.api.montoya.utilities.Base64Utils;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
 import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.util.Base64Util;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -90,10 +93,10 @@ public class LoggerImport {
                 String[] v = line.split(","); // Format: "base64(request),base64(response),url"
 
                 String url = v[3];
-                Base64.Decoder b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils().getDecoder();
+                Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
                 HttpService httpService = HttpService.httpService(url);
-                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, ByteArray.byteArray(b64Decoder.decode(v[0])));
-                HttpResponse httpResponse = HttpResponse.httpResponse(ByteArray.byteArray(b64Decoder.decode(v[1])));
+                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0], Base64DecodingOptions.URL));
+                HttpResponse httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1], Base64DecodingOptions.URL));
                 HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
                 requests.add(requestResponse);

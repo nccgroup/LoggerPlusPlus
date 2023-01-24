@@ -1,7 +1,7 @@
 package com.nccgroup.loggerplusplus.exports;
 
-import burp.api.montoya.http.message.cookies.Cookie;
-import burp.api.montoya.http.message.headers.HttpHeader;
+import burp.api.montoya.http.message.Cookie;
+import burp.api.montoya.http.message.HttpHeader;
 import burp.api.montoya.http.message.params.HttpParameter;
 import burp.api.montoya.http.message.params.HttpParameterType;
 import burp.api.montoya.http.message.requests.HttpRequest;

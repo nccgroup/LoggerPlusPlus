@@ -4,7 +4,7 @@ import burp.api.montoya.core.ToolType;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.http.message.responses.HttpResponse;
-import burp.api.montoya.proxy.ProxyRequestResponse;
+import burp.api.montoya.proxy.ProxyHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
@@ -17,7 +17,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
     private final LogProcessor logProcessor;
     private final ToolType originatingTool;
-    private final List<ProxyRequestResponse> proxyEntries;
+    private final List<ProxyHttpRequestResponse> proxyEntries;
     private final List<HttpRequestResponse> httpEntries;
     private final Consumer<List<Integer>> interimConsumer;
     private final Runnable callback;
@@ -50,8 +50,8 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
                 request = proxyEntries.get(index).finalRequest();
                 response = proxyEntries.get(index).originalResponse();
             }else{
-                request = httpEntries.get(index).httpRequest();
-                response = httpEntries.get(index).httpResponse();
+                request = httpEntries.get(index).request();
+                response = httpEntries.get(index).response();
             }
             final LogEntry logEntry = new LogEntry(originatingTool, request, response);
             int finalIndex = index;
@@ -86,7 +86,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
         private final LogProcessor logProcessor;
         private ToolType originatingTool = ToolType.EXTENSIONS;
-        private List<ProxyRequestResponse> proxyEntries;
+        private List<ProxyHttpRequestResponse> proxyEntries;
         private List<HttpRequestResponse> httpEntries;
         private Consumer<List<Integer>> interimConsumer;
         private Runnable callback;
@@ -101,7 +101,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
             return this;
         }
 
-        public Builder setProxyEntries(List<ProxyRequestResponse> entries) {
+        public Builder setProxyEntries(List<ProxyHttpRequestResponse> entries) {
             this.proxyEntries.addAll(entries);
             this.httpEntries.clear();
             return this;

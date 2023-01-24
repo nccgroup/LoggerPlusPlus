@@ -2,9 +2,12 @@ package com.nccgroup.loggerplusplus.logview;
 
 import burp.api.montoya.core.BurpSuiteEdition;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.scanner.BuiltInScanConfiguration;
-import burp.api.montoya.scanner.InvalidLauncherConfigurationException;
-import burp.api.montoya.scanner.Scan;
+import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.scanner.AuditConfiguration;
+import burp.api.montoya.scanner.BuiltInAuditConfiguration;
+import burp.api.montoya.scanner.Crawl;
+import burp.api.montoya.scanner.CrawlConfiguration;
+import burp.api.montoya.scanner.audit.Audit;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -101,17 +104,9 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenuItem scanner = new JMenuItem(new AbstractAction("Crawl selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-
-                for (LogEntry entry : selectedEntries) {
-                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-                }
-
-                try {
-                    scan.startCrawl();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
-                }
+                List<String> urls = selectedEntries.stream().map(logEntry -> logEntry.getUrl().toExternalForm()).toList();
+                CrawlConfiguration config = CrawlConfiguration.crawlConfiguration(urls.toArray(String[]::new));
+                Crawl crawl = LoggerPlusPlus.montoya.scanner().startCrawl(config);
             }
         });
         this.add(scanner);
@@ -119,17 +114,10 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Active scan selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-                scan.addConfiguration(BuiltInScanConfiguration.ACTIVE_AUDIT_CHECKS);
-
-                for (LogEntry entry : selectedEntries) {
-                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-                }
-
-                try {
-                    scan.startAudit();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_ACTIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
+                for (LogEntry selectedEntry : selectedEntries) {
+                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(selectedEntry.getRequest(), selectedEntry.getResponse()));
                 }
             }
         });
@@ -139,17 +127,10 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Passive scan selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                Scan scan = LoggerPlusPlus.montoya.scanner().createScan();
-                scan.addConfiguration(BuiltInScanConfiguration.PASSIVE_AUDIT_CHECKS);
-
-                for (LogEntry entry : selectedEntries) {
-                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(entry.getRequest(), entry.getResponse()));
-                }
-
-                try {
-                    scan.startAudit();
-                } catch (InvalidLauncherConfigurationException e) {
-                    log.error(e);
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_PASSIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
+                for (LogEntry selectedEntry : selectedEntries) {
+                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(selectedEntry.getRequest(), selectedEntry.getResponse()));
                 }
             }
         });
@@ -183,7 +164,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().asBytes());
+                    LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().toByteArray());
                 }
             }
         });
@@ -193,7 +174,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
                     if (entry.isComplete()) { //Do not add entries without a response
-                        LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().asBytes());
+                        LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().toByteArray());
                     }
                 }
             }

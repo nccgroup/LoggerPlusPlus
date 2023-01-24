@@ -1,14 +1,14 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
 import burp.api.montoya.core.Annotations;
-import burp.api.montoya.core.ToolSource;
 import burp.api.montoya.core.ToolType;
-import burp.api.montoya.http.HttpHandler;
-import burp.api.montoya.http.RequestResult;
-import burp.api.montoya.http.ResponseResult;
-import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.handler.*;
 import burp.api.montoya.http.message.responses.HttpResponse;
-import burp.api.montoya.proxy.*;
+import burp.api.montoya.proxy.ProxyHttpRequestResponse;
+import burp.api.montoya.proxy.http.InterceptedResponse;
+import burp.api.montoya.proxy.http.ProxyResponseHandler;
+import burp.api.montoya.proxy.http.ProxyResponseReceivedAction;
+import burp.api.montoya.proxy.http.ProxyResponseToBeSentAction;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -50,7 +50,7 @@ public class LogProcessor {
     @Getter
     private final HttpHandler httpHandler;
     @Getter
-    private final ProxyHttpResponseHandler proxyHttpResponseHandler;
+    private final ProxyResponseHandler proxyResponseHandler;
 
     Logger logger = LogManager.getLogger(this);
 
@@ -77,83 +77,88 @@ public class LogProcessor {
 
         //TODO Enable new logging API when support for matching requests and their responses improves...
         this.httpHandler = createHttpHandler();
-        this.proxyHttpResponseHandler = createProxyResponseHandler();
+        this.proxyResponseHandler = createProxyResponseHandler();
     }
 
     private HttpHandler createHttpHandler(){
         return new HttpHandler() {
             @Override
-            public RequestResult handleHttpRequest(HttpRequest request, Annotations annotations, ToolSource toolSource) {
-                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolSource.toolType())
-                        || !LoggerPlusPlus.isUrlInScope(request.url())){
-                    return RequestResult.requestResult(request,annotations);
+            public RequestToBeSentAction handleHttpRequestToBeSent(HttpRequestToBeSent requestToBeSent) {
+                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(requestToBeSent.toolSource().toolType())
+                        || !LoggerPlusPlus.isUrlInScope(requestToBeSent.url())){
+                    return RequestToBeSentAction.continueWith(requestToBeSent);
                 }
                 Date arrivalTime = new Date();
 
                 //If we're handling a new request, create a log entry.
                 //We must also handle proxy messages here, since the HTTP listener operates after the proxy listener
-                final LogEntry logEntry = new LogEntry(toolSource.toolType(), request, arrivalTime);
+                final LogEntry logEntry = new LogEntry(requestToBeSent.toolSource().toolType(), requestToBeSent, arrivalTime);
 
                 //Set the entry's identifier to the HTTP request's hashcode.
                 // For non-proxy messages, this doesn't change when we receive the response
-                Integer identifier = System.identityHashCode(request.body());
+                Integer identifier = System.identityHashCode(requestToBeSent.body());
+                log.info("HTTP Request - Request Identifier: " + identifier);
+
                 logEntry.setIdentifier(identifier);
-                annotations = LogProcessorHelper.addIdentifierInComment(identifier, annotations);
+                Annotations annotations = LogProcessorHelper.addIdentifierInComment(identifier, requestToBeSent.annotations());
                 //Submit a new task to process the entry
                 submitNewEntryProcessingRunnable(logEntry);
 
-                return RequestResult.requestResult(request, annotations);
+                return RequestToBeSentAction.continueWith(requestToBeSent, annotations);
             }
 
             @Override
-            public ResponseResult handleHttpResponse(HttpResponse response, HttpRequest initiatingRequest, Annotations annotations, ToolSource toolSource) {
-                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolSource.toolType())
-                        || !LoggerPlusPlus.isUrlInScope(initiatingRequest.url())){
-                    return ResponseResult.responseResult(response,annotations);
+            public ResponseReceivedAction handleHttpResponseReceived(HttpResponseReceived responseReceived) {
+                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(responseReceived.toolSource().toolType())
+                        || !LoggerPlusPlus.isUrlInScope(responseReceived.initiatingRequest().url())){
+                    return ResponseReceivedAction.continueWith(responseReceived);
                 }
                 Date arrivalTime = new Date();
 
-                if (toolSource.isFromTool(ToolType.PROXY)) {
+                Annotations annotations = responseReceived.annotations();
+                if (responseReceived.toolSource().isFromTool(ToolType.PROXY)) {
                     //If the request came from the proxy, the response isn't final yet.
                     //Just tag the comment with the identifier so we can match it up later.
-//                    Integer identifier = System.identityHashCode(initiatingRequest);
-//                    System.out.println("HTTP Response Proxy - Initiating Request: " + identifier);
-//                    log.info("New Proxy Response: " + identifier);
+                    Integer identifier = System.identityHashCode(responseReceived.initiatingRequest());
+                    log.info("HTTP Response Proxy - Response Received: " + identifier);
 //                    annotations = LogProcessorHelper.addIdentifierInComment(identifier, annotations);
 //                    return ResponseResult.responseResult(response, annotations); //Process proxy responses using processProxyMessage
                 } else {
                     //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
-                    Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(annotations);
+                    Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(responseReceived.annotations());
                     Integer identifier = (Integer) identifierAndAnnotation[0]; //TODO Ew.
                     annotations = (Annotations) identifierAndAnnotation[1];
-                    updateRequestWithResponse(identifier, arrivalTime, response);
+                    updateRequestWithResponse(identifier, arrivalTime, responseReceived);
                 }
-                return ResponseResult.responseResult(response, annotations);
+                return ResponseReceivedAction.continueWith(responseReceived, annotations);
             }
         };
     }
 
-    private ProxyHttpResponseHandler createProxyResponseHandler(){
-        return new ProxyHttpResponseHandler() {
+    private ProxyResponseHandler createProxyResponseHandler(){
+        return new ProxyResponseHandler() {
             @Override
-            public ResponseInitialInterceptResult handleReceivedResponse(InterceptedHttpResponse interceptedResponse, HttpRequest initiatingRequest, Annotations annotations) {
-                return ResponseInitialInterceptResult.followUserRules(interceptedResponse, annotations); //Do nothing
+            public ProxyResponseReceivedAction handleResponseReceived(InterceptedResponse interceptedResponse) {
+                return ProxyResponseReceivedAction.continueWith(interceptedResponse); //Do nothing
             }
 
             @Override
-            public ResponseFinalInterceptResult handleResponseToReturn(InterceptedHttpResponse interceptedResponse, HttpRequest initiatingRequest, Annotations annotations) {
+            public ProxyResponseToBeSentAction handleResponseToBeSent(InterceptedResponse interceptedResponse) {
                 if(!((boolean) preferences.getSetting(PREF_ENABLED)) || !((boolean) preferences.getSetting(PREF_LOG_PROXY))
-                        || !LoggerPlusPlus.isUrlInScope(initiatingRequest.url())) {
-                    return ResponseFinalInterceptResult.continueWith(interceptedResponse, annotations);
+                        || !LoggerPlusPlus.isUrlInScope(interceptedResponse.initiatingRequest().url())) {
+                    return ProxyResponseToBeSentAction.continueWith(interceptedResponse);
                 }
 
+                Integer identifier2 = System.identityHashCode(interceptedResponse.initiatingRequest());
+                log.info("Proxy Response - Identifier: " + identifier2);
+
                 Date arrivalTime = new Date();
-                Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(annotations);
+                Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(interceptedResponse.annotations());
                 Integer identifier = (Integer) identifierAndAnnotation[0]; //TODO Ew.
-                annotations = (Annotations) identifierAndAnnotation[1];
+                Annotations annotations = (Annotations) identifierAndAnnotation[1];
 
                 updateRequestWithResponse(identifier, arrivalTime, interceptedResponse);
-                return ResponseFinalInterceptResult.continueWith(interceptedResponse, annotations);
+                return ProxyResponseToBeSentAction.continueWith(interceptedResponse, annotations);
             }
         };
     }
@@ -340,10 +345,10 @@ public class LogProcessor {
         //TODO Remove to more suitable UI class and show dialog
 
         //Build list of entries to import
-        List<ProxyRequestResponse> proxyHistory = LoggerPlusPlus.montoya.proxy().history();
+        List<ProxyHttpRequestResponse> proxyHistory = LoggerPlusPlus.montoya.proxy().history();
         int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
         int startIndex = Math.max(proxyHistory.size() - maxEntries, 0);
-        List<ProxyRequestResponse> entriesToImport = proxyHistory.subList(startIndex, proxyHistory.size());
+        List<ProxyHttpRequestResponse> entriesToImport = proxyHistory.subList(startIndex, proxyHistory.size());
 
         //Build and start import worker
         EntryImportWorker importWorker = new EntryImportWorker.Builder(this)

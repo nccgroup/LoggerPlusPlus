@@ -15,9 +15,9 @@ package com.nccgroup.loggerplusplus.logentry;
 
 import burp.api.montoya.core.ToolType;
 import burp.api.montoya.http.HttpService;
-import burp.api.montoya.http.MimeType;
-import burp.api.montoya.http.message.cookies.Cookie;
-import burp.api.montoya.http.message.headers.HttpHeader;
+import burp.api.montoya.http.message.Cookie;
+import burp.api.montoya.http.message.HttpHeader;
+import burp.api.montoya.http.message.MimeType;
 import burp.api.montoya.http.message.params.HttpParameter;
 import burp.api.montoya.http.message.params.HttpParameterType;
 import burp.api.montoya.http.message.requests.HttpRequest;
@@ -414,7 +414,7 @@ public class LogEntry {
 		if (responseBodyLength < maxRespSize) {
 			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
 			if (this.responseInferredMimeType == MimeType.HTML) {
-				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(response.bodyAsString());
+				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(response.bodyToString());
 				if (titleMatcher.find()) {
 					this.title = titleMatcher.group(1);
 				}
@@ -422,7 +422,7 @@ public class LogEntry {
 
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
 			reflectedParameters = request.parameters().parallelStream()
-					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyAsString(), parameter))
+					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyToString(), parameter))
 					.map(HttpParameter::name).collect(Collectors.toList());
 
 //			this.requestResponse = LoggerPlusPlus.montoya.saveBuffersToTempFiles(requestResponse);
@@ -431,7 +431,7 @@ public class LogEntry {
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
 			reflectedParameters = request.parameters().parallelStream()
 					.filter(parameter -> !reflectionController.isParameterFiltered(parameter)
-							&& reflectionController.validReflection(new String(response.asBytes().getBytes(), 0, bodyOffset), parameter))
+							&& reflectionController.validReflection(response.bodyToString(), parameter))
 					.map(HttpParameter::name).collect(Collectors.toList());
 
 			//Trim the response down to a maximum size, but at least keep the headers!
@@ -499,11 +499,11 @@ public class LogEntry {
 	}
 
 	public byte[] getRequestBytes() {
-		return this.request.asBytes().getBytes();
+		return this.request.toByteArray().getBytes();
 	}
 
 	public byte[] getResponseBytes() {
-		return response.asBytes().getBytes();
+		return response.toByteArray().getBytes();
 	}
 
 	public void setReqestTime(Date requestTime) {
@@ -639,12 +639,12 @@ public class LogEntry {
 				case REFLECTION_COUNT:
 					return reflectedParameters.size();
 				case REQUEST_BODY: // request
-					return request.bodyAsString();
+					return request.bodyToString();
 				case REQUEST_BODY_LENGTH:
 					return request.body().length();
 //							.substring(request.length - requestBodyLength);
 				case RESPONSE_BODY: // response
-					return response.bodyAsString();
+					return response.bodyToString();
 				case RESPONSE_BODY_LENGTH:
 					return response.body().length();
 				case RTT:

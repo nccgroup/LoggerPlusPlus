@@ -1,9 +1,8 @@
 package com.nccgroup.loggerplusplus.grepper;
 
-import burp.api.montoya.core.Annotations;
+import burp.api.montoya.core.Marker;
 import burp.api.montoya.core.Range;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.http.message.MarkedHttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
@@ -60,15 +59,15 @@ public class GrepperController {
         }
     }
 
-    public MarkedHttpRequestResponse addMarkers(HttpRequestResponse requestResponse, List<GrepResults.Match> matches) {
-        List<Range> requestMarkers = new ArrayList<>(), responseMarkers = new ArrayList<>();
+    public HttpRequestResponse addMarkers(HttpRequestResponse requestResponse, List<GrepResults.Match> matches) {
+        List<Marker> requestMarkers = new ArrayList<>(), responseMarkers = new ArrayList<>();
         for (GrepResults.Match match : matches) {
-            Range marker = Range.range(match.startIndex, match.endIndex);
+            Marker marker = Marker.marker(match.startIndex, match.endIndex);
             if (match.isRequest) requestMarkers.add(marker);
             else responseMarkers.add(marker);
         }
 
-        return requestResponse.withMarkers(requestMarkers, responseMarkers);
+        return requestResponse.withRequestMarkers(requestMarkers).withResponseMarkers(responseMarkers);
     }
 
     public void beginSearch(final Pattern pattern, final boolean inScopeOnly, final boolean searchRequests, final boolean searchResponses) {
