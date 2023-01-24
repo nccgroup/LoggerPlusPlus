@@ -86,8 +86,8 @@ public class LogProcessor implements IHttpListener, IProxyListener {
             final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
 
             //Set the entry's identifier to the HTTP request's hashcode.
-            // For non-proxy messages, this doesn't change when we receive the response
             logEntry.setIdentifier(System.identityHashCode(httpMessage.getRequest()));
+            LogProcessorHelper.addIdentifierInComment(logEntry.getIdentifier(), httpMessage);
             //Submit a new task to process the entry
             submitNewEntryProcessingRunnable(logEntry);
         } else {
@@ -99,7 +99,7 @@ public class LogProcessor implements IHttpListener, IProxyListener {
                 return; //Process proxy responses using processProxyMessage
             } else {
                 //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
-                Integer identifier = System.identityHashCode(httpMessage.getRequest());
+                Integer identifier = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(httpMessage);
                 updateRequestWithResponse(identifier, arrivalTime, httpMessage);
             }
         }
