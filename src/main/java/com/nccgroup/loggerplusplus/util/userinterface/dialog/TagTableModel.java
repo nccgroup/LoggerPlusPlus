@@ -7,7 +7,9 @@ import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Created by corey on 19/07/17.
@@ -16,7 +18,7 @@ public class TagTableModel extends AbstractTableModel {
 
     private final Map<Short, UUID> rowUUIDs = new HashMap<Short, UUID>();
     private final Map<UUID, Tag> tags;
-    private final String[] columnNames = {"Tag", "LogFilter", "Enabled", ""};
+    private final String[] columnNames = {"Tag", "LogFilter", "Foreground Color", "Background Color", "Enabled", ""};
     private final JButton removeButton = new JButton("Remove");
     private final FilterLibraryController filterLibraryController;
 
@@ -55,8 +57,12 @@ public class TagTableModel extends AbstractTableModel {
             case 1:
                 return (tags.get(rowUid).getFilterString() == null ? "" : tags.get(rowUid).getFilterString());
             case 2:
-                return tags.get(rowUid).isEnabled();
+                return (tags.get(rowUid).getForegroundColor() == null ? Color.BLACK : tags.get(rowUid).getForegroundColor());
             case 3:
+                return (tags.get(rowUid).getBackgroundColor() == null ? Color.WHITE : tags.get(rowUid).getBackgroundColor());
+            case 4:
+                return tags.get(rowUid).isEnabled();
+            case 5:
                 return removeButton;
             default:
                 return false;
@@ -92,6 +98,12 @@ public class TagTableModel extends AbstractTableModel {
                 break;
             }
             case 2:
+                tag.setForegroundColor((Color) value);
+                break;
+            case 3:
+                tag.setBackgroundColor((Color) value);
+                break;
+            case 4:
                 tag.setEnabled((Boolean) value);
                 break;
             default:
@@ -106,8 +118,11 @@ public class TagTableModel extends AbstractTableModel {
     public Class<?> getColumnClass(int columnIndex) {
         switch (columnIndex) {
             case 2:
-                return Boolean.class;
             case 3:
+                return Color.class;
+            case 4:
+                return Boolean.class;
+            case 5:
                 return JButton.class;
             default:
                 return String.class;
@@ -116,7 +131,7 @@ public class TagTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int row, int col) {
-        return col != 3;
+        return col != 5;
     }
 
     public void addTag(Tag tag) {
@@ -128,7 +143,7 @@ public class TagTableModel extends AbstractTableModel {
     }
 
     public void onClick(int row, int column) {
-        if (row != -1 && row < tags.size() && column == 3) {
+        if (row != -1 && row < tags.size() && column == 5) {
             synchronized (rowUUIDs) {
                 Tag removedFilter = tags.get(rowUUIDs.get((short) row));
                 filterLibraryController.removeTag(removedFilter);

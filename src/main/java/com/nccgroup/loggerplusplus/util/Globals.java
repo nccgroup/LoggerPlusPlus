@@ -75,6 +75,7 @@ public class Globals {
     public static final String PREF_SAVED_FIELD_SELECTIONS = "savedFieldSelections";
     public static final String PREF_COLUMNS_VERSION = "columnsVersion";
     public static final String PREF_MAX_RESP_SIZE = "maxRespBodySize";
+    public static final String PREF_TABLE_PILL_STYLE = "tagsStyle";
 
     public enum ElasticAuthType {ApiKey, Basic, None}
 

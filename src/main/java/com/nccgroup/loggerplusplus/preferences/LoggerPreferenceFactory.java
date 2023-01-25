@@ -16,7 +16,6 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
-import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.Level;
 
@@ -78,6 +77,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_LOG_EXTENSIONS, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
         prefs.registerSetting(PREF_MAX_RESP_SIZE, Integer.class, 10); //Default 10MB
+        prefs.registerSetting(PREF_TABLE_PILL_STYLE, Boolean.class, true);
         prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {
         }.getType(), defaultColorFilters);
         prefs.registerSetting(PREF_TAG_FILTERS, new TypeToken<Map<UUID, Tag>>() {

@@ -140,6 +140,6 @@ public class Tag implements Comparable<Tag> {
 
     @Override
     public String toString() {
-        return "ColorFilter[" + (this.filter != null ? this.filter.toString() : "") + "]";
+        return this.getName();
     }
 }

@@ -2,7 +2,9 @@ package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import com.nccgroup.loggerplusplus.util.userinterface.ColorEditor;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.ColorRenderer;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.FilterRenderer;
 
 import javax.swing.*;
@@ -28,7 +30,11 @@ public class TagTable extends JTable {
         ((JComponent) this.getDefaultRenderer(JButton.class)).setOpaque(true);
 
         this.getColumnModel().getColumn(1).setCellRenderer(new FilterRenderer());
-        this.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
+        this.getColumnModel().getColumn(2).setCellRenderer(new ColorRenderer(true));
+        this.getColumnModel().getColumn(2).setCellEditor(new ColorEditor());
+        this.getColumnModel().getColumn(3).setCellRenderer(new ColorRenderer(true));
+        this.getColumnModel().getColumn(3).setCellEditor(new ColorEditor());
+        this.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
 
 
         this.setDragEnabled(true);

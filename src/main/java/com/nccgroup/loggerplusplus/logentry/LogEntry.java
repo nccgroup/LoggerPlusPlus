@@ -533,7 +533,7 @@ public class LogEntry {
 				case REQUEST_TOOL:
 					return tool.toolName();
 				case TAGS:
-					return this.matchingTags.stream().map(Tag::getName).collect(Collectors.toList());
+					return this.matchingTags.stream().collect(Collectors.toList());
 				case URL:
 					return this.urlString;
 				case PATH:

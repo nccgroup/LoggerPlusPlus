@@ -24,15 +24,17 @@ import com.nccgroup.loggerplusplus.exports.*;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.TagRenderer;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
@@ -207,6 +209,21 @@ public class PreferencesPanel extends JScrollPane {
         ((SpinnerNumberModel) maxResponseSize.getModel()).setMinimum(0);
         ((SpinnerNumberModel) maxResponseSize.getModel()).setMaximum(1000000);
         ((SpinnerNumberModel) maxResponseSize.getModel()).setStepSize(1);
+
+        JCheckBox tagStyle = otherPanel.addPreferenceComponent(preferences, PREF_TABLE_PILL_STYLE, "Display matching tags as pill components");
+
+        preferences.addSettingListener((source, settingName, newValue) -> {
+            if(Objects.equals(settingName, PREF_TABLE_PILL_STYLE)){
+                LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogViewController().getLogViewPanel().getLogTable().getColumnModel();
+                Optional<LogTableColumn> column = columnModel.getAllColumns().stream().filter(logTableColumn -> logTableColumn.getIdentifier() == LogEntryField.TAGS).findFirst();
+                if(column.isEmpty()) return;
+                if((boolean) newValue) {
+                    column.get().setCellRenderer(new TagRenderer());
+                }else{
+                    column.get().setCellRenderer(new DefaultTableCellRenderer());
+                }
+            }
+        });
 
         ComponentGroup savedFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Saved Filter Sharing");
         savedFilterSharing.add(new JButton(new AbstractAction("Import Saved Filters") {
