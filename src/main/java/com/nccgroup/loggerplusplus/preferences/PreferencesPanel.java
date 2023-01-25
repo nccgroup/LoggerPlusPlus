@@ -21,7 +21,7 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.*;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -256,11 +256,11 @@ public class PreferencesPanel extends JScrollPane {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
-                Map<UUID, ColorFilter> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
-                        new TypeToken<Map<UUID, ColorFilter>>() {
+                Map<UUID, TableColorRule> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
+                        new TypeToken<Map<UUID, TableColorRule>>() {
                         }.getType());
-                for (ColorFilter colorFilter : colorFilterMap.values()) {
-                    LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
+                for (TableColorRule tableColorRule : colorFilterMap.values()) {
+                    LoggerPlusPlus.instance.getLibraryController().addColorFilter(tableColorRule);
                 }
             }
         }));
@@ -268,7 +268,7 @@ public class PreferencesPanel extends JScrollPane {
         colorFilterSharing.add(new JButton(new AbstractAction("Export Color Filters") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
+                HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
                 String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(colorFilters);
                 MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
             }

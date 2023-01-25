@@ -1,6 +1,7 @@
 package com.nccgroup.loggerplusplus.util.userinterface.renderer;
 
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterTable;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterTableModel;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.TagTable;
@@ -24,7 +25,7 @@ public class FilterRenderer extends DefaultTableCellRenderer {
         } else if (table instanceof TagTable) {
             validFilter = ((TagTableModel) table.getModel()).validFilterAtRow(row);
         } else {
-            validFilter = (value instanceof LogFilter);
+            validFilter = (value instanceof FilterExpression);
         }
 
         if(validFilter){

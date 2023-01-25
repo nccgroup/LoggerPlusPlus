@@ -12,13 +12,14 @@
 
 PARSER_BEGIN(FilterParser)
 package com.nccgroup.loggerplusplus.filter.parser;
-import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
+import com.nccgroup.loggerplusplus.filter.LogicalOperator;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Date;
 import java.util.ArrayList;
@@ -37,20 +38,18 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
         FilterParser FilterParser = new FilterParser(new StringReader(string));
         ASTExpression node;
         node = FilterParser.Filter();
-//        VisitorData result = new SanityCheckVisitor().visit(node);
-//        if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return node;
     }
 
-    public static void checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
+    public static HashSet<String> checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
         VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
+        return (HashSet<String>) result.getData().get("dependencies");
     }
 
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
         throw new ParseException(String.format("Cannot mix operators %s, %s. Please use parenthesis to remove ambiguity.", op.getLabel(), other.getLabel()));
     }
-}}
 }
 
 PARSER_END(FilterParser)

@@ -89,9 +89,9 @@ public class FilterEvaluationVisitor implements FilterParserVisitor{
 
   @Override
   public Boolean visit(ASTAlias node, VisitorData data) {
-    for (SavedFilter savedFilter : filterLibraryController.getSavedFilters()) {
+    for (SavedFilter savedFilter : filterLibraryController.getFilterSnippets()) {
       if(node.identifier.equalsIgnoreCase(savedFilter.getName())){
-        return visit(savedFilter.getFilter().getAST(), data);
+        return visit(savedFilter.getFilterExpression().getAst(), data);
       }
     }
      return false;

@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
@@ -29,7 +29,7 @@ public class TagTableModel extends AbstractTableModel {
         List<Tag> sorted = new ArrayList<Tag>(tags.values());
         Collections.sort(sorted);
         for (Tag filter : sorted) {
-            rowUUIDs.put((short) rowUUIDs.size(), filter.getUUID());
+            rowUUIDs.put((short) rowUUIDs.size(), filter.getUuid());
         }
     }
 
@@ -70,7 +70,7 @@ public class TagTableModel extends AbstractTableModel {
     }
 
     public boolean validFilterAtRow(int row) {
-        return getTagAtRow(row).getFilter() != null;
+        return getTagAtRow(row).getFilterExpression() != null;
     }
 
 //    public LogFilter getFilterAtRow(int row){
@@ -89,12 +89,7 @@ public class TagTableModel extends AbstractTableModel {
                 tag.setName((String) value);
                 break;
             case 1: {
-                tag.setFilterString((String) value);
-                try {
-                    tag.setFilter(new LogFilter(filterLibraryController, (String) value));
-                } catch (ParseException e) {
-                    tag.setFilter(null);
-                }
+                tag.trySetFilter((String) value);
                 break;
             }
             case 2:
@@ -137,7 +132,7 @@ public class TagTableModel extends AbstractTableModel {
     public void addTag(Tag tag) {
         int i = tags.size();
         filterLibraryController.addTag(tag);
-        rowUUIDs.put((short) i, tag.getUUID());
+        rowUUIDs.put((short) i, tag.getUuid());
         tag.setPriority((short) i);
         this.fireTableRowsInserted(i, i);
     }

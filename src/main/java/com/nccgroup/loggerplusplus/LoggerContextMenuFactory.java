@@ -5,9 +5,7 @@ import burp.api.montoya.http.message.HttpMessage;
 import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
 import burp.api.montoya.ui.contextmenu.ContextMenuItemsProvider;
 import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
-import com.nccgroup.loggerplusplus.filter.parser.ParseException;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
@@ -120,19 +118,13 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
             filterMenu.add(addToCurrentFilter);
         }
 
-        JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set Selection as Color LogFilter") {
+        JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set Selection as Color Filter") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                try {
-                    ColorFilter colorFilter = new ColorFilter();
-                    colorFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(),
-                            context.getFullLabel() + " CONTAINS \"" + selectedText + "\""));
-                    HashMap<UUID,ColorFilter> colorFilters = LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
-                    colorFilters.put(colorFilter.getUUID(), colorFilter);
-                    new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
-                } catch (ParseException e) {
-                    return;
-                }
+                TableColorRule tableColorRule = new TableColorRule("New Filter", context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
+                HashMap<UUID, TableColorRule> colorFilters = LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(PREF_COLOR_FILTERS);
+                colorFilters.put(tableColorRule.getUuid(), tableColorRule);
+                new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController()).setVisible(true);
             }
         });
         filterMenu.add(colorFilterItem);

@@ -2,7 +2,7 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -46,7 +46,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;
-    LogFilter logFilter;
+    LogTableFilter logFilter;
     private List<LogEntryField> fields;
     private String indexName;
     private ScheduledFuture indexTask;
@@ -97,7 +97,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
         if (!StringUtils.isBlank(filterString)) {
             try {
-                logFilter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);
+                logFilter = new LogTableFilter(filterString);
             } catch (ParseException ex) {
                 logger.error("The log filter configured for the Elastic exporter is invalid!", ex);
             }
@@ -143,7 +143,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportNewEntry(final LogEntry logEntry) {
         if(logEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(logEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(logEntry)) return;
             pendingEntries.add(logEntry);
         }
     }
@@ -151,7 +151,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportUpdatedEntry(final LogEntry updatedEntry) {
         if(updatedEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(updatedEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(updatedEntry)) return;
             pendingEntries.add(updatedEntry);
         }
     }

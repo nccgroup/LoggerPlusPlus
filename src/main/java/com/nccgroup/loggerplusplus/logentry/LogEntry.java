@@ -23,7 +23,7 @@ import burp.api.montoya.http.message.params.HttpParameterType;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.http.message.responses.HttpResponse;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
@@ -704,27 +704,27 @@ public class LogEntry {
 	/**
 	 * TODO CLEAN UP
 	 * 
-	 * @param colorFilter
+	 * @param tableColorRule
 	 * @param retest
 	 * @return If the list of matching color filters was updated
 	 */
-	public boolean testColorFilter(ColorFilter colorFilter, boolean retest) {
-		if (!colorFilter.isEnabled() || colorFilter.getFilter() == null) {
-			return this.getMatchingColorFilters().remove(colorFilter.getUUID());
+	public boolean testColorFilter(TableColorRule tableColorRule, boolean retest) {
+		if (!tableColorRule.isEnabled() || tableColorRule.getFilterExpression() == null) {
+			return this.getMatchingColorFilters().remove(tableColorRule.getUuid());
 		}
 
 		// If we don't already know if the color filter matches (e.g. haven't checked it
 		// before)
-		if (!this.matchingColorFilters.contains(colorFilter.getUUID())) {
-			if (colorFilter.getFilter().matches(this)) {
-				this.matchingColorFilters.add(colorFilter.getUUID());
+		if (!this.matchingColorFilters.contains(tableColorRule.getUuid())) {
+			if (tableColorRule.getFilterExpression().matches(this)) {
+				this.matchingColorFilters.add(tableColorRule.getUuid());
 				return true;
 			} else {
 				return false;
 			}
 		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!colorFilter.getFilter().matches(this)) {
-				this.matchingColorFilters.remove(colorFilter.getUUID());
+			if (!tableColorRule.getFilterExpression().matches(this)) {
+				this.matchingColorFilters.remove(tableColorRule.getUuid());
 			}
 			return true;
 		} else {
@@ -738,21 +738,21 @@ public class LogEntry {
 	 * @return If the list of matching color filters was updated
 	 */
 	public boolean testTag(Tag tag, boolean retest) {
-		if (!tag.isEnabled() || tag.getFilter() == null) {
+		if (!tag.isEnabled() || tag.getFilterExpression() == null) {
 			return this.getMatchingTags().remove(tag);
 		}
 
 		// If we don't already know if the color filter matches (e.g. haven't checked it
 		// before)
 		if (!this.matchingTags.contains(tag)) {
-			if (tag.getFilter().matches(this)) {
+			if (tag.getFilterExpression().matches(this)) {
 				this.matchingTags.add(tag);
 				return true;
 			} else {
 				return false;
 			}
 		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!tag.getFilter().matches(this)) {
+			if (!tag.getFilterExpression().matches(this)) {
 				this.matchingTags.remove(tag);
 			}
 			return true;

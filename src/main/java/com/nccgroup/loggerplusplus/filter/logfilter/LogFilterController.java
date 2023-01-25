@@ -118,10 +118,10 @@ public class LogFilterController {
 
     public void setFilter(final String filterString) {
         if (filterString == null || filterString.length() == 0 || filterString.matches(" +")) {
-            setFilter((LogFilter) null);
+            setFilter((LogTableFilter) null);
         } else {
             try {
-                LogFilter filter = new LogFilter(LoggerPlusPlus.instance.getLibraryController(), filterString);
+                LogTableFilter filter = new LogTableFilter(filterString);
                 setFilter(filter);
             } catch (ParseException e) {
                 logTable.setFilter(null);
@@ -149,11 +149,11 @@ public class LogFilterController {
         formatFilter("");
     }
 
-    private void setFilter(LogFilter filter) {
+    public void setFilter(LogTableFilter filter) {
         if (filter == null) {
             clearFilter();
         } else {
-            String filterString = filter.toString();
+            String filterString = filter.getFilterExpression().toString();
             formatFilter(filterString);
             logTable.setFilter(filter);
         }

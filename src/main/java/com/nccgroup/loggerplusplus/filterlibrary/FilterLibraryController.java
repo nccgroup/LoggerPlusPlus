@@ -1,18 +1,16 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilterListener;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filter.tag.TagListener;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -26,7 +24,7 @@ public class FilterLibraryController {
     private final FilterLibraryPanel panel;
     private final ArrayList<FilterLibraryListener> listeners;
     private final ArrayList<SavedFilter> savedFilters;
-    private final HashMap<UUID, ColorFilter> colorFilters;
+    private final HashMap<UUID, TableColorRule> colorFilters;
     private final ArrayList<ColorFilterListener> colorFilterListeners;
     private final HashMap<UUID, Tag> tagFilters;
     private final ArrayList<TagListener> tagListeners;
@@ -46,7 +44,7 @@ public class FilterLibraryController {
         return panel;
     }
 
-    public ArrayList<SavedFilter> getSavedFilters(){
+    public ArrayList<SavedFilter> getFilterSnippets(){
         return this.savedFilters;
     }
 
@@ -94,24 +92,24 @@ public class FilterLibraryController {
         this.listeners.remove(listener);
     }
 
-    public HashMap<UUID, ColorFilter> getColorFilters() {
+    public HashMap<UUID, TableColorRule> getColorFilters() {
         return colorFilters;
     }
 
-    public void addColorFilter(String title, LogFilter filter){
+    public void addColorFilter(String title, FilterExpression filter){
         this.addColorFilter(title, filter, Color.BLACK, Color.WHITE);
     }
 
-    public void addColorFilter(String title, LogFilter filter, Color foreground, Color background){
-        this.addColorFilter(new ColorFilter(title, filter, foreground, background));
+    public void addColorFilter(String title, FilterExpression filter, Color foreground, Color background){
+        this.addColorFilter(new TableColorRule(title, filter));
     }
 
-    public void addColorFilter(ColorFilter colorFilter){
-        this.colorFilters.put(colorFilter.getUUID(), colorFilter);
+    public void addColorFilter(TableColorRule tableColorRule){
+        this.colorFilters.put(tableColorRule.getUuid(), tableColorRule);
 
         for (ColorFilterListener colorFilterListener : this.colorFilterListeners) {
             try {
-                colorFilterListener.onColorFilterAdd(colorFilter);
+                colorFilterListener.onColorFilterAdd(tableColorRule);
             } catch (Exception e) {
                 log.error(e);
             }
@@ -119,13 +117,13 @@ public class FilterLibraryController {
         saveColorFilters();
     }
 
-    public void removeColorFilter(ColorFilter colorFilter){
+    public void removeColorFilter(TableColorRule tableColorRule){
         synchronized (this.colorFilters){
-            this.colorFilters.remove(colorFilter.getUUID());
+            this.colorFilters.remove(tableColorRule.getUuid());
         }
         for (ColorFilterListener listener : this.colorFilterListeners) {
             try{
-                listener.onColorFilterRemove(colorFilter);
+                listener.onColorFilterRemove(tableColorRule);
             }catch (Exception e){
                 log.error(e);
             }
@@ -134,10 +132,10 @@ public class FilterLibraryController {
     }
 
     //Called when a filter is modified.
-    public void updateColorFilter(ColorFilter colorFilter){
+    public void updateColorFilter(TableColorRule tableColorRule){
         for (ColorFilterListener listener : this.colorFilterListeners) {
             try{
-                listener.onColorFilterChange(colorFilter);
+                listener.onColorFilterChange(tableColorRule);
             }catch (Exception e){
                 log.error(e);
             }
@@ -162,7 +160,7 @@ public class FilterLibraryController {
     }
 
     public void addTag(Tag tag) {
-        this.tagFilters.put(tag.getUUID(), tag);
+        this.tagFilters.put(tag.getUuid(), tag);
 
         for (TagListener listener : this.tagListeners) {
             try {
@@ -176,7 +174,7 @@ public class FilterLibraryController {
 
     public void removeTag(Tag tag) {
         synchronized (this.tagFilters) {
-            this.tagFilters.remove(tag.getUUID());
+            this.tagFilters.remove(tag.getUuid());
         }
         for (TagListener listener : this.tagListeners) {
             try {
@@ -212,4 +210,18 @@ public class FilterLibraryController {
         this.tagListeners.remove(listener);
     }
 
+    public void propagateChangesToSnippetUsers(SavedFilter savedFilter) {
+        String snippet = savedFilter.getName();
+        for (TableColorRule tableColorRule : this.getColorFilters().values()) {
+            if(tableColorRule.getFilterExpression().getSnippetDependencies().contains(snippet)){
+                updateColorFilter(tableColorRule);
+            }
+        }
+
+        for (Tag tag : this.getTags().values()) {
+            if(tag.getFilterExpression().getSnippetDependencies().contains(snippet)){
+                updateTag(tag);
+            }
+        }
+    }
 }

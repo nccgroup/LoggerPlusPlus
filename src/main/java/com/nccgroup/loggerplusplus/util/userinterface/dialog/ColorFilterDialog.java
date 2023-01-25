@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 import javax.swing.*;
@@ -78,7 +78,7 @@ public class ColorFilterDialog extends JFrame {
         btnAddFilter.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                ((ColorFilterTableModel) filterTable.getModel()).addFilter(new ColorFilter());
+                ((ColorFilterTableModel) filterTable.getModel()).addFilter(new TableColorRule());
             }
         });
         JButton btnClose = new JButton("Close");

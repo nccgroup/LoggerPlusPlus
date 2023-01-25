@@ -5,14 +5,11 @@ import burp.api.montoya.core.ToolType;
 import burp.api.montoya.http.handler.*;
 import burp.api.montoya.http.message.responses.HttpResponse;
 import burp.api.montoya.proxy.ProxyHttpRequestResponse;
-import burp.api.montoya.proxy.http.InterceptedResponse;
-import burp.api.montoya.proxy.http.ProxyResponseHandler;
-import burp.api.montoya.proxy.http.ProxyResponseReceivedAction;
-import burp.api.montoya.proxy.http.ProxyResponseToBeSentAction;
+import burp.api.montoya.proxy.http.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
@@ -96,8 +93,7 @@ public class LogProcessor {
 
                 //Set the entry's identifier to the HTTP request's hashcode.
                 // For non-proxy messages, this doesn't change when we receive the response
-                Integer identifier = System.identityHashCode(requestToBeSent.body());
-                log.info("HTTP Request - Request Identifier: " + identifier);
+                Integer identifier = System.identityHashCode(requestToBeSent);
 
                 logEntry.setIdentifier(identifier);
                 Annotations annotations = LogProcessorHelper.addIdentifierInComment(identifier, requestToBeSent.annotations());
@@ -119,8 +115,7 @@ public class LogProcessor {
                 if (responseReceived.toolSource().isFromTool(ToolType.PROXY)) {
                     //If the request came from the proxy, the response isn't final yet.
                     //Just tag the comment with the identifier so we can match it up later.
-                    Integer identifier = System.identityHashCode(responseReceived.initiatingRequest());
-                    log.info("HTTP Response Proxy - Response Received: " + identifier);
+//                    Integer identifier = System.identityHashCode(responseReceived.initiatingRequest());
 //                    annotations = LogProcessorHelper.addIdentifierInComment(identifier, annotations);
 //                    return ResponseResult.responseResult(response, annotations); //Process proxy responses using processProxyMessage
                 } else {
@@ -148,9 +143,6 @@ public class LogProcessor {
                         || !LoggerPlusPlus.isUrlInScope(interceptedResponse.initiatingRequest().url())) {
                     return ProxyResponseToBeSentAction.continueWith(interceptedResponse);
                 }
-
-                Integer identifier2 = System.identityHashCode(interceptedResponse.initiatingRequest());
-                log.info("Proxy Response - Identifier: " + identifier2);
 
                 Date arrivalTime = new Date();
                 Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(interceptedResponse.annotations());
@@ -298,9 +290,9 @@ public class LogProcessor {
                 if (logEntry.getStatus() == Status.IGNORED) return null; //Don't care about entry
 
                 //Check against color filters
-                HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
-                for (ColorFilter colorFilter : colorFilters.values()) {
-                    logEntry.testColorFilter(colorFilter, true);
+                HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
+                for (TableColorRule tableColorRule : colorFilters.values()) {
+                    logEntry.testColorFilter(tableColorRule, true);
                 }
 
                 //Check against tags

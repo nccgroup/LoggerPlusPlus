@@ -1,8 +1,8 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
@@ -18,7 +18,7 @@ import java.util.*;
 public class ColorFilterTableModel extends AbstractTableModel {
 
     private final Map<Short, UUID> rowUUIDs = new HashMap<Short, UUID>();
-    private final Map<UUID, ColorFilter> filters;
+    private final Map<UUID, TableColorRule> filters;
     private final String[] columnNames = {"Title", "LogFilter", "Foreground Color", "Background Color", "Enabled", ""};
     private final JButton removeButton = new JButton("Remove");
     private final FilterLibraryController filterLibraryController;
@@ -27,10 +27,10 @@ public class ColorFilterTableModel extends AbstractTableModel {
         this.filterLibraryController = filterLibraryController;
         //Sort existing filters by their priority before adding to table.
         filters = filterLibraryController.getColorFilters();
-        List<ColorFilter> sorted = new ArrayList<ColorFilter>(filters.values());
+        List<TableColorRule> sorted = new ArrayList<TableColorRule>(filters.values());
         Collections.sort(sorted);
-        for (ColorFilter filter : sorted) {
-            rowUUIDs.put((short) rowUUIDs.size(), filter.getUUID());
+        for (TableColorRule filter : sorted) {
+            rowUUIDs.put((short) rowUUIDs.size(), filter.getUuid());
         }
     }
 
@@ -71,31 +71,26 @@ public class ColorFilterTableModel extends AbstractTableModel {
     }
 
     public boolean validFilterAtRow(int row) {
-        return getFilterAtRow(row).getFilter() != null;
+        return getFilterAtRow(row).getFilterExpression() != null;
     }
 
 //    public LogFilter getFilterAtRow(int row){
 //        return filters.get(rowUUIDs.get((short) row)).getFilter();
 //    }
 
-    public ColorFilter getFilterAtRow(int row){
+    public TableColorRule getFilterAtRow(int row){
         return filters.get(rowUUIDs.get((short) row));
     }
 
     public void setValueAt(Object value, int row, int col) {
         UUID rowUid = rowUUIDs.get((short) row);
-        ColorFilter filter = filters.get(rowUid);
+        TableColorRule filter = filters.get(rowUid);
         switch (col) {
             case 0:
                 filter.setName((String) value);
                 break;
             case 1: {
-                filter.setFilterString((String) value);
-                try {
-                    filter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(), (String) value));
-                } catch (ParseException e) {
-                    filter.setFilter(null);
-                }
+                filter.trySetFilter((String) value);
                 break;
             }
             case 2:
@@ -134,10 +129,10 @@ public class ColorFilterTableModel extends AbstractTableModel {
         return col != 5;
     }
 
-    public void addFilter(ColorFilter filter){
+    public void addFilter(TableColorRule filter){
         int i = filters.size();
         filterLibraryController.addColorFilter(filter);
-        rowUUIDs.put((short) i, filter.getUUID());
+        rowUUIDs.put((short) i, filter.getUuid());
         filter.setPriority((short) i);
         this.fireTableRowsInserted(i, i);
     }
@@ -145,7 +140,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
     public void onClick(int row, int column) {
         if(row != -1 && row < filters.size() && column == 5) {
             synchronized (rowUUIDs) {
-                ColorFilter removedFilter = filters.get(rowUUIDs.get((short) row));
+                TableColorRule removedFilter = filters.get(rowUUIDs.get((short) row));
                 filterLibraryController.removeColorFilter(removedFilter);
                 this.fireTableRowsDeleted(row, row);
                 rowUUIDs.remove((short) row);
@@ -163,9 +158,9 @@ public class ColorFilterTableModel extends AbstractTableModel {
         UUID toUid = this.rowUUIDs.get((short) to);
         rowUUIDs.put((short) to, rowUUIDs.get((short) from));
         rowUUIDs.put((short) from, toUid);
-        ColorFilter toFilter = filters.get(rowUUIDs.get((short) to));
+        TableColorRule toFilter = filters.get(rowUUIDs.get((short) to));
         toFilter.setPriority((short) to);
-        ColorFilter fromFilter = filters.get(rowUUIDs.get((short) from));
+        TableColorRule fromFilter = filters.get(rowUUIDs.get((short) from));
         fromFilter.setPriority((short) from);
         filterLibraryController.updateColorFilter(toFilter);
         filterLibraryController.updateColorFilter(fromFilter);
@@ -174,7 +169,7 @@ public class ColorFilterTableModel extends AbstractTableModel {
     }
 
     public void removeAll() {
-        for (ColorFilter filter : new ArrayList<>(filterLibraryController.getColorFilters().values())) {
+        for (TableColorRule filter : new ArrayList<>(filterLibraryController.getColorFilters().values())) {
             filterLibraryController.removeColorFilter(filter);
         }
 

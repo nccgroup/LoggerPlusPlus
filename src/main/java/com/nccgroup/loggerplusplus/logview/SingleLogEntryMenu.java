@@ -12,9 +12,10 @@ import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.filter.ComparisonOperator;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
 import com.nccgroup.loggerplusplus.filter.LogicalOperator;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -37,30 +38,30 @@ import java.util.Date;
 @Log4j2
 public class SingleLogEntryMenu extends JPopupMenu {
 
-    public SingleLogEntryMenu(final LogTableController logTableController, final LogEntry entry, final LogEntryField selectedField){
+    public SingleLogEntryMenu(final LogTableController logTableController, final LogEntry entry, final LogEntryField selectedField) {
         final LogTable logTable = logTableController.getLogTable();
         final String columnName = selectedField.getFullLabel();
         final Object columnValue = entry.getValueByKey(selectedField);
         final String columnValueString;
 
-        if(columnValue != null){
-            if(columnValue instanceof Date){
+        if (columnValue != null) {
+            if (columnValue instanceof Date) {
                 columnValueString = "\"" + LogProcessor.LOGGER_DATE_FORMAT.format(columnValue) + "\"";
-            }else {
+            } else {
                 columnValueString = columnValue instanceof Number ?
                         columnValue.toString() : "\"" + columnValue + "\"";
             }
-        }else{
+        } else {
             columnValueString = "\"\"";
         }
 
         final boolean isPro = LoggerPlusPlus.montoya.burpSuite().version().edition() == BurpSuiteEdition.PROFESSIONAL;
         String title = entry.getValueByKey(LogEntryField.URL).toString();
-        if(title.length() > 50) title = title.substring(0, 47) + "...";
+        if (title.length() > 50) title = title.substring(0, 47) + "...";
         this.add(new JMenuItem(title));
         this.add(new JPopupMenu.Separator());
 
-        if(selectedField != LogEntryField.NUMBER) {
+        if (selectedField != LogEntryField.NUMBER) {
             JMenuItem useAsFilter = new JMenuItem(new AbstractAction("Use " + columnName + " Value As LogFilter") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
@@ -74,24 +75,36 @@ public class SingleLogEntryMenu extends JPopupMenu {
                 JMenuItem andFilter = new JMenuItem(new AbstractAction(LogicalOperator.AND.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.EQUAL, columnValueString);
-                        logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
+                        try {
+                            logTable.getCurrentFilter().getFilterExpression().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.EQUAL, columnValueString);
+                            logTableController.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter());
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 });
 
                 JMenuItem andNotFilter = new JMenuItem(new AbstractAction("AND NOT") {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.NOT_EQUAL, columnValueString);
-                        logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
+                        try {
+                            logTable.getCurrentFilter().getFilterExpression().addConditionToFilter(LogicalOperator.AND, selectedField, ComparisonOperator.NOT_EQUAL, columnValueString);
+                            logTableController.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter());
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 });
 
                 JMenuItem orFilter = new JMenuItem(new AbstractAction(LogicalOperator.OR.getLabel()) {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
-                        String newFilter = logTable.getCurrentFilter().addConditionToFilter(LogicalOperator.OR, selectedField, ComparisonOperator.EQUAL, columnValueString);
-                        logTableController.getLogViewController().getLogFilterController().setFilter(newFilter);
+                        try {
+                            logTable.getCurrentFilter().getFilterExpression().addConditionToFilter(LogicalOperator.OR, selectedField, ComparisonOperator.EQUAL, columnValueString);
+                            logTableController.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter());
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 });
                 addToCurrentFilter.add(andFilter);
@@ -103,16 +116,10 @@ public class SingleLogEntryMenu extends JPopupMenu {
             JMenuItem colorFilterItem = new JMenuItem(new AbstractAction("Set " + columnName + " Value as Color Filter") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    try {
-                        ColorFilter colorFilter = new ColorFilter();
-                        colorFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(),
-                                columnName + " == " + columnValueString));
-                        LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
-                        ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
-                        colorFilterDialog.setVisible(true);
-                    } catch (ParseException e1) {
-                        return;
-                    }
+                    TableColorRule tableColorRule = new TableColorRule("New Filter", columnName + " == " + columnValueString);
+                    LoggerPlusPlus.instance.getLibraryController().addColorFilter(tableColorRule);
+                    ColorFilterDialog colorFilterDialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
+                    colorFilterDialog.setVisible(true);
                 }
             });
             this.add(colorFilterItem);
@@ -121,7 +128,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
         this.add(new JPopupMenu.Separator());
         final boolean inScope = LoggerPlusPlus.isUrlInScope(entry.getUrlString());
         JMenuItem scopeItem;
-        if(!inScope){
+        if (!inScope) {
             scopeItem = new JMenu("Add to scope");
             scopeItem.add(new JMenuItem(new AbstractAction("Domain") {
                 @Override
@@ -140,7 +147,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
                     LoggerPlusPlus.montoya.scope().isInScope(entry.getUrlString());
                 }
             }));
-        }else{
+        } else {
             scopeItem = new JMenuItem(new AbstractAction("Remove from scope") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
@@ -159,7 +166,7 @@ public class SingleLogEntryMenu extends JPopupMenu {
             }
         }
 
-        if(exportMenu.getItemCount() > 0){
+        if (exportMenu.getItemCount() > 0) {
             this.add(new JPopupMenu.Separator());
             this.add(exportMenu);
         }
