@@ -41,6 +41,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static com.nccgroup.loggerplusplus.LoggerPlusPlus.montoya;
+
 @Getter
 @Setter
 public class LogEntry {
@@ -138,11 +140,7 @@ public class LogEntry {
 		switch (this.status) {
 			case UNPROCESSED: {
 				this.status = processRequest();
-				// If the entry should be ignored, stop here.
-				if (this.status == Status.IGNORED)
-					return true;
-
-				// Else continue, fall through to process response
+				//fall through to process response
 			}
 			case AWAITING_RESPONSE: {
 				if (this.response == null) {
@@ -154,7 +152,6 @@ public class LogEntry {
 				return true;
 			}
 
-			case IGNORED:
 			case PROCESSED: {
 				// Nothing to do, we're done!
 				return true;
@@ -233,7 +230,7 @@ public class LogEntry {
 						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
 						// Check to see if it uses cookie Jars!
-						List<Cookie> cookiesInJar = LoggerPlusPlus.montoya.http().cookieJar().cookies();
+						List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
 						boolean oneNotMatched = false;
 						boolean anyParamMatched = false;
 
@@ -529,6 +526,8 @@ public class LogEntry {
 
 		try {
 			switch (columnName) {
+				case INSCOPE:
+					return montoya.scope().isInScope(urlString);
 				case PROXY_TOOL:
 				case REQUEST_TOOL:
 					return tool.toolName();

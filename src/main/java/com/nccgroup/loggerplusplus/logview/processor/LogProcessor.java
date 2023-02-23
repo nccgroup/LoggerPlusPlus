@@ -9,8 +9,10 @@ import burp.api.montoya.proxy.http.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
 import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
@@ -250,31 +252,6 @@ public class LogProcessor {
         }
     }
 
-    private void submitNewEntryProcessingRunnable(final LogEntry logEntry){
-        entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
-        RunnableFuture<LogEntry> processingRunnable = new FutureTask<>(() -> {
-            entriesPendingProcessing.remove(logEntry.getIdentifier());
-            LogEntry result = processEntry(logEntry);
-
-            if(result == null) {
-                entryProcessingFutures.remove(logEntry.getIdentifier());
-                return null; //Ignored entry. Skip it.
-            }else{
-                addProcessedEntry(logEntry, true);
-
-                if(result.getStatus() == Status.PROCESSED){
-                    //If the entry was fully processed, remove it from the processing list.
-                    entryProcessingFutures.remove(logEntry.getIdentifier());
-                }else{
-                    //We're waiting on the response, we'll use this future to know we're done later.
-                }
-                return result;
-            }
-        });
-        entryProcessingFutures.put(logEntry.getIdentifier(), processingRunnable);
-        entryProcessExecutor.submit(processingRunnable);
-    }
-
     /**
      * Create a runnable to be used in an executor which will process a
      * HTTP object and store the results in the provided LogEntry object.
@@ -287,7 +264,15 @@ public class LogProcessor {
 
             //If the status has been changed
             if (logEntry.getStatus() != logEntry.getPreviousStatus()) {
-                if (logEntry.getStatus() == Status.IGNORED) return null; //Don't care about entry
+                FilterExpression doNotLogExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
+                if(doNotLogExpression != null){
+                    if (logEntry.getStatus() == Status.PROCESSED || !doNotLogExpression.getRequiredContexts().contains(FieldGroup.RESPONSE)) {
+                        //If we're dealing with a complete entry, or if the filter doesn't need the response.
+                        if(doNotLogExpression.matches(logEntry)){
+                            return null;
+                        }
+                    }
+                }
 
                 //Check against color filters
                 HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
@@ -305,6 +290,31 @@ public class LogProcessor {
         return logEntry;
     }
 
+    private void submitNewEntryProcessingRunnable(final LogEntry logEntry){
+        entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
+        RunnableFuture<LogEntry> processingRunnable = new FutureTask<>(() -> {
+            entriesPendingProcessing.remove(logEntry.getIdentifier());
+            LogEntry result = processEntry(logEntry);
+
+            if(result == null) {
+                entryProcessingFutures.remove(logEntry.getIdentifier());
+                return null; //Ignored entry. Skip it.
+            }else{
+                addNewEntry(logEntry, true);
+
+                if(result.getStatus() == Status.PROCESSED){
+                    //If the entry was fully processed, remove it from the processing list.
+                    entryProcessingFutures.remove(logEntry.getIdentifier());
+                }else{
+                    //We're waiting on the response, we'll use this future to know we're done later.
+                }
+                return result;
+            }
+        });
+        entryProcessingFutures.put(logEntry.getIdentifier(), processingRunnable);
+        entryProcessExecutor.submit(processingRunnable);
+    }
+
     private RunnableFuture<LogEntry> createEntryUpdateRunnable(final Future<LogEntry> processingFuture,
                                                               final HttpResponse requestResponse,
                                                               final Date arrivalTime){
@@ -312,10 +322,20 @@ public class LogProcessor {
             //Block until initial processing is complete.
             LogEntry logEntry = processingFuture.get();
             if (logEntry == null) {
-                return null; //Request to an ignored host. Stop processing.
+                //Request was filtered during response processing. We can just ignore the response.
+                return null;
             }
+
+            //Request was processed successfully... now process the response.
             logEntry.addResponse(requestResponse, arrivalTime);
-            processEntry(logEntry);
+            LogEntry updatedEntry = processEntry(logEntry);
+
+            if(updatedEntry == null){
+                //Response must have been filtered out. Delete the existing entry and stop processing
+                removeExistingEntry(logEntry);
+                entryProcessingFutures.remove(logEntry.getIdentifier());
+                return null;
+            }
 
             if (logEntry.getStatus() == Status.PROCESSED) {
                 //If the entry was fully processed, remove it from the processing list.
@@ -373,9 +393,10 @@ public class LogProcessor {
         this.entryImportExecutor.shutdownNow();
     }
 
-    void addProcessedEntry(LogEntry logEntry, boolean sendToAutoExporters) {
-        if (sendToAutoExporters) exportController.exportNewEntry(logEntry);
+    void addNewEntry(LogEntry logEntry, boolean sendToAutoExporters) {
+        FilterExpression doNotLogExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
         SwingUtilities.invokeLater(() -> {
+            if (sendToAutoExporters) exportController.exportNewEntry(logEntry);
             logTableController.getLogTableModel().addEntry(logEntry);
         });
     }
@@ -384,6 +405,12 @@ public class LogProcessor {
         exportController.exportUpdatedEntry(logEntry);
         SwingUtilities.invokeLater(() -> {
             logTableController.getLogTableModel().updateEntry(logEntry);
+        });
+    }
+
+    void removeExistingEntry(LogEntry logEntry){
+        SwingUtilities.invokeLater(() -> {
+            logTableController.getLogTableModel().removeLogEntry(logEntry);
         });
     }
 

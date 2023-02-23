@@ -3,8 +3,11 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 
 public class AliasCheckVisitor implements FilterParserVisitor{
 
@@ -15,7 +18,6 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   }
 
   public VisitorData defaultVisit(SimpleNode node, VisitorData data){
-    data.setData("dependencies", new HashSet<String>());
     node.childrenAccept(this, data);
     return data;
   }
@@ -24,12 +26,19 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   }
 
   public VisitorData visit(SimpleNode node){
-    return visit(node, new VisitorData());
+    VisitorData visitorData = new VisitorData();
+    visitorData.setData("dependencies", new HashSet<String>());
+    visitorData.setData("contexts", new HashSet<FieldGroup>());
+    visitorData.setData("aliasVisitList", new LinkedList<String>());
+    return visit(node, visitorData);
   }
   public VisitorData visit(ASTExpression node, VisitorData data){
     return defaultVisit(node, data);
   }
   public VisitorData visit(ASTComparison node, VisitorData visitorData){
+    HashSet<FieldGroup> contexts = (HashSet<FieldGroup>) visitorData.getData().get("contexts");
+    if(node.left instanceof LogEntryField) contexts.add(((LogEntryField) node.left).getFieldGroup());
+    if(node.right instanceof LogEntryField) contexts.add(((LogEntryField) node.right).getFieldGroup());
     defaultVisit(node, visitorData);
     return visitorData;
   }
@@ -37,22 +46,20 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   private static String RECURSION_CHECK = "RECURSION_CHECK";
   @Override
   public VisitorData visit(ASTAlias node, VisitorData data) {
+    //Add this alias to our dependencies
     ((HashSet<String>) data.getData().get("dependencies")).add(node.identifier);
     if(filterLibraryController == null){
       data.addError("Cannot use aliases in this context. Filter library controller is not set.");
       return data;
     }
-    if(!data.getData().containsKey(RECURSION_CHECK)){
-      data.getData().put(RECURSION_CHECK, new HashSet<String>());
-    }
 
-    HashSet<String> recursionSet = (HashSet<String>) data.getData().get(RECURSION_CHECK);
-    if(recursionSet.contains(node.identifier)){
+    LinkedList<String> aliasVisitList = (LinkedList<String>) data.getData().get("aliasVisitList");
+    if(aliasVisitList.contains(node.identifier)){
       //We're recursing, don't continue!
       data.addError("Recursion detected in filter. Alias identifier: " + node.identifier);
       return data;
     }else{
-      recursionSet.add(node.identifier);
+      aliasVisitList.push(node.identifier);
     }
 
     //Now sanity check on the aliased filter with our existing data
@@ -61,6 +68,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
       if(savedFilter.getName().equalsIgnoreCase(node.identifier) && savedFilter.getFilterExpression() != null){
         visit(savedFilter.getFilterExpression().getAst(), data);
         foundAliasedFilter = true;
+        aliasVisitList.pop();
         break;
       }
     }

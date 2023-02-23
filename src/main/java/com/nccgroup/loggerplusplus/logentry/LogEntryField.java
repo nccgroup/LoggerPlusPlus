@@ -12,6 +12,8 @@ public enum LogEntryField {
     NUMBER(FieldGroup.ENTRY, Integer.class, "Item table number. Not valid for filter use.", "Number"),
     PROXY_TOOL(FieldGroup.ENTRY, String.class, "Originating tool name. Extension generated requests will be displayed as \"Extender\".", "Tool"),
     TAGS(FieldGroup.ENTRY, String.class, "The configured tags for which this entry match.", "Tags"),
+
+    INSCOPE(FieldGroup.ENTRY, Boolean.class, "If the URL is in scope", "InScope"),
     LISTENER_INTERFACE(FieldGroup.ENTRY, String.class, "The interface the proxied message was delivered to.", "ListenInterface", "Interface"),
     CLIENT_IP(FieldGroup.ENTRY, String.class, "The requesting client IP address.", "ClientIP", "ClientAddress"),
 

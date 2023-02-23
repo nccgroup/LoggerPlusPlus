@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.Date;
 import java.util.ArrayList;
@@ -26,10 +27,10 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, 
         return node;
     }
 
-    public static HashSet<String> checkAliasesForSanity(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
+    public static HashMap<String, Object> validateFilterDependencies(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
         VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
-        return (HashSet<String>) result.getData().get("dependencies");
+        return result.getData();
     }
 
     private static void throwOperatorAmbiguityException(LogicalOperator op, LogicalOperator other) throws ParseException {
@@ -762,11 +763,6 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, 
     finally { jj_save(3, xla); }
   }
 
-  private boolean jj_3_4() {
-    if (jj_3R_9()) return true;
-    return false;
-  }
-
   private boolean jj_3R_18() {
     if (jj_3R_21()) return true;
     return false;
@@ -976,6 +972,11 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants, 
 
   private boolean jj_3R_13() {
     if (jj_3R_19()) return true;
+    return false;
+  }
+
+  private boolean jj_3_4() {
+    if (jj_3R_9()) return true;
     return false;
   }
 

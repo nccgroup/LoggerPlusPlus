@@ -73,6 +73,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
         prefs.registerSetting(PREF_ENABLED, Boolean.class, true);
         prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false);
+        prefs.registerSetting(PREF_DO_NOT_LOG_IF_MATCH, FilterExpression.class, null, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_LOG_GLOBAL, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_PROXY, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_SPIDER, Boolean.class, true);

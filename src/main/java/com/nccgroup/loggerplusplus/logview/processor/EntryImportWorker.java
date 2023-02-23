@@ -59,7 +59,7 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
                 if(this.isCancelled()) return;
                 LogEntry result = logProcessor.processEntry(logEntry);
                 if(result != null) {
-                    logProcessor.addProcessedEntry(logEntry, sendToAutoExporters);
+                    logProcessor.addNewEntry(logEntry, sendToAutoExporters);
                 }
                 publish(finalIndex);
                 countDownLatch.countDown();

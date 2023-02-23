@@ -21,7 +21,9 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.*;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
 import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
@@ -65,6 +67,40 @@ public class PreferencesPanel extends JScrollPane {
         });
         statusPanel.add(tglbtnIsEnabled);
         tglbtnIsEnabled.setSelected(preferences.getSetting(PREF_ENABLED));
+
+        ComponentGroup doNotLogPanel = new ComponentGroup(Orientation.HORIZONTAL, "Log Filter");
+        JTextField doNotLogFilterField = new JTextField(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH).toString());
+        doNotLogPanel.add(new JLabel("Do not log entries matching filter: "));
+        GridBagConstraints gbc = doNotLogPanel.generateNextConstraints(true);
+        gbc.weightx = 100;
+        doNotLogPanel.add(doNotLogFilterField, gbc);
+        JToggleButton applyButton = new JToggleButton(new AbstractAction("Enable") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JToggleButton thisButton = (JToggleButton) e.getSource();
+                if(thisButton.isSelected()){
+                    try {
+                        FilterExpression expression = new FilterExpression(doNotLogFilterField.getText());
+                        doNotLogFilterField.setText(expression.toString());
+                        preferences.setSetting(PREF_DO_NOT_LOG_IF_MATCH, expression);
+                        doNotLogFilterField.setEnabled(false);
+                        thisButton.setText("Disable");
+                    } catch (ParseException ex) {
+                        JOptionPane.showMessageDialog(thisButton, "Could not parse filter: " + ex.getMessage());
+                        thisButton.setSelected(false);
+                    }
+                }else{
+                    preferences.setSetting(PREF_DO_NOT_LOG_IF_MATCH, null);
+                    doNotLogFilterField.setEnabled(true);
+                    thisButton.setText("Enable");
+                }
+            }
+        });
+        if(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH) != null){
+            applyButton.doClick();
+        }
+        doNotLogPanel.add(applyButton);
+
 
         ComponentGroup logFromPanel = new ComponentGroup(Orientation.VERTICAL, "Log From");
         logFromPanel.addPreferenceComponent(preferences, PREF_RESTRICT_TO_SCOPE, "In scope items only");
@@ -321,6 +357,7 @@ public class PreferencesPanel extends JScrollPane {
 
         JComponent mainComponent = PanelBuilder
                 .build(new JPanel[][] { new JPanel[] { statusPanel, statusPanel, statusPanel, statusPanel },
+                        new JPanel[] { logFromPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel },
                         new JPanel[] { logFromPanel, importGroup, importGroup, importGroup },
                         new JPanel[] { logFromPanel, exportGroup, exportGroup, exportGroup },
                         new JPanel[] { savedFilterSharing, savedFilterSharing, colorFilterSharing, colorFilterSharing },

@@ -2,10 +2,12 @@ package com.nccgroup.loggerplusplus.filter;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.*;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import lombok.Getter;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class FilterExpression {
@@ -16,9 +18,14 @@ public class FilterExpression {
     @Getter
     protected HashSet<String> snippetDependencies;
 
+    @Getter
+    protected HashSet<FieldGroup> requiredContexts;
+
     public FilterExpression(String filterString) throws ParseException {
         this.ast = FilterParser.parseFilter(filterString);
-        this.snippetDependencies = FilterParser.checkAliasesForSanity(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        snippetDependencies = (HashSet<String>) filterInfo.get("dependencies");
+        requiredContexts = (HashSet<FieldGroup>) filterInfo.get("contexts");
     }
 
     public boolean matches(LogEntry entry){
@@ -36,7 +43,9 @@ public class FilterExpression {
         }
 
         this.ast = FilterParser.parseFilter(String.format("%s %s %s %s %s", existing, logicalOperator.toString(), field.toString(), booleanOperator, value));
-        this.snippetDependencies = FilterParser.checkAliasesForSanity(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        snippetDependencies = (HashSet<String>) filterInfo.get("dependencies");
+        requiredContexts = (HashSet<FieldGroup>) filterInfo.get("contexts");
     }
 
     @Override
