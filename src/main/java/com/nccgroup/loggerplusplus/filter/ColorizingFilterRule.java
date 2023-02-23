@@ -33,7 +33,7 @@ public abstract class ColorizingFilterRule extends FilterRule {
     @Override
     public boolean equals(Object obj) {
         if(obj instanceof ColorizingFilterRule){
-            return ((TableColorRule) obj).getUuid().equals(this.getUuid());
+            return ((ColorizingFilterRule) obj).getUuid().equals(this.getUuid());
         }else{
             return super.equals(obj);
         }

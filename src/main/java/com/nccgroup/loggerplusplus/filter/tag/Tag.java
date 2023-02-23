@@ -50,6 +50,12 @@ public class Tag extends ColorizingFilterRule implements Comparable<Tag> {
     }
 
     @Override
+    public void setPriority(short priority) {
+        super.setPriority(priority);
+        shouldRetest = true;
+    }
+
+    @Override
     public int compareTo(Tag tag) {
         return ((Comparable) this.getPriority()).compareTo(tag.getPriority());
     }

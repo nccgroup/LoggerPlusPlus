@@ -197,7 +197,7 @@ public class LogTableModel extends AbstractTableModel implements ColorFilterList
     public void onTagAdd(final Tag filter) {
         if (!filter.isEnabled() || filter.getFilterExpression() == null)
             return;
-        createTagTestingWorker(filter, false);
+        createTagTestingWorker(filter, false).execute();
     }
 
     @Override
