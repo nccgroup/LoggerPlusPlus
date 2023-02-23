@@ -62,10 +62,8 @@ public class TableHeaderMenu extends JPopupMenu{
 		item = new JMenuItem("Make all visible");
 		item.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Enumeration<LogTableColumn> columnEnumeration = logTable.getColumnModel().getAllColumns();
-				while (columnEnumeration.hasMoreElements()) {
-					LogTableColumn logTableColumn = columnEnumeration.nextElement();
-					logTable.getColumnModel().showColumn(logTableColumn);
+				for (LogTableColumn column : logTable.getColumnModel().getAllColumns()) {
+					logTable.getColumnModel().showColumn(column);
 				}
 				logTableController.getLogTableColumnModel().saveLayout();
 			}
@@ -74,9 +72,8 @@ public class TableHeaderMenu extends JPopupMenu{
 
 		Map<FieldGroup, JMenu> groupMenus = new HashMap<>();
 
-		Enumeration<LogTableColumn> columnEnumeration = logTable.getColumnModel().getAllColumns();
-		while (columnEnumeration.hasMoreElements()) {
-			LogTableColumn logTableColumn = columnEnumeration.nextElement();
+		for (LogTableColumn logTableColumn : logTable.getColumnModel().getAllColumns()) {
+
 			FieldGroup group = logTableColumn.getIdentifier().getFieldGroup();
 			if (!groupMenus.containsKey(group)) {
 				groupMenus.put(group, new JMenu(group.getLabel()));

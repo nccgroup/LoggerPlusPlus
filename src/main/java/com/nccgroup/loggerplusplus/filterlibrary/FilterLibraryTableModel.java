@@ -1,8 +1,6 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
-import burp.BurpExtender;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
@@ -27,7 +25,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
 
     @Override
     public int getRowCount() {
-        return controller.getSavedFilters().size();
+        return controller.getFilterSnippets().size();
     }
 
     @Override
@@ -37,13 +35,12 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
 
     @Override
     public Object getValueAt(int row, int column) {
-        if(row >= controller.getSavedFilters().size()) return null;
-        SavedFilter savedFilter = controller.getSavedFilters().get(row);
+        if(row >= controller.getFilterSnippets().size()) return null;
+        SavedFilter savedFilter = controller.getFilterSnippets().get(row);
         switch (column){
             case 0: return savedFilter.getName();
             case 1: {
-                if(savedFilter.getFilter() == null) return savedFilter.getFilterString();
-                else return savedFilter.getFilter();
+                return savedFilter.getFilterExpression() == null ? savedFilter.getFilterString() : savedFilter.getFilterExpression();
             }
             case 2: return btnApplyFilter;
             case 3: return btnSetColorFilter;
@@ -63,7 +60,7 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
 
     @Override
     public void setValueAt(Object value, int row, int column) {
-        SavedFilter savedFilter = controller.getSavedFilters().get(row);
+        SavedFilter savedFilter = controller.getFilterSnippets().get(row);
         if(savedFilter == null) return;
         if(column == 0) {
             savedFilter.setName((String) value);
@@ -74,11 +71,10 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
         }
         if(column == 1){
             try{
-                savedFilter.setFilter(new LogFilter(LoggerPlusPlus.instance.getLibraryController(), (String) value));
+                savedFilter.parseAndSetFilter((String) value);
+                controller.propagateChangesToSnippetUsers(savedFilter);
             }catch (ParseException e){
                 //Not a valid filter...
-                savedFilter.setFilterString((String) value);
-                savedFilter.setFilter(null);
                 MoreHelp.showLargeOutputDialog("Filter Exception", "<html>" + e.getMessage().replaceAll("\n", "<br>") + "</html>");
 //                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getMainViewController().getUiComponent(), "<html><body style=\"max-height: 400px; max-width: 400px;\">" + e.getMessage().replaceAll("\n", "<br>") + "</html>", "Filter Exception", JOptionPane.ERROR_MESSAGE);
             }
@@ -87,15 +83,15 @@ public class FilterLibraryTableModel extends AbstractTableModel implements Filte
     }
 
     public void onClick(int row, int col) {
-        if(row < 0 || row >= controller.getSavedFilters().size()) return;
-        SavedFilter savedFilter = controller.getSavedFilters().get(row);
+        if(row < 0 || row >= controller.getFilterSnippets().size()) return;
+        SavedFilter savedFilter = controller.getFilterSnippets().get(row);
         if(col == 2){
-            controller.getLoggerPlusPlus().getLogViewController().getLogFilterController().setFilter(savedFilter.getFilterString());
-            controller.getLoggerPlusPlus().getMainViewController().getTabbedPanel().setSelectedIndex(0);
+            LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(savedFilter.getFilterString());
+            LoggerPlusPlus.instance.getMainViewController().getTabbedPanel().setSelectedIndex(0);
             return;
         }
         if(col == 3){
-            controller.addColorFilter(savedFilter.getName(), savedFilter.getFilter());
+            controller.addColorFilter(savedFilter.getName(), savedFilter.getFilterExpression());
             ColorFilterDialog dialog = new ColorFilterDialog(LoggerPlusPlus.instance.getLibraryController());
             dialog.setVisible(true);
         }

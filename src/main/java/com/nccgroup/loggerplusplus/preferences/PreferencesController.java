@@ -1,57 +1,49 @@
 package com.nccgroup.loggerplusplus.preferences;
 
+import burp.api.montoya.MontoyaApi;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@Log4j2
 public class PreferencesController {
-    private final LoggerPlusPlus loggerPlusPlus;
+
+    @Getter
     private final IGsonProvider gsonProvider;
+
+    @Getter
     private final Preferences preferences;
 
     private PreferencesPanel preferencesPanel;
 
-    private Logger logger = LogManager.getLogger(this.getClass());
-
-    public PreferencesController(LoggerPlusPlus loggerPlusPlus) {
-        this.loggerPlusPlus = loggerPlusPlus;
-        this.gsonProvider = loggerPlusPlus.getGsonProvider();
-        this.preferences = new LoggerPreferenceFactory(
+    public PreferencesController(MontoyaApi montoya) {
+        this.gsonProvider = LoggerPlusPlus.gsonProvider;
+        this.preferences = new LoggerPreferenceFactory(montoya,
                 gsonProvider,
                 new ILogProvider() {
                     @Override
                     public void logOutput(String message) {
-                        logger.debug(message);
+                        log.debug(message);
                     }
 
                     @Override
                     public void logError(String errorMessage) {
-                        logger.error(errorMessage);
+                        log.error(errorMessage);
                     }
-                },
-                LoggerPlusPlus.callbacks
+                }
         ).buildPreferences();
     }
 
     public PreferencesPanel getPreferencesPanel() {
-        if(preferencesPanel == null) {
-            preferencesPanel = new PreferencesPanel(this);
+        if(this.preferencesPanel == null) {
+            this.preferencesPanel = new PreferencesPanel(this);
         }
+
         return preferencesPanel;
-    }
-
-    public LoggerPlusPlus getLoggerPlusPlus() {
-        return loggerPlusPlus;
-    }
-
-    public IGsonProvider getGsonProvider() {
-        return gsonProvider;
-    }
-
-    public Preferences getPreferences() {
-        return preferences;
     }
 }

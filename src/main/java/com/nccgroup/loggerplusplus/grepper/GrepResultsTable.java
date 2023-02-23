@@ -1,5 +1,6 @@
 package com.nccgroup.loggerplusplus.grepper;
 
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import org.jdesktop.swingx.JXTree;
 import org.jdesktop.swingx.JXTreeTable;
@@ -51,7 +52,7 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
                         public void actionPerformed(ActionEvent actionEvent) {
                             LogTable table = controller.getLogTableController().getLogTable();
                             table.changeSelection(table.convertRowIndexToView(index), 1, false, false);
-                            controller.getLoggerPlusPlus().getMainViewController().getTabbedPanel().setSelectedIndex(0);
+                            LoggerPlusPlus.instance.getMainViewController().getTabbedPanel().setSelectedIndex(0);
                         }
                     });
                     menu.add(viewInLogs);

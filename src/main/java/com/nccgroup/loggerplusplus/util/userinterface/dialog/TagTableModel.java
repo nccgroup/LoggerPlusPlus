@@ -1,13 +1,15 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Created by corey on 19/07/17.
@@ -16,7 +18,7 @@ public class TagTableModel extends AbstractTableModel {
 
     private final Map<Short, UUID> rowUUIDs = new HashMap<Short, UUID>();
     private final Map<UUID, Tag> tags;
-    private final String[] columnNames = {"Tag", "LogFilter", "Enabled", ""};
+    private final String[] columnNames = {"Tag", "LogFilter", "Foreground Color", "Background Color", "Enabled", ""};
     private final JButton removeButton = new JButton("Remove");
     private final FilterLibraryController filterLibraryController;
 
@@ -27,7 +29,7 @@ public class TagTableModel extends AbstractTableModel {
         List<Tag> sorted = new ArrayList<Tag>(tags.values());
         Collections.sort(sorted);
         for (Tag filter : sorted) {
-            rowUUIDs.put((short) rowUUIDs.size(), filter.getUUID());
+            rowUUIDs.put((short) rowUUIDs.size(), filter.getUuid());
         }
     }
 
@@ -55,8 +57,12 @@ public class TagTableModel extends AbstractTableModel {
             case 1:
                 return (tags.get(rowUid).getFilterString() == null ? "" : tags.get(rowUid).getFilterString());
             case 2:
-                return tags.get(rowUid).isEnabled();
+                return (tags.get(rowUid).getForegroundColor() == null ? Color.BLACK : tags.get(rowUid).getForegroundColor());
             case 3:
+                return (tags.get(rowUid).getBackgroundColor() == null ? Color.WHITE : tags.get(rowUid).getBackgroundColor());
+            case 4:
+                return tags.get(rowUid).isEnabled();
+            case 5:
                 return removeButton;
             default:
                 return false;
@@ -64,7 +70,7 @@ public class TagTableModel extends AbstractTableModel {
     }
 
     public boolean validFilterAtRow(int row) {
-        return getTagAtRow(row).getFilter() != null;
+        return getTagAtRow(row).getFilterExpression() != null;
     }
 
 //    public LogFilter getFilterAtRow(int row){
@@ -83,15 +89,16 @@ public class TagTableModel extends AbstractTableModel {
                 tag.setName((String) value);
                 break;
             case 1: {
-                tag.setFilterString((String) value);
-                try {
-                    tag.setFilter(new LogFilter(filterLibraryController, (String) value));
-                } catch (ParseException e) {
-                    tag.setFilter(null);
-                }
+                tag.trySetFilter((String) value);
                 break;
             }
             case 2:
+                tag.setForegroundColor((Color) value);
+                break;
+            case 3:
+                tag.setBackgroundColor((Color) value);
+                break;
+            case 4:
                 tag.setEnabled((Boolean) value);
                 break;
             default:
@@ -106,8 +113,11 @@ public class TagTableModel extends AbstractTableModel {
     public Class<?> getColumnClass(int columnIndex) {
         switch (columnIndex) {
             case 2:
-                return Boolean.class;
             case 3:
+                return Color.class;
+            case 4:
+                return Boolean.class;
+            case 5:
                 return JButton.class;
             default:
                 return String.class;
@@ -116,19 +126,19 @@ public class TagTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int row, int col) {
-        return col != 3;
+        return col != 5;
     }
 
     public void addTag(Tag tag) {
         int i = tags.size();
         filterLibraryController.addTag(tag);
-        rowUUIDs.put((short) i, tag.getUUID());
+        rowUUIDs.put((short) i, tag.getUuid());
         tag.setPriority((short) i);
         this.fireTableRowsInserted(i, i);
     }
 
     public void onClick(int row, int column) {
-        if (row != -1 && row < tags.size() && column == 3) {
+        if (row != -1 && row < tags.size() && column == 5) {
             synchronized (rowUUIDs) {
                 Tag removedFilter = tags.get(rowUUIDs.get((short) row));
                 filterLibraryController.removeTag(removedFilter);

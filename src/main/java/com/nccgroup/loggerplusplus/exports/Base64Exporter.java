@@ -39,19 +39,19 @@ public class Base64Exporter extends LogExporter implements ContextMenuExportProv
                 protected Void doInBackground() throws Exception {
                     super.doInBackground();
                     try (FileWriter fileWriter = new FileWriter(file, false)) {
-                        Gson gson = exportController.getLoggerPlusPlus().getGsonProvider().getGson();
+                        Gson gson = LoggerPlusPlus.gsonProvider.getGson();
                         ArrayList<JsonObject> jsonEntries = new ArrayList<>();
                         Base64.Encoder encoder = Base64.getEncoder();
                         for (LogEntry entry : entries) {
                             JsonObject jsonEntry = new JsonObject();
                             if (includeRequest) {
                                 jsonEntry.addProperty("request",
-                                        encoder.encodeToString(entry.getRequest()));
+                                        encoder.encodeToString(entry.getRequestBytes()));
                             }
 
                             if (includeResponse) {
                                 jsonEntry.addProperty("response",
-                                        encoder.encodeToString(entry.getResponse()));
+                                        encoder.encodeToString(entry.getResponseBytes()));
                             }
                             jsonEntries.add(jsonEntry);
                         }

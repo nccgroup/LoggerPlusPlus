@@ -1,7 +1,6 @@
 package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import java.util.ArrayList;
@@ -10,14 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 
 public class ExportController {
-
-    private final LoggerPlusPlus loggerPlusPlus;
     private final Preferences preferences;
     private final HashMap<Class<? extends LogExporter>, LogExporter> exporters;
     private final List<AutomaticLogExporter> enabledExporters;
 
-    public ExportController(LoggerPlusPlus loggerPlusPlus, Preferences preferences) {
-        this.loggerPlusPlus = loggerPlusPlus;
+    public ExportController(Preferences preferences) {
         this.preferences = preferences;
 
         this.exporters = new HashMap<>();
@@ -62,9 +58,5 @@ public class ExportController {
         for (AutomaticLogExporter exporter : this.enabledExporters) {
             exporter.exportUpdatedEntry(logEntry);
         }
-    }
-
-    public LoggerPlusPlus getLoggerPlusPlus() {
-        return loggerPlusPlus;
     }
 }

@@ -15,6 +15,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   }
 
   public VisitorData defaultVisit(SimpleNode node, VisitorData data){
+    data.setData("dependencies", new HashSet<String>());
     node.childrenAccept(this, data);
     return data;
   }
@@ -36,6 +37,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   private static String RECURSION_CHECK = "RECURSION_CHECK";
   @Override
   public VisitorData visit(ASTAlias node, VisitorData data) {
+    ((HashSet<String>) data.getData().get("dependencies")).add(node.identifier);
     if(filterLibraryController == null){
       data.addError("Cannot use aliases in this context. Filter library controller is not set.");
       return data;
@@ -55,9 +57,9 @@ public class AliasCheckVisitor implements FilterParserVisitor{
 
     //Now sanity check on the aliased filter with our existing data
     boolean foundAliasedFilter = false;
-    for (SavedFilter savedFilter : filterLibraryController.getSavedFilters()) {
-      if(savedFilter.getName().equalsIgnoreCase(node.identifier) && savedFilter.getFilter() != null){
-        visit(savedFilter.getFilter().getAST(), data);
+    for (SavedFilter savedFilter : filterLibraryController.getFilterSnippets()) {
+      if(savedFilter.getName().equalsIgnoreCase(node.identifier) && savedFilter.getFilterExpression() != null){
+        visit(savedFilter.getFilterExpression().getAst(), data);
         foundAliasedFilter = true;
         break;
       }

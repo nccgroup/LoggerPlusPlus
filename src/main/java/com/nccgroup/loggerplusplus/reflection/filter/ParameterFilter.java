@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.reflection.filter;
 
-import burp.IParameter;
+import burp.api.montoya.http.message.params.HttpParameter;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 
 public abstract class ParameterFilter {
@@ -31,7 +31,7 @@ public abstract class ParameterFilter {
         return enabled;
     }
 
-    public abstract boolean isFiltered(IParameter parameter);
+    public abstract boolean isFiltered(HttpParameter parameter);
     public abstract void showConfigDialog();
 
 }

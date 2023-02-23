@@ -2,12 +2,13 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -40,11 +41,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
+@Log4j2
 public class ElasticExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
     RestHighLevelClient httpClient;
     ArrayList<LogEntry> pendingEntries;
-    LogFilter logFilter;
+    LogTableFilter logFilter;
     private List<LogEntryField> fields;
     private String indexName;
     private ScheduledFuture indexTask;
@@ -95,7 +97,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
         if (!StringUtils.isBlank(filterString)) {
             try {
-                logFilter = new LogFilter(exportController.getLoggerPlusPlus().getLibraryController(), filterString);
+                logFilter = new LogTableFilter(filterString);
             } catch (ParseException ex) {
                 logger.error("The log filter configured for the Elastic exporter is invalid!", ex);
             }
@@ -141,7 +143,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportNewEntry(final LogEntry logEntry) {
         if(logEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(logEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(logEntry)) return;
             pendingEntries.add(logEntry);
         }
     }
@@ -149,7 +151,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportUpdatedEntry(final LogEntry updatedEntry) {
         if(updatedEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(updatedEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(updatedEntry)) return;
             pendingEntries.add(updatedEntry);
         }
     }
@@ -197,8 +199,8 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                     builder.field(field.getFullLabel(), value);
                 }
             }catch (Exception e){
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + value);
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + e.getMessage());
+                log.error("ElasticExporter: " + value);
+                log.error("ElasticExporter: " + e.getMessage());
                 throw e;
             }
         }
@@ -224,7 +226,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                     IndexRequest request = buildIndexRequest(logEntry);
                     httpBulkBuilder.add(request);
                 } catch (Exception e) {
-                    LoggerPlusPlus.callbacks.printError("Could not build elastic export request for entry: " + e.getMessage());
+                    log.error("Could not build elastic export request for entry: " + e.getMessage());
                     //Could not build index request. Ignore it?
                 }
             }
@@ -233,7 +235,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                 BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
                 if (bulkResponse.hasFailures()) {
                     for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
-                        LoggerPlusPlus.callbacks.printError(bulkItemResponse.getFailureMessage());
+                        log.error(bulkItemResponse.getFailureMessage());
                     }
                 }
                 connectFailedCounter = 0;
