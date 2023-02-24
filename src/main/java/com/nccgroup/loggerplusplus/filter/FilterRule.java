@@ -59,6 +59,11 @@ public abstract class FilterRule {
 
     public void parseAndSetFilter(String filterString) throws ParseException {
         this.filterString = filterString;
-        this.filterExpression = new FilterExpression(filterString);
+        try {
+            this.filterExpression = new FilterExpression(name, filterString);
+        }catch (ParseException e){
+            this.filterExpression = null;
+            throw e;
+        }
     }
 }

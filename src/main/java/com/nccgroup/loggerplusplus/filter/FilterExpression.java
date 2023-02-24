@@ -22,8 +22,12 @@ public class FilterExpression {
     protected HashSet<FieldGroup> requiredContexts;
 
     public FilterExpression(String filterString) throws ParseException {
+        this(null, filterString);
+    }
+
+    public FilterExpression(String alias, String filterString) throws ParseException {
         this.ast = FilterParser.parseFilter(filterString);
-        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), alias, this.ast);
         snippetDependencies = (HashSet<String>) filterInfo.get("dependencies");
         requiredContexts = (HashSet<FieldGroup>) filterInfo.get("contexts");
     }
@@ -43,7 +47,7 @@ public class FilterExpression {
         }
 
         this.ast = FilterParser.parseFilter(String.format("%s %s %s %s %s", existing, logicalOperator.toString(), field.toString(), booleanOperator, value));
-        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), this.ast);
+        HashMap<String, Object> filterInfo = FilterParser.validateFilterDependencies(LoggerPlusPlus.instance.getLibraryController(), null, this.ast);
         snippetDependencies = (HashSet<String>) filterInfo.get("dependencies");
         requiredContexts = (HashSet<FieldGroup>) filterInfo.get("contexts");
     }

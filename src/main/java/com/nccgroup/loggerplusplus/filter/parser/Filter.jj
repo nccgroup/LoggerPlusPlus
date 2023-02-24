@@ -42,8 +42,8 @@ public class FilterParser/*@bgen(jjtree)*/implements FilterParserTreeConstants/*
         return node;
     }
 
-    public static HashMap<String, Object> validateFilterDependencies(FilterLibraryController libraryController, ASTExpression filter) throws ParseException {
-        VisitorData result = new AliasCheckVisitor(libraryController).visit(filter);
+    public static HashMap<String, Object> validateFilterDependencies(FilterLibraryController libraryController, String alias, ASTExpression filter) throws ParseException {
+        VisitorData result = new AliasCheckVisitor(libraryController).visit(alias, filter);
         if(!result.isSuccess()) throw new ParseException(result.getErrorString());
         return result.getData();
     }
