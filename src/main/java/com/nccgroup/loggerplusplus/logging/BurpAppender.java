@@ -18,7 +18,6 @@ public class BurpAppender extends AbstractAppender {
 
     public BurpAppender(String name, Filter filter){
         super(name, filter, PatternLayout.createDefaultLayout(), false, null);
-        System.out.println("Created appender");
     }
 
     @PluginFactory
