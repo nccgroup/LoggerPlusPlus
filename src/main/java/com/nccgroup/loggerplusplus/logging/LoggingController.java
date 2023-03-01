@@ -20,9 +20,11 @@ public class LoggingController {
         logLevel = gsonProvider.getGson().fromJson(montoyaApi.persistence().preferences().getString(Globals.PREF_LOG_LEVEL), Level.class);
         if(montoyaApi.extension().filename() == null){ //Loaded from classpath. Log to console!
             LoggerContext context = (LoggerContext) LogManager.getContext(false);
-            ConsoleAppender.Builder consoleAppender = new ConsoleAppender.Builder();
-            consoleAppender.setName("ConsoleAppender");
-            context.getRootLogger().addAppender(consoleAppender.build());
+            ConsoleAppender.Builder appenderBuilder = new ConsoleAppender.Builder();
+            appenderBuilder.setName("ConsoleAppender");
+            ConsoleAppender consoleAppender = appenderBuilder.build();
+            consoleAppender.start();
+            context.getRootLogger().addAppender(consoleAppender);
         }
         setLogLevel(logLevel);
     }
