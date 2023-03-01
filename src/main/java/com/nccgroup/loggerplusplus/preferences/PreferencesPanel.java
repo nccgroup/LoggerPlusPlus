@@ -69,7 +69,7 @@ public class PreferencesPanel extends JScrollPane {
         tglbtnIsEnabled.setSelected(preferences.getSetting(PREF_ENABLED));
 
         ComponentGroup doNotLogPanel = new ComponentGroup(Orientation.HORIZONTAL, "Log Filter");
-        JTextField doNotLogFilterField = new JTextField(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH).toString());
+        JTextField doNotLogFilterField = new JTextField(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH));
         doNotLogPanel.add(new JLabel("Do not log entries matching filter: "));
         GridBagConstraints gbc = doNotLogPanel.generateNextConstraints(true);
         gbc.weightx = 100;
