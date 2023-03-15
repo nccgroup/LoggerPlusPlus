@@ -47,7 +47,7 @@ public class PreferencesPanel extends JScrollPane {
 
     private final JToggleButton tglbtnIsEnabled;
     private final JLabel esValueChangeWarning = new JLabel(
-            "Warning: Changing preferences while running will disable the upload service and clear all pending groups.");
+            "Warning: Changing preferences while running will disable the upload service and clear all pending uploads.");
 
     /**
      * Create the panel.
@@ -69,7 +69,7 @@ public class PreferencesPanel extends JScrollPane {
         tglbtnIsEnabled.setSelected(preferences.getSetting(PREF_ENABLED));
 
         ComponentGroup doNotLogPanel = new ComponentGroup(Orientation.HORIZONTAL, "Log Filter");
-        JTextField doNotLogFilterField = new JTextField(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH));
+        JTextField doNotLogFilterField = new JTextField();
         doNotLogPanel.add(new JLabel("Do not log entries matching filter: "));
         GridBagConstraints gbc = doNotLogPanel.generateNextConstraints(true);
         gbc.weightx = 100;
@@ -96,7 +96,9 @@ public class PreferencesPanel extends JScrollPane {
                 }
             }
         });
-        if(preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH) != null){
+        FilterExpression filterExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
+        if(filterExpression != null){
+            doNotLogFilterField.setText(filterExpression.toString());
             applyButton.doClick();
         }
         doNotLogPanel.add(applyButton);
