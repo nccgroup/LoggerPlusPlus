@@ -116,6 +116,7 @@ public class LogProcessor {
                 Annotations annotations = responseReceived.annotations();
                 if (responseReceived.toolSource().isFromTool(ToolType.PROXY)) {
                     //If the request came from the proxy, the response isn't final yet.
+                    //Instead, the response must be taken from the proxy response handler.
                     //Just tag the comment with the identifier so we can match it up later.
 //                    Integer identifier = System.identityHashCode(responseReceived.initiatingRequest());
 //                    annotations = LogProcessorHelper.addIdentifierInComment(identifier, annotations);
@@ -229,6 +230,7 @@ public class LogProcessor {
      * @param response The HTTP request response object.
      */
     private void updateRequestWithResponse(Integer entryIdentifier, Date arrivalTime, HttpResponse response) {
+        log.debug("Updating entry with response for ID: " + entryIdentifier);
         if (entriesPendingProcessing.containsKey(entryIdentifier)) {
             //Not yet started processing the entry, we can add the response so it is processed in the first pass
             final LogEntry logEntry = entriesPendingProcessing.get(entryIdentifier);
@@ -291,6 +293,7 @@ public class LogProcessor {
     }
 
     private void submitNewEntryProcessingRunnable(final LogEntry logEntry){
+        log.debug("Adding log process request for ID: " + logEntry.getIdentifier());
         entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
         RunnableFuture<LogEntry> processingRunnable = new FutureTask<>(() -> {
             entriesPendingProcessing.remove(logEntry.getIdentifier());
