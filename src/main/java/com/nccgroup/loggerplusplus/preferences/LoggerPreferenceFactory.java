@@ -33,11 +33,11 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     private Set<String> defaultBlacklistedReflections;
 
     public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider, ILogProvider logProvider){
-        super(montoya, "LoggerPlusPlus", gsonProvider, logProvider);
+        super(montoya, gsonProvider, logProvider);
     }
 
     public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider){
-        super(montoya, "LoggerPlusPlus", gsonProvider);
+        super(montoya, gsonProvider);
     }
 
     @Override

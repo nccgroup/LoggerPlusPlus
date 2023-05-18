@@ -22,7 +22,7 @@ public class MainViewController {
         tabbedPane.addTab("Options", null, loggerPlusPlus.getPreferencesController().getPreferencesPanel(), null);
         tabbedPane.addTab("About", null, new AboutPanel(loggerPlusPlus.getPreferencesController().getPreferences()), null);
         tabbedPane.addTab("Help", null, new HelpPanel(), null);
-        this.popOutWrapper = new PopOutPanel(tabbedPane, Globals.APP_NAME);
+        this.popOutWrapper = new PopOutPanel(LoggerPlusPlus.montoya, tabbedPane, Globals.APP_NAME);
     }
 
     public Component getUiComponent() {

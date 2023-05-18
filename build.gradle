@@ -16,7 +16,7 @@ repositories {
 dependencies {
     implementation 'net.portswigger.burp.extensions:montoya-api:2023.3'
     implementation 'org.swinglabs:swingx:1.6.1'
-    implementation 'com.github.CoreyD97:Burp-Montoya-Utilities:07e3e02b'
+    implementation 'com.github.CoreyD97:Burp-Montoya-Utilities:234d21d'
 //    implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.9'
     implementation 'co.elastic.clients:elasticsearch-java:8.6.2'
     implementation 'org.apache.httpcomponents:httpclient:4.5.13'

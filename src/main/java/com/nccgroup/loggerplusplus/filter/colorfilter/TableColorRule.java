@@ -2,17 +2,8 @@ package com.nccgroup.loggerplusplus.filter.colorfilter;
 
 import com.nccgroup.loggerplusplus.filter.ColorizingFilterRule;
 import com.nccgroup.loggerplusplus.filter.FilterExpression;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
-import com.nccgroup.loggerplusplus.filter.parser.ParseException;
-import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import lombok.AccessLevel;
 import lombok.Getter;
-import org.elasticsearch.common.Table;
-
-import java.awt.*;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.
