@@ -68,7 +68,9 @@ public class LoggerPlusPlus implements BurpExtension {
 
         //TODO Set Logging Level from prefs
         loggingController = new LoggingController(gsonProvider, montoya);
-        log.info("Logging configured");
+        log.info("Logger++ " + Globals.VERSION + " by @CoreyD97.");
+        log.info("Please submit any bug reports or feature requests via GitHub.");
+        log.info("Feel free to reach out on Twitter (@CoreyD97) with any questions.");
 
         preferencesController = new PreferencesController(montoya);
         preferencesController.getPreferences().addSettingListener((source, settingName, newValue) -> {

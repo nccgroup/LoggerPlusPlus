@@ -49,7 +49,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         doNotLogFilter = new FilterExpression("Request.Extension IN [\"css\", \"svg\", \"woff2\", \"woff\", \"ico\", \"png\", \"jpeg\", \"jpg\", \"mp4\"]");
         defaultColorFilters = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, TableColorRule>>(){}.getType());
-        log.info(DEFAULT_LOG_TABLE_COLUMNS_JSON);
+
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
         defaultBlacklistedReflections = new TreeSet(String.CASE_INSENSITIVE_ORDER);
