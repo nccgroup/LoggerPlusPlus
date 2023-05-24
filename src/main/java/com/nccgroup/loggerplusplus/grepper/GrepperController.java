@@ -121,25 +121,28 @@ public class GrepperController {
     private Runnable createProcessThread(final LogEntry logEntry, final Pattern pattern,
                                          final boolean inScopeOnly, final boolean searchRequests, final boolean searchResponses) {
         return () -> {
-            if (Thread.currentThread().isInterrupted()) return;
-            GrepResults grepResults = null;
-            if (!inScopeOnly || LoggerPlusPlus.isUrlInScope(logEntry.getUrlString())) {
-                grepResults = processEntry(logEntry, pattern, searchRequests, searchResponses);
-            }
-            for (GrepperListener listener : this.listeners) {
-                try {
-                    listener.onEntryProcessed(grepResults);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try {
+                if (Thread.currentThread().isInterrupted()) return;
+                GrepResults grepResults = null;
+                if (!inScopeOnly || LoggerPlusPlus.isUrlInScope(logEntry.getUrlString())) {
+                    grepResults = processEntry(logEntry, pattern, searchRequests, searchResponses);
                 }
-            }
-            int remaining = remainingEntries.decrementAndGet();
-            if(remaining == 0){
-                for (GrepperListener listener : listeners) {
+                for (GrepperListener listener : this.listeners) {
                     try {
-                        listener.onSearchComplete();
-                    }catch (Exception e){
+                        listener.onEntryProcessed(grepResults);
+                    } catch (Exception e) {
                         e.printStackTrace();
+                    }
+                }
+            }finally {
+                int remaining = remainingEntries.decrementAndGet();
+                if (remaining == 0) {
+                    for (GrepperListener listener : listeners) {
+                        try {
+                            listener.onSearchComplete();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
