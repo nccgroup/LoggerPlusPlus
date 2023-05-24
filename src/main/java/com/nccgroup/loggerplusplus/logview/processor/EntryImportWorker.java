@@ -8,6 +8,7 @@ import burp.api.montoya.proxy.ProxyHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -86,8 +87,8 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
         private final LogProcessor logProcessor;
         private ToolType originatingTool = ToolType.EXTENSIONS;
-        private List<ProxyHttpRequestResponse> proxyEntries;
-        private List<HttpRequestResponse> httpEntries;
+        private List<ProxyHttpRequestResponse> proxyEntries = new ArrayList<>();
+        private List<HttpRequestResponse> httpEntries = new ArrayList<>();
         private Consumer<List<Integer>> interimConsumer;
         private Runnable callback;
         private boolean sendToAutoExporters = false;
