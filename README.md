@@ -1,7 +1,7 @@
 <h1 align="center">Logger++</h1>
 <h4 align="center">Advanced Logging for Burp Suite</h4>
 <p align="center">
-  <img src="https://img.shields.io/github/workflow/status/nccgroup/LoggerPlusPlus/Java%20CI%20with%20Gradle?style=for-the-badge" alt="GitHub Workflow Status">
+  
   <img src="https://img.shields.io/github/watchers/nccgroup/LoggerPlusPlus?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
   <img src="https://img.shields.io/github/stars/nccgroup/LoggerPlusPlus?style=for-the-badge" alt="GitHub Stars">
   <img src="https://img.shields.io/github/downloads/nccgroup/LoggerPlusPlus/total?style=for-the-badge" alt="GitHub All Releases">
@@ -9,9 +9,9 @@
 </p>
 
 Developed by Corey
-Arthur  [![Twitter Follow](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)  
+Arthur  [![Twitter Follow](https://img.shields.io/badge/follow-%40CoreyD97-1DA1F2?logo=twitter&style=social)](https://twitter.com/coreyd97/)  
 Originally by Soroush
-Dalili  [![Twitter Follow](https://img.shields.io/twitter/follow/irsdl?style=social)](https://twitter.com/irsdl/)
+Dalili  [![Twitter Follow](https://img.shields.io/badge/follow-%40irsdl-1DA1F2?logo=twitter&style=social)](https://twitter.com/irsdl/)
 
 Released as open source by NCC Group Plc - https://www.nccgroup.com/  
 Released under AGPL-3.0 see LICENSE for more information
