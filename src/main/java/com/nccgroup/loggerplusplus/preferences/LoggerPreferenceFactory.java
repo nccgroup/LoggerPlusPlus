@@ -17,6 +17,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.Level;
 
@@ -31,6 +32,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     private HashMap<UUID, TableColorRule> defaultColorFilters;
     private ArrayList<LogTableColumn> defaultlogTableColumns;
     private Set<String> defaultBlacklistedReflections;
+    private FilterExpression doNotLogFilter;
 
     public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider, ILogProvider logProvider){
         super(montoya, gsonProvider, logProvider);
@@ -40,10 +42,11 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         super(montoya, gsonProvider);
     }
 
+    @SneakyThrows
     @Override
     protected void createDefaults(){
 
-
+        doNotLogFilter = new FilterExpression("Request.Extension IN [\"css\", \"svg\", \"woff2\", \"woff\", \"ico\", \"png\", \"jpeg\", \"jpg\", \"mp4\"]");
         defaultColorFilters = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, TableColorRule>>(){}.getType());
         log.info(DEFAULT_LOG_TABLE_COLUMNS_JSON);
@@ -73,7 +76,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
         prefs.registerSetting(PREF_ENABLED, Boolean.class, true);
         prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false);
-        prefs.registerSetting(PREF_DO_NOT_LOG_IF_MATCH, FilterExpression.class, null, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(PREF_DO_NOT_LOG_IF_MATCH, FilterExpression.class, doNotLogFilter, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_LOG_GLOBAL, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_PROXY, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_SPIDER, Boolean.class, true);

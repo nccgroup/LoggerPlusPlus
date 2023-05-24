@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus;
 
 import burp.api.montoya.BurpExtension;
 import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.Registration;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -40,6 +41,7 @@ public class LoggerPlusPlus implements BurpExtension {
     public static MontoyaApi montoya;
     public static IGsonProvider gsonProvider = new DefaultGsonProvider();
 
+    private Registration menuBarRegistration;
     private LogProcessor logProcessor;
     private ExportController exportController;
     private PreferencesController preferencesController;
@@ -90,20 +92,10 @@ public class LoggerPlusPlus implements BurpExtension {
         montoya.http().registerHttpHandler(logProcessor.getHttpHandler());
         montoya.proxy().registerResponseHandler(logProcessor.getProxyResponseHandler());
 
-        //Add menu item to Burp's frame menu.
-        Frame rootFrame = null;
-        try {
-            rootFrame = montoya.userInterface().swingUtils().suiteFrame();
-            if (rootFrame instanceof JFrame) {
-                JMenuBar menuBar = ((JFrame) rootFrame).getJMenuBar();
-                if (menuBar != null) {
-                    loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
-                    menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
-                }
-            }
-        } catch (Exception e) {
-            log.error("Could not find root frame. Window JMenu will not be added");
-        }
+
+        loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
+        menuBarRegistration = montoya.userInterface().menuBar().registerMenu(loggerMenu);
+
     }
 
     public void unloadExtension() {
@@ -119,6 +111,8 @@ public class LoggerPlusPlus implements BurpExtension {
 
         //Stop log processor executors and pending tasks.
         logProcessor.shutdown();
+
+        menuBarRegistration.deregister();
 
         //Null out static variables so not leftover.
         LoggerPlusPlus.instance = null;
