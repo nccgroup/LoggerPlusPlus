@@ -1,13 +1,14 @@
 package com.nccgroup.loggerplusplus.preferences;
 
-import burp.IBurpExtenderCallbacks;
+import burp.api.montoya.MontoyaApi;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.*;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
@@ -16,6 +17,8 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
@@ -23,24 +26,30 @@ import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
+@Log4j2
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
-    private HashMap<UUID, ColorFilter> defaultColorFilters;
+    private HashMap<UUID, TableColorRule> defaultColorFilters;
     private ArrayList<LogTableColumn> defaultlogTableColumns;
     private Set<String> defaultBlacklistedReflections;
+    private FilterExpression doNotLogFilter;
 
-    public LoggerPreferenceFactory(IGsonProvider gsonProvider, ILogProvider logProvider, IBurpExtenderCallbacks callbacks){
-        super("LoggerPlusPlus", gsonProvider, logProvider, callbacks);
+    public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider, ILogProvider logProvider){
+        super(montoya, gsonProvider, logProvider);
     }
 
-    public LoggerPreferenceFactory(IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks){
-        super("LoggerPlusPlus", gsonProvider, callbacks);
+    public LoggerPreferenceFactory(MontoyaApi montoya, IGsonProvider gsonProvider){
+        super(montoya, gsonProvider);
     }
 
+    @SneakyThrows
     @Override
     protected void createDefaults(){
+
+        doNotLogFilter = new FilterExpression("Request.Extension IN [\"css\", \"svg\", \"woff2\", \"woff\", \"ico\", \"png\", \"jpeg\", \"jpg\", \"mp4\"]");
         defaultColorFilters = this.gsonProvider.getGson().fromJson(
-                Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, ColorFilter>>(){}.getType());
+                Globals.DEFAULT_COLOR_FILTERS_JSON, new TypeToken<HashMap<UUID, TableColorRule>>(){}.getType());
+
         defaultlogTableColumns = this.gsonProvider.getGson().fromJson(
                 Globals.DEFAULT_LOG_TABLE_COLUMNS_JSON, new TypeToken<List<LogTableColumn>>() {}.getType());
         defaultBlacklistedReflections = new TreeSet(String.CASE_INSENSITIVE_ORDER);
@@ -50,7 +59,10 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
     @Override
     protected void registerTypeAdapters(){
         this.gsonProvider.registerTypeAdapter(LogEntryField.class, new LogEntryFieldSerializer());
-        this.gsonProvider.registerTypeAdapter(LogFilter.class, new LogFilter.FilterSerializer());
+        this.gsonProvider.registerTypeAdapter(FilterExpression.class, new FilterExpressionSerializer());
+        this.gsonProvider.registerTypeAdapter(Tag.class, new TagSerializer());
+        this.gsonProvider.registerTypeAdapter(TableColorRule.class, new TableColorRuleSerializer());
+        this.gsonProvider.registerTypeAdapter(SavedFilter.class, new SavedFilterSerializer());
         this.gsonProvider.registerTypeAdapter(LogTableColumn.class, new LogTableColumn.ColumnSerializer());
         this.gsonProvider.registerTypeAdapter(LogEntry.class, new LogEntrySerializer());
     }
@@ -64,6 +76,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_UPDATE_ON_STARTUP, Boolean.class, true);
         prefs.registerSetting(PREF_ENABLED, Boolean.class, true);
         prefs.registerSetting(PREF_RESTRICT_TO_SCOPE, Boolean.class, false);
+        prefs.registerSetting(PREF_DO_NOT_LOG_IF_MATCH, FilterExpression.class, doNotLogFilter, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(PREF_LOG_GLOBAL, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_PROXY, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_SPIDER, Boolean.class, true);
@@ -71,10 +84,11 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(PREF_LOG_SCANNER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_REPEATER, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_SEQUENCER, Boolean.class, true);
-        prefs.registerSetting(PREF_LOG_EXTENDER, Boolean.class, true);
+        prefs.registerSetting(PREF_LOG_EXTENSIONS, Boolean.class, true);
         prefs.registerSetting(PREF_LOG_TARGET_TAB, Boolean.class, true);
         prefs.registerSetting(PREF_MAX_RESP_SIZE, Integer.class, 10); //Default 10MB
-        prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, ColorFilter>>() {
+        prefs.registerSetting(PREF_TABLE_PILL_STYLE, Boolean.class, true);
+        prefs.registerSetting(PREF_COLOR_FILTERS, new TypeToken<Map<UUID, TableColorRule>>() {
         }.getType(), defaultColorFilters);
         prefs.registerSetting(PREF_TAG_FILTERS, new TypeToken<Map<UUID, Tag>>() {
         }.getType(), new HashMap<>());

@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.util.userinterface.dialog;
 
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ColorRenderer;
@@ -67,7 +67,7 @@ public class ColorFilterTable extends JTable {
         if(this.getSelectedRow() > 0){
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()-1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()-1, this.getSelectedRow()-1);
-            ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
+            TableColorRule filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
             filterLibraryController.updateColorFilter(filter);
         }
     }
@@ -75,7 +75,7 @@ public class ColorFilterTable extends JTable {
         if(this.getSelectedRow() >= 0 && this.getSelectedRow() < this.getRowCount()){
             ((ColorFilterTableModel) this.getModel()).switchRows(this.getSelectedRow(), this.getSelectedRow()+1);
             this.getSelectionModel().setSelectionInterval(this.getSelectedRow()+1, this.getSelectedRow()+1);
-            ColorFilter filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
+            TableColorRule filter = ((ColorFilterTableModel) this.getModel()).getFilterAtRow(this.getSelectedRow());
             filterLibraryController.updateColorFilter(filter);
         }
     }

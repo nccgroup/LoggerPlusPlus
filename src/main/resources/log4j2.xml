@@ -1,0 +1,10 @@
+<Configuration xmlns:xi="http://www.w3.org/2001/XInclude" packages="com.nccgroup" status="INFO">
+    <Appenders>
+        <BurpAppender name="BurpAppender" />
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="BurpAppender" />
+        </Root>
+    </Loggers>
+</Configuration>

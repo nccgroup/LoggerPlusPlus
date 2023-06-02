@@ -1,5 +1,13 @@
 package com.nccgroup.loggerplusplus.logview;
 
+import burp.api.montoya.core.BurpSuiteEdition;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.scanner.AuditConfiguration;
+import burp.api.montoya.scanner.BuiltInAuditConfiguration;
+import burp.api.montoya.scanner.Crawl;
+import burp.api.montoya.scanner.CrawlConfiguration;
+import burp.api.montoya.scanner.audit.Audit;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ContextMenuExportProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -7,6 +15,7 @@ import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
+import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.datatransfer.Clipboard;
@@ -21,11 +30,12 @@ import java.util.stream.Collectors;
 /**
  * Created by corey on 24/08/17.
  */
+@Log4j2
 public class MultipleLogEntryMenu extends JPopupMenu {
 
     public MultipleLogEntryMenu(final LogTableController logTableController, final List<LogEntry> selectedEntries){
         final LogTable logTable = logTableController.getLogTable();
-        final boolean isPro = LoggerPlusPlus.callbacks.getBurpVersion()[0].equals("Burp Suite Professional");
+        final boolean isPro = LoggerPlusPlus.montoya.burpSuite().version().edition() == BurpSuiteEdition.PROFESSIONAL;
 
         this.add(new JMenuItem(selectedEntries.size() + " items"));
         this.add(new Separator());
@@ -76,7 +86,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         this.add(copySelectedUrls);
 
         JMenu exportMenu = new JMenu("Export entries as...");
-        ExportController exportController = logTableController.getLogViewController().getLoggerPlusPlus().getExportController();
+        ExportController exportController = LoggerPlusPlus.instance.getExportController();
         for (LogExporter exporter : exportController.getExporters().values()) {
             if (exporter instanceof ContextMenuExportProvider) {
                 JMenuItem item = ((ContextMenuExportProvider) exporter).getExportEntriesMenuItem(selectedEntries);
@@ -91,21 +101,23 @@ public class MultipleLogEntryMenu extends JPopupMenu {
 
         this.add(new Separator());
 
-        JMenuItem spider = new JMenuItem(new AbstractAction("Spider selected " + selectedEntries.size() + " urls") {
+        JMenuItem scanner = new JMenuItem(new AbstractAction("Crawl selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToSpider(entry.getUrl());
-                }
+                List<String> urls = selectedEntries.stream().map(logEntry -> logEntry.getUrl().toExternalForm()).toList();
+                CrawlConfiguration config = CrawlConfiguration.crawlConfiguration(urls.toArray(String[]::new));
+                Crawl crawl = LoggerPlusPlus.montoya.scanner().startCrawl(config);
             }
         });
-        this.add(spider);
+        this.add(scanner);
 
         JMenuItem activeScan = new JMenuItem(new AbstractAction("Active scan selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.doActiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_ACTIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
+                for (LogEntry selectedEntry : selectedEntries) {
+                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(selectedEntry.getRequest(), selectedEntry.getResponse()));
                 }
             }
         });
@@ -115,10 +127,10 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         JMenuItem passiveScan = new JMenuItem(new AbstractAction("Passive scan selected " + selectedEntries.size() + " urls") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (LogEntry entry : selectedEntries) {
-                    if (entry.isComplete()) { //Cannot scan entries without response
-                        LoggerPlusPlus.callbacks.doPassiveScan(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), entry.getResponse());
-                    }
+                AuditConfiguration auditConfiguration = AuditConfiguration.auditConfiguration(BuiltInAuditConfiguration.LEGACY_PASSIVE_AUDIT_CHECKS);
+                Audit scan = LoggerPlusPlus.montoya.scanner().startAudit(auditConfiguration);
+                for (LogEntry selectedEntry : selectedEntries) {
+                    scan.addRequestResponse(HttpRequestResponse.httpRequestResponse(selectedEntry.getRequest(), selectedEntry.getResponse()));
                 }
             }
         });
@@ -131,7 +143,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToRepeater(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest(), "L++");
+                    LoggerPlusPlus.montoya.repeater().sendToRepeater(entry.getRequest());
                 }
             }
         });
@@ -141,7 +153,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToIntruder(entry.getHostname(), entry.getTargetPort(), entry.isSSL(), entry.getRequest());
+                    LoggerPlusPlus.montoya.intruder().sendToIntruder(entry.getRequest());
                 }
             }
         });
@@ -152,7 +164,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
-                    LoggerPlusPlus.callbacks.sendToComparer(entry.getRequest());
+                    LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getRequest().toByteArray());
                 }
             }
         });
@@ -162,7 +174,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
             public void actionPerformed(ActionEvent actionEvent) {
                 for (LogEntry entry : selectedEntries) {
                     if (entry.isComplete()) { //Do not add entries without a response
-                        LoggerPlusPlus.callbacks.sendToComparer(entry.getResponse());
+                        LoggerPlusPlus.montoya.comparer().sendToComparer(entry.getResponse().toByteArray());
                     }
                 }
             }
@@ -193,7 +205,7 @@ public class MultipleLogEntryMenu extends JPopupMenu {
         for (LogEntry item : items) {
             switch (scope) {
                 case URL:
-                    values.add(String.valueOf(item.getUrl()));
+                    values.add(String.valueOf(item.getUrlString()));
                     break;
                 case PATH:
                     values.add(item.getUrl().getPath());

@@ -3,9 +3,14 @@ package com.nccgroup.loggerplusplus.filter.parser;
 
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import com.nccgroup.loggerplusplus.logentry.FieldGroup;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import lombok.extern.log4j.Log4j2;
 
-import java.util.HashSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Log4j2
 public class AliasCheckVisitor implements FilterParserVisitor{
 
   private FilterLibraryController filterLibraryController;
@@ -18,56 +23,74 @@ public class AliasCheckVisitor implements FilterParserVisitor{
     node.childrenAccept(this, data);
     return data;
   }
+
+  @Override
   public VisitorData visit(SimpleNode node, VisitorData data){
     return defaultVisit(node, data);
   }
 
-  public VisitorData visit(SimpleNode node){
-    return visit(node, new VisitorData());
+  public VisitorData visit(String alias, SimpleNode node){
+    log.debug("Starting sanity check on expression (%s) alias (%s) ".formatted(node.toString(), alias));
+    VisitorData visitorData = new VisitorData();
+    visitorData.setData("dependencies", new HashSet<String>());
+    visitorData.setData("contexts", new HashSet<FieldGroup>());
+    Stack<String> visitStack = new Stack<String>();
+    visitorData.setData("aliasVisitList", visitStack);
+    if (alias != null) {
+      visitStack.push(alias.toUpperCase());
+    }
+    return visit(node, visitorData);
   }
+
+  @Override
   public VisitorData visit(ASTExpression node, VisitorData data){
     return defaultVisit(node, data);
   }
+
+  @Override
   public VisitorData visit(ASTComparison node, VisitorData visitorData){
+    HashSet<FieldGroup> contexts = (HashSet<FieldGroup>) visitorData.getData().get("contexts");
+    if(node.left instanceof LogEntryField) contexts.add(((LogEntryField) node.left).getFieldGroup());
+    if(node.right instanceof LogEntryField) contexts.add(((LogEntryField) node.right).getFieldGroup());
     defaultVisit(node, visitorData);
     return visitorData;
   }
 
-  private static String RECURSION_CHECK = "RECURSION_CHECK";
   @Override
   public VisitorData visit(ASTAlias node, VisitorData data) {
-    if(filterLibraryController == null){
-      data.addError("Cannot use aliases in this context. Filter library controller is not set.");
-      return data;
-    }
-    if(!data.getData().containsKey(RECURSION_CHECK)){
-      data.getData().put(RECURSION_CHECK, new HashSet<String>());
-    }
-
-    HashSet<String> recursionSet = (HashSet<String>) data.getData().get(RECURSION_CHECK);
-    if(recursionSet.contains(node.identifier)){
-      //We're recursing, don't continue!
-      data.addError("Recursion detected in filter. Alias identifier: " + node.identifier);
-      return data;
-    }else{
-      recursionSet.add(node.identifier);
-    }
-
-    //Now sanity check on the aliased filter with our existing data
-    boolean foundAliasedFilter = false;
-    for (SavedFilter savedFilter : filterLibraryController.getSavedFilters()) {
-      if(savedFilter.getName().equalsIgnoreCase(node.identifier) && savedFilter.getFilter() != null){
-        visit(savedFilter.getFilter().getAST(), data);
-        foundAliasedFilter = true;
-        break;
+    //Add this alias to our dependencies
+    Stack<String> aliasVisitList = (Stack<String>) data.getData().get("aliasVisitList");
+    try {
+      log.debug("Visiting " + node.identifier);
+      if (aliasVisitList.contains(node.identifier.toUpperCase())) {
+        //We're recursing, don't continue!
+        aliasVisitList.push(node.identifier.toUpperCase());
+        String visitOrder = aliasVisitList.stream().collect(Collectors.joining("->"));
+        data.addError("Recursion detected in filter. Alias trace: " + visitOrder);
+        return data;
       }
-    }
 
-    if(!foundAliasedFilter){
-      data.addError("Could not find a filter in the library for alias: " + node.identifier);
-    }
+      aliasVisitList.push(node.identifier.toUpperCase());
+      log.debug("Current Visit Queue " + aliasVisitList.toString());
 
-    return data;
+
+      ((HashSet<String>) data.getData().get("dependencies")).add(node.identifier.toUpperCase());
+
+      //Now sanity check on the aliased filter with our existing data
+      Optional<SavedFilter> aliasedFilter = filterLibraryController.getFilterSnippets().stream().filter(savedFilter -> savedFilter.getName().equalsIgnoreCase(node.identifier)).findFirst();
+      if (aliasedFilter.isPresent()) {
+        visit(aliasedFilter.get().getFilterExpression().getAst(), data);
+      } else {
+        data.addError("Could not find a filter in the library for alias: " + node.identifier);
+      }
+
+
+      return data;
+    }finally {
+      log.debug("Leaving " + node.identifier);
+      aliasVisitList.pop();
+      log.debug("Current Visit Queue " + aliasVisitList.toString());
+    }
   }
 }
 /* JavaCC - OriginalChecksum=b30458d637879c9662107beea18204f0 (do not edit this line) */

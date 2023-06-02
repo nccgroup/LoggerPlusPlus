@@ -1,6 +1,5 @@
 package com.nccgroup.loggerplusplus.filterlibrary;
 
-import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
@@ -49,19 +48,14 @@ public class FilterLibraryPanel extends JPanel {
         JButton addFilterButton = new JButton("Add Snippet");
         addFilterButton.setPreferredSize(new Dimension(0, 75));
         addFilterButton.addActionListener(actionEvent -> {
-            try {
-                libraryController.addFilter(new SavedFilter(libraryController,
-                        "Unnamed", "Response.body CONTAINS \"Example\""));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+            libraryController.addFilter(new SavedFilter("Unnamed", "Response.body CONTAINS \"Example\""));
         });
         JButton removeSelectedButton = new JButton("Remove Selected");
         removeSelectedButton.setMinimumSize(new Dimension(0, 75));
         removeSelectedButton.addActionListener(actionEvent -> {
             int selectedRow = libraryTable.getSelectedRow();
             if(selectedRow == -1) return;
-            SavedFilter filter = libraryController.getSavedFilters().get(selectedRow);
+            SavedFilter filter = libraryController.getFilterSnippets().get(selectedRow);
             libraryController.removeFilter(filter);
         });
         controlPanel.add(addFilterButton);

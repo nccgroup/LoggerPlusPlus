@@ -3,10 +3,6 @@ package com.nccgroup.loggerplusplus.logentry;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 public class LogEntryFieldSerializer implements JsonSerializer<LogEntryField>, JsonDeserializer<LogEntryField> {
 

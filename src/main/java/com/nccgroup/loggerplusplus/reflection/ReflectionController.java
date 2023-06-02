@@ -1,6 +1,6 @@
 package com.nccgroup.loggerplusplus.reflection;
 
-import burp.IParameter;
+import burp.api.montoya.http.message.params.HttpParameter;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
@@ -9,20 +9,16 @@ import com.nccgroup.loggerplusplus.reflection.filter.BlacklistFilter;
 import com.nccgroup.loggerplusplus.reflection.filter.LengthFilter;
 import com.nccgroup.loggerplusplus.reflection.filter.ParameterFilter;
 import com.nccgroup.loggerplusplus.reflection.transformer.*;
-import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ReflectionController {
@@ -47,15 +43,15 @@ public class ReflectionController {
         transformerList.add(new XMLUnescapeTransformer(preferences));
     }
 
-    public List<IParameter> filterParameters(List<IParameter> allParameters){
-        List<IParameter> interestingParameters = new ArrayList<>();
-        for (IParameter parameter : allParameters) {
+    public List<HttpParameter> filterParameters(List<? extends HttpParameter> allParameters){
+        List<HttpParameter> interestingParameters = new ArrayList<>();
+        for (HttpParameter parameter : allParameters) {
             if(!isParameterFiltered(parameter)) interestingParameters.add(parameter);
         }
         return interestingParameters;
     }
     
-    public boolean isParameterFiltered(IParameter parameter){
+    public boolean isParameterFiltered(HttpParameter parameter){
         for (ParameterFilter filter : filterList) {
             if(!filter.isEnabled()) continue;
             if(filter.isFiltered(parameter)){
@@ -65,15 +61,15 @@ public class ReflectionController {
         return false;
     }
     
-    public boolean validReflection(String responseBody, IParameter param){
-        if(param.getName().isEmpty() || param.getValue().isEmpty()) return false;
+    public boolean validReflection(String responseBody, HttpParameter param){
+        if(param.name().isEmpty() || param.value().isEmpty()) return false;
 
-        if(responseBody.contains(param.getValue())) return true;
+        if(responseBody.contains(param.value())) return true;
 
         for (ParameterValueTransformer transformer : transformerList) {
             try {
                 if (transformer.isEnabled()){
-                    Pattern pattern = Pattern.compile("\\Q"+transformer.transform(param.getValue())+"\\E", Pattern.CASE_INSENSITIVE);
+                    Pattern pattern = Pattern.compile("\\Q"+transformer.transform(param.value())+"\\E", Pattern.CASE_INSENSITIVE);
                     if(pattern.matcher(responseBody).find()){
                         return true;
                     }

@@ -1,10 +1,14 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IHttpRequestResponse;
+import burp.api.montoya.core.ToolType;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.message.responses.HttpResponse;
+import burp.api.montoya.proxy.ProxyHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -13,8 +17,9 @@ import java.util.function.Consumer;
 public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
     private final LogProcessor logProcessor;
-    private final int originatingTool;
-    private final List<IHttpRequestResponse> entries;
+    private final ToolType originatingTool;
+    private final List<ProxyHttpRequestResponse> proxyEntries;
+    private final List<HttpRequestResponse> httpEntries;
     private final Consumer<List<Integer>> interimConsumer;
     private final Runnable callback;
     private final boolean sendToAutoExporters;
@@ -22,7 +27,8 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
     private EntryImportWorker(Builder builder){
         this.logProcessor = builder.logProcessor;
         this.originatingTool = builder.originatingTool;
-        this.entries = builder.entries;
+        this.proxyEntries = builder.proxyEntries;
+        this.httpEntries = builder.httpEntries;
         this.interimConsumer = builder.interimConsumer;
         this.callback = builder.callback;
         this.sendToAutoExporters = builder.sendToAutoExporters;
@@ -31,18 +37,30 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
     @Override
     protected Void doInBackground() throws Exception {
         logProcessor.getEntryProcessExecutor().pause(); //Pause the processor, we don't want it mixing with our import.
+        boolean isProxyEntries = proxyEntries.size() > 0;
+        int count = isProxyEntries ? proxyEntries.size() : httpEntries.size();
 
-        CountDownLatch countDownLatch = new CountDownLatch(entries.size());
+
+        CountDownLatch countDownLatch = new CountDownLatch(count);
         ThreadPoolExecutor entryImportExecutor = logProcessor.getEntryImportExecutor();
-        for (int index = 0; index < entries.size(); index++) {
+        for (int index = 0; index < count; index++) {
             if(entryImportExecutor.isShutdown() || this.isCancelled()) return null;
-            final LogEntry logEntry = new LogEntry(originatingTool, entries.get(index));
+            HttpRequest request;
+            HttpResponse response;
+            if(isProxyEntries){
+                request = proxyEntries.get(index).finalRequest();
+                response = proxyEntries.get(index).originalResponse();
+            }else{
+                request = httpEntries.get(index).request();
+                response = httpEntries.get(index).response();
+            }
+            final LogEntry logEntry = new LogEntry(originatingTool, request, response);
             int finalIndex = index;
             entryImportExecutor.submit(() -> {
                 if(this.isCancelled()) return;
                 LogEntry result = logProcessor.processEntry(logEntry);
                 if(result != null) {
-                    logProcessor.addProcessedEntry(logEntry, sendToAutoExporters);
+                    logProcessor.addNewEntry(logEntry, sendToAutoExporters);
                 }
                 publish(finalIndex);
                 countDownLatch.countDown();
@@ -68,8 +86,9 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
     public static class Builder {
 
         private final LogProcessor logProcessor;
-        private int originatingTool = IBurpExtenderCallbacks.TOOL_EXTENDER;
-        private List<IHttpRequestResponse> entries;
+        private ToolType originatingTool = ToolType.EXTENSIONS;
+        private List<ProxyHttpRequestResponse> proxyEntries = new ArrayList<>();
+        private List<HttpRequestResponse> httpEntries = new ArrayList<>();
         private Consumer<List<Integer>> interimConsumer;
         private Runnable callback;
         private boolean sendToAutoExporters = false;
@@ -78,13 +97,20 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
             this.logProcessor = logProcessor;
         }
 
-        public Builder setOriginatingTool(int originatingTool){
+        public Builder setOriginatingTool(ToolType originatingTool){
             this.originatingTool = originatingTool;
             return this;
         }
 
-        public Builder setEntries(List<IHttpRequestResponse> entries) {
-            this.entries = entries;
+        public Builder setProxyEntries(List<ProxyHttpRequestResponse> entries) {
+            this.proxyEntries.addAll(entries);
+            this.httpEntries.clear();
+            return this;
+        }
+
+        public Builder setHttpEntries(List<HttpRequestResponse> entries) {
+            this.httpEntries.addAll(entries);
+            this.proxyEntries.clear();
             return this;
         }
 

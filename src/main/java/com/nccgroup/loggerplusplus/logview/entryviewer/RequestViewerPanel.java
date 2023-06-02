@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.logview.entryviewer;
 
 import com.coreyd97.BurpExtenderUtilities.PopOutPanel;
 import com.coreyd97.BurpExtenderUtilities.VariableViewPanel;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.util.Globals;
 
 public class RequestViewerPanel extends PopOutPanel {
@@ -10,17 +11,16 @@ public class RequestViewerPanel extends PopOutPanel {
     private final VariableViewPanel variableViewPanel;
 
     public RequestViewerPanel(RequestViewerController controller){
-        super();
+        super(LoggerPlusPlus.montoya);
         this.controller = controller;
 
         this.variableViewPanel = new VariableViewPanel(controller.getPreferences(), Globals.PREF_MESSAGE_VIEW_LAYOUT,
-                controller.getRequestEditor().getComponent(), "Request",
-                controller.getResponseEditor().getComponent(), "Response",
+                controller.getRequestEditor().uiComponent(), "Request",
+                controller.getResponseEditor().uiComponent(), "Response",
                 VariableViewPanel.View.HORIZONTAL);
 
         this.setComponent(variableViewPanel);
         this.setTitle("Request/Response Viewer");
-        //TODO set log view variable panel to Vertical when popped out
     }
 
     public VariableViewPanel getVariableViewPanel() {

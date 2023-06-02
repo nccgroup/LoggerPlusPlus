@@ -1,54 +1,34 @@
 package com.nccgroup.loggerplusplus.filter.savedfilter;
 
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
+import com.nccgroup.loggerplusplus.filter.FilterRule;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
-import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 
 /**
  * Created by corey on 19/07/17.
  */
-public class SavedFilter {
-    private String name;
-    private LogFilter filter;
-    private String filterString;
+public class SavedFilter extends FilterRule {
 
-    public SavedFilter(FilterLibraryController filterLibraryController, String name, String filterString) throws ParseException {
-        this.name = name.replaceAll("[^a-zA-Z0-9_.]", "_");
-        this.setFilter(new LogFilter(filterLibraryController, filterString));
+    public SavedFilter(String name, String filterString) {
+        super(name.replaceAll("[^a-zA-Z0-9_.]", "_"));
+        this.trySetFilter(filterString);
     }
 
-    public LogFilter getFilter() {
-        return filter;
+    public SavedFilter(String name, FilterExpression filterExpression){
+        super(name, filterExpression);
     }
 
-    public void setFilter(LogFilter filter) {
-        this.filter = filter;
-        if(filter != null)
-            this.filterString = filter.toString();
-    }
-
-    public String getName() {
-        return name;
-    }
-
+    @Override
     public void setName(String name) {
         name = name.replaceAll("[^a-zA-Z0-9_.]", "_");
-        this.name = name;
-    }
-
-    public String getFilterString() {
-        return filterString;
-    }
-
-    public void setFilterString(String filterString) {
-        this.filterString = filterString;
+        super.setName(name);
     }
 
     @Override
     public boolean equals(Object o) {
         if(o instanceof SavedFilter){
             SavedFilter other = (SavedFilter) o;
-            return other.name.equals(name) && other.filterString.equals(filterString);
+            return other.getName().equals(getName()) && other.getFilterString().equals(getFilterString());
         }else{
             return super.equals(o);
         }
@@ -56,6 +36,6 @@ public class SavedFilter {
 
     @Override
     public String toString() {
-        return "SavedFilter[" + this.name + ", " + (this.filter == null ? this.filterString : this.filter) + "]";
+        return "SavedFilter[" + this.getName() + ", " + (this.getFilterExpression() == null ? this.getFilterString() : this.getFilterExpression()) + "]";
     }
 }

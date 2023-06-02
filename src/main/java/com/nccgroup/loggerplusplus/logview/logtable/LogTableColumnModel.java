@@ -16,8 +16,10 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.TagRenderer;
 
 import javax.swing.event.TableColumnModelEvent;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
 import java.util.*;
@@ -46,6 +48,11 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
             if (column.isVisible()) {
                 addColumn(column);
             }
+        }
+
+        Optional<LogTableColumn> tagColumn = this.allColumns.stream().filter(logTableColumn -> logTableColumn.getName().equals("Tags")).findFirst();
+        if((boolean) preferences.getSetting(Globals.PREF_TABLE_PILL_STYLE) && tagColumn.isPresent()){
+            tagColumn.get().setCellRenderer(new TagRenderer());
         }
 
         initialize();
@@ -168,7 +175,7 @@ public class LogTableColumnModel extends DefaultTableColumnModel {
         }
     }
 
-    public Enumeration<LogTableColumn> getAllColumns() {
-        return Collections.enumeration(this.allColumns);
+    public List<LogTableColumn> getAllColumns() {
+        return this.allColumns;
     }
 }

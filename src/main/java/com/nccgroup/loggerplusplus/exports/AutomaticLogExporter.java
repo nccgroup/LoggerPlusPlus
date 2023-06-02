@@ -3,8 +3,6 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
-import javax.swing.*;
-
 public abstract class AutomaticLogExporter extends LogExporter {
 
     protected AutomaticLogExporter(ExportController exportController, Preferences preferences){

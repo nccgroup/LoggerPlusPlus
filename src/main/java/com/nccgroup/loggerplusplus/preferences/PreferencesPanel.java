@@ -12,7 +12,7 @@
 
 package com.nccgroup.loggerplusplus.preferences;
 
-import burp.IHttpRequestResponse;
+import burp.api.montoya.http.message.HttpRequestResponse;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.ComponentGroup.Orientation;
@@ -21,18 +21,22 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.*;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.FilterExpression;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
+import com.nccgroup.loggerplusplus.logentry.LogEntryField;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
+import com.nccgroup.loggerplusplus.util.userinterface.renderer.TagRenderer;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
@@ -43,7 +47,7 @@ public class PreferencesPanel extends JScrollPane {
 
     private final JToggleButton tglbtnIsEnabled;
     private final JLabel esValueChangeWarning = new JLabel(
-            "Warning: Changing preferences while running will disable the upload service and clear all pending groups.");
+            "Warning: Changing preferences while running will disable the upload service and clear all pending uploads.");
 
     /**
      * Create the panel.
@@ -64,6 +68,42 @@ public class PreferencesPanel extends JScrollPane {
         statusPanel.add(tglbtnIsEnabled);
         tglbtnIsEnabled.setSelected(preferences.getSetting(PREF_ENABLED));
 
+        ComponentGroup doNotLogPanel = new ComponentGroup(Orientation.HORIZONTAL, "Log Filter");
+        JTextField doNotLogFilterField = new JTextField();
+        doNotLogPanel.add(new JLabel("Do not log entries matching filter: "));
+        GridBagConstraints gbc = doNotLogPanel.generateNextConstraints(true);
+        gbc.weightx = 100;
+        doNotLogPanel.add(doNotLogFilterField, gbc);
+        JToggleButton applyButton = new JToggleButton(new AbstractAction("Enable") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JToggleButton thisButton = (JToggleButton) e.getSource();
+                if(thisButton.isSelected()){
+                    try {
+                        FilterExpression expression = new FilterExpression(doNotLogFilterField.getText());
+                        doNotLogFilterField.setText(expression.toString());
+                        preferences.setSetting(PREF_DO_NOT_LOG_IF_MATCH, expression);
+                        doNotLogFilterField.setEnabled(false);
+                        thisButton.setText("Disable");
+                    } catch (ParseException ex) {
+                        JOptionPane.showMessageDialog(thisButton, "Could not parse filter: " + ex.getMessage());
+                        thisButton.setSelected(false);
+                    }
+                }else{
+                    preferences.setSetting(PREF_DO_NOT_LOG_IF_MATCH, null);
+                    doNotLogFilterField.setEnabled(true);
+                    thisButton.setText("Enable");
+                }
+            }
+        });
+        FilterExpression filterExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
+        if(filterExpression != null){
+            doNotLogFilterField.setText(filterExpression.toString());
+            applyButton.doClick();
+        }
+        doNotLogPanel.add(applyButton);
+
+
         ComponentGroup logFromPanel = new ComponentGroup(Orientation.VERTICAL, "Log From");
         logFromPanel.addPreferenceComponent(preferences, PREF_RESTRICT_TO_SCOPE, "In scope items only");
         GridBagConstraints strutConstraints = logFromPanel.generateNextConstraints(true);
@@ -77,7 +117,7 @@ public class PreferencesPanel extends JScrollPane {
         JCheckBox logSequencer = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_SEQUENCER, "Sequencer");
         JCheckBox logProxy = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_PROXY, "Proxy");
         JCheckBox logTarget = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_TARGET_TAB, "Target");
-        JCheckBox logExtender = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_EXTENDER, "Extender");
+        JCheckBox logExtender = logFromPanel.addPreferenceComponent(preferences, PREF_LOG_EXTENSIONS, "Extender");
 
         strutConstraints = logFromPanel.generateNextConstraints(true);
         strutConstraints.weighty = strutConstraints.weightx = 0;
@@ -115,7 +155,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import Burp Proxy History") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int historySize = LoggerPlusPlus.callbacks.getProxyHistory().length;
+                int historySize = LoggerPlusPlus.montoya.proxy().history().size();
                 int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
                 String message = "Import " + historySize
                         + " items from burp suite proxy history? This will clear the current entries."
@@ -137,7 +177,7 @@ public class PreferencesPanel extends JScrollPane {
                         sendToAutoExporters = res == JOptionPane.YES_OPTION;
                     }
 
-                    preferencesController.getLoggerPlusPlus().getLogProcessor().importProxyHistory(sendToAutoExporters);
+                    LoggerPlusPlus.instance.getLogProcessor().importProxyHistory(sendToAutoExporters);
                 }
             }
         }));
@@ -145,7 +185,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From WStalker CSV") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<IHttpRequestResponse> requests = LoggerImport.importWStalker();
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importWStalker();
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +
@@ -161,7 +201,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From OWASP ZAP") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<IHttpRequestResponse> requests = LoggerImport.importZAP();
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importZAP();
 
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
@@ -176,7 +216,7 @@ public class PreferencesPanel extends JScrollPane {
         }));
 
         ComponentGroup exportGroup = new ComponentGroup(Orientation.HORIZONTAL);
-        HashMap<Class<? extends LogExporter>, LogExporter> exporters = preferencesController.getLoggerPlusPlus()
+        HashMap<Class<? extends LogExporter>, LogExporter> exporters = LoggerPlusPlus.instance
                 .getExportController().getExporters();
         exportGroup.add(((ExportPanelProvider) exporters.get(CSVExporter.class)).getExportPanel());
         exportGroup.add(((ExportPanelProvider) exporters.get(JSONExporter.class)).getExportPanel());
@@ -207,6 +247,21 @@ public class PreferencesPanel extends JScrollPane {
         ((SpinnerNumberModel) maxResponseSize.getModel()).setMinimum(0);
         ((SpinnerNumberModel) maxResponseSize.getModel()).setMaximum(1000000);
         ((SpinnerNumberModel) maxResponseSize.getModel()).setStepSize(1);
+
+        JCheckBox tagStyle = otherPanel.addPreferenceComponent(preferences, PREF_TABLE_PILL_STYLE, "Display matching tags as pill components");
+
+        preferences.addSettingListener((source, settingName, newValue) -> {
+            if(Objects.equals(settingName, PREF_TABLE_PILL_STYLE)){
+                LogTableColumnModel columnModel = LoggerPlusPlus.instance.getLogViewController().getLogViewPanel().getLogTable().getColumnModel();
+                Optional<LogTableColumn> column = columnModel.getAllColumns().stream().filter(logTableColumn -> logTableColumn.getIdentifier() == LogEntryField.TAGS).findFirst();
+                if(column.isEmpty()) return;
+                if((boolean) newValue) {
+                    column.get().setCellRenderer(new TagRenderer());
+                }else{
+                    column.get().setCellRenderer(new DefaultTableCellRenderer());
+                }
+            }
+        });
 
         ComponentGroup savedFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Saved Filter Sharing");
         savedFilterSharing.add(new JButton(new AbstractAction("Import Saved Filters") {
@@ -239,11 +294,11 @@ public class PreferencesPanel extends JScrollPane {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String json = MoreHelp.showLargeInputDialog("Import Color Filters", null);
-                Map<UUID, ColorFilter> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
-                        new TypeToken<Map<UUID, ColorFilter>>() {
+                Map<UUID, TableColorRule> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
+                        new TypeToken<Map<UUID, TableColorRule>>() {
                         }.getType());
-                for (ColorFilter colorFilter : colorFilterMap.values()) {
-                    LoggerPlusPlus.instance.getLibraryController().addColorFilter(colorFilter);
+                for (TableColorRule tableColorRule : colorFilterMap.values()) {
+                    LoggerPlusPlus.instance.getLibraryController().addColorFilter(tableColorRule);
                 }
             }
         }));
@@ -251,7 +306,7 @@ public class PreferencesPanel extends JScrollPane {
         colorFilterSharing.add(new JButton(new AbstractAction("Export Color Filters") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                HashMap<UUID, ColorFilter> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
+                HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
                 String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(colorFilters);
                 MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
             }
@@ -280,7 +335,7 @@ public class PreferencesPanel extends JScrollPane {
                         JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
                     preferences.resetSettings(preferences.getRegisteredSettings().keySet());
-                    preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController()
+                    LoggerPlusPlus.instance.getLogViewController().getLogTableController()
                             .reinitialize();
                 }
             }
@@ -289,7 +344,7 @@ public class PreferencesPanel extends JScrollPane {
         resetPanel.add(new JButton(new AbstractAction("Clear The Logs") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                preferencesController.getLoggerPlusPlus().getLogViewController().getLogTableController().reset();
+                LoggerPlusPlus.instance.getLogViewController().getLogTableController().reset();
             }
         }));
 
@@ -304,6 +359,7 @@ public class PreferencesPanel extends JScrollPane {
 
         JComponent mainComponent = PanelBuilder
                 .build(new JPanel[][] { new JPanel[] { statusPanel, statusPanel, statusPanel, statusPanel },
+                        new JPanel[] { logFromPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel },
                         new JPanel[] { logFromPanel, importGroup, importGroup, importGroup },
                         new JPanel[] { logFromPanel, exportGroup, exportGroup, exportGroup },
                         new JPanel[] { savedFilterSharing, savedFilterSharing, colorFilterSharing, colorFilterSharing },

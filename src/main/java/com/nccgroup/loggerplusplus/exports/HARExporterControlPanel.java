@@ -2,6 +2,7 @@ package com.nccgroup.loggerplusplus.exports;
 
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
 import javax.swing.*;
@@ -14,7 +15,7 @@ public class HARExporterControlPanel extends JPanel {
 
         JButton manualSaveButton = new JButton("Export as HAR");
         manualSaveButton.addActionListener(actionEvent -> {
-            final List<LogEntry> entries = harExporter.getExportController().getLoggerPlusPlus().getLogEntries();
+            final List<LogEntry> entries = LoggerPlusPlus.instance.getLogEntries();
             harExporter.exportEntries(entries);
         });
 

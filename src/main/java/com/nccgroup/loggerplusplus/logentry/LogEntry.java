@@ -13,12 +13,19 @@
 
 package com.nccgroup.loggerplusplus.logentry;
 
-import burp.*;
+import burp.api.montoya.core.ToolType;
+import burp.api.montoya.http.HttpService;
+import burp.api.montoya.http.message.Cookie;
+import burp.api.montoya.http.message.HttpHeader;
+import burp.api.montoya.http.message.MimeType;
+import burp.api.montoya.http.message.params.HttpParameter;
+import burp.api.montoya.http.message.params.HttpParameterType;
+import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.http.message.responses.HttpResponse;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.colorfilter.ColorFilter;
+import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
-import com.nccgroup.loggerplusplus.logview.processor.LogProcessorHelper;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import lombok.AccessLevel;
@@ -27,12 +34,14 @@ import lombok.Setter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+
+import static com.nccgroup.loggerplusplus.LoggerPlusPlus.montoya;
 
 @Getter
 @Setter
@@ -41,17 +50,17 @@ public class LogEntry {
 	Status previousStatus;
 	Status status = Status.UNPROCESSED;
 
-	@Getter(AccessLevel.NONE)
 	@Setter(AccessLevel.NONE)
-	private IHttpRequestResponse requestResponse; //Only used for request, comment and HTTP Service.
-	private byte[] response;
+	private HttpRequest request;
+	@Setter(AccessLevel.NONE)
+	private HttpResponse response;
 
 	private Integer identifier;
-	private int tool;
-	private String toolName;
+	private ToolType tool;
 	private String hostname = "";
 	private String host = ""; // TODO better name?
 	private String method = "";
+	private String urlString;
 	private URL url;
 	private boolean params = false;
 	private Short responseStatus = -1;
@@ -60,7 +69,8 @@ public class LogEntry {
 	private boolean hasBodyParam = false;
 	private boolean hasCookieParam = false;
 	private String title = "";
-	private String newCookies = "";
+	private String comment;
+	private List<String> newCookies = new ArrayList<>();
 	private String sentCookies = "";
 	private String listenerInterface = "";
 	private boolean isSSL = false;
@@ -74,8 +84,8 @@ public class LogEntry {
 	private String clientIP = "";
 	private boolean hasSetCookies = false;
 	private String formattedResponseTime = "";
-	private String responseMimeType = "";
-	private String responseInferredMimeType = "";
+	private MimeType responseMimeType;
+	private MimeType responseInferredMimeType;
 	private int responseBodyLength = -1;
 	private String responseContentType = "";
 	private boolean complete = false;
@@ -92,63 +102,62 @@ public class LogEntry {
 	private Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	private Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
 	private int requestResponseDelay = -1;
-	private List<String> responseHeaders;
-	private List<String> requestHeaders;
-	private List<IParameter> tempParameters;
+	private List<HttpHeader> responseHeaders;
+	private List<HttpHeader> requestHeaders;
 	private List<String> parameters;
 	private List<String> reflectedParameters;
 
 	private LogEntry() {
-		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<UUID>());
-		this.matchingTags = Collections.synchronizedList(new ArrayList<Tag>());
+		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<>());
+		this.matchingTags = Collections.synchronizedList(new ArrayList<>());
 	}
 
-	public LogEntry(int tool, IHttpRequestResponse requestResponse) {
+	public LogEntry(ToolType tool, HttpRequest request) {
 		this();
 		this.tool = tool;
-		this.toolName = LoggerPlusPlus.callbacks.getToolName(tool);
-		this.requestResponse = requestResponse;
-		this.response = requestResponse.getResponse();
+		this.request = request;
+	}
+
+	public LogEntry(ToolType tool, HttpRequest request, HttpResponse response){
+		this(tool, request);
+		this.response = response;
 	}
 
 	/**
 	 * Create new entry and specify arrival time.
-	 * 
+	 *
 	 * @param tool
+	 * @param request
 	 * @param formattedRequestTime
-	 * @param requestResponse
 	 */
-	public LogEntry(int tool, Date formattedRequestTime, IHttpRequestResponse requestResponse) {
-		this(tool, requestResponse);
+	public LogEntry(ToolType tool, HttpRequest request, Date formattedRequestTime) {
+		this(tool, request);
 		this.setReqestTime(formattedRequestTime);
 	}
 
-	public void process() {
-		// TODO Move into separate processing class
+	public boolean process() {
 		previousStatus = this.status;
 		switch (this.status) {
 			case UNPROCESSED: {
 				this.status = processRequest();
-				// If the entry should be ignored, break here.
-				if (this.status == Status.IGNORED)
-					break;
-
-				// Else continue, fall through to process response
+				//fall through to process response
 			}
 			case AWAITING_RESPONSE: {
 				if (this.response == null) {
 					this.status = Status.AWAITING_RESPONSE;
-					break;
+					return false;
 				}
 				processResponse();
 				this.status = Status.PROCESSED;
+				return true;
 			}
 
-			case IGNORED:
 			case PROCESSED: {
 				// Nothing to do, we're done!
-				break;
+				return true;
 			}
+
+			default: return false;
 		}
 	}
 
@@ -166,69 +175,69 @@ public class LogEntry {
 	}
 
 	private Status processRequest() {
-		IRequestInfo tempAnalyzedReq = LoggerPlusPlus.callbacks.getHelpers().analyzeRequest(this.requestResponse);
-		URL uUrl = tempAnalyzedReq.getUrl();
-		if (!LoggerPlusPlus.isUrlInScope(uUrl))
-			return Status.IGNORED;
 
-		requestHeaders = tempAnalyzedReq.getHeaders();
+
+		requestHeaders = request.headers();
 
 		// Get HTTP Version, which would be the last token in "GET /admin/login/?next\u003d/admin/ HTTP/1.1"
-		String[] httpRequestTokens = requestHeaders.get(0).split(" ");
+		String[] httpRequestTokens = requestHeaders.get(0).value().split(" ");
 		this.requestHttpVersion = httpRequestTokens[httpRequestTokens.length - 1];
 
-		this.tempParameters = tempAnalyzedReq.getParameters().stream()
-				.filter(iParameter -> iParameter.getType() != IParameter.PARAM_COOKIE).collect(Collectors.toList());
-		this.parameters = tempParameters.stream().map(IParameter::getName).collect(Collectors.toList());
+		this.parameters = request.parameters().stream()
+				.filter(param -> param.type() != HttpParameterType.COOKIE)
+				.map(HttpParameter::name)
+				.collect(Collectors.toList());
 
-		this.url = tempAnalyzedReq.getUrl();
-		this.hostname = this.requestResponse.getHttpService().getHost();
-		this.protocol = this.requestResponse.getHttpService().getProtocol();
-		this.isSSL = this.protocol.equals("https");
-		this.targetPort = this.requestResponse.getHttpService().getPort();
+		this.urlString = request.url();
+		this.hostname = this.request.httpService().host();
+		this.protocol = this.request.httpService().secure() ? "https" : "http";
+		this.isSSL = this.request.httpService().secure();
+		this.targetPort = this.request.httpService().port();
 
 		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
 				|| (this.protocol.equals("http") && this.targetPort == 80);
 
 		this.host = this.protocol + "://" + this.hostname + (isDefaultPort ? "" : ":" + this.targetPort);
 
-		this.method = tempAnalyzedReq.getMethod();
+		this.method = request.method();
+		this.requestBodyLength = this.getRequestBytes().length - request.bodyOffset();
+		this.hasBodyParam = requestBodyLength > 0;
+
 		try {
+			this.url = new URL(request.url());
+
 			// I don't want to delete special characters such as ; or : from the extension
 			// as it may really be part of the extension! (burp proxy log ignores them)
-			String tempPath = this.url.getPath().replaceAll("\\\\", "/");
+			String tempPath = url.getPath().replaceAll("\\\\", "/");
 			tempPath = tempPath.substring(tempPath.lastIndexOf("/"));
 			int tempPathDotLocation = tempPath.lastIndexOf(".");
-			if (tempPathDotLocation >= 0)
+			if (tempPathDotLocation >= 0) {
 				this.urlExtension = tempPath.substring(tempPathDotLocation + 1);
-		} catch (Exception e) {
-			this.urlExtension = "";
-		}
+			}
+			this.params = url.getQuery() != null || this.hasBodyParam;
+		} catch (MalformedURLException ignored) {}
 
-		this.requestBodyLength = this.getRequest().length - tempAnalyzedReq.getBodyOffset();
-		this.hasBodyParam = requestBodyLength > 0;
-		this.params = this.url.getQuery() != null || this.hasBodyParam;
-		this.hasCookieParam = false;
+
+
 
 		// reading request headers like a boss!
-		for (String item : requestHeaders) {
-			if (item.contains(":")) {
-				String[] headerItem = item.split(":\\s", 2);
-				if (headerItem[0].equalsIgnoreCase("cookie")) {
-					this.sentCookies = headerItem[1];
+		for (HttpHeader header : requestHeaders) {
+//			if (header.contains(":")) {
+				if (header.name().equalsIgnoreCase("cookie")) {
+					this.sentCookies = header.value();
 					if (!this.sentCookies.isEmpty()) {
 						this.hasCookieParam = true;
 						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
 						// Check to see if it uses cookie Jars!
-						List<ICookie> cookieJars = LoggerPlusPlus.callbacks.getCookieJarContents();
+						List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
 						boolean oneNotMatched = false;
 						boolean anyParamMatched = false;
 
-						for (ICookie cookieItem : cookieJars) {
-							if (cookieItem.getDomain().equals(this.hostname)) {
+						for (Cookie cookieItem : cookiesInJar) {
+							if (cookieItem.domain().equals(this.hostname)) {
 								// now we want to see if any of these cookies have been set here!
-								String currentCookieJarParam = cookieItem.getName() + "=" + cookieItem.getValue() + ";";
+								String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
 								if (this.sentCookies.contains(currentCookieJarParam)) {
 									anyParamMatched = true;
 								} else {
@@ -245,14 +254,14 @@ public class LogEntry {
 							this.usesCookieJar = CookieJarStatus.YES;
 						}
 					}
-				} else if (headerItem[0].equalsIgnoreCase("referer")) {
-					this.referrerURL = headerItem[1];
-				} else if (headerItem[0].equalsIgnoreCase("content-type")) {
-					this.requestContentType = headerItem[1];
-				} else if (headerItem[0].equalsIgnoreCase("origin")) {
-					this.origin = headerItem[1];
+				} else if (header.name().equalsIgnoreCase("referer")) {
+					this.referrerURL = header.value();
+				} else if (header.name().equalsIgnoreCase("content-type")) {
+					this.requestContentType = header.value();
+				} else if (header.name().equalsIgnoreCase("origin")) {
+					this.origin = header.value();
 				}
-			}
+//			}
 		}
 
 		return Status.AWAITING_RESPONSE;
@@ -303,7 +312,7 @@ public class LogEntry {
 		//// this.regexAllReq[i] = allMatches.toString();
 		//
 		// }catch(Exception e){
-		// LoggerPlusPlus.callbacks.printError("Error in regular expression: " +
+		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
 		// regexString);
 		// }
 		//
@@ -317,64 +326,54 @@ public class LogEntry {
 	 * @param requestResponse
 	 * @param arrivalTime
 	 */
-	public void addResponse(IHttpRequestResponse requestResponse, Date arrivalTime) {
+	public void addResponse(HttpResponse requestResponse, Date arrivalTime) {
 		this.responseDateTime = arrivalTime;
 
 		//IHttpRequestResponse objects received by the proxy listener do not contain the latest request.
 		//So we must store the content separately.
-		this.response = requestResponse.getResponse();
-		this.setComment(requestResponse.getComment()); //Update the comment with the current comment
+		this.response = requestResponse;
+//		this.setComment(requestResponse.getComment()); //Update the comment with the current comment
 	}
 
 	private Status processResponse() {
 		reflectedParameters = new ArrayList<>();
-		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.callbacks.getHelpers()
-				.analyzeResponse(response);
+//		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.montoya.getHelpers()
+//				.analyzeResponse(response);
 
-		this.responseStatus = tempAnalyzedResp.getStatusCode();
-		this.responseBodyLength = response.length - tempAnalyzedResp.getBodyOffset();
-		this.responseMimeType = tempAnalyzedResp.getStatedMimeType();
-		this.responseInferredMimeType = tempAnalyzedResp.getInferredMimeType();
+		this.responseStatus = response.statusCode();
+		this.responseBodyLength = response.body().length();
+		this.responseMimeType = response.statedMimeType();
+		this.responseInferredMimeType = response.inferredMimeType();
 
 		/**************************************
 		 ************HEADER PROCESSING*********
 		 **************************************/
 
-		//Fancy handling to combine duplicate headers into CSVs.
-		Map<String, String> headers = tempAnalyzedResp.getHeaders().stream().filter(s -> s.contains(":"))
-				.collect(Collectors.toMap(s -> {
-					String[] split = s.split(": ", 2);
-					return split.length > 0 ? split[0] : "";
-				}, s -> {
-					String[] split = s.split(": ", 2);
-					if (split.length > 1) {
-						return split[1];
-					}
-					return "";
-				}, (s, s2) -> {
+		Map<String, String> headers = response.headers().stream()
+				.collect(Collectors.toMap(HttpHeader::name, HttpHeader::value, (s, s2) -> {
 					s += ", " + s2;
 					return s;
 				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
 
-		responseHeaders = tempAnalyzedResp.getHeaders();
+		responseHeaders = response.headers();
 
 		if (headers.containsKey("Location")) {
 			this.redirectURL = headers.get("Location");
 		}
 
 		// Extract HTTP Status message
-		String[] httpStatusTokens = responseHeaders.get(0).split(" ");
-		this.responseStatusText = httpStatusTokens[httpStatusTokens.length - 1];
-		this.responseHttpVersion = httpStatusTokens[0];
+		HttpHeader httpStatusTokens = response.headers().get(0);
+		//TODO FixMe
+//		this.responseStatusText = httpStatusTokens[httpStatusTokens.length - 1];
+//		this.responseHttpVersion = httpStatusTokens[0];
+
 
 		if (headers.containsKey("content-type")) {
 			this.responseContentType = headers.get("content-type");
 		}
 
 		//Cookies
-		for (ICookie cookieItem : tempAnalyzedResp.getCookies()) {
-			this.newCookies += cookieItem.getName() + "=" + cookieItem.getValue() + "; "; //TODO convert to map, and add filter support for maps
-		}
+		this.newCookies = response.cookies().stream().map(cookie -> String.format("%s=%s", cookie.name(), cookie.value())).collect(Collectors.toList());
 		this.hasSetCookies = !newCookies.isEmpty();
 
 
@@ -408,39 +407,34 @@ public class LogEntry {
 		 **************************************/
 
 		Long maxRespSize = ((Integer) LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(Globals.PREF_MAX_RESP_SIZE)) * 1000000L;
-		int bodyOffset = response.length - responseBodyLength;
+		int bodyOffset = response.bodyOffset();
 		if (responseBodyLength < maxRespSize) {
 			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
-			if (this.responseInferredMimeType.equalsIgnoreCase("HTML")) {
-				String strFullResponse = new String(response);
-				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(strFullResponse);
+			if (this.responseInferredMimeType == MimeType.HTML) {
+				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(response.bodyToString());
 				if (titleMatcher.find()) {
 					this.title = titleMatcher.group(1);
 				}
 			}
 
-			String responseBody = new String(response, bodyOffset, responseBodyLength);
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-			reflectedParameters = tempParameters.parallelStream()
-					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
-							&& reflectionController.validReflection(responseBody, iParameter))
-					.map(IParameter::getName).collect(Collectors.toList());
+			reflectedParameters = request.parameters().parallelStream()
+					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyToString(), parameter))
+					.map(HttpParameter::name).collect(Collectors.toList());
 
-//			this.requestResponse = LoggerPlusPlus.callbacks.saveBuffersToTempFiles(requestResponse);
+//			this.requestResponse = LoggerPlusPlus.montoya.saveBuffersToTempFiles(requestResponse);
 		} else {
 			//Just look for reflections in the headers.
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-			reflectedParameters = tempParameters.parallelStream()
-					.filter(iParameter -> !reflectionController.isParameterFiltered(iParameter)
-							&& reflectionController.validReflection(new String(response, 0, bodyOffset), iParameter))
-					.map(IParameter::getName).collect(Collectors.toList());
+			reflectedParameters = request.parameters().parallelStream()
+					.filter(parameter -> !reflectionController.isParameterFiltered(parameter)
+							&& reflectionController.validReflection(response.bodyToString(), parameter))
+					.map(HttpParameter::name).collect(Collectors.toList());
 
 			//Trim the response down to a maximum size, but at least keep the headers!
-			this.response = (new String(this.response, 0, bodyOffset) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8);
+			//TODO Fix response trimming?
+//			this.response = (new String(this.response, 0, bodyOffset) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8);
 		}
-
-
-		tempParameters = null; // We're done with these. Allow them to be cleaned.
 
 		this.complete = true;
 
@@ -487,7 +481,7 @@ public class LogEntry {
 		// this.regexAllResp[i] = allMatches.toString();
 		//
 		// }catch(Exception e){
-		// LoggerPlusPlus.callbacks.printError("Error in regular expression: " +
+		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
 		// regexString);
 		// }
 		//
@@ -501,12 +495,12 @@ public class LogEntry {
 		// }
 	}
 
-	public byte[] getRequest() {
-		return this.requestResponse.getRequest();
+	public byte[] getRequestBytes() {
+		return this.request.toByteArray().getBytes();
 	}
 
-	public byte[] getResponse() {
-		return response;
+	public byte[] getResponseBytes() {
+		return response.toByteArray().getBytes();
 	}
 
 	public void setReqestTime(Date requestTime) {
@@ -520,11 +514,11 @@ public class LogEntry {
 	}
 
 	public void setComment(String comment) {
-		this.requestResponse.setComment(comment);
+		this.comment = comment;
 	}
 
 	public String getComment() {
-		return this.requestResponse.getComment();
+		return this.comment;
 	}
 
 
@@ -532,17 +526,19 @@ public class LogEntry {
 
 		try {
 			switch (columnName) {
+				case INSCOPE:
+					return montoya.scope().isInScope(urlString);
 				case PROXY_TOOL:
 				case REQUEST_TOOL:
-					return getToolName();
+					return tool.toolName();
 				case TAGS:
-					return this.matchingTags.stream().map(Tag::getName).collect(Collectors.toList());
+					return this.matchingTags.stream().collect(Collectors.toList());
 				case URL:
-					return this.url;
+					return this.urlString;
 				case PATH:
-					return this.url.getPath();
+					return (this.url != null ? this.url.getPath() : "");
 				case QUERY:
-					return this.url.getQuery();
+					return (this.url != null ? this.url.getQuery() : "");
 				case PATHQUERY:
 					return this.url.getFile();
 				case STATUS:
@@ -570,7 +566,7 @@ public class LogEntry {
 				case RESPONSE_TIME:
 					return this.responseDateTime;
 				case COMMENT:
-					return this.requestResponse.getComment();
+					return this.comment;
 				case REQUEST_CONTENT_TYPE:
 					return this.requestContentType;
 				case REQUEST_HTTP_VERSION:
@@ -584,7 +580,7 @@ public class LogEntry {
 				case PARAMETER_COUNT:
 					return this.parameters.size();
 				case HASGETPARAM:
-					return this.url.getQuery() != null;
+					return this.url != null && this.url.getQuery() != null;
 				case HASPOSTPARAM:
 					return this.hasBodyParam;
 				case HASCOOKIEPARAM:
@@ -642,25 +638,26 @@ public class LogEntry {
 				case REFLECTION_COUNT:
 					return reflectedParameters.size();
 				case REQUEST_BODY: // request
-					if (requestBodyLength == 0) return "";
-					return new String(getRequest(), getRequest().length - requestBodyLength, requestBodyLength);
+					return request.bodyToString();
+				case REQUEST_BODY_LENGTH:
+					return request.body().length();
 //							.substring(request.length - requestBodyLength);
 				case RESPONSE_BODY: // response
-					if (responseBodyLength == 0) return "";
-					return new String(response, response.length - responseBodyLength, responseBodyLength);
-//							.substring(response.length - responseBodyLength);
+					return response.bodyToString();
+				case RESPONSE_BODY_LENGTH:
+					return response.body().length();
 				case RTT:
 					return requestResponseDelay;
 				case REQUEST_HEADERS:
-					return requestHeaders != null ? String.join("\r\n", requestHeaders) : "";
+					return requestHeaders != null ? requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
 				case RESPONSE_HEADERS:
-					return responseHeaders != null ? String.join("\r\n", responseHeaders) : "";
+					return responseHeaders != null ? responseHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
 				case REDIRECT_URL:
 					return redirectURL;
 				case BASE64_REQUEST:
-					return Base64.getEncoder().encodeToString(this.getRequest());
+					return Base64.getEncoder().encodeToString(this.getRequestBytes());
 				case BASE64_RESPONSE:
-					return Base64.getEncoder().encodeToString(response);
+					return Base64.getEncoder().encodeToString(this.getResponseBytes());
 				case RESPONSE_HASH: {
 					if (responseHash == null) {
 						responseHash = DigestUtils
@@ -684,8 +681,8 @@ public class LogEntry {
 		return matchingTags;
 	}
 
-	public IHttpService getHttpService() {
-		return this.requestResponse.getHttpService();
+	public HttpService getHttpService() {
+		return this.request.httpService();
 	}
 
 	public enum CookieJarStatus {
@@ -706,27 +703,27 @@ public class LogEntry {
 	/**
 	 * TODO CLEAN UP
 	 * 
-	 * @param colorFilter
+	 * @param tableColorRule
 	 * @param retest
 	 * @return If the list of matching color filters was updated
 	 */
-	public boolean testColorFilter(ColorFilter colorFilter, boolean retest) {
-		if (!colorFilter.isEnabled() || colorFilter.getFilter() == null) {
-			return this.getMatchingColorFilters().remove(colorFilter.getUUID());
+	public boolean testColorFilter(TableColorRule tableColorRule, boolean retest) {
+		if (!tableColorRule.isEnabled() || tableColorRule.getFilterExpression() == null) {
+			return this.getMatchingColorFilters().remove(tableColorRule.getUuid());
 		}
 
 		// If we don't already know if the color filter matches (e.g. haven't checked it
 		// before)
-		if (!this.matchingColorFilters.contains(colorFilter.getUUID())) {
-			if (colorFilter.getFilter().matches(this)) {
-				this.matchingColorFilters.add(colorFilter.getUUID());
+		if (!this.matchingColorFilters.contains(tableColorRule.getUuid())) {
+			if (tableColorRule.getFilterExpression().matches(this)) {
+				this.matchingColorFilters.add(tableColorRule.getUuid());
 				return true;
 			} else {
 				return false;
 			}
 		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!colorFilter.getFilter().matches(this)) {
-				this.matchingColorFilters.remove(colorFilter.getUUID());
+			if (!tableColorRule.getFilterExpression().matches(this)) {
+				this.matchingColorFilters.remove(tableColorRule.getUuid());
 			}
 			return true;
 		} else {
@@ -740,21 +737,21 @@ public class LogEntry {
 	 * @return If the list of matching color filters was updated
 	 */
 	public boolean testTag(Tag tag, boolean retest) {
-		if (!tag.isEnabled() || tag.getFilter() == null) {
+		if (!tag.isEnabled() || tag.getFilterExpression() == null) {
 			return this.getMatchingTags().remove(tag);
 		}
 
 		// If we don't already know if the color filter matches (e.g. haven't checked it
 		// before)
 		if (!this.matchingTags.contains(tag)) {
-			if (tag.getFilter().matches(this)) {
+			if (tag.getFilterExpression().matches(this)) {
 				this.matchingTags.add(tag);
 				return true;
 			} else {
 				return false;
 			}
 		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!tag.getFilter().matches(this)) {
+			if (!tag.getFilterExpression().matches(this)) {
 				this.matchingTags.remove(tag);
 			}
 			return true;
@@ -765,10 +762,10 @@ public class LogEntry {
 
 	@Override
 	public String toString() {
-		return this.url.toString();
+		return this.urlString.toString();
 	}
 
-	public static Integer extractAndRemoveIdentifierFromComment(LogEntry logEntry) {
-		return LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(logEntry.requestResponse);
-	}
+//	public static Integer extractAndRemoveIdentifierFromComment(LogEntry logEntry) {
+//		return LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(logEntry.request);
+//	}
 }

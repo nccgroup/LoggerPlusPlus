@@ -1,8 +1,8 @@
 package com.nccgroup.loggerplusplus;
 
-import burp.IBurpExtender;
-import burp.IBurpExtenderCallbacks;
-import burp.IExtensionStateListener;
+import burp.api.montoya.BurpExtension;
+import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.Registration;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -16,26 +16,32 @@ import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.*;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 
 /**
  * Created by corey on 07/09/17.
  */
-public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
-    public static LoggerPlusPlus instance;
-    public static IBurpExtenderCallbacks callbacks;
+@Log4j2
+@Getter
+public class LoggerPlusPlus implements BurpExtension {
 
-    private final IGsonProvider gsonProvider;
-    private LoggingController loggingController;
+    private static String NAME = "Logger++";
+
+    public static LoggingController loggingController;
+    public static LoggerPlusPlus instance;
+    public static MontoyaApi montoya;
+    public static IGsonProvider gsonProvider = new DefaultGsonProvider();
+
+    private Registration menuBarRegistration;
     private LogProcessor logProcessor;
     private ExportController exportController;
     private PreferencesController preferencesController;
@@ -49,91 +55,52 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
     //UX
     private LoggerMenu loggerMenu;
 
-
-    public LoggerPlusPlus(){
-        this.gsonProvider = new DefaultGsonProvider();
-    }
-
-    private JFrame getBurpFrame() throws Exception {
-        // Get all frames
-        Frame[] allFrames = JFrame.getFrames();
-        // Filter the stream find the main burp window frame, and convert to a list
-        List<Frame> filteredFrames = Arrays.stream(allFrames).filter(f ->
-                f.getTitle().startsWith("Burp Suite") && f.isVisible()
-        ).collect(Collectors.toList());
-        //  If size is 1, we have the main burp frame. Otherwise fails
-        if (filteredFrames.size() == 1) {
-            return (JFrame) filteredFrames.get(0);
-        } else {
-            throw new Exception("Expected one burp pane, but found " + filteredFrames.size());
-        }
+    public LoggerPlusPlus() {
+        LoggerPlusPlus.instance = this;
     }
 
     @Override
-    public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks)
-    {
+    public void initialize(MontoyaApi montoya) {
+        //Woohoo! Montoya!
+        LoggerPlusPlus.montoya = montoya;
+        montoya.extension().setName(NAME);
+        montoya.extension().registerUnloadingHandler(this::unloadExtension);
 
-        //Fix Darcula's issue with JSpinner UI.
-        try {
-            Class spinnerUI = Class.forName("com.bulenkov.darcula.ui.DarculaSpinnerUI");
-            UIManager.put("com.bulenkov.darcula.ui.DarculaSpinnerUI", spinnerUI);
-            Class sliderUI = Class.forName("com.bulenkov.darcula.ui.DarculaSliderUI");
-            UIManager.put("com.bulenkov.darcula.ui.DarculaSliderUI", sliderUI);
-        } catch (ClassNotFoundException e) {
-            //Darcula is not installed.
-        }
+        //TODO Set Logging Level from prefs
+        loggingController = new LoggingController(gsonProvider, montoya);
+        log.info("Logger++ " + Globals.VERSION + " by @CoreyD97.");
+        log.info("Please submit any bug reports or feature requests via GitHub.");
+        log.info("Feel free to reach out on Twitter (@CoreyD97) with any questions.");
 
-        //Burp Specific
-        LoggerPlusPlus.instance = this;
-        LoggerPlusPlus.callbacks = callbacks;
-        callbacks.setExtensionName("Logger++");
-        LoggerPlusPlus.callbacks.registerExtensionStateListener(LoggerPlusPlus.this);
-
-        loggingController = new LoggingController(gsonProvider);
-        preferencesController = new PreferencesController(this);
+        preferencesController = new PreferencesController(montoya);
         preferencesController.getPreferences().addSettingListener((source, settingName, newValue) -> {
             if (settingName.equals(Globals.PREF_LOG_LEVEL)) {
                 loggingController.setLogLevel((Level) newValue);
             }
         });
         reflectionController = new ReflectionController(preferencesController.getPreferences());
-        exportController = new ExportController(this, preferencesController.getPreferences());
-        libraryController = new FilterLibraryController(this, preferencesController);
-        logViewController = new LogViewController(this, libraryController);
-        logProcessor = new LogProcessor(this, logViewController.getLogTableController(), exportController);
-        grepperController = new GrepperController(this, logViewController.getLogTableController(), preferencesController);
-        contextMenuFactory = new LoggerContextMenuFactory(this);
-
-        mainViewController = new MainViewController(this);
-
-        LoggerPlusPlus.callbacks.registerContextMenuFactory(contextMenuFactory);
+        exportController = new ExportController(preferencesController.getPreferences());
+        libraryController = new FilterLibraryController(preferencesController);
+        logViewController = new LogViewController(libraryController);
+        logProcessor = new LogProcessor(logViewController.getLogTableController(), exportController);
+        grepperController = new GrepperController(logViewController.getLogTableController(), preferencesController);
+        contextMenuFactory = new LoggerContextMenuFactory();
+        mainViewController = new MainViewController();
 
 
-        SwingUtilities.invokeLater(() -> {
+        montoya.userInterface().registerContextMenuItemsProvider(contextMenuFactory);
+        montoya.userInterface().registerSuiteTab(NAME, mainViewController.getUiComponent());
 
-            LoggerPlusPlus.callbacks.addSuiteTab(mainViewController);
+        montoya.http().registerHttpHandler(logProcessor.getHttpHandler());
+        montoya.proxy().registerResponseHandler(logProcessor.getProxyResponseHandler());
 
-            //Add menu item to Burp's frame menu.
-            JFrame rootFrame = null;
-            try {
-                rootFrame = getBurpFrame();
-            } catch (Exception e) {
-                callbacks.printError("Could not find root frame. Window JMenu will not be added");
-                throw new RuntimeException(e);
-            }
-            try{
-                JMenuBar menuBar = rootFrame.getJMenuBar();
-                loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
-                menuBar.add(loggerMenu, menuBar.getMenuCount() - 1);
-            }catch (NullPointerException nPException){
-                loggerMenu = null;
-            }
-        });
+
+        loggerMenu = new LoggerMenu(LoggerPlusPlus.this);
+        menuBarRegistration = montoya.userInterface().menuBar().registerMenu(loggerMenu);
 
     }
 
-    @Override
-    public void extensionUnloaded() {
+    public void unloadExtension() {
         if(loggerMenu != null && loggerMenu.getParent() != null){
             loggerMenu.getParent().remove(loggerMenu);
         }
@@ -147,63 +114,19 @@ public class LoggerPlusPlus implements IBurpExtender, IExtensionStateListener {
         //Stop log processor executors and pending tasks.
         logProcessor.shutdown();
 
+        menuBarRegistration.deregister();
+
         //Null out static variables so not leftover.
         LoggerPlusPlus.instance = null;
-        LoggerPlusPlus.callbacks = null;
     }
 
-    public static boolean isUrlInScope(URL url){
+    public static boolean isUrlInScope(String url){
         return (!(Boolean) instance.getPreferencesController().getPreferences().getSetting(PREF_RESTRICT_TO_SCOPE)
-                || callbacks.isInScope(url));
-    }
-
-
-    public LogViewController getLogViewController() {
-        return logViewController;
-    }
-
-    public IGsonProvider getGsonProvider() {
-        return gsonProvider;
-    }
-
-    public GrepperController getGrepperController() {
-        return grepperController;
-    }
-
-    public MainViewController getMainViewController() {
-        return mainViewController;
-    }
-
-    public FilterLibraryController getLibraryController() {
-        return libraryController;
-    }
-
-    public LoggingController getLoggingController() {
-        return loggingController;
-    }
-
-    public PreferencesController getPreferencesController() {
-        return preferencesController;
-    }
-
-    public LogProcessor getLogProcessor() {
-        return logProcessor;
-    }
-
-    public ReflectionController getReflectionController() {
-        return reflectionController;
-    }
-
-    public LoggerMenu getLoggerMenu() {
-        return loggerMenu;
+                || montoya.scope().isInScope(url));
     }
 
     public List<LogEntry> getLogEntries(){
         return logViewController.getLogTableController().getLogTableModel().getData();
-    }
-
-    public ExportController getExportController() {
-        return exportController;
     }
 
     public Frame getLoggerFrame() {

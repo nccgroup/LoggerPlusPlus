@@ -1,31 +1,39 @@
 package com.nccgroup.loggerplusplus.exports;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
+import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpGenerator;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogFilter;
+import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
 import com.nccgroup.loggerplusplus.util.Globals;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.message.BasicHeader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentElasticsearchExtension;
+
 
 import javax.swing.*;
 import java.io.IOException;
@@ -38,13 +46,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
+@Log4j2
 public class ElasticExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
-    RestHighLevelClient httpClient;
+    ElasticsearchClient elasticClient;
     ArrayList<LogEntry> pendingEntries;
-    LogFilter logFilter;
+    LogTableFilter logFilter;
     private List<LogEntryField> fields;
     private String indexName;
     private ScheduledFuture indexTask;
@@ -52,12 +59,14 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     private final ScheduledExecutorService executorService;
     private final ElasticExporterControlPanel controlPanel;
+    private final Gson gson;
 
     private Logger logger = LogManager.getLogger(this);
 
     protected ElasticExporter(ExportController exportController, Preferences preferences) {
         super(exportController, preferences);
         this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
+        this.gson = LoggerPlusPlus.gsonProvider.getGson();
         executorService = Executors.newScheduledThreadPool(1);
 
         if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
@@ -95,7 +104,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
         if (!StringUtils.isBlank(filterString)) {
             try {
-                logFilter = new LogFilter(exportController.getLoggerPlusPlus().getLibraryController(), filterString);
+                logFilter = new LogTableFilter(filterString);
             } catch (ParseException ex) {
                 logger.error("The log filter configured for the Elastic exporter is invalid!", ex);
             }
@@ -105,7 +114,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         int port = preferences.getSetting(Globals.PREF_ELASTIC_PORT);
         indexName = preferences.getSetting(Globals.PREF_ELASTIC_INDEX);
         String protocol = preferences.getSetting(Globals.PREF_ELASTIC_PROTOCOL).toString();
-        RestClientBuilder builder = RestClient.builder(new HttpHost(address, port, protocol));
+        RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(address, port, protocol));
         logger.info(String.format("Starting ElasticSearch exporter. %s://%s:%s/%s", protocol, address, port, indexName));
 
         Globals.ElasticAuthType authType = preferences.getSetting(Globals.PREF_ELASTIC_AUTH);
@@ -127,10 +136,13 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         if (!"".equals(user) && !"".equalsIgnoreCase(pass)) {
             logger.info(String.format("ElasticSearch using %s, Username: %s", authType, user));
             String authValue = Base64.getEncoder().encodeToString((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
-            builder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", String.format("%s %s", authType, authValue))});
+            restClientBuilder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization", String.format("%s %s", authType, authValue))});
         }
 
-        httpClient = new RestHighLevelClient(builder);
+
+        ElasticsearchTransport transport = new RestClientTransport(restClientBuilder.build(), new JacksonJsonpMapper());
+
+        elasticClient = new ElasticsearchClient(transport);
 
         createIndices();
         pendingEntries = new ArrayList<>();
@@ -141,7 +153,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportNewEntry(final LogEntry logEntry) {
         if(logEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(logEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(logEntry)) return;
             pendingEntries.add(logEntry);
         }
     }
@@ -149,7 +161,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     @Override
     public void exportUpdatedEntry(final LogEntry updatedEntry) {
         if(updatedEntry.getStatus() == Status.PROCESSED) {
-            if (logFilter != null && !logFilter.matches(updatedEntry)) return;
+            if (logFilter != null && !logFilter.getFilterExpression().matches(updatedEntry)) return;
             pendingEntries.add(updatedEntry);
         }
     }
@@ -173,45 +185,37 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     }
 
     private void createIndices() throws IOException {
-        GetIndexRequest request = new GetIndexRequest(this.indexName);
+        ExistsRequest existsRequest = new ExistsRequest.Builder().index(this.indexName).build();
 
-        boolean exists = httpClient.indices().exists(request, RequestOptions.DEFAULT);
+        BooleanResponse exists = elasticClient.indices().exists(existsRequest);
 
-        if(!exists) {
-            CreateIndexRequest _request = new CreateIndexRequest(this.indexName);
-            httpClient.indices().create(_request, RequestOptions.DEFAULT);
+        if(!exists.value()) {
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest.Builder().index(this.indexName).build();
+            elasticClient.indices().create(createIndexRequest);
         }
     }
 
-    public IndexRequest buildIndexRequest(LogEntry logEntry) throws IOException {
-        XContentBuilder builder = jsonBuilder().startObject();
+    public JsonObject serializeLogEntry(LogEntry logEntry) {
+        //Todo Better serialization of entries
+        JsonObject jsonObject = new JsonObject();
         for (LogEntryField field : this.fields) {
             Object value = formatValue(logEntry.getValueByKey(field));
             try {
-                //For some reason, the XContentElasticsearchExtension service cannot be loaded
-                //when in burp, so we must format dates manually ourselves :(
-                //TODO investigate further
-                if (value instanceof Date) {
-                    builder.field(field.getFullLabel(), XContentElasticsearchExtension.DEFAULT_DATE_PRINTER.print(((Date) value).getTime()));
-                } else {
-                    builder.field(field.getFullLabel(), value);
-                }
+                jsonObject.addProperty(field.getFullLabel(), gson.toJson(value));
             }catch (Exception e){
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + value);
-                LoggerPlusPlus.callbacks.printError("ElasticExporter: " + e.getMessage());
+                log.error("ElasticExporter: " + value);
+                log.error("ElasticExporter: " + e.getMessage());
                 throw e;
             }
         }
-        builder.endObject();
-
-        return new IndexRequest(this.indexName, "doc").source(builder); //TODO Remove deprecated ES6 methods.
+        return jsonObject;
     }
 
     private void indexPendingEntries(){
         try {
             if (this.pendingEntries.size() == 0) return;
 
-            BulkRequest httpBulkBuilder = new BulkRequest();
+            BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
 
             ArrayList<LogEntry> entriesInBulk;
             synchronized (pendingEntries) {
@@ -221,19 +225,24 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
             for (LogEntry logEntry : entriesInBulk) {
                 try {
-                    IndexRequest request = buildIndexRequest(logEntry);
-                    httpBulkBuilder.add(request);
+                    bulkBuilder.operations(op -> op
+                            .index(idx -> idx
+                                    .index(this.indexName)
+                                    .document(serializeLogEntry(logEntry))
+                            )
+                    );
+
                 } catch (Exception e) {
-                    LoggerPlusPlus.callbacks.printError("Could not build elastic export request for entry: " + e.getMessage());
+                    log.error("Could not build elastic export request for entry: " + e.getMessage());
                     //Could not build index request. Ignore it?
                 }
             }
 
             try {
-                BulkResponse bulkResponse = httpClient.bulk(httpBulkBuilder, RequestOptions.DEFAULT);
-                if (bulkResponse.hasFailures()) {
-                    for (BulkItemResponse bulkItemResponse : bulkResponse.getItems()) {
-                        LoggerPlusPlus.callbacks.printError(bulkItemResponse.getFailureMessage());
+                BulkResponse bulkResponse = elasticClient.bulk(bulkBuilder.build());
+                if (bulkResponse.errors()) {
+                    for (BulkResponseItem bulkResponseItem : bulkResponse.items()) {
+                        log.error(bulkResponseItem.error().reason());
                     }
                 }
                 connectFailedCounter = 0;

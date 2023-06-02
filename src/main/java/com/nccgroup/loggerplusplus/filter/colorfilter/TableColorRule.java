@@ -1,32 +1,27 @@
-package com.nccgroup.loggerplusplus.filter.tag;
+package com.nccgroup.loggerplusplus.filter.colorfilter;
 
 import com.nccgroup.loggerplusplus.filter.ColorizingFilterRule;
 import com.nccgroup.loggerplusplus.filter.FilterExpression;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
-import com.nccgroup.loggerplusplus.filter.parser.ParseException;
-import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
+import lombok.AccessLevel;
 import lombok.Getter;
-
-import java.awt.*;
-import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.
  */
-public class Tag extends ColorizingFilterRule implements Comparable<Tag> {
+public class TableColorRule extends ColorizingFilterRule implements Comparable<TableColorRule>{
 
-    @Getter
+    @Getter(AccessLevel.PUBLIC)
     private boolean shouldRetest = true;
 
-    public Tag(){
+    public TableColorRule(){
         super("", "");
     }
 
-    public Tag(String title, String filterString) {
+    public TableColorRule(String title, String filterString) {
         super(title, filterString);
     }
 
-    public Tag(String title, FilterExpression filterExpression) {
+    public TableColorRule(String title, FilterExpression filterExpression) {
         super(title, filterExpression);
     }
 
@@ -50,22 +45,12 @@ public class Tag extends ColorizingFilterRule implements Comparable<Tag> {
     }
 
     @Override
-    public void setPriority(short priority) {
-        super.setPriority(priority);
-        shouldRetest = true;
-    }
-
-    @Override
-    public int compareTo(Tag tag) {
-        return ((Comparable) this.getPriority()).compareTo(tag.getPriority());
-    }
-
-    public boolean shouldRetest() {
-        return shouldRetest;
+    public int compareTo(TableColorRule tableColorRule) {
+        return ((Comparable) this.getPriority()).compareTo(tableColorRule.getPriority());
     }
 
     @Override
     public String toString() {
-        return this.getName();
+        return "ColorFilter[" + (this.getFilterExpression() != null ? this.getFilterExpression().toString() : getFilterString()) + "]";
     }
 }
