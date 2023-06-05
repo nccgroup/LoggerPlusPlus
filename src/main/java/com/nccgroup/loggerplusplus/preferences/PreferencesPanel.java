@@ -25,6 +25,7 @@ import com.nccgroup.loggerplusplus.filter.FilterExpression;
 import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
+import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
@@ -263,7 +264,7 @@ public class PreferencesPanel extends JScrollPane {
             }
         });
 
-        ComponentGroup savedFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Saved Filter Sharing");
+        ComponentGroup savedFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Saved Filter Backup");
         savedFilterSharing.add(new JButton(new AbstractAction("Import Saved Filters") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -289,7 +290,7 @@ public class PreferencesPanel extends JScrollPane {
             }
         }));
 
-        ComponentGroup colorFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Color Filter Sharing");
+        ComponentGroup colorFilterSharing = new ComponentGroup(Orientation.VERTICAL, "Color Filter Backup");
         colorFilterSharing.add(new JButton(new AbstractAction("Import Color Filters") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -297,6 +298,7 @@ public class PreferencesPanel extends JScrollPane {
                 Map<UUID, TableColorRule> colorFilterMap = preferencesController.getGsonProvider().getGson().fromJson(json,
                         new TypeToken<Map<UUID, TableColorRule>>() {
                         }.getType());
+                if(colorFilterMap == null) return;
                 for (TableColorRule tableColorRule : colorFilterMap.values()) {
                     LoggerPlusPlus.instance.getLibraryController().addColorFilter(tableColorRule);
                 }
@@ -309,6 +311,30 @@ public class PreferencesPanel extends JScrollPane {
                 HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
                 String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(colorFilters);
                 MoreHelp.showLargeOutputDialog("Export Color Filters", jsonOutput);
+            }
+        }));
+
+        ComponentGroup tagSharing = new ComponentGroup(Orientation.VERTICAL, "Tag Backup");
+        tagSharing.add(new JButton(new AbstractAction("Import Tags") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String json = MoreHelp.showLargeInputDialog("Import Tags", null);
+                Map<UUID, Tag> tagMap = preferencesController.getGsonProvider().getGson().fromJson(json,
+                        new TypeToken<Map<UUID, Tag>>() {
+                        }.getType());
+                if(tagMap == null) return;
+                for (Tag tag : tagMap.values()) {
+                    LoggerPlusPlus.instance.getLibraryController().addTag(tag);
+                }
+            }
+        }));
+
+        tagSharing.add(new JButton(new AbstractAction("Export Tags") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                HashMap<UUID, Tag> tags = preferences.getSetting(PREF_TAG_FILTERS);
+                String jsonOutput = preferencesController.getGsonProvider().getGson().toJson(tags);
+                MoreHelp.showLargeOutputDialog("Export Tags", jsonOutput);
             }
         }));
 
@@ -357,16 +383,20 @@ public class PreferencesPanel extends JScrollPane {
                 new JLabel("Note 3: Full request/response logging available in 'Project Options > Misc > Logging'"));
         notesPanel.add(new JLabel("Note 4: Updating the extension will reset the log table settings."));
 
-        JComponent mainComponent = PanelBuilder
-                .build(new JPanel[][] { new JPanel[] { statusPanel, statusPanel, statusPanel, statusPanel },
-                        new JPanel[] { logFromPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel },
-                        new JPanel[] { logFromPanel, importGroup, importGroup, importGroup },
-                        new JPanel[] { logFromPanel, exportGroup, exportGroup, exportGroup },
-                        new JPanel[] { savedFilterSharing, savedFilterSharing, colorFilterSharing, colorFilterSharing },
-                        new JPanel[] { reflectionsPanel, reflectionsPanel, reflectionsPanel, reflectionsPanel },
-                        new JPanel[] { otherPanel, otherPanel, otherPanel, otherPanel },
-                        new JPanel[] { resetPanel, resetPanel, resetPanel, resetPanel },
-                        new JPanel[] { notesPanel, notesPanel, notesPanel, notesPanel }, }, Alignment.TOPMIDDLE, 0, 0);
+        JPanel mainComponent = new PanelBuilder()
+                .setAlignment(Alignment.TOPMIDDLE)
+                .setScaleX(0)
+                .setScaleY(0)
+                .setComponentGrid(new JPanel[][] { new JPanel[] { statusPanel, statusPanel, statusPanel, statusPanel, statusPanel, statusPanel },
+                        new JPanel[] { doNotLogPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel, doNotLogPanel},
+                        new JPanel[] { logFromPanel, logFromPanel, importGroup, importGroup, importGroup, importGroup },
+                        new JPanel[] { logFromPanel, logFromPanel, exportGroup, exportGroup, exportGroup, exportGroup },
+                        new JPanel[] { savedFilterSharing, savedFilterSharing, colorFilterSharing, colorFilterSharing, tagSharing, tagSharing },
+                        new JPanel[] { reflectionsPanel, reflectionsPanel, reflectionsPanel, reflectionsPanel, reflectionsPanel, reflectionsPanel },
+                        new JPanel[] { otherPanel, otherPanel, otherPanel, otherPanel, otherPanel, otherPanel },
+                        new JPanel[] { resetPanel, resetPanel, resetPanel, resetPanel, resetPanel, resetPanel },
+                        new JPanel[] { notesPanel, notesPanel, notesPanel, notesPanel, notesPanel, notesPanel }, })
+                .build();
 
         this.setViewportView(mainComponent);
     }
