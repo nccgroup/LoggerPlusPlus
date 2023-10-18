@@ -215,6 +215,22 @@ public class PreferencesPanel extends JScrollPane {
             }
         }));
 
+        importGroup.add(new JButton(new AbstractAction("Import From Exported JSON") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importFromExportedJson();
+                if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
+                    int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
+                            "One or more auto-exporters are currently enabled. " +
+                                    "Do you want the imported entries to also be sent to the auto-exporters?",
+                            "Auto-exporters Enabled", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    LoggerImport.loadImported(requests, res == JOptionPane.YES_OPTION);
+                } else {
+                    LoggerImport.loadImported(requests, false);
+                }
+            }
+        }));
+
         ComponentGroup exportGroup = new ComponentGroup(Orientation.HORIZONTAL);
         HashMap<Class<? extends LogExporter>, LogExporter> exporters = LoggerPlusPlus.instance
                 .getExportController().getExporters();
