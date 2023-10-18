@@ -245,7 +245,7 @@ public class LoggerImport {
 
                 requests.add(requestResponse);
             } catch (Exception e) {
-                log.error("LoggerImport-importWStalker: Error Parsing Content");
+                log.error("LoggerImport-importFromExportedJson: Error Parsing Content");
                 return new ArrayList<>();
             }
         }
