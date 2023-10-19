@@ -79,7 +79,7 @@ public class LogEntry {
 	private String requestHttpVersion = "";
 	private String requestContentType = "";
 	private String protocol = "";
-	private int targetPort = -1;
+	private short targetPort = -1;
 	private int requestBodyLength = -1;
 	private String clientIP = "";
 	private boolean hasSetCookies = false;
@@ -179,9 +179,7 @@ public class LogEntry {
 
 		requestHeaders = request.headers();
 
-		// Get HTTP Version, which would be the last token in "GET /admin/login/?next\u003d/admin/ HTTP/1.1"
-		String[] httpRequestTokens = requestHeaders.get(0).value().split(" ");
-		this.requestHttpVersion = httpRequestTokens[httpRequestTokens.length - 1];
+		this.requestHttpVersion = request.httpVersion();
 
 		this.parameters = request.parameters().stream()
 				.filter(param -> param.type() != HttpParameterType.COOKIE)
@@ -192,7 +190,7 @@ public class LogEntry {
 		this.hostname = this.request.httpService().host();
 		this.protocol = this.request.httpService().secure() ? "https" : "http";
 		this.isSSL = this.request.httpService().secure();
-		this.targetPort = this.request.httpService().port();
+		this.targetPort = (short) this.request.httpService().port();
 
 		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
 				|| (this.protocol.equals("http") && this.targetPort == 80);
@@ -361,11 +359,8 @@ public class LogEntry {
 			this.redirectURL = headers.get("Location");
 		}
 
-		// Extract HTTP Status message
-		HttpHeader httpStatusTokens = response.headers().get(0);
-		//TODO FixMe
-//		this.responseStatusText = httpStatusTokens[httpStatusTokens.length - 1];
-//		this.responseHttpVersion = httpStatusTokens[0];
+		this.responseStatusText = response.reasonPhrase();
+		this.responseHttpVersion = response.httpVersion();
 
 
 		if (headers.containsKey("content-type")) {
@@ -422,7 +417,6 @@ public class LogEntry {
 					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyToString(), parameter))
 					.map(HttpParameter::name).collect(Collectors.toList());
 
-//			this.requestResponse = LoggerPlusPlus.montoya.saveBuffersToTempFiles(requestResponse);
 		} else {
 			//Just look for reflections in the headers.
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
@@ -439,60 +433,6 @@ public class LogEntry {
 		this.complete = true;
 
 		return Status.PROCESSED;
-
-		// RegEx processing for responses - should be available only when we have a
-		// RegEx rule!
-		// There are 5 RegEx rule for requests
-		// for(int i=0;i<5;i++){
-		// String regexVarName = "regex"+(i+1)+"Resp";
-		// if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
-		// // so this rule is enabled!
-		// // check to see if the RegEx is not empty
-		// LogTableColumn regexColumn =
-		// logTable.getColumnModel().getColumnByName(regexVarName);
-		// String regexString = regexColumn.getRegExData().getRegExString();
-		// if(!regexString.isEmpty()){
-		// // now we can process it safely!
-		// Pattern p = null;
-		// try{
-		// if(regexColumn.getRegExData().isRegExCaseSensitive())
-		// p = Pattern.compile(regexString);
-		// else
-		// p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
-		//
-		// Matcher m = p.matcher(strFullResponse);
-		// StringBuilder allMatches = new StringBuilder();
-		//
-		// int counter = 1;
-		// while (m.find()) {
-		// if(counter==2){
-		// allMatches.insert(0, "X");
-		// allMatches.append("X");
-		// }
-		// if(counter > 1){
-		// allMatches.append("X"+m.group()+"X"); //TODO investigate unicode use
-		// }else{
-		// allMatches.append(m.group());
-		// }
-		// counter++;
-		//
-		// }
-		//
-		// this.regexAllResp[i] = allMatches.toString();
-		//
-		// }catch(Exception e){
-		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
-		// regexString);
-		// }
-		//
-		// }
-		// }
-		// }
-
-		// if(!logTable.getColumnModel().isColumnEnabled("response") &&
-		// !logTable.getColumnModel().isColumnEnabled("request")){
-		// this.requestResponse = null;
-		// }
 	}
 
 	public byte[] getRequestBytes() {
@@ -613,26 +553,6 @@ public class LogEntry {
 					return this.usesCookieJar.toString();
 				case ORIGIN:
 					return this.origin;
-				// case REGEX1REQ:
-				// return this.regexAllReq[0];
-				// case REGEX2REQ:
-				// return this.regexAllReq[1];
-				// case REGEX3REQ:
-				// return this.regexAllReq[2];
-				// case REGEX4REQ:
-				// return this.regexAllReq[3];
-				// case REGEX5REQ:
-				// return this.regexAllReq[4];
-				// case REGEX1RESP:
-				// return this.regexAllResp[0];
-				// case REGEX2RESP:
-				// return this.regexAllResp[1];
-				// case REGEX3RESP:
-				// return this.regexAllResp[2];
-				// case REGEX4RESP:
-				// return this.regexAllResp[3];
-				// case REGEX5RESP:
-				// return this.regexAllResp[4];
 				case REFLECTED_PARAMS:
 					return reflectedParameters;
 				case REFLECTION_COUNT:
