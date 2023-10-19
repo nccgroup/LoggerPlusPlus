@@ -58,7 +58,7 @@ public class LogEntry {
 	private Integer identifier;
 	private ToolType tool;
 	private String hostname = "";
-	private String host = ""; // TODO better name?
+	private String host = "";
 	private String method = "";
 	private String urlString;
 	private URL url;
@@ -216,106 +216,49 @@ public class LogEntry {
 		} catch (MalformedURLException ignored) {}
 
 
-
-
-		// reading request headers like a boss!
 		for (HttpHeader header : requestHeaders) {
-//			if (header.contains(":")) {
-				if (header.name().equalsIgnoreCase("cookie")) {
-					this.sentCookies = header.value();
-					if (!this.sentCookies.isEmpty()) {
-						this.hasCookieParam = true;
-						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
+			if (header.name().equalsIgnoreCase("cookie")) {
+				this.sentCookies = header.value();
+				if (!this.sentCookies.isEmpty()) {
+					this.hasCookieParam = true;
+					this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
-						// Check to see if it uses cookie Jars!
-						List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
-						boolean oneNotMatched = false;
-						boolean anyParamMatched = false;
+					// Check to see if it uses cookie Jars!
+					List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
+					boolean oneNotMatched = false;
+					boolean anyParamMatched = false;
 
-						for (Cookie cookieItem : cookiesInJar) {
-							if (cookieItem.domain().equals(this.hostname)) {
-								// now we want to see if any of these cookies have been set here!
-								String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
-								if (this.sentCookies.contains(currentCookieJarParam)) {
-									anyParamMatched = true;
-								} else {
-									oneNotMatched = true;
-								}
-							}
-							if (anyParamMatched && oneNotMatched) {
-								break; // we do not need to analyse it more!
+					for (Cookie cookieItem : cookiesInJar) {
+						if (cookieItem.domain().equals(this.hostname)) {
+							// now we want to see if any of these cookies have been set here!
+							String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
+							if (this.sentCookies.contains(currentCookieJarParam)) {
+								anyParamMatched = true;
+							} else {
+								oneNotMatched = true;
 							}
 						}
-						if (oneNotMatched && anyParamMatched) {
-							this.usesCookieJar = CookieJarStatus.PARTIALLY;
-						} else if (!oneNotMatched && anyParamMatched) {
-							this.usesCookieJar = CookieJarStatus.YES;
+						if (anyParamMatched && oneNotMatched) {
+							break; // we do not need to analyse it more!
 						}
 					}
-				} else if (header.name().equalsIgnoreCase("referer")) {
-					this.referrerURL = header.value();
-				} else if (header.name().equalsIgnoreCase("content-type")) {
-					this.requestContentType = header.value();
-				} else if (header.name().equalsIgnoreCase("origin")) {
-					this.origin = header.value();
+					if (oneNotMatched && anyParamMatched) {
+						this.usesCookieJar = CookieJarStatus.PARTIALLY;
+					} else if (!oneNotMatched && anyParamMatched) {
+						this.usesCookieJar = CookieJarStatus.YES;
+					}
 				}
-//			}
+			} else if (header.name().equalsIgnoreCase("referer")) {
+				this.referrerURL = header.value();
+			} else if (header.name().equalsIgnoreCase("content-type")) {
+				this.requestContentType = header.value();
+			} else if (header.name().equalsIgnoreCase("origin")) {
+				this.origin = header.value();
+			}
 		}
 
 		return Status.AWAITING_RESPONSE;
 
-		// RegEx processing for requests - should be available only when we have a RegEx
-		// rule!
-		// There are 5 RegEx rule for requests
-		// LogTableColumn.ColumnIdentifier[] regexReqColumns = new
-		// LogTableColumn.ColumnIdentifier[]{
-		// REGEX1REQ, REGEX2REQ, REGEX3REQ, REGEX4REQ, REGEX5REQ
-		// };
-		//
-		// for (LogTableColumn.ColumnIdentifier regexReqColumn : regexReqColumns) {
-		// int columnIndex = logTable.getColumnModel().getColumnIndex(regexReqColumn);
-		// if(columnIndex == -1){
-		// continue;
-		// }
-		// LogTableColumn column = (LogTableColumn)
-		// logTable.getColumnModel().getColumn(columnIndex);
-		// String regexString = regexColumn.getRegExData().getRegExString();
-		// if(!regexString.isEmpty()){
-		// // now we can process it safely!
-		// Pattern p = null;
-		// try{
-		// if(regexColumn.getRegExData().isRegExCaseSensitive())
-		// p = Pattern.compile(regexString);
-		// else
-		// p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
-		//
-		// Matcher m = p.matcher(strFullRequest);
-		// StringBuilder allMatches = new StringBuilder();
-		// int counter = 1;
-		// while (m.find()) {
-		// if(counter==2){
-		// allMatches.insert(0, "X");
-		// allMatches.append("X");
-		// }
-		// if(counter > 1){
-		// allMatches.append("X"+m.group()+"X"); //TODO Investigate unicode use
-		// }else{
-		// allMatches.append(m.group());
-		// }
-		// counter++;
-		//
-		// }
-		//
-		// //TODO Fix storage of regex result
-		//// this.regexAllReq[i] = allMatches.toString();
-		//
-		// }catch(Exception e){
-		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
-		// regexString);
-		// }
-		//
-		// }
-		// }
 	}
 
 	/**
