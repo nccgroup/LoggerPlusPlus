@@ -66,7 +66,7 @@ public enum LogEntryField {
     RTT(FieldGroup.RESPONSE, Integer.class, "The round trip time (as calculated by L++, not 100% accurate).", "RTT", "TimeTaken"),
     TITLE(FieldGroup.RESPONSE, String.class, "The HTTP response title.", "Title"),
     RESPONSE_CONTENT_TYPE(FieldGroup.RESPONSE, String.class, "The content-type header sent by the server.", "ContentType", "Content_Type"),
-    INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "The type inferred by the response content.", "InferredType", "Inferred_Type"),
+    INFERRED_TYPE(FieldGroup.RESPONSE, String.class, "The type inferred by the response content.", "Type", "InferredType", "Inferred_Type"),
     MIME_TYPE(FieldGroup.RESPONSE, String.class, "The mime-type stated by the server.", "MimeType", "Mime"),
     HAS_SET_COOKIES(FieldGroup.RESPONSE, Boolean.class, "Did the response set cookies?", "HasSetCookies", "DidSetCookies"),
     NEW_COOKIES(FieldGroup.RESPONSE, String.class, "The new cookies sent by the server", "Cookies", "NewCookies", "New_Cookies", "SetCookies"),

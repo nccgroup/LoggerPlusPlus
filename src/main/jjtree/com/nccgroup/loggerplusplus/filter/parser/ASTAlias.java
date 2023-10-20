@@ -33,4 +33,3 @@ class ASTAlias extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=b5d9705c3b2352700f09763675b026ae (do not edit this line) */

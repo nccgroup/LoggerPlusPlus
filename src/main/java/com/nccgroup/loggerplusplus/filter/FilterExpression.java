@@ -1,7 +1,10 @@
 package com.nccgroup.loggerplusplus.filter;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
-import com.nccgroup.loggerplusplus.filter.parser.*;
+import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
+import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
+import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
+import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;

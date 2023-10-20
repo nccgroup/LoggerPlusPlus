@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id "io.freefair.lombok" version "6.5.1"
+    id "org.javacc.javacc" version "3.0.0"
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -24,6 +25,19 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
 
     testRuntimeOnly files("${System.properties['user.home']}/BurpSuiteCommunity/burpsuite_community.jar")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir compileJavacc.outputDirectory
+            srcDir compileJjtree.outputDirectory
+        }
+    }
+}
+
+compileJjtree {
+    include '**/*.java'
 }
 
 jar {

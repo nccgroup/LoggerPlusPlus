@@ -2,13 +2,8 @@ package com.nccgroup.loggerplusplus.filter.tag;
 
 import com.nccgroup.loggerplusplus.filter.ColorizingFilterRule;
 import com.nccgroup.loggerplusplus.filter.FilterExpression;
-import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
-import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import lombok.Getter;
-
-import java.awt.*;
-import java.util.UUID;
 
 /**
  * Created by corey on 19/07/17.

@@ -80,4 +80,3 @@ class ASTComparison extends SimpleNode {
   }
 
 }
-/* JavaCC - OriginalChecksum=bdaeeba5ee349a11518169d312e524e0 (do not edit this line) */
