@@ -25,6 +25,8 @@ import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.util.Base64Util;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -193,6 +195,58 @@ public class LoggerImport {
             } else {
                 responseBuffer += line;
                 responseBuffer += "\n";
+            }
+        }
+
+        return requests;
+    }
+
+    public static ArrayList<HttpRequestResponse> importFromExportedJson() {
+        ArrayList<HttpRequestResponse> requests = new ArrayList<>();
+        
+        String filename = getLoadFile();
+        if ( filename.length() == 0 ) { // exit if no file selected
+            return new ArrayList<>();
+        }
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(filename));
+        } catch (FileNotFoundException e) {
+            log.error("LoggerImport-readFile: Error Opening File " + filename);
+            return new ArrayList<>();
+        }
+
+        // declare all required variables for re-use in runtime
+        JsonArray arr = gson.fromJson(reader, JsonElement.class).getAsJsonArray();
+        Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
+        JsonObject obj, req, res;
+        HttpService httpService;
+        HttpRequest httpRequest;
+        HttpResponse httpResponse;
+        HttpRequestResponse requestResponse;
+        String url;
+        String[] v = new String[2];
+
+        Iterator<JsonElement> i = arr.iterator();
+        while (i.hasNext()) {
+            obj = i.next().getAsJsonObject();
+            req = obj.getAsJsonObject("Request");
+            res = obj.getAsJsonObject("Response");
+
+            url = req.getAsString("URL");
+            v[0] = req.getAsString("AsBase64");
+            v[1] = res.getAsString("AsBase64");
+            
+            try {
+                httpService = HttpService.httpService(url);
+                httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0], Base64DecodingOptions.URL));
+                httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1], Base64DecodingOptions.URL));
+                requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
+
+                requests.add(requestResponse);
+            } catch (Exception e) {
+                log.error("LoggerImport-importFromExportedJson: Error Parsing Content");
+                return new ArrayList<>();
             }
         }
 
