@@ -234,6 +234,13 @@ public class LogProcessor {
         if (entriesPendingProcessing.containsKey(entryIdentifier)) {
             //Not yet started processing the entry, we can add the response so it is processed in the first pass
             final LogEntry logEntry = entriesPendingProcessing.get(entryIdentifier);
+
+            if (response instanceof InterceptedResponse) {
+                // Raises java.lang.UnsupportedOperationException: Not yet implemented
+//                logEntry.setClientIP(String.valueOf(((InterceptedResponse) response).sourceIpAddress()));
+                logEntry.setListenerInterface(((InterceptedResponse) response).listenerInterface());
+            }
+
             //Update the response with the new one, and tell it when it arrived.
             logEntry.addResponse(response, arrivalTime);
 
@@ -330,6 +337,12 @@ public class LogProcessor {
             }
 
             //Request was processed successfully... now process the response.
+            if (requestResponse instanceof InterceptedResponse) {
+                // Raises java.lang.UnsupportedOperationException: Not yet implemented
+//                logEntry.setClientIP(String.valueOf(((InterceptedResponse) requestResponse).sourceIpAddress()));
+                logEntry.setListenerInterface(((InterceptedResponse) requestResponse).listenerInterface());
+            }
+
             logEntry.addResponse(requestResponse, arrivalTime);
             LogEntry updatedEntry = processEntry(logEntry);
 
