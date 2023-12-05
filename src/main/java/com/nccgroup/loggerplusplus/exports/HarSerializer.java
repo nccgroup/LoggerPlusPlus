@@ -148,7 +148,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.endArray(); // end response headers array
 
             writer.name("redirectURL").value(String.valueOf(logEntry.getValueByKey(LogEntryField.REDIRECT_URL)));
-            if (logEntry.getResponseBytes() != null) {
+            if (logEntry.getResponse() != null) {
                 writer.name("headersSize").value(logEntry.getResponseBytes().length - logEntry.getResponseBodyLength());
                 writer.name("bodySize").value(logEntry.getResponseBodyLength());
             } else {

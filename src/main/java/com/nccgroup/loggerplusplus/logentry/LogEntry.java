@@ -379,10 +379,12 @@ public class LogEntry {
 	}
 
 	public byte[] getRequestBytes() {
+		if(request == null) return new byte[0];
 		return this.request.toByteArray().getBytes();
 	}
 
 	public byte[] getResponseBytes() {
+		if(response == null) return new byte[0];
 		return response.toByteArray().getBytes();
 	}
 
