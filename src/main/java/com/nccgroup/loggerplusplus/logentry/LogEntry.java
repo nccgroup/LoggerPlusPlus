@@ -177,7 +177,7 @@ public class LogEntry {
 	private Status processRequest() {
 
 
-		requestHeaders = request.headers();
+		requestHeaders = new ArrayList<>(request.headers());
 
 		this.requestHttpVersion = request.httpVersion();
 
@@ -513,8 +513,11 @@ public class LogEntry {
 					return response.body().length();
 				case RTT:
 					return requestResponseDelay;
-				case REQUEST_HEADERS:
-					return requestHeaders != null ? requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
+				case REQUEST_HEADERS: {
+					if(requestHeaders == null) return "";
+					//Hacky workaround since Burp doesn't include path in headers.
+					return String.format("%s %s %s\r\n%s", request.method(), request.path(), request.httpVersion(), requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")));
+				}
 				case RESPONSE_HEADERS:
 					return responseHeaders != null ? responseHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
 				case REDIRECT_URL:
