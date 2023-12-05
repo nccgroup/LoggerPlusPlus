@@ -2,8 +2,8 @@ Uuid: 470b7057b86f41c396a97903377f3d81
 ExtensionType: 1
 Name: Logger++
 RepoName: logger-plus-plus
-ScreenVersion: 3.20.0
-SerialVersion: 20
+ScreenVersion: 3.20.1
+SerialVersion: 21
 MinPlatformVersion: 0
 ProOnly: False
 Author: Corey Arthur, NCC Group

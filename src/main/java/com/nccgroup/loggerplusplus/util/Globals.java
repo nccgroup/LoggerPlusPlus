@@ -8,7 +8,7 @@ import static com.nccgroup.loggerplusplus.logentry.LogEntryField.*;
 
 public class Globals {
     public static final String APP_NAME = "Logger++";
-    public static final String VERSION = "3.20.0";
+    public static final String VERSION = "3.20.1";
     public static final String AUTHOR = "Corey Arthur (@CoreyD97), Soroush Dalili (@irsdl) from NCC Group";
     public static final String TWITTER_URL = "https://twitter.com/CoreyD97";
     public static final String IRSDL_TWITTER_URL = "https://twitter.com/irsdl";
