@@ -261,6 +261,7 @@ public class LoggerImport {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
                 .setOriginatingTool(ToolType.EXTENSIONS)
                 .setHttpEntries(requests)
+                .setSendToAutoExporters(sendToAutoExporters)
                 .setInterimConsumer(integers -> {
                     //Optional
                     //Outputs chunks of integers representing imported indices
