@@ -3,20 +3,20 @@ package com.nccgroup.loggerplusplus.exports;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
-import co.elastic.clients.json.JsonData;
-import co.elastic.clients.json.jackson.JacksonJsonpGenerator;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
@@ -59,15 +59,19 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
 
     private final ScheduledExecutorService executorService;
     private final ElasticExporterControlPanel controlPanel;
-    private final Gson gson;
+    private final ObjectMapper mapper;
 
     private Logger logger = LogManager.getLogger(this);
 
     protected ElasticExporter(ExportController exportController, Preferences preferences) {
         super(exportController, preferences);
         this.fields = new ArrayList<>(preferences.getSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS));
-        this.gson = LoggerPlusPlus.gsonProvider.getGson();
         executorService = Executors.newScheduledThreadPool(1);
+
+        this.mapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule("LogEntry Serializer", new Version(0,1,0,"",null, null));
+        module.addSerializer(LogEntry.class, new ElasticExporter.EntrySerializer(LogEntry.class));
+        mapper.registerModule(module);
 
         if ((boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_GLOBAL)
                 || (boolean) preferences.getSetting(Globals.PREF_ELASTIC_AUTOSTART_PROJECT)) {
@@ -91,22 +95,23 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         String projectPreviousFilterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER_PROJECT_PREVIOUS);
         String filterString = preferences.getSetting(Globals.PREF_ELASTIC_FILTER);
 
-        if (!Objects.equals(projectPreviousFilterString, filterString)) {
-            //The current filter isn't what we used to export last time.
-            int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
-                    "Heads up! Looks like the filter being used to select which logs to export to " +
-                            "ElasticSearch has changed since you last ran the exporter for this project.\n" +
-                            "Do you want to continue?", "ElasticSearch Export Log Filter", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (res == JOptionPane.NO_OPTION) {
-                throw new Exception("Export cancelled.");
-            }
-        }
+//        if (!Objects.equals(projectPreviousFilterString, filterString)) {
+//            //The current filter isn't what we used to export last time.
+//            int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
+//                    "Heads up! Looks like the filter being used to select which logs to export to " +
+//                            "ElasticSearch has changed since you last ran the exporter for this project.\n" +
+//                            "Do you want to continue?", "ElasticSearch Export Log Filter", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+//            if (res == JOptionPane.NO_OPTION) {
+//                throw new Exception("Export cancelled.");
+//            }
+//        }
 
         if (!StringUtils.isBlank(filterString)) {
             try {
                 logFilter = new LogTableFilter(filterString);
             } catch (ParseException ex) {
                 logger.error("The log filter configured for the Elastic exporter is invalid!", ex);
+                throw new Exception("The log filter configured for the Elastic exporter is invalid!", ex);
             }
         }
 
@@ -140,7 +145,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         }
 
 
-        ElasticsearchTransport transport = new RestClientTransport(restClientBuilder.build(), new JacksonJsonpMapper());
+        ElasticsearchTransport transport = new RestClientTransport(restClientBuilder.build(), new JacksonJsonpMapper(this.mapper));
 
         elasticClient = new ElasticsearchClient(transport);
 
@@ -195,21 +200,21 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         }
     }
 
-    public JsonObject serializeLogEntry(LogEntry logEntry) {
-        //Todo Better serialization of entries
-        JsonObject jsonObject = new JsonObject();
-        for (LogEntryField field : this.fields) {
-            Object value = formatValue(logEntry.getValueByKey(field));
-            try {
-                jsonObject.addProperty(field.getFullLabel(), gson.toJson(value));
-            }catch (Exception e){
-                log.error("ElasticExporter: " + value);
-                log.error("ElasticExporter: " + e.getMessage());
-                throw e;
-            }
-        }
-        return jsonObject;
-    }
+//    public JsonObject serializeLogEntry(LogEntry logEntry) {
+//        //Todo Better serialization of entries
+//        JsonObject jsonObject = new JsonObject();
+//        for (LogEntryField field : this.fields) {
+//            Object value = formatValue(logEntry.getValueByKey(field));
+//            try {
+//                jsonObject.addProperty(field.getFullLabel(), gson.toJson(value));
+//            }catch (Exception e){
+//                log.error("ElasticExporter: " + value);
+//                log.error("ElasticExporter: " + e.getMessage());
+//                throw e;
+//            }
+//        }
+//        return jsonObject;
+//    }
 
     private void indexPendingEntries(){
         try {
@@ -228,7 +233,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                     bulkBuilder.operations(op -> op
                             .index(idx -> idx
                                     .index(this.indexName)
-                                    .document(serializeLogEntry(logEntry))
+                                    .document(logEntry)
                             )
                     );
 
@@ -255,16 +260,11 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                     shutdown();
                 }
             }catch (IOException e) {
-                e.printStackTrace();
+                log.error(e);
             }
         }catch (Exception e){
-            e.printStackTrace();
+            log.error(e);
         }
-    }
-
-    private Object formatValue(Object value){
-        if (value instanceof java.net.URL) return String.valueOf((java.net.URL) value);
-        else return value;
     }
 
     public ExportController getExportController() {
@@ -278,5 +278,35 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
     public void setFields(List<LogEntryField> fields) {
         preferences.setSetting(Globals.PREF_PREVIOUS_ELASTIC_FIELDS, fields);
         this.fields = fields;
+    }
+
+    private class EntrySerializer extends StdSerializer<LogEntry> {
+
+        public EntrySerializer(Class<LogEntry> t) {
+            super(t);
+        }
+
+        @Override
+        public void serialize(LogEntry logEntry, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            for (LogEntryField field : ElasticExporter.this.fields) {
+                Object value = logEntry.getValueByKey(field);
+                if(value == null) continue;
+                try {
+                    switch (field.getType().getSimpleName()){
+                        case "Integer": gen.writeNumberField(field.getFullLabel(), (Integer) value); break;
+                        case "Short": gen.writeNumberField(field.getFullLabel(), (Short) value); break;
+                        case "Double": gen.writeNumberField(field.getFullLabel(), (Double) value); break;
+                        case "String": gen.writeStringField(field.getFullLabel(), value.toString()); break;
+                        case "Boolean": gen.writeBooleanField(field.getFullLabel(), (Boolean) value); break;
+                        case "Date": gen.writeNumberField(field.getFullLabel(), ((Date) value).getTime()); break;
+                        default: log.error("Unhandled field type: " + field.getType().getSimpleName());
+                    }
+                }catch (Exception e){
+                    log.error("ElasticExporter: Couldn't serialize field. The field was ommitted from the export.");
+                }
+            }
+            gen.writeEndObject();
+        }
     }
 }

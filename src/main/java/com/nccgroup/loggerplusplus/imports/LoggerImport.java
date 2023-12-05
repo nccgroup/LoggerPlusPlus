@@ -21,10 +21,14 @@ import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.http.message.responses.HttpResponse;
 import burp.api.montoya.utilities.Base64DecodingOptions;
 import burp.api.montoya.utilities.Base64Utils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.util.Base64Util;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -78,7 +82,7 @@ public class LoggerImport {
     public static ArrayList<HttpRequestResponse> importWStalker() {
         ArrayList<String> lines;
         ArrayList<HttpRequestResponse> requests = new ArrayList<>();
-        
+
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
             return new ArrayList<>();
@@ -86,7 +90,7 @@ public class LoggerImport {
 
         lines = readFile(filename);
         Iterator<String> i = lines.iterator();
-        
+
         while (i.hasNext()) {
             try {
                 String line = i.next();
@@ -113,7 +117,7 @@ public class LoggerImport {
     public static ArrayList<HttpRequestResponse> importZAP() {
         ArrayList<String> lines = new ArrayList<String>();
         ArrayList<HttpRequestResponse> requests = new ArrayList<HttpRequestResponse>();
-        
+
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
             return new ArrayList<HttpRequestResponse>();
@@ -178,7 +182,7 @@ public class LoggerImport {
                 } catch (Exception e) {
                     log.error("importZAP: Wrong Path Format");
                     return new ArrayList<>();
-                } 
+                }
             }
 
             // It's the beginning of a response
@@ -199,10 +203,66 @@ public class LoggerImport {
         return requests;
     }
 
+    public static ArrayList<HttpRequestResponse> importFromExportedJson() {
+        ArrayList<HttpRequestResponse> requests = new ArrayList<>();
+
+        String filename = getLoadFile();
+        if ( filename.length() == 0 ) { // exit if no file selected
+            return new ArrayList<>();
+        }
+
+        BufferedReader reader;
+        try {
+            reader = new BufferedReader(new FileReader(filename));
+        } catch (FileNotFoundException e) {
+            log.error("LoggerImport-readFile: Error Opening File " + filename);
+            return new ArrayList<>();
+        }
+
+        // declare all required variables for re-use in runtime
+        Gson gson = LoggerPlusPlus.gsonProvider.getGson();
+        JsonArray arr = gson.fromJson(reader, JsonElement.class).getAsJsonArray();
+        Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
+        JsonObject obj, req, res;
+        HttpService httpService;
+        HttpRequest httpRequest;
+        HttpResponse httpResponse;
+        HttpRequestResponse requestResponse;
+        String url;
+        String[] v = new String[2];
+
+        Iterator<JsonElement> i = arr.iterator();
+        while (i.hasNext()) {
+            obj = i.next().getAsJsonObject();
+            req = obj.getAsJsonObject("Request");
+            res = obj.getAsJsonObject("Response");
+
+            url = req.get("URL").getAsString();
+            v[0] = req.get("AsBase64").getAsString();
+            v[1] = res.get("AsBase64").getAsString();
+
+            try {
+                httpService = HttpService.httpService(url);
+                httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0]));
+                httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1]));
+                requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
+
+                requests.add(requestResponse);
+            } catch (Exception e) {
+                log.error("LoggerImport-importFromExportedJson: Error Parsing Content", e);
+
+            }
+        }
+
+        return requests;
+    }
+
+    //TODO Integrate progress bar with SwingWorkerWithProgressDialog
     public static boolean loadImported(ArrayList<HttpRequestResponse> requests, Boolean sendToAutoExporters) {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
                 .setOriginatingTool(ToolType.EXTENSIONS)
                 .setHttpEntries(requests)
+                .setSendToAutoExporters(sendToAutoExporters)
                 .setInterimConsumer(integers -> {
                     //Optional
                     //Outputs chunks of integers representing imported indices
@@ -210,8 +270,8 @@ public class LoggerImport {
                 })
                 .setCallback(() -> {
                     //Optional
-                //Called when all entries have been imported.
-            }).build();
+                    //Called when all entries have been imported.
+                }).build();
         importWorker.execute();
 
         return true;

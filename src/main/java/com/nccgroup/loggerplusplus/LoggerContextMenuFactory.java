@@ -92,7 +92,7 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
             JMenuItem andFilter = new JMenuItem(new AbstractAction("AND") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && "
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().getFilterExpression() + " && "
                             + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });
@@ -100,7 +100,7 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
             JMenuItem andNotFilter = new JMenuItem(new AbstractAction("AND NOT") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " && !("
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().getFilterExpression() + " && !("
                             + "" + context.getFullLabel() + " CONTAINS \"" + selectedText + "\")");
                 }
             });
@@ -108,7 +108,7 @@ public class LoggerContextMenuFactory implements ContextMenuItemsProvider {
             JMenuItem orFilter = new JMenuItem(new AbstractAction("OR") {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().toString() + " || "
+                    LoggerPlusPlus.instance.getLogViewController().getLogFilterController().setFilter(logTable.getCurrentFilter().getFilterExpression() + " || "
                             + context.getFullLabel() + " CONTAINS \"" + selectedText + "\"");
                 }
             });

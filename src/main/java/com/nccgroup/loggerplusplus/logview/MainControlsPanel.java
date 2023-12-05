@@ -43,8 +43,12 @@ public class MainControlsPanel extends JPanel {
         this.add(colorFilterButton, gbc);
 
         final JButton clearLogsButton = new JButton("Clear Logs");
-        clearLogsButton.addActionListener(actionEvent ->
-                logFilterController.getLogViewController().getLogTableController().reset());
+        clearLogsButton.addActionListener(actionEvent -> {
+            int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(), "Are you sure you want to clear the log table?", "Clear Logs", JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+            if(res == JOptionPane.YES_OPTION) {
+                logFilterController.getLogViewController().getLogTableController().reset();
+            }
+        });
 
         gbc.gridx = 4;
         gbc.weightx = 0;

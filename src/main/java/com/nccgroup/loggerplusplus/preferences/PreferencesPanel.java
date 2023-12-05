@@ -202,8 +202,32 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From OWASP ZAP") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<HttpRequestResponse> requests = LoggerImport.importZAP();
+                ArrayList<HttpRequestResponse> requests;
+                try{
+                    requests = LoggerImport.importZAP();
+                } catch (Exception ex){
+                    JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getLoggerFrame(), "Could not import ZAP entries. Exception: \n" + ex.getMessage(), "ZAP Import Failed", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
+                if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
+                    int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
+                            "One or more auto-exporters are currently enabled. " +
+                                    "Do you want the imported entries to also be sent to the auto-exporters?",
+                            "Auto-exporters Enabled", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    LoggerImport.loadImported(requests, res == JOptionPane.YES_OPTION);
+                } else {
+                    LoggerImport.loadImported(requests, false);
+                }
+
+                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getLoggerFrame(), requests.size() + " ZAP entries imported successfully", "ZAP Import", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }));
+
+        importGroup.add(new JButton(new AbstractAction("Import From Exported JSON") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ArrayList<HttpRequestResponse> requests = LoggerImport.importFromExportedJson();
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +

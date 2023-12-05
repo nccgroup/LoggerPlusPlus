@@ -171,8 +171,8 @@ public class GrepResultsTable extends JXTreeTable implements GrepperListener {
         @Override
         public Object getValueAt(Object node, int column) {
             if(node instanceof GrepResults) {
-                if (column == 0) return ((GrepResults) node).getLogEntry().toString();
                 if (column == 1) return ((GrepResults) node).getRequestMatches();
+                if (column == 0) return ((GrepResults) node).getLogEntry().getUrlString();
                 if (column == 2) return ((GrepResults) node).getResponseMatches();
                 if (column == 3) return ((GrepResults) node).getMatches().size();
                 else return "";

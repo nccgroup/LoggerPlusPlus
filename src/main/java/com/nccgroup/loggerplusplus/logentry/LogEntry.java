@@ -58,7 +58,7 @@ public class LogEntry {
 	private Integer identifier;
 	private ToolType tool;
 	private String hostname = "";
-	private String host = ""; // TODO better name?
+	private String host = "";
 	private String method = "";
 	private String urlString;
 	private URL url;
@@ -79,7 +79,7 @@ public class LogEntry {
 	private String requestHttpVersion = "";
 	private String requestContentType = "";
 	private String protocol = "";
-	private int targetPort = -1;
+	private short targetPort = -1;
 	private int requestBodyLength = -1;
 	private String clientIP = "";
 	private boolean hasSetCookies = false;
@@ -177,11 +177,9 @@ public class LogEntry {
 	private Status processRequest() {
 
 
-		requestHeaders = request.headers();
+		requestHeaders = new ArrayList<>(request.headers());
 
-		// Get HTTP Version, which would be the last token in "GET /admin/login/?next\u003d/admin/ HTTP/1.1"
-		String[] httpRequestTokens = requestHeaders.get(0).value().split(" ");
-		this.requestHttpVersion = httpRequestTokens[httpRequestTokens.length - 1];
+		this.requestHttpVersion = request.httpVersion();
 
 		this.parameters = request.parameters().stream()
 				.filter(param -> param.type() != HttpParameterType.COOKIE)
@@ -192,7 +190,7 @@ public class LogEntry {
 		this.hostname = this.request.httpService().host();
 		this.protocol = this.request.httpService().secure() ? "https" : "http";
 		this.isSSL = this.request.httpService().secure();
-		this.targetPort = this.request.httpService().port();
+		this.targetPort = (short) this.request.httpService().port();
 
 		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
 				|| (this.protocol.equals("http") && this.targetPort == 80);
@@ -218,106 +216,49 @@ public class LogEntry {
 		} catch (MalformedURLException ignored) {}
 
 
-
-
-		// reading request headers like a boss!
 		for (HttpHeader header : requestHeaders) {
-//			if (header.contains(":")) {
-				if (header.name().equalsIgnoreCase("cookie")) {
-					this.sentCookies = header.value();
-					if (!this.sentCookies.isEmpty()) {
-						this.hasCookieParam = true;
-						this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
+			if (header.name().equalsIgnoreCase("cookie")) {
+				this.sentCookies = header.value();
+				if (!this.sentCookies.isEmpty()) {
+					this.hasCookieParam = true;
+					this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
 
-						// Check to see if it uses cookie Jars!
-						List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
-						boolean oneNotMatched = false;
-						boolean anyParamMatched = false;
+					// Check to see if it uses cookie Jars!
+					List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
+					boolean oneNotMatched = false;
+					boolean anyParamMatched = false;
 
-						for (Cookie cookieItem : cookiesInJar) {
-							if (cookieItem.domain().equals(this.hostname)) {
-								// now we want to see if any of these cookies have been set here!
-								String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
-								if (this.sentCookies.contains(currentCookieJarParam)) {
-									anyParamMatched = true;
-								} else {
-									oneNotMatched = true;
-								}
-							}
-							if (anyParamMatched && oneNotMatched) {
-								break; // we do not need to analyse it more!
+					for (Cookie cookieItem : cookiesInJar) {
+						if (cookieItem.domain().equals(this.hostname)) {
+							// now we want to see if any of these cookies have been set here!
+							String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
+							if (this.sentCookies.contains(currentCookieJarParam)) {
+								anyParamMatched = true;
+							} else {
+								oneNotMatched = true;
 							}
 						}
-						if (oneNotMatched && anyParamMatched) {
-							this.usesCookieJar = CookieJarStatus.PARTIALLY;
-						} else if (!oneNotMatched && anyParamMatched) {
-							this.usesCookieJar = CookieJarStatus.YES;
+						if (anyParamMatched && oneNotMatched) {
+							break; // we do not need to analyse it more!
 						}
 					}
-				} else if (header.name().equalsIgnoreCase("referer")) {
-					this.referrerURL = header.value();
-				} else if (header.name().equalsIgnoreCase("content-type")) {
-					this.requestContentType = header.value();
-				} else if (header.name().equalsIgnoreCase("origin")) {
-					this.origin = header.value();
+					if (oneNotMatched && anyParamMatched) {
+						this.usesCookieJar = CookieJarStatus.PARTIALLY;
+					} else if (!oneNotMatched && anyParamMatched) {
+						this.usesCookieJar = CookieJarStatus.YES;
+					}
 				}
-//			}
+			} else if (header.name().equalsIgnoreCase("referer")) {
+				this.referrerURL = header.value();
+			} else if (header.name().equalsIgnoreCase("content-type")) {
+				this.requestContentType = header.value();
+			} else if (header.name().equalsIgnoreCase("origin")) {
+				this.origin = header.value();
+			}
 		}
 
 		return Status.AWAITING_RESPONSE;
 
-		// RegEx processing for requests - should be available only when we have a RegEx
-		// rule!
-		// There are 5 RegEx rule for requests
-		// LogTableColumn.ColumnIdentifier[] regexReqColumns = new
-		// LogTableColumn.ColumnIdentifier[]{
-		// REGEX1REQ, REGEX2REQ, REGEX3REQ, REGEX4REQ, REGEX5REQ
-		// };
-		//
-		// for (LogTableColumn.ColumnIdentifier regexReqColumn : regexReqColumns) {
-		// int columnIndex = logTable.getColumnModel().getColumnIndex(regexReqColumn);
-		// if(columnIndex == -1){
-		// continue;
-		// }
-		// LogTableColumn column = (LogTableColumn)
-		// logTable.getColumnModel().getColumn(columnIndex);
-		// String regexString = regexColumn.getRegExData().getRegExString();
-		// if(!regexString.isEmpty()){
-		// // now we can process it safely!
-		// Pattern p = null;
-		// try{
-		// if(regexColumn.getRegExData().isRegExCaseSensitive())
-		// p = Pattern.compile(regexString);
-		// else
-		// p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
-		//
-		// Matcher m = p.matcher(strFullRequest);
-		// StringBuilder allMatches = new StringBuilder();
-		// int counter = 1;
-		// while (m.find()) {
-		// if(counter==2){
-		// allMatches.insert(0, "X");
-		// allMatches.append("X");
-		// }
-		// if(counter > 1){
-		// allMatches.append("X"+m.group()+"X"); //TODO Investigate unicode use
-		// }else{
-		// allMatches.append(m.group());
-		// }
-		// counter++;
-		//
-		// }
-		//
-		// //TODO Fix storage of regex result
-		//// this.regexAllReq[i] = allMatches.toString();
-		//
-		// }catch(Exception e){
-		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
-		// regexString);
-		// }
-		//
-		// }
-		// }
 	}
 
 	/**
@@ -361,11 +302,8 @@ public class LogEntry {
 			this.redirectURL = headers.get("Location");
 		}
 
-		// Extract HTTP Status message
-		HttpHeader httpStatusTokens = response.headers().get(0);
-		//TODO FixMe
-//		this.responseStatusText = httpStatusTokens[httpStatusTokens.length - 1];
-//		this.responseHttpVersion = httpStatusTokens[0];
+		this.responseStatusText = response.reasonPhrase();
+		this.responseHttpVersion = response.httpVersion();
 
 
 		if (headers.containsKey("content-type")) {
@@ -422,7 +360,6 @@ public class LogEntry {
 					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyToString(), parameter))
 					.map(HttpParameter::name).collect(Collectors.toList());
 
-//			this.requestResponse = LoggerPlusPlus.montoya.saveBuffersToTempFiles(requestResponse);
 		} else {
 			//Just look for reflections in the headers.
 			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
@@ -439,67 +376,15 @@ public class LogEntry {
 		this.complete = true;
 
 		return Status.PROCESSED;
-
-		// RegEx processing for responses - should be available only when we have a
-		// RegEx rule!
-		// There are 5 RegEx rule for requests
-		// for(int i=0;i<5;i++){
-		// String regexVarName = "regex"+(i+1)+"Resp";
-		// if(logTable.getColumnModel().isColumnEnabled(regexVarName)){
-		// // so this rule is enabled!
-		// // check to see if the RegEx is not empty
-		// LogTableColumn regexColumn =
-		// logTable.getColumnModel().getColumnByName(regexVarName);
-		// String regexString = regexColumn.getRegExData().getRegExString();
-		// if(!regexString.isEmpty()){
-		// // now we can process it safely!
-		// Pattern p = null;
-		// try{
-		// if(regexColumn.getRegExData().isRegExCaseSensitive())
-		// p = Pattern.compile(regexString);
-		// else
-		// p = Pattern.compile(regexString, Pattern.CASE_INSENSITIVE);
-		//
-		// Matcher m = p.matcher(strFullResponse);
-		// StringBuilder allMatches = new StringBuilder();
-		//
-		// int counter = 1;
-		// while (m.find()) {
-		// if(counter==2){
-		// allMatches.insert(0, "X");
-		// allMatches.append("X");
-		// }
-		// if(counter > 1){
-		// allMatches.append("X"+m.group()+"X"); //TODO investigate unicode use
-		// }else{
-		// allMatches.append(m.group());
-		// }
-		// counter++;
-		//
-		// }
-		//
-		// this.regexAllResp[i] = allMatches.toString();
-		//
-		// }catch(Exception e){
-		// LoggerPlusPlus.montoya.printError("Error in regular expression: " +
-		// regexString);
-		// }
-		//
-		// }
-		// }
-		// }
-
-		// if(!logTable.getColumnModel().isColumnEnabled("response") &&
-		// !logTable.getColumnModel().isColumnEnabled("request")){
-		// this.requestResponse = null;
-		// }
 	}
 
 	public byte[] getRequestBytes() {
+		if(request == null) return new byte[0];
 		return this.request.toByteArray().getBytes();
 	}
 
 	public byte[] getResponseBytes() {
+		if(response == null) return new byte[0];
 		return response.toByteArray().getBytes();
 	}
 
@@ -613,26 +498,6 @@ public class LogEntry {
 					return this.usesCookieJar.toString();
 				case ORIGIN:
 					return this.origin;
-				// case REGEX1REQ:
-				// return this.regexAllReq[0];
-				// case REGEX2REQ:
-				// return this.regexAllReq[1];
-				// case REGEX3REQ:
-				// return this.regexAllReq[2];
-				// case REGEX4REQ:
-				// return this.regexAllReq[3];
-				// case REGEX5REQ:
-				// return this.regexAllReq[4];
-				// case REGEX1RESP:
-				// return this.regexAllResp[0];
-				// case REGEX2RESP:
-				// return this.regexAllResp[1];
-				// case REGEX3RESP:
-				// return this.regexAllResp[2];
-				// case REGEX4RESP:
-				// return this.regexAllResp[3];
-				// case REGEX5RESP:
-				// return this.regexAllResp[4];
 				case REFLECTED_PARAMS:
 					return reflectedParameters;
 				case REFLECTION_COUNT:
@@ -648,8 +513,11 @@ public class LogEntry {
 					return response.body().length();
 				case RTT:
 					return requestResponseDelay;
-				case REQUEST_HEADERS:
-					return requestHeaders != null ? requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
+				case REQUEST_HEADERS: {
+					if(requestHeaders == null) return "";
+					//Hacky workaround since Burp doesn't include path in headers.
+					return String.format("%s %s %s\r\n%s", request.method(), request.path(), request.httpVersion(), requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")));
+				}
 				case RESPONSE_HEADERS:
 					return responseHeaders != null ? responseHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
 				case REDIRECT_URL:
