@@ -67,6 +67,7 @@ public class HARExporter extends LogExporter implements ExportPanelProvider, Con
 
         } catch (Exception e) {
             // Cancelled.
+            log.error(e);
         }
     }
 

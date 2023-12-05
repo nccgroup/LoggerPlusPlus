@@ -202,7 +202,13 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From OWASP ZAP") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<HttpRequestResponse> requests = LoggerImport.importZAP();
+                ArrayList<HttpRequestResponse> requests;
+                try{
+                    requests = LoggerImport.importZAP();
+                } catch (Exception ex){
+                    JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getLoggerFrame(), "Could not import ZAP entries. Exception: \n" + ex.getMessage(), "ZAP Import Failed", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
@@ -213,6 +219,8 @@ public class PreferencesPanel extends JScrollPane {
                 } else {
                     LoggerImport.loadImported(requests, false);
                 }
+
+                JOptionPane.showMessageDialog(LoggerPlusPlus.instance.getLoggerFrame(), requests.size() + " ZAP entries imported successfully", "ZAP Import", JOptionPane.INFORMATION_MESSAGE);
             }
         }));
 

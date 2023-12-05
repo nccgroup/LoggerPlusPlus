@@ -257,6 +257,7 @@ public class LoggerImport {
         return requests;
     }
 
+    //TODO Integrate progress bar with SwingWorkerWithProgressDialog
     public static boolean loadImported(ArrayList<HttpRequestResponse> requests, Boolean sendToAutoExporters) {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
                 .setOriginatingTool(ToolType.EXTENSIONS)
