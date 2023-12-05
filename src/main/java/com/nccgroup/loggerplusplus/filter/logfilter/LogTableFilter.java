@@ -32,4 +32,9 @@ public class LogTableFilter extends RowFilter<TableModel, Integer> {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return getFilterExpression().toString();
+    }
 }
