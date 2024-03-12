@@ -27,6 +27,7 @@ import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.imports.LoggerImport;
+import com.nccgroup.loggerplusplus.logentry.ImportingLogEntryHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumnModel;
@@ -186,7 +187,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From WStalker CSV") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<HttpRequestResponse> requests = LoggerImport.importWStalker();
+                ArrayList<ImportingLogEntryHttpRequestResponse> requests = LoggerImport.importWStalker();
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +
@@ -202,7 +203,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From OWASP ZAP") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<HttpRequestResponse> requests;
+                ArrayList<ImportingLogEntryHttpRequestResponse> requests;
                 try{
                     requests = LoggerImport.importZAP();
                 } catch (Exception ex){
@@ -227,7 +228,7 @@ public class PreferencesPanel extends JScrollPane {
         importGroup.add(new JButton(new AbstractAction("Import From Exported JSON") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ArrayList<HttpRequestResponse> requests = LoggerImport.importFromExportedJson();
+                ArrayList<ImportingLogEntryHttpRequestResponse> requests = LoggerImport.importFromExportedJson();
                 if (LoggerPlusPlus.instance.getExportController().getEnabledExporters().size() > 0) {
                     int res = JOptionPane.showConfirmDialog(LoggerPlusPlus.instance.getLoggerFrame(),
                             "One or more auto-exporters are currently enabled. " +

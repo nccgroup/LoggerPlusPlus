@@ -24,9 +24,9 @@ import burp.api.montoya.utilities.Base64Utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logentry.ImportingLogEntryHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.util.Base64Util;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
@@ -79,9 +79,9 @@ public class LoggerImport {
         return lines;
     }
 
-    public static ArrayList<HttpRequestResponse> importWStalker() {
+    public static ArrayList<ImportingLogEntryHttpRequestResponse> importWStalker() {
         ArrayList<String> lines;
-        ArrayList<HttpRequestResponse> requests = new ArrayList<>();
+        ArrayList<ImportingLogEntryHttpRequestResponse> requests = new ArrayList<>();
 
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
@@ -101,9 +101,10 @@ public class LoggerImport {
                 HttpService httpService = HttpService.httpService(url);
                 HttpRequest httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0], Base64DecodingOptions.URL));
                 HttpResponse httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1], Base64DecodingOptions.URL));
-                HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
-                requests.add(requestResponse);
+                requests.add(new ImportingLogEntryHttpRequestResponse(
+                        HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse)
+                ));
 
             } catch (Exception e) {
                 log.error("LoggerImport-importWStalker: Error Parsing Content");
@@ -114,13 +115,13 @@ public class LoggerImport {
         return requests;
     }
 
-    public static ArrayList<HttpRequestResponse> importZAP() {
+    public static ArrayList<ImportingLogEntryHttpRequestResponse> importZAP() {
         ArrayList<String> lines = new ArrayList<String>();
-        ArrayList<HttpRequestResponse> requests = new ArrayList<HttpRequestResponse>();
+        ArrayList<ImportingLogEntryHttpRequestResponse> requests = new ArrayList<ImportingLogEntryHttpRequestResponse>();
 
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
-            return new ArrayList<HttpRequestResponse>();
+            return new ArrayList<ImportingLogEntryHttpRequestResponse>();
         }
 
         lines = readFile(filename);
@@ -155,9 +156,10 @@ public class LoggerImport {
                 HttpService httpService = HttpService.httpService(url);
                 HttpRequest httpRequest = HttpRequest.httpRequest(httpService, requestBuffer);
                 HttpResponse httpResponse = HttpResponse.httpResponse(responseBuffer);
-                HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
-                requests.add(requestResponse);
+                requests.add(new ImportingLogEntryHttpRequestResponse(
+                        HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse)
+                ));
 
                 // Reset content
                 isRequest = true;
@@ -203,8 +205,8 @@ public class LoggerImport {
         return requests;
     }
 
-    public static ArrayList<HttpRequestResponse> importFromExportedJson() {
-        ArrayList<HttpRequestResponse> requests = new ArrayList<>();
+    public static ArrayList<ImportingLogEntryHttpRequestResponse> importFromExportedJson() {
+        ArrayList<ImportingLogEntryHttpRequestResponse> requests = new ArrayList<>();
 
         String filename = getLoadFile();
         if ( filename.length() == 0 ) { // exit if no file selected
@@ -227,13 +229,15 @@ public class LoggerImport {
         HttpService httpService;
         HttpRequest httpRequest;
         HttpResponse httpResponse;
-        HttpRequestResponse requestResponse;
+        HttpRequestResponse requestResponse = null;
         String url;
         String[] v = new String[2];
+        ImportingLogEntryHttpRequestResponse logEntry;
+        JsonElement ele;
 
-        Iterator<JsonElement> i = arr.iterator();
-        while (i.hasNext()) {
-            obj = i.next().getAsJsonObject();
+        Iterator<JsonElement> iter = arr.iterator();
+        while (iter.hasNext()) {
+            obj = iter.next().getAsJsonObject();
             req = obj.getAsJsonObject("Request");
             res = obj.getAsJsonObject("Response");
 
@@ -246,19 +250,32 @@ public class LoggerImport {
                 httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0]));
                 httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1]));
                 requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
-
-                requests.add(requestResponse);
             } catch (Exception e) {
                 log.error("LoggerImport-importFromExportedJson: Error Parsing Content", e);
-
             }
+
+            int i = 0;
+            logEntry = new ImportingLogEntryHttpRequestResponse(requestResponse);
+            logEntry.setRequestTime(req.get("Time").getAsString());
+            logEntry.setResponseTime(res.get("Time").getAsString());
+
+            // might not exist
+            if (req.has("Comment")) {
+                logEntry.setComment(req.get("Comment").getAsString());
+            }
+
+            if (req.has("Tool")) {
+                logEntry.setTool(req.get("Tool").getAsString());
+            }
+
+            requests.add(logEntry);
         }
 
         return requests;
     }
 
     //TODO Integrate progress bar with SwingWorkerWithProgressDialog
-    public static boolean loadImported(ArrayList<HttpRequestResponse> requests, Boolean sendToAutoExporters) {
+    public static boolean loadImported(ArrayList<ImportingLogEntryHttpRequestResponse> requests, Boolean sendToAutoExporters) {
         EntryImportWorker importWorker = LoggerPlusPlus.instance.getLogProcessor().createEntryImportBuilder()
                 .setOriginatingTool(ToolType.EXTENSIONS)
                 .setHttpEntries(requests)
