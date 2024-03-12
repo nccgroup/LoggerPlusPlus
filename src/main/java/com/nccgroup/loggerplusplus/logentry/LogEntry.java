@@ -132,7 +132,7 @@ public class LogEntry {
 	 */
 	public LogEntry(ToolType tool, HttpRequest request, Date formattedRequestTime) {
 		this(tool, request);
-		this.setReqestTime(formattedRequestTime);
+		this.setRequestTime(formattedRequestTime);
 	}
 
 	public boolean process() {
@@ -388,7 +388,7 @@ public class LogEntry {
 		return response.toByteArray().getBytes();
 	}
 
-	public void setReqestTime(Date requestTime) {
+	public void setRequestTime(Date requestTime) {
 		this.requestDateTime = requestTime;
 		this.formattedRequestTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.requestDateTime);
 	}
