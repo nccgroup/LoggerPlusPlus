@@ -19,6 +19,7 @@ public class ImportingLogEntryHttpRequestResponse {
     // ...btw wt is this date time format, it is not common at all!
     // ...ffs, there is also a '0x202f' (Narrow no-break space) char in the date sometime..
     private static final SimpleDateFormat dtFormatter = new SimpleDateFormat("MMM d, y, K:m:s a");
+    private static final SimpleDateFormat longDtFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private final HttpRequestResponse httpReqRes;
 
@@ -27,9 +28,15 @@ public class ImportingLogEntryHttpRequestResponse {
     private Date responseTime = null;
 
     @Setter
+    private Integer RTT = null;
+
+    @Setter
     private String comment = null;
 
     private ToolType tool = null;
+
+    @Setter
+    private String listenInterface = null;
 
     public ImportingLogEntryHttpRequestResponse(HttpRequestResponse hrr) {
         this.httpReqRes = hrr;
@@ -43,9 +50,17 @@ public class ImportingLogEntryHttpRequestResponse {
         return httpReqRes.response();
     }
 
+    private Date formattedTimeParser(String dateTimeString) throws ParseException {
+        if (dateTimeString.indexOf(',') > -1)
+        {
+            return dtFormatter.parse(dateTimeString.replace('\u202F', ' '));
+        }
+        return longDtFormatter.parse(dateTimeString);
+    }
+
     public void setRequestTime(String dateTimeString) {
         try {
-            this.requestTime = dtFormatter.parse(dateTimeString.replace('\u202F', ' '));
+            this.requestTime = formattedTimeParser(dateTimeString);
         } catch (ParseException e) {
             log.error("Failed to parse requestTime: " + dateTimeString);
             throw new RuntimeException(e);
@@ -54,7 +69,7 @@ public class ImportingLogEntryHttpRequestResponse {
 
     public void setResponseTime(String dateTimeString) {
         try {
-            this.responseTime = dtFormatter.parse(dateTimeString.replace('\u202F', ' '));
+            this.responseTime = formattedTimeParser(dateTimeString);
         } catch (ParseException e) {
             log.error("Failed to parse responseTime: " + dateTimeString);
             throw new RuntimeException(e);

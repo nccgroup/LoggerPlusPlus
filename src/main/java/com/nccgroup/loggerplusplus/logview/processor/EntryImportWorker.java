@@ -6,6 +6,7 @@ import burp.api.montoya.http.message.responses.HttpResponse;
 import burp.api.montoya.proxy.ProxyHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.ImportingLogEntryHttpRequestResponse;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
+@Log4j2
 public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
     private final LogProcessor logProcessor;
@@ -40,20 +42,19 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
         boolean isProxyEntries = proxyEntries.size() > 0;
         int count = isProxyEntries ? proxyEntries.size() : httpEntries.size();
 
-
         CountDownLatch countDownLatch = new CountDownLatch(count);
         ThreadPoolExecutor entryImportExecutor = logProcessor.getEntryImportExecutor();
-        ImportingLogEntryHttpRequestResponse entry;
+        ImportingLogEntryHttpRequestResponse entry = null;
         for (int index = 0; index < count; index++) {
             if(entryImportExecutor.isShutdown() || this.isCancelled()) return null;
             HttpRequest request;
             HttpResponse response;
-            entry = httpEntries.get(index);
 
             if(isProxyEntries){
                 request = proxyEntries.get(index).finalRequest();
                 response = proxyEntries.get(index).originalResponse();
             }else{
+                entry = httpEntries.get(index);
                 request = entry.request();
                 response = entry.response();
 
@@ -73,16 +74,27 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
                 if (entry.getResponseTime() != null) {
                     logEntry.setResponseDateTime(entry.getResponseTime());
                 }
-                if (entry.getComment() != null) {
-                    logEntry.setComment(entry.getComment());
-                }
             }
 
             int finalIndex = index;
+            ImportingLogEntryHttpRequestResponse finalEntry = entry;
             entryImportExecutor.submit(() -> {
                 if(this.isCancelled()) return;
                 LogEntry result = logProcessor.processEntry(logEntry);
                 if(result != null) {
+                    if (!isProxyEntries) {
+                        // must be called after processing:
+                        if (finalEntry.getComment() != null) {
+                            result.setComment(finalEntry.getComment());
+                        }
+                        if (finalEntry.getListenInterface() != null) {
+                            result.setListenerInterface(finalEntry.getListenInterface());
+                        }
+                        if (finalEntry.getRTT() != null) {
+                            result.setRequestResponseDelay(finalEntry.getRTT());
+                        }
+                    }
+
                     logProcessor.addNewEntry(logEntry, sendToAutoExporters);
                 }
                 publish(finalIndex);

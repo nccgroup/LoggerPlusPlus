@@ -43,6 +43,8 @@ import java.util.Iterator;
 @Log4j2
 public class LoggerImport {
 
+    private static final String COMMENT_IMPORTED_MARKER = "[Imported from JSON]";
+
     public static String getLoadFile() {
         JFileChooser chooser = null;
         chooser = new JFileChooser();
@@ -225,7 +227,7 @@ public class LoggerImport {
         Gson gson = LoggerPlusPlus.gsonProvider.getGson();
         JsonArray arr = gson.fromJson(reader, JsonElement.class).getAsJsonArray();
         Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
-        JsonObject obj, req, res;
+        JsonObject obj, req, res, jsonEntry;
         HttpService httpService;
         HttpRequest httpRequest;
         HttpResponse httpResponse;
@@ -233,9 +235,9 @@ public class LoggerImport {
         String url;
         String[] v = new String[2];
         ImportingLogEntryHttpRequestResponse logEntry;
-        JsonElement ele;
 
         Iterator<JsonElement> iter = arr.iterator();
+        StringBuilder comment = new StringBuilder();
         while (iter.hasNext()) {
             obj = iter.next().getAsJsonObject();
             req = obj.getAsJsonObject("Request");
@@ -254,19 +256,40 @@ public class LoggerImport {
                 log.error("LoggerImport-importFromExportedJson: Error Parsing Content", e);
             }
 
-            int i = 0;
             logEntry = new ImportingLogEntryHttpRequestResponse(requestResponse);
             logEntry.setRequestTime(req.get("Time").getAsString());
             logEntry.setResponseTime(res.get("Time").getAsString());
 
             // might not exist
-            if (req.has("Comment")) {
-                logEntry.setComment(req.get("Comment").getAsString());
-            }
-
             if (req.has("Tool")) {
                 logEntry.setTool(req.get("Tool").getAsString());
             }
+
+            if (res.has("RTT")) {
+                logEntry.setRTT(res.get("RTT").getAsInt());
+            }
+
+            jsonEntry = obj.getAsJsonObject("Entry");
+            if (jsonEntry.has("ListenInterface")) {
+                logEntry.setListenInterface(jsonEntry.get("ListenInterface").getAsString());
+            }
+
+            comment.setLength(0); // empty the string
+            if (req.has("Comment")) {
+                comment.append(req.get("Comment").getAsString());
+
+                // prevent duplicated 'imported' marker
+                if (comment.indexOf(COMMENT_IMPORTED_MARKER) == -1)
+                {
+                    comment.insert(0, " ");
+                    comment.insert(0, COMMENT_IMPORTED_MARKER);
+                }
+            }
+            else {
+                comment.insert(0, COMMENT_IMPORTED_MARKER);
+            }
+
+            logEntry.setComment(comment.toString());
 
             requests.add(logEntry);
         }

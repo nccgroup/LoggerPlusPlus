@@ -14,6 +14,7 @@ import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
+import com.nccgroup.loggerplusplus.util.DateFormattedGsonProvider;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
 import lombok.Getter;
@@ -39,7 +40,7 @@ public class LoggerPlusPlus implements BurpExtension {
     public static LoggingController loggingController;
     public static LoggerPlusPlus instance;
     public static MontoyaApi montoya;
-    public static IGsonProvider gsonProvider = new DefaultGsonProvider();
+    public static IGsonProvider gsonProvider = new DateFormattedGsonProvider();
 
     private Registration menuBarRegistration;
     private LogProcessor logProcessor;
