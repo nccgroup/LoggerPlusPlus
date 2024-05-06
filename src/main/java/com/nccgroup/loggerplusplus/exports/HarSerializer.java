@@ -12,7 +12,13 @@ import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -107,7 +113,9 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
                     writer.endObject();
                 }
                 writer.endArray(); // end params array
-                writer.name("text").value((String) logEntry.getValueByKey(LogEntryField.REQUEST_BODY));
+                // Most HAR implementations use encoding base64 for postData too,
+                // even though it's not supported by HAR specification
+                writeContentBody(writer, logEntry.getRequest().body().getBytes());
                 writer.endObject(); // end postData object
             }
 
@@ -160,7 +168,7 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
             writer.name("content").beginObject(); // start content object
             writer.name("size").value(logEntry.getResponseBodyLength());
             writer.name("mimeType").value(logEntry.getResponseContentType());
-            writer.name("text").value(String.valueOf(logEntry.getValueByKey(LogEntryField.RESPONSE_BODY)));
+            writeContentBody(writer, logEntry.getResponse().body().getBytes());
             writer.endObject(); //end content object
 
             writer.endObject(); // end response object
@@ -183,6 +191,19 @@ public class HarSerializer extends TypeAdapter<List<LogEntry>> {
 
         writer.endObject(); // end top level object
 
+    }
+
+    private static void writeContentBody(JsonWriter writer, byte[] data) throws IOException {
+        // try to write write it as an UTF-8 string, and if it's not a valid
+        // UTF-8 string -- write it as binary data in base64 and set encoding
+        try {
+            final CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder();
+            final String value = utf8Decoder.decode(ByteBuffer.wrap(data)).toString();
+            writer.name("text").value(value);
+        } catch (CharacterCodingException e) {
+            writer.name("encoding").value("base64");
+            writer.name("text").value(Base64.getEncoder().encodeToString(data));
+        }
     }
 
     private List<HttpParameter> getRequestParametersByType(HttpRequest request, HttpParameterType paramType) {
