@@ -97,10 +97,24 @@ public class LoggerImport {
                 String[] v = line.split(","); // Format: "base64(request),base64(response),url"
 
                 String url = v[3];
-                Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
                 HttpService httpService = HttpService.httpService(url);
-                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, b64Decoder.decode(v[0], Base64DecodingOptions.URL));
-                HttpResponse httpResponse = HttpResponse.httpResponse(b64Decoder.decode(v[1], Base64DecodingOptions.URL));
+                Base64Utils b64Decoder = LoggerPlusPlus.montoya.utilities().base64Utils();
+
+                // Attempt to decode using standard Base64
+                ByteArray decodedRequest;
+                ByteArray decodedResponse;
+                try {
+                    decodedRequest = b64Decoder.decode(v[0]);
+                    decodedResponse = b64Decoder.decode(v[1]);
+                } catch (IllegalArgumentException e) {
+                    // If decoding with standard Base64 fails, try URL-safe Base64 decoding
+                    log.warn("Standard Base64 decoding failed, trying URL-safe Base64 decoding");
+                    decodedRequest = b64Decoder.decode(v[0], Base64DecodingOptions.URL);
+                    decodedResponse = b64Decoder.decode(v[1], Base64DecodingOptions.URL);
+                }
+                
+                HttpRequest httpRequest = HttpRequest.httpRequest(httpService, decodedRequest);
+                HttpResponse httpResponse = HttpResponse.httpResponse(decodedResponse);
                 HttpRequestResponse requestResponse = HttpRequestResponse.httpRequestResponse(httpRequest, httpResponse);
 
                 requests.add(requestResponse);
