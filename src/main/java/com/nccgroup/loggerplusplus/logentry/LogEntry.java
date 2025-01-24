@@ -99,8 +99,8 @@ public class LogEntry {
 	private List<UUID> matchingColorFilters;
 	private List<Tag> matchingTags;
 	private String formattedRequestTime;
-	private Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
-	private Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
+	private Date responseDateTime = null; // If null, gets pulled from the response
+	private Date requestDateTime = null; // If null, becomes epoch start time
 	private int requestResponseDelay = -1;
 	private List<HttpHeader> responseHeaders;
 	private List<HttpHeader> requestHeaders;
@@ -121,6 +121,14 @@ public class LogEntry {
 	public LogEntry(ToolType tool, HttpRequest request, HttpResponse response){
 		this(tool, request);
 		this.response = response;
+		this.requestDateTime = new Date(0);
+	}
+
+	public LogEntry(ToolType tool, HttpRequest request, HttpResponse response, Date requestTime, Date responseTime){
+		this(tool, request);
+		this.response = response;
+		this.requestDateTime = requestTime;
+		this.responseDateTime = responseTime;
 	}
 
 	/**
@@ -314,7 +322,7 @@ public class LogEntry {
 		this.newCookies = response.cookies().stream().map(cookie -> String.format("%s=%s", cookie.name(), cookie.value())).collect(Collectors.toList());
 		this.hasSetCookies = !newCookies.isEmpty();
 
-
+		// If response date isn't set, pull it from response headers
 		if (this.responseDateTime == null) {
 			// If it didn't have an arrival time set, parse the response for it.
 			if (headers.get("date") != null && !StringUtils.isBlank(headers.get("date"))) {

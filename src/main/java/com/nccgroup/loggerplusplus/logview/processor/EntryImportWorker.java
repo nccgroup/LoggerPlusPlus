@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
+import java.util.Date;
+import java.time.ZonedDateTime;
+import java.time.Instant;
+import burp.api.montoya.http.handler.TimingData;
 
 public class EntryImportWorker extends SwingWorker<Void, Integer> {
 
@@ -47,14 +51,28 @@ public class EntryImportWorker extends SwingWorker<Void, Integer> {
             if(entryImportExecutor.isShutdown() || this.isCancelled()) return null;
             HttpRequest request;
             HttpResponse response;
+            Date requestTime = null;
+            Date responseTime = null;
             if(isProxyEntries){
                 request = proxyEntries.get(index).finalRequest();
                 response = proxyEntries.get(index).originalResponse();
+
+                TimingData timingData = proxyEntries.get(index).timingData();
+                requestTime = Date.from(timingData.timeRequestSent().toInstant());
+                responseTime = Date.from(timingData.timeRequestSent().plusNanos(timingData.timeBetweenRequestSentAndEndOfResponse().getNano()).toInstant());
             }else{
                 request = httpEntries.get(index).request();
                 response = httpEntries.get(index).response();
+                TimingData timingData = httpEntries.get(index).timingData().orElse(null);
+                if(timingData != null){
+                    requestTime = Date.from(timingData.timeRequestSent().toInstant());
+                    responseTime = Date.from(timingData.timeRequestSent().plusNanos(timingData.timeBetweenRequestSentAndEndOfResponse().getNano()).toInstant());
+                }else{
+                    //Zero epoch date to prevent null. Response date pulled from response headers
+                    requestTime = new Date(0);
+                }
             }
-            final LogEntry logEntry = new LogEntry(originatingTool, request, response);
+            final LogEntry logEntry = new LogEntry(originatingTool, request, response, requestTime, responseTime);
             int finalIndex = index;
             entryImportExecutor.submit(() -> {
                 if(this.isCancelled()) return;

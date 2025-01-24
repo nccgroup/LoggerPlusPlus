@@ -46,6 +46,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import java.text.SimpleDateFormat;
+
 @Log4j2
 public class ElasticExporter extends AutomaticLogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
@@ -289,6 +291,7 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
         @Override
         public void serialize(LogEntry logEntry, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
+            String stamp = null;
             for (LogEntryField field : ElasticExporter.this.fields) {
                 Object value = logEntry.getValueByKey(field);
                 if(value == null) continue;
@@ -299,12 +302,23 @@ public class ElasticExporter extends AutomaticLogExporter implements ExportPanel
                         case "Double": gen.writeNumberField(field.getFullLabel(), (Double) value); break;
                         case "String": gen.writeStringField(field.getFullLabel(), value.toString()); break;
                         case "Boolean": gen.writeBooleanField(field.getFullLabel(), (Boolean) value); break;
-                        case "Date": gen.writeNumberField(field.getFullLabel(), ((Date) value).getTime()); break;
+                        case "Date":
+                            String label = field.getFullLabel();
+                            if(label.equals("Request.Time")){
+                                SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                                simpleDate.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                stamp = simpleDate.format(((Date) value));
+                            }
+                            gen.writeStringField(field.getFullLabel(), ((Date) value).toLocaleString());
+                            break;
                         default: log.error("Unhandled field type: " + field.getType().getSimpleName());
                     }
                 }catch (Exception e){
                     log.error("ElasticExporter: Couldn't serialize field. The field was ommitted from the export.");
                 }
+            }
+            if(stamp != null){
+                gen.writeStringField("@timestamp", stamp);
             }
             gen.writeEndObject();
         }
