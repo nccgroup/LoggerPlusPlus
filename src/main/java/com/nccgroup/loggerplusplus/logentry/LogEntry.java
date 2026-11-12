@@ -1,8 +1,8 @@
 //
 // Burp Suite Logger++
-// 
+//
 // Released as open source by NCC Group Plc - https://www.nccgroup.trust/
-// 
+//
 // Originally Developed by Soroush Dalili (@irsdl)
 // Maintained by Corey Arthur (@CoreyD97)
 //
@@ -12,6 +12,8 @@
 //
 
 package com.nccgroup.loggerplusplus.logentry;
+
+import static com.nccgroup.loggerplusplus.LoggerPlusPlus.montoya;
 
 import burp.api.montoya.core.ToolType;
 import burp.api.montoya.http.HttpService;
@@ -27,613 +29,839 @@ import com.nccgroup.loggerplusplus.filter.colorfilter.TableColorRule;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.reflection.ReflectionController;
+import com.nccgroup.loggerplusplus.util.Canonical;
 import com.nccgroup.loggerplusplus.util.Globals;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
-import java.util.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
-import static com.nccgroup.loggerplusplus.LoggerPlusPlus.montoya;
-
-@Getter
-@Setter
+/**
+ * One row of the log: a request, its response once it arrives, and what the table, the filters and
+ * the exports need to know about them.
+ *
+ * <p>An entry is built to be small, because a table holds up to a million of them. It keeps what is
+ * asked for on every repaint and by most filters (the URL's parts, the status, lengths, times), and
+ * works out the rest from Burp's own request and response objects when asked: headers, bodies,
+ * cookies. Values that many entries repeat, such as the host, are shared between them.
+ *
+ * <p>{@link #process()} is called by one worker thread at a time; the table and the filters read
+ * the entry from other threads while it runs.
+ */
 public class LogEntry {
-
-	Status previousStatus;
-	Status status = Status.UNPROCESSED;
-
-	@Setter(AccessLevel.NONE)
-	private HttpRequest request;
-	@Setter(AccessLevel.NONE)
-	private HttpResponse response;
-
-	private Integer identifier;
-	private ToolType tool;
-	private String hostname = "";
-	private String host = "";
-	private String method = "";
-	private String urlString;
-	private URL url;
-	private boolean params = false;
-	private Short responseStatus = -1;
-	private String responseStatusText = "";
-	private String responseHttpVersion = "";
-	private boolean hasBodyParam = false;
-	private boolean hasCookieParam = false;
-	private String title = "";
-	private String comment;
-	private List<String> newCookies = new ArrayList<>();
-	private String sentCookies = "";
-	private String listenerInterface = "";
-	private boolean isSSL = false;
-	private String urlExtension = "";
-	private String referrerURL = "";
-	private String requestHttpVersion = "";
-	private String requestContentType = "";
-	private String protocol = "";
-	private short targetPort = -1;
-	private int requestBodyLength = -1;
-	private String clientIP = "";
-	private boolean hasSetCookies = false;
-	private String formattedResponseTime = "";
-	private MimeType responseMimeType;
-	private MimeType responseInferredMimeType;
-	private int responseBodyLength = -1;
-	private String responseContentType = "";
-	private boolean complete = false;
-	private CookieJarStatus usesCookieJar = CookieJarStatus.NO;
-	private String responseHash;
-	private String redirectURL;
-	private String origin = "";
-	// private String[] regexAllReq = {"","","","",""};
-	// private String[] regexAllResp = {"","","","",""};
-
-	private List<UUID> matchingColorFilters;
-	private List<Tag> matchingTags;
-	private String formattedRequestTime;
-	private Date responseDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
-	private Date requestDateTime = new Date(0); //Zero epoch dates to prevent null. Response date pulled from response headers
-	private int requestResponseDelay = -1;
-	private List<HttpHeader> responseHeaders;
-	private List<HttpHeader> requestHeaders;
-	private List<String> parameters;
-	private List<String> reflectedParameters;
-
-	private LogEntry() {
-		this.matchingColorFilters = Collections.synchronizedList(new ArrayList<>());
-		this.matchingTags = Collections.synchronizedList(new ArrayList<>());
-	}
-
-	public LogEntry(ToolType tool, HttpRequest request) {
-		this();
-		this.tool = tool;
-		this.request = request;
-	}
-
-	public LogEntry(ToolType tool, HttpRequest request, HttpResponse response){
-		this(tool, request);
-		this.response = response;
-	}
-
-	/**
-	 * Create new entry and specify arrival time.
-	 *
-	 * @param tool
-	 * @param request
-	 * @param formattedRequestTime
-	 */
-	public LogEntry(ToolType tool, HttpRequest request, Date formattedRequestTime) {
-		this(tool, request);
-		this.setReqestTime(formattedRequestTime);
-	}
-
-	public boolean process() {
-		previousStatus = this.status;
-		switch (this.status) {
-			case UNPROCESSED: {
-				this.status = processRequest();
-				//fall through to process response
-			}
-			case AWAITING_RESPONSE: {
-				if (this.response == null) {
-					this.status = Status.AWAITING_RESPONSE;
-					return false;
-				}
-				processResponse();
-				this.status = Status.PROCESSED;
-				return true;
-			}
-
-			case PROCESSED: {
-				// Nothing to do, we're done!
-				return true;
-			}
-
-			default: return false;
-		}
-	}
-
-	public void reprocess() {
-		this.status = Status.UNPROCESSED;
-		process();
-	}
-
-	public Status getStatus() {
-		return status;
-	}
-
-	public Status getPreviousStatus() {
-		return previousStatus;
-	}
-
-	private Status processRequest() {
-
-
-		requestHeaders = new ArrayList<>(request.headers());
-
-		this.requestHttpVersion = request.httpVersion();
-
-		this.parameters = request.parameters().stream()
-				.filter(param -> param.type() != HttpParameterType.COOKIE)
-				.map(HttpParameter::name)
-				.collect(Collectors.toList());
-
-		this.urlString = request.url();
-		this.hostname = this.request.httpService().host();
-		this.protocol = this.request.httpService().secure() ? "https" : "http";
-		this.isSSL = this.request.httpService().secure();
-		this.targetPort = (short) this.request.httpService().port();
-
-		boolean isDefaultPort = (this.protocol.equals("https") && this.targetPort == 443)
-				|| (this.protocol.equals("http") && this.targetPort == 80);
-
-		this.host = this.protocol + "://" + this.hostname + (isDefaultPort ? "" : ":" + this.targetPort);
-
-		this.method = request.method();
-		this.requestBodyLength = this.getRequestBytes().length - request.bodyOffset();
-		this.hasBodyParam = requestBodyLength > 0;
-
-		try {
-			this.url = new URL(request.url());
-
-			// I don't want to delete special characters such as ; or : from the extension
-			// as it may really be part of the extension! (burp proxy log ignores them)
-			String tempPath = url.getPath().replaceAll("\\\\", "/");
-			tempPath = tempPath.substring(tempPath.lastIndexOf("/"));
-			int tempPathDotLocation = tempPath.lastIndexOf(".");
-			if (tempPathDotLocation >= 0) {
-				this.urlExtension = tempPath.substring(tempPathDotLocation + 1);
-			}
-			this.params = url.getQuery() != null || this.hasBodyParam;
-		} catch (MalformedURLException ignored) {}
-
-
-		for (HttpHeader header : requestHeaders) {
-			if (header.name().equalsIgnoreCase("cookie")) {
-				this.sentCookies = header.value();
-				if (!this.sentCookies.isEmpty()) {
-					this.hasCookieParam = true;
-					this.sentCookies += ";"; // we need to ad this to search it in cookie Jar!
-
-					// Check to see if it uses cookie Jars!
-					List<Cookie> cookiesInJar = montoya.http().cookieJar().cookies();
-					boolean oneNotMatched = false;
-					boolean anyParamMatched = false;
-
-					for (Cookie cookieItem : cookiesInJar) {
-						if (cookieItem.domain().equals(this.hostname)) {
-							// now we want to see if any of these cookies have been set here!
-							String currentCookieJarParam = cookieItem.name() + "=" + cookieItem.value() + ";";
-							if (this.sentCookies.contains(currentCookieJarParam)) {
-								anyParamMatched = true;
-							} else {
-								oneNotMatched = true;
-							}
-						}
-						if (anyParamMatched && oneNotMatched) {
-							break; // we do not need to analyse it more!
-						}
-					}
-					if (oneNotMatched && anyParamMatched) {
-						this.usesCookieJar = CookieJarStatus.PARTIALLY;
-					} else if (!oneNotMatched && anyParamMatched) {
-						this.usesCookieJar = CookieJarStatus.YES;
-					}
-				}
-			} else if (header.name().equalsIgnoreCase("referer")) {
-				this.referrerURL = header.value();
-			} else if (header.name().equalsIgnoreCase("content-type")) {
-				this.requestContentType = header.value();
-			} else if (header.name().equalsIgnoreCase("origin")) {
-				this.origin = header.value();
-			}
-		}
-
-		return Status.AWAITING_RESPONSE;
-
-	}
-
-	/**
-	 * Update entry with response object and arrival time.
-	 * 
-	 * @param requestResponse
-	 * @param arrivalTime
-	 */
-	public void addResponse(HttpResponse requestResponse, Date arrivalTime) {
-		this.responseDateTime = arrivalTime;
-
-		//IHttpRequestResponse objects received by the proxy listener do not contain the latest request.
-		//So we must store the content separately.
-		this.response = requestResponse;
-//		this.setComment(requestResponse.getComment()); //Update the comment with the current comment
-	}
-
-	private Status processResponse() {
-		reflectedParameters = new ArrayList<>();
-//		IResponseInfo tempAnalyzedResp = LoggerPlusPlus.montoya.getHelpers()
-//				.analyzeResponse(response);
-
-		this.responseStatus = response.statusCode();
-		this.responseBodyLength = response.body().length();
-		this.responseMimeType = response.statedMimeType();
-		this.responseInferredMimeType = response.inferredMimeType();
-
-		/**************************************
-		 ************HEADER PROCESSING*********
-		 **************************************/
-
-		Map<String, String> headers = response.headers().stream()
-				.collect(Collectors.toMap(HttpHeader::name, HttpHeader::value, (s, s2) -> {
-					s += ", " + s2;
-					return s;
-				}, () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
-
-		responseHeaders = response.headers();
-
-		if (headers.containsKey("Location")) {
-			this.redirectURL = headers.get("Location");
-		}
-
-		this.responseStatusText = response.reasonPhrase();
-		this.responseHttpVersion = response.httpVersion();
-
-
-		if (headers.containsKey("content-type")) {
-			this.responseContentType = headers.get("content-type");
-		}
-
-		//Cookies
-		this.newCookies = response.cookies().stream().map(cookie -> String.format("%s=%s", cookie.name(), cookie.value())).collect(Collectors.toList());
-		this.hasSetCookies = !newCookies.isEmpty();
-
-
-		if (this.responseDateTime == null) {
-			// If it didn't have an arrival time set, parse the response for it.
-			if (headers.get("date") != null && !StringUtils.isBlank(headers.get("date"))) {
-				try {
-					synchronized (LogProcessor.SERVER_DATE_FORMAT) {
-						this.responseDateTime = LogProcessor.SERVER_DATE_FORMAT.parse(headers.get("date"));
-					}
-				} catch (ParseException e) {
-					this.responseDateTime = null;
-				}
-			} else {
-				// No date header...
-				this.responseDateTime = null;
-			}
-		}
-		if (responseDateTime != null) {
-			this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(responseDateTime);
-		} else {
-			this.formattedResponseTime = "";
-		}
-
-		if (requestDateTime != null && responseDateTime != null) {
-			this.requestResponseDelay = (int) (responseDateTime.getTime() - requestDateTime.getTime());
-		}
-
-		/**************************************
-		 *************BODY PROCESSING**********
-		 **************************************/
-
-		Long maxRespSize = ((Integer) LoggerPlusPlus.instance.getPreferencesController().getPreferences().getSetting(Globals.PREF_MAX_RESP_SIZE)) * 1000000L;
-		int bodyOffset = response.bodyOffset();
-		if (responseBodyLength < maxRespSize) {
-			//Only title match HTML files. Prevents expensive regex running on e.g. binary downloads.
-			if (this.responseInferredMimeType == MimeType.HTML) {
-				Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(response.bodyToString());
-				if (titleMatcher.find()) {
-					this.title = titleMatcher.group(1);
-				}
-			}
-
-			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-			reflectedParameters = request.parameters().parallelStream()
-					.filter(parameter -> !reflectionController.isParameterFiltered(parameter) && reflectionController.validReflection(response.bodyToString(), parameter))
-					.map(HttpParameter::name).collect(Collectors.toList());
-
-		} else {
-			//Just look for reflections in the headers.
-			ReflectionController reflectionController = LoggerPlusPlus.instance.getReflectionController();
-			reflectedParameters = request.parameters().parallelStream()
-					.filter(parameter -> !reflectionController.isParameterFiltered(parameter)
-							&& reflectionController.validReflection(response.bodyToString(), parameter))
-					.map(HttpParameter::name).collect(Collectors.toList());
-
-			//Trim the response down to a maximum size, but at least keep the headers!
-			//TODO Fix response trimming?
-//			this.response = (new String(this.response, 0, bodyOffset) + "Response body trimmed by Logger++. To prevent this, increase \"Maximum Response Size\" in the Logger++ options.").getBytes(StandardCharsets.UTF_8);
-		}
-
-		this.complete = true;
-
-		return Status.PROCESSED;
-	}
-
-	public byte[] getRequestBytes() {
-		if(request == null) return new byte[0];
-		return this.request.toByteArray().getBytes();
-	}
-
-	public byte[] getResponseBytes() {
-		if(response == null) return new byte[0];
-		return response.toByteArray().getBytes();
-	}
-
-	public void setReqestTime(Date requestTime) {
-		this.requestDateTime = requestTime;
-		this.formattedRequestTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.requestDateTime);
-	}
-
-	public void setResponseTime(Date responseTime) {
-		this.responseDateTime = responseTime;
-		this.formattedResponseTime = LogProcessor.LOGGER_DATE_FORMAT.format(this.responseDateTime);
-	}
-
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
-
-	public String getComment() {
-		return this.comment;
-	}
-
-
-	public Object getValueByKey(LogEntryField columnName) {
-
-		try {
-			switch (columnName) {
-				case INSCOPE:
-					return montoya.scope().isInScope(urlString);
-				case PROXY_TOOL:
-				case REQUEST_TOOL:
-					return tool.toolName();
-				case TAGS:
-					return this.matchingTags.stream().collect(Collectors.toList());
-				case URL:
-					return this.urlString;
-				case PATH:
-					return (this.url != null ? this.url.getPath() : "");
-				case QUERY:
-					return (this.url != null ? this.url.getQuery() : "");
-				case PATHQUERY:
-					return this.url.getFile();
-				case STATUS:
-					return this.responseStatus;
-				case STATUS_TEXT:
-					return this.responseStatusText;
-				case RESPONSE_HTTP_VERSION:
-					return this.responseHttpVersion;
-				case PROTOCOL:
-					return this.protocol;
-				case HOSTNAME:
-					return this.hostname;
-				case HOST:
-					return this.host;
-				case MIME_TYPE:
-					return this.responseMimeType;
-				case RESPONSE_LENGTH:
-					return this.responseBodyLength;
-				case PORT:
-					return this.targetPort;
-				case METHOD:
-					return this.method;
-				case REQUEST_TIME:
-					return this.requestDateTime;
-				case RESPONSE_TIME:
-					return this.responseDateTime;
-				case COMMENT:
-					return this.comment;
-				case REQUEST_CONTENT_TYPE:
-					return this.requestContentType;
-				case REQUEST_HTTP_VERSION:
-					return this.requestHttpVersion;
-				case EXTENSION:
-					return this.urlExtension;
-				case REFERRER:
-					return this.referrerURL;
-				case PARAMETERS:
-					return this.parameters;
-				case PARAMETER_COUNT:
-					return this.parameters.size();
-				case HASGETPARAM:
-					return this.url != null && this.url.getQuery() != null;
-				case HASPOSTPARAM:
-					return this.hasBodyParam;
-				case HASCOOKIEPARAM:
-					return this.hasCookieParam;
-				case REQUEST_LENGTH:
-					return this.requestBodyLength;
-				case RESPONSE_CONTENT_TYPE:
-					return this.responseContentType;
-				case INFERRED_TYPE:
-					return this.responseInferredMimeType;
-				case HAS_SET_COOKIES:
-					return this.hasSetCookies;
-				case HASPARAMS:
-					return this.params;
-				case TITLE:
-					return this.title;
-				case ISSSL:
-					return this.isSSL;
-				case NEW_COOKIES:
-					return this.newCookies;
-				case LISTENER_INTERFACE:
-					return this.listenerInterface;
-				case CLIENT_IP:
-					return this.clientIP;
-				case COMPLETE:
-					return this.complete;
-				case SENTCOOKIES:
-					return this.sentCookies;
-				case USES_COOKIE_JAR:
-					return this.usesCookieJar.toString();
-				case ORIGIN:
-					return this.origin;
-				case REFLECTED_PARAMS:
-					return reflectedParameters;
-				case REFLECTION_COUNT:
-					return reflectedParameters.size();
-				case REQUEST_BODY: // request
-					return request.bodyToString();
-				case REQUEST_BODY_LENGTH:
-					return request.body().length();
-//							.substring(request.length - requestBodyLength);
-				case RESPONSE_BODY: // response
-					return response.bodyToString();
-				case RESPONSE_BODY_LENGTH:
-					return response.body().length();
-				case RTT:
-					return requestResponseDelay;
-				case REQUEST_HEADERS: {
-					if(requestHeaders == null) return "";
-					//Hacky workaround since Burp doesn't include path in headers.
-					return String.format("%s %s %s\r\n%s", request.method(), request.path(), request.httpVersion(), requestHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")));
-				}
-				case RESPONSE_HEADERS:
-					return responseHeaders != null ? responseHeaders.stream().map(HttpHeader::toString).collect(Collectors.joining("\r\n")) : "";
-				case REDIRECT_URL:
-					return redirectURL;
-				case BASE64_REQUEST:
-					return Base64.getEncoder().encodeToString(this.getRequestBytes());
-				case BASE64_RESPONSE:
-					return Base64.getEncoder().encodeToString(this.getResponseBytes());
-				case RESPONSE_HASH: {
-					if (responseHash == null) {
-						responseHash = DigestUtils
-								.sha1Hex(((String) getValueByKey(LogEntryField.RESPONSE_BODY)).getBytes());
-					}
-					return responseHash;
-				}
-				default:
-					return "";
-			}
-		} catch (Exception e) {
-			return "";
-		}
-	}
-
-	public List<UUID> getMatchingColorFilters() {
-		return matchingColorFilters;
-	}
-
-	public List<Tag> getMatchingTags() {
-		return matchingTags;
-	}
-
-	public HttpService getHttpService() {
-		return this.request.httpService();
-	}
-
-	public enum CookieJarStatus {
-		YES("Yes"), NO("No"), PARTIALLY("Partially");
-
-		private String value;
-
-		CookieJarStatus(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public String toString() {
-			return this.value;
-		}
-	}
-
-	/**
-	 * TODO CLEAN UP
-	 * 
-	 * @param tableColorRule
-	 * @param retest
-	 * @return If the list of matching color filters was updated
-	 */
-	public boolean testColorFilter(TableColorRule tableColorRule, boolean retest) {
-		if (!tableColorRule.isEnabled() || tableColorRule.getFilterExpression() == null) {
-			return this.getMatchingColorFilters().remove(tableColorRule.getUuid());
-		}
-
-		// If we don't already know if the color filter matches (e.g. haven't checked it
-		// before)
-		if (!this.matchingColorFilters.contains(tableColorRule.getUuid())) {
-			if (tableColorRule.getFilterExpression().matches(this)) {
-				this.matchingColorFilters.add(tableColorRule.getUuid());
-				return true;
-			} else {
-				return false;
-			}
-		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!tableColorRule.getFilterExpression().matches(this)) {
-				this.matchingColorFilters.remove(tableColorRule.getUuid());
-			}
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/*
-	 * @param Tag
-	 * @param retest
-	 * @return If the list of matching color filters was updated
-	 */
-	public boolean testTag(Tag tag, boolean retest) {
-		if (!tag.isEnabled() || tag.getFilterExpression() == null) {
-			return this.getMatchingTags().remove(tag);
-		}
-
-		// If we don't already know if the color filter matches (e.g. haven't checked it
-		// before)
-		if (!this.matchingTags.contains(tag)) {
-			if (tag.getFilterExpression().matches(this)) {
-				this.matchingTags.add(tag);
-				return true;
-			} else {
-				return false;
-			}
-		} else if (retest) { // Or if we are forcing a retest (e.g. filter was updated)
-			if (!tag.getFilterExpression().matches(this)) {
-				this.matchingTags.remove(tag);
-			}
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public String toString() {
-		return this.urlString.toString();
-	}
-
-//	public static Integer extractAndRemoveIdentifierFromComment(LogEntry logEntry) {
-//		return LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(logEntry.request);
-//	}
+    /**
+     * Marks a response time that was given as null, where the entry falls back to the Date header.
+     */
+    private static final long NO_TIME = Long.MIN_VALUE;
+
+    private static final Short[] STATUS_CODES = new Short[1000];
+
+    private static final SimpleDateFormat SERVER_DATE_FORMAT =
+            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+
+    private Status previousStatus;
+    private Status status = Status.UNPROCESSED;
+
+    private final HttpRequest request;
+    private HttpResponse response;
+    private final ToolType tool;
+    private Integer identifier;
+    private String comment;
+    private String listenerInterface = "";
+    private long arrivalNumber = -1;
+
+    // What reading the request found.
+    private boolean requestRead;
+    private String urlString;
+    private boolean urlParsed;
+    private String path = "";
+    private String query;
+    private String hostname = "";
+    private String host = "";
+    private String protocol = "";
+    private String method = "";
+    private String urlExtension = "";
+    private String referrerURL = "";
+    private String origin = "";
+    private String requestHttpVersion = "";
+    private String requestContentType = "";
+    private int targetPort = -1;
+    private int requestBodyLength = -1;
+    private boolean isSSL;
+    private boolean params;
+    private boolean hasBodyParam;
+    private boolean hasCookieParam;
+    private CookieJarStatus usesCookieJar = CookieJarStatus.NO;
+    private List<String> parameters;
+
+    // What reading the response found.
+    private boolean responseRead;
+    private short responseStatus = -1;
+    private String responseStatusText = "";
+    private String responseHttpVersion = "";
+    private String responseContentType = "";
+    private String title = "";
+    private String redirectURL;
+    private String responseHash;
+    private MimeType responseMimeType;
+    private MimeType responseInferredMimeType;
+    private int responseBodyLength = -1;
+    private int requestResponseDelay = -1;
+    private boolean hasSetCookies;
+    private boolean complete;
+    private List<String> newCookies;
+    private List<String> reflectedParameters;
+
+    // Times, in milliseconds since the epoch. Both start at zero so that neither is ever null.
+    private long requestTime;
+    private boolean requestTimeGiven;
+    private long responseTime;
+
+    // Replaced, never changed in place: the table reads them while workers test filters.
+    private volatile List<UUID> matchingColorFilters = List.of();
+    private volatile List<Tag> matchingTags = List.of();
+
+    public LogEntry(ToolType tool, HttpRequest request) {
+        this.tool = tool;
+        this.request = request;
+    }
+
+    public LogEntry(ToolType tool, HttpRequest request, HttpResponse response) {
+        this(tool, request);
+        this.response = response;
+    }
+
+    /** A new entry for a request that arrived at {@code requestTime}. */
+    public LogEntry(ToolType tool, HttpRequest request, Date requestTime) {
+        this(tool, request);
+        this.setReqestTime(requestTime);
+    }
+
+    /**
+     * Reads the request if it has not been read, then the response if there is one.
+     *
+     * @return whether the entry is complete, that is, its response has been read
+     */
+    public boolean process() {
+        previousStatus = this.status;
+        if (this.status == Status.PROCESSED) {
+            return true;
+        }
+        if (this.status == Status.UNPROCESSED) {
+            readRequest();
+        }
+        if (this.response == null) {
+            this.status = Status.AWAITING_RESPONSE;
+            return false;
+        }
+        readResponse();
+        this.status = Status.PROCESSED;
+        return true;
+    }
+
+    public void reprocess() {
+        this.status = Status.UNPROCESSED;
+        process();
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Status getPreviousStatus() {
+        return previousStatus;
+    }
+
+    private void readRequest() {
+        this.requestHttpVersion = canonicalOrEmpty(request.httpVersion());
+
+        List<String> names = new ArrayList<>();
+        for (HttpParameter parameter : request.parameters()) {
+            if (parameter.type() != HttpParameterType.COOKIE) {
+                names.add(parameter.name());
+            }
+        }
+        this.parameters = List.copyOf(names);
+
+        HttpService service = request.httpService();
+        this.urlString = request.url();
+        this.hostname = Canonical.of(service.host());
+        this.isSSL = service.secure();
+        this.protocol = this.isSSL ? "https" : "http";
+        this.targetPort = service.port();
+        boolean isDefaultPort = this.targetPort == (this.isSSL ? 443 : 80);
+        this.host =
+                Canonical.of(
+                        this.protocol
+                                + "://"
+                                + this.hostname
+                                + (isDefaultPort ? "" : ":" + this.targetPort));
+
+        this.method = Canonical.of(request.method());
+        this.requestBodyLength = request.toByteArray().length() - request.bodyOffset();
+        this.hasBodyParam = requestBodyLength > 0;
+        readUrl();
+        readRequestHeaders(request.headers());
+        this.requestRead = true;
+    }
+
+    private void readUrl() {
+        try {
+            URL url = new URL(urlString);
+            this.path = url.getPath();
+            this.query = url.getQuery();
+            this.urlParsed = true;
+            this.urlExtension = Canonical.of(extensionOf(this.path));
+            this.params = this.query != null || this.hasBodyParam;
+        } catch (MalformedURLException ignored) {
+            // The path, query and extension stay empty, as they always have for such a URL.
+        }
+    }
+
+    /**
+     * What follows the last dot of the path's last segment. Characters such as {@code ;} and {@code
+     * :} stay: they may really be part of the extension, though Burp's proxy history drops them.
+     */
+    private static String extensionOf(String path) {
+        String lastSegment = path.replace('\\', '/');
+        lastSegment = lastSegment.substring(Math.max(lastSegment.lastIndexOf('/'), 0));
+        int dot = lastSegment.lastIndexOf('.');
+        return dot >= 0 ? lastSegment.substring(dot + 1) : "";
+    }
+
+    private static String canonicalOrEmpty(String text) {
+        return text == null ? "" : Canonical.of(text);
+    }
+
+    private void readRequestHeaders(List<HttpHeader> headers) {
+        for (HttpHeader header : headers) {
+            String name = header.name();
+            if (name.equalsIgnoreCase("cookie")) {
+                String sentCookies = header.value();
+                if (!sentCookies.isEmpty()) {
+                    this.hasCookieParam = true;
+                    compareWithCookieJar(sentCookies + ";");
+                }
+            } else if (name.equalsIgnoreCase("referer")) {
+                this.referrerURL = header.value();
+            } else if (name.equalsIgnoreCase("content-type")) {
+                this.requestContentType = Canonical.of(header.value());
+            } else if (name.equalsIgnoreCase("origin")) {
+                this.origin = Canonical.of(header.value());
+            }
+        }
+    }
+
+    /** Records whether all, some or none of the jar's cookies for this host were sent. */
+    private void compareWithCookieJar(String sentCookies) {
+        boolean oneNotMatched = false;
+        boolean anyMatched = false;
+        for (Cookie cookie : montoya.http().cookieJar().cookies()) {
+            if (this.hostname.equals(cookie.domain())) {
+                if (sentCookies.contains(cookie.name() + "=" + cookie.value() + ";")) {
+                    anyMatched = true;
+                } else {
+                    oneNotMatched = true;
+                }
+            }
+            if (anyMatched && oneNotMatched) {
+                break;
+            }
+        }
+        if (anyMatched) {
+            this.usesCookieJar = oneNotMatched ? CookieJarStatus.PARTIALLY : CookieJarStatus.YES;
+        }
+    }
+
+    /**
+     * Attaches the response, which arrived at {@code arrivalTime}, for the next {@link #process}.
+     */
+    public void addResponse(HttpResponse response, Date arrivalTime) {
+        this.responseTime = arrivalTime == null ? NO_TIME : arrivalTime.getTime();
+        this.response = response;
+    }
+
+    private void readResponse() {
+        this.responseStatus = response.statusCode();
+        this.responseStatusText = canonicalOrEmpty(response.reasonPhrase());
+        this.responseHttpVersion = canonicalOrEmpty(response.httpVersion());
+        this.responseBodyLength = response.body().length();
+        this.responseMimeType = response.statedMimeType();
+        this.responseInferredMimeType = response.inferredMimeType();
+
+        List<HttpHeader> headers = response.headers();
+        String location = combinedHeader(headers, "location");
+        if (location != null) {
+            this.redirectURL = location;
+        }
+        String contentType = combinedHeader(headers, "content-type");
+        if (contentType != null) {
+            this.responseContentType = Canonical.of(contentType);
+        }
+        this.hasSetCookies = !response.cookies().isEmpty();
+        this.newCookies = null;
+
+        if (this.responseTime == NO_TIME) {
+            this.responseTime = parseServerDate(combinedHeader(headers, "date"));
+        }
+        if (this.responseTime != NO_TIME) {
+            this.requestResponseDelay = (int) (this.responseTime - this.requestTime);
+        }
+
+        readResponseBody();
+        this.responseHash = null;
+        this.responseRead = true;
+        this.complete = true;
+    }
+
+    /** The body is turned into a string at most once, and only if something needs to search it. */
+    private void readResponseBody() {
+        String body = null;
+        int megabytes =
+                LoggerPlusPlus.instance
+                        .getPreferencesController()
+                        .getPreferences()
+                        .getSetting(Globals.PREF_MAX_RESP_SIZE);
+        // Only HTML is searched for a title, and only below the size limit: the pattern is costly.
+        if (responseBodyLength < megabytes * 1000000L
+                && responseInferredMimeType == MimeType.HTML) {
+            body = response.bodyToString();
+            Matcher titleMatcher = Globals.HTML_TITLE_PATTERN.matcher(body);
+            if (titleMatcher.find()) {
+                this.title = titleMatcher.group(1);
+            }
+        }
+
+        ReflectionController reflections = LoggerPlusPlus.instance.getReflectionController();
+        ReflectionController.Scan scan = null;
+        List<String> reflected = new ArrayList<>();
+        for (HttpParameter parameter : request.parameters()) {
+            if (reflections.isParameterFiltered(parameter)) {
+                continue;
+            }
+            if (scan == null) {
+                scan = reflections.scan(body != null ? body : response.bodyToString());
+            }
+            if (scan.reflects(parameter)) {
+                reflected.add(parameter.name());
+            }
+        }
+        this.reflectedParameters = List.copyOf(reflected);
+    }
+
+    /** The values of every header of that name, joined by a comma and a space; null when none. */
+    private static String combinedHeader(List<HttpHeader> headers, String name) {
+        String combined = null;
+        for (HttpHeader header : headers) {
+            if (header.name().equalsIgnoreCase(name)) {
+                combined = combined == null ? header.value() : combined + ", " + header.value();
+            }
+        }
+        return combined;
+    }
+
+    private static long parseServerDate(String dateHeader) {
+        if (dateHeader == null || dateHeader.isBlank()) {
+            return NO_TIME;
+        }
+        try {
+            synchronized (SERVER_DATE_FORMAT) {
+                return SERVER_DATE_FORMAT.parse(dateHeader).getTime();
+            }
+        } catch (ParseException e) {
+            return NO_TIME;
+        }
+    }
+
+    public HttpRequest getRequest() {
+        return request;
+    }
+
+    public HttpResponse getResponse() {
+        return response;
+    }
+
+    /** The request as it was sent; empty when the entry has none. */
+    public byte[] getRequestBytes() {
+        if (request == null) {
+            return new byte[0];
+        }
+        return this.request.toByteArray().getBytes();
+    }
+
+    /** The response as it was received; empty until one has arrived. */
+    public byte[] getResponseBytes() {
+        if (response == null) {
+            return new byte[0];
+        }
+        return response.toByteArray().getBytes();
+    }
+
+    public ToolType getTool() {
+        return tool;
+    }
+
+    public Integer getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(Integer identifier) {
+        this.identifier = identifier;
+    }
+
+    /**
+     * The entry's place in the order entries were added to the log table, or -1 before it is added.
+     * The table's rows are in this order, which lets it find an entry's row without searching.
+     */
+    public long getArrivalNumber() {
+        return arrivalNumber;
+    }
+
+    public void setArrivalNumber(long arrivalNumber) {
+        this.arrivalNumber = arrivalNumber;
+    }
+
+    public HttpService getHttpService() {
+        return this.request.httpService();
+    }
+
+    public void setReqestTime(Date requestTime) {
+        this.requestTime = requestTime.getTime();
+        this.requestTimeGiven = true;
+    }
+
+    public void setResponseTime(Date responseTime) {
+        this.responseTime = responseTime.getTime();
+    }
+
+    public Date getRequestDateTime() {
+        return new Date(requestTime);
+    }
+
+    /** When the response arrived; null only when no time was given and its Date header had none. */
+    public Date getResponseDateTime() {
+        return responseTime == NO_TIME ? null : new Date(responseTime);
+    }
+
+    /** The request time as the table shows it; null when the entry was created without one. */
+    public String getFormattedRequestTime() {
+        return requestTimeGiven ? LogProcessor.LOGGER_DATE_FORMAT.format(requestTime) : null;
+    }
+
+    /** The response time as the table shows it; empty until a response with a time is read. */
+    public String getFormattedResponseTime() {
+        return responseRead && responseTime != NO_TIME
+                ? LogProcessor.LOGGER_DATE_FORMAT.format(responseTime)
+                : "";
+    }
+
+    /**
+     * The proxy listener the message came through, such as {@code 127.0.0.1:8080}; empty for a
+     * message of another tool.
+     */
+    public String getListenerInterface() {
+        return listenerInterface;
+    }
+
+    public void setListenerInterface(String listenerInterface) {
+        this.listenerInterface = listenerInterface == null ? null : Canonical.of(listenerInterface);
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getComment() {
+        return this.comment;
+    }
+
+    public String getUrlString() {
+        return urlString;
+    }
+
+    /** The request's URL, parsed; null when it cannot be parsed. */
+    public URL getUrl() {
+        try {
+            return urlParsed ? new URL(urlString) : null;
+        } catch (MalformedURLException e) {
+            return null;
+        }
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public int getTargetPort() {
+        return targetPort;
+    }
+
+    public String getRequestHttpVersion() {
+        return requestHttpVersion;
+    }
+
+    public String getRequestContentType() {
+        return requestContentType;
+    }
+
+    public int getRequestBodyLength() {
+        return requestBodyLength;
+    }
+
+    public boolean isHasBodyParam() {
+        return hasBodyParam;
+    }
+
+    public boolean isHasCookieParam() {
+        return hasCookieParam;
+    }
+
+    /** The request's headers, without the request line. */
+    public List<HttpHeader> getRequestHeaders() {
+        return request.headers();
+    }
+
+    public Short getResponseStatus() {
+        return boxedStatus(responseStatus);
+    }
+
+    /** One object per status code: every filter on the status asks for it, for every entry. */
+    private static Short boxedStatus(short status) {
+        if (status < 0 || status >= STATUS_CODES.length) {
+            return status;
+        }
+        Short boxed = STATUS_CODES[status];
+        if (boxed == null) {
+            boxed = status;
+            STATUS_CODES[status] = boxed;
+        }
+        return boxed;
+    }
+
+    public String getResponseStatusText() {
+        return responseStatusText;
+    }
+
+    public String getResponseHttpVersion() {
+        return responseHttpVersion;
+    }
+
+    public String getResponseContentType() {
+        return responseContentType;
+    }
+
+    public int getResponseBodyLength() {
+        return responseBodyLength;
+    }
+
+    public boolean isHasSetCookies() {
+        return hasSetCookies;
+    }
+
+    public boolean isComplete() {
+        return complete;
+    }
+
+    /** The response's headers, without the status line; null until a response has been read. */
+    public List<HttpHeader> getResponseHeaders() {
+        return responseRead ? response.headers() : null;
+    }
+
+    /** The Cookie header's value followed by a semicolon; empty when no cookie was sent. */
+    private String sentCookies() {
+        String sentCookies = "";
+        if (requestRead) {
+            for (HttpHeader header : request.headers()) {
+                if (header.name().equalsIgnoreCase("cookie")) {
+                    sentCookies = header.value();
+                }
+            }
+        }
+        return sentCookies.isEmpty() ? sentCookies : sentCookies + ";";
+    }
+
+    /** Each cookie the response set, as {@code name=value}. Worked out when first asked for. */
+    private List<String> newCookies() {
+        List<String> cookies = this.newCookies;
+        if (cookies == null) {
+            if (!responseRead) {
+                return List.of();
+            }
+            List<String> found = new ArrayList<>();
+            for (Cookie cookie : response.cookies()) {
+                found.add(cookie.name() + "=" + cookie.value());
+            }
+            cookies = List.copyOf(found);
+            this.newCookies = cookies;
+        }
+        return cookies;
+    }
+
+    /** The first line of the request, which Burp leaves out of the headers. */
+    private String requestLine() {
+        return request.method() + " " + request.path() + " " + request.httpVersion();
+    }
+
+    private static String joined(List<HttpHeader> headers) {
+        StringBuilder joined = new StringBuilder();
+        for (HttpHeader header : headers) {
+            if (joined.length() > 0) {
+                joined.append("\r\n");
+            }
+            joined.append(header.toString());
+        }
+        return joined.toString();
+    }
+
+    private String responseHash() {
+        if (response == null) {
+            return sha1Hex("");
+        }
+        if (responseHash == null) {
+            responseHash = sha1Hex(response.bodyToString());
+        }
+        return responseHash;
+    }
+
+    private static String sha1Hex(String text) {
+        try {
+            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+            return HexFormat.of().formatHex(sha1.digest(text.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Every Java platform provides SHA-1", e);
+        }
+    }
+
+    /**
+     * The value of a field, for the table, the filters and the exports. A field that cannot be
+     * answered yet (a response field before the response arrives) is an empty string.
+     */
+    public Object getValueByKey(LogEntryField columnName) {
+        try {
+            return switch (columnName) {
+                case INSCOPE -> montoya.scope().isInScope(urlString);
+                case PROXY_TOOL, REQUEST_TOOL -> tool.toolName();
+                case TAGS -> this.matchingTags;
+                case URL -> this.urlString;
+                case PATH -> this.path;
+                case QUERY -> this.urlParsed ? this.query : "";
+                case PATHQUERY ->
+                        this.urlParsed
+                                ? (this.query == null ? this.path : this.path + "?" + this.query)
+                                : "";
+                case STATUS -> boxedStatus(this.responseStatus);
+                case STATUS_TEXT -> this.responseStatusText;
+                case RESPONSE_HTTP_VERSION -> this.responseHttpVersion;
+                case PROTOCOL -> this.protocol;
+                case HOSTNAME -> this.hostname;
+                case HOST -> this.host;
+                case MIME_TYPE -> this.responseMimeType;
+                case RESPONSE_LENGTH -> this.responseBodyLength;
+                case PORT -> this.targetPort;
+                case METHOD -> this.method;
+                case REQUEST_TIME -> getRequestDateTime();
+                case RESPONSE_TIME -> getResponseDateTime();
+                case COMMENT -> this.comment;
+                case REQUEST_CONTENT_TYPE -> this.requestContentType;
+                case REQUEST_HTTP_VERSION -> this.requestHttpVersion;
+                case EXTENSION -> this.urlExtension;
+                case REFERRER -> this.referrerURL;
+                case PARAMETERS -> this.parameters;
+                case PARAMETER_COUNT ->
+                        this.parameters == null ? "" : (Object) this.parameters.size();
+                case HASGETPARAM -> this.query != null;
+                case HASPOSTPARAM -> this.hasBodyParam;
+                case HASCOOKIEPARAM -> this.hasCookieParam;
+                case REQUEST_LENGTH -> this.requestBodyLength;
+                case RESPONSE_CONTENT_TYPE -> this.responseContentType;
+                case INFERRED_TYPE -> this.responseInferredMimeType;
+                case HAS_SET_COOKIES -> this.hasSetCookies;
+                case HASPARAMS -> this.params;
+                case TITLE -> this.title;
+                case ISSSL -> this.isSSL;
+                case NEW_COOKIES -> newCookies();
+                case LISTENER_INTERFACE -> this.listenerInterface;
+                case CLIENT_IP -> ""; // Burp does not yet say which client sent a proxied request.
+                case COMPLETE -> this.complete;
+                case SENTCOOKIES -> sentCookies();
+                case USES_COOKIE_JAR -> this.usesCookieJar.toString();
+                case ORIGIN -> this.origin;
+                case REFLECTED_PARAMS -> reflectedParameters;
+                case REFLECTION_COUNT ->
+                        reflectedParameters == null ? "" : (Object) reflectedParameters.size();
+                case REQUEST_BODY -> request.bodyToString();
+                case REQUEST_BODY_LENGTH -> request.body().length();
+                case RESPONSE_BODY -> response == null ? "" : response.bodyToString();
+                case RESPONSE_BODY_LENGTH ->
+                        response == null ? "" : (Object) response.body().length();
+                case RTT -> requestResponseDelay;
+                case REQUEST_HEADERS ->
+                        requestRead ? requestLine() + "\r\n" + joined(request.headers()) : "";
+                case RESPONSE_HEADERS -> responseRead ? joined(response.headers()) : "";
+                case REDIRECT_URL -> redirectURL;
+                case BASE64_REQUEST -> Base64.getEncoder().encodeToString(this.getRequestBytes());
+                case BASE64_RESPONSE ->
+                        response == null
+                                ? ""
+                                : Base64.getEncoder().encodeToString(getResponseBytes());
+                case RESPONSE_HASH -> responseHash();
+                default -> "";
+            };
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** The identifiers of the colour rules this entry matches. The list is never changed. */
+    public List<UUID> getMatchingColorFilters() {
+        return matchingColorFilters;
+    }
+
+    /** The tags this entry matches. The list is never changed. */
+    public List<Tag> getMatchingTags() {
+        return matchingTags;
+    }
+
+    /**
+     * Stops counting this entry as a match of that colour rule.
+     *
+     * @return whether it was one
+     */
+    public synchronized boolean removeColorFilter(UUID colorFilter) {
+        List<UUID> without = without(matchingColorFilters, colorFilter);
+        boolean wasPresent = without != matchingColorFilters;
+        matchingColorFilters = without;
+        return wasPresent;
+    }
+
+    /**
+     * Stops counting this entry as a match of that tag.
+     *
+     * @return whether it was one
+     */
+    public synchronized boolean removeTag(Tag tag) {
+        List<Tag> without = without(matchingTags, tag);
+        boolean wasPresent = without != matchingTags;
+        matchingTags = without;
+        return wasPresent;
+    }
+
+    private static <T> List<T> with(List<T> list, T added) {
+        List<T> longer = new ArrayList<>(list.size() + 1);
+        longer.addAll(list);
+        longer.add(added);
+        return List.copyOf(longer);
+    }
+
+    /** The list without its first element equal to {@code removed}; the same list when none is. */
+    private static <T> List<T> without(List<T> list, T removed) {
+        int index = list.indexOf(removed);
+        if (index < 0) {
+            return list;
+        }
+        List<T> shorter = new ArrayList<>(list);
+        shorter.remove(index);
+        return List.copyOf(shorter);
+    }
+
+    public enum CookieJarStatus {
+        YES("Yes"),
+        NO("No"),
+        PARTIALLY("Partially");
+
+        private final String value;
+
+        CookieJarStatus(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return this.value;
+        }
+    }
+
+    /**
+     * Tests the entry against a colour rule and records the result.
+     *
+     * @param retest whether to test again an entry already recorded as matching, as is needed after
+     *     the rule's filter is edited
+     * @return whether the entry's row may need repainting
+     */
+    public synchronized boolean testColorFilter(TableColorRule tableColorRule, boolean retest) {
+        UUID uuid = tableColorRule.getUuid();
+        if (!tableColorRule.isEnabled() || tableColorRule.getFilterExpression() == null) {
+            return removeColorFilter(uuid);
+        }
+
+        if (!this.matchingColorFilters.contains(uuid)) {
+            if (tableColorRule.getFilterExpression().matches(this)) {
+                this.matchingColorFilters = with(this.matchingColorFilters, uuid);
+                return true;
+            }
+            return false;
+        }
+        if (retest) {
+            if (!tableColorRule.getFilterExpression().matches(this)) {
+                removeColorFilter(uuid);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Tests the entry against a tag and records the result.
+     *
+     * @param retest whether to test again an entry already recorded as matching, as is needed after
+     *     the tag's filter is edited
+     * @return whether the entry's row may need repainting
+     */
+    public synchronized boolean testTag(Tag tag, boolean retest) {
+        if (!tag.isEnabled() || tag.getFilterExpression() == null) {
+            return removeTag(tag);
+        }
+
+        if (!this.matchingTags.contains(tag)) {
+            if (tag.getFilterExpression().matches(this)) {
+                this.matchingTags = with(this.matchingTags, tag);
+                return true;
+            }
+            return false;
+        }
+        if (retest) {
+            if (!tag.getFilterExpression().matches(this)) {
+                removeTag(tag);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return this.urlString;
+    }
 }

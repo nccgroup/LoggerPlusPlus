@@ -3,9 +3,9 @@ package com.nccgroup.loggerplusplus.util.userinterface;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.BurpExtenderUtilities.VariableViewPanel;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logging.LogLevel;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
-import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -99,14 +99,14 @@ public class LoggerMenu extends javax.swing.JMenu {
         this.add(viewMenu);
 
         ButtonGroup logLevelGroup = new ButtonGroup();
-        Level logLevel = preferences.getSetting(Globals.PREF_LOG_LEVEL);
-        AbstractButton debug = new JRadioButtonMenuItem(String.valueOf(Level.DEBUG), logLevel.compareTo(Level.DEBUG) == 0);
+        LogLevel logLevel = preferences.getSetting(Globals.PREF_LOG_LEVEL);
+        AbstractButton debug = new JRadioButtonMenuItem(String.valueOf(LogLevel.DEBUG), logLevel.compareTo(LogLevel.DEBUG) == 0);
         debug.addActionListener(actionEvent -> {
-            preferences.setSetting(Globals.PREF_LOG_LEVEL, Level.DEBUG);
+            preferences.setSetting(Globals.PREF_LOG_LEVEL, LogLevel.DEBUG);
         });
-        AbstractButton info = new JRadioButtonMenuItem(String.valueOf(Level.INFO), logLevel.compareTo(Level.INFO) == 0);
+        AbstractButton info = new JRadioButtonMenuItem(String.valueOf(LogLevel.INFO), logLevel.compareTo(LogLevel.INFO) == 0);
         info.addActionListener(actionEvent -> {
-            preferences.setSetting(Globals.PREF_LOG_LEVEL, Level.INFO);
+            preferences.setSetting(Globals.PREF_LOG_LEVEL, LogLevel.INFO);
         });
 
         logLevelGroup.add(debug);

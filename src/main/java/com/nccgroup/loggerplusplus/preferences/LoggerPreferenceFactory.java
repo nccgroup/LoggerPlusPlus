@@ -15,18 +15,16 @@ import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.LogEntryFieldSerializer;
 import com.nccgroup.loggerplusplus.logentry.LogEntrySerializer;
+import com.nccgroup.loggerplusplus.logging.LogLevel;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableColumn;
 import com.nccgroup.loggerplusplus.util.Globals;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.util.*;
 
 import static com.nccgroup.loggerplusplus.util.Globals.*;
 
-@Log4j2
 public class LoggerPreferenceFactory extends PreferenceFactory {
 
     private HashMap<UUID, TableColorRule> defaultColorFilters;
@@ -58,6 +56,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     @Override
     protected void registerTypeAdapters(){
+        this.gsonProvider.registerTypeAdapter(LogLevel.class, new LogLevel.Serializer());
         this.gsonProvider.registerTypeAdapter(LogEntryField.class, new LogEntryFieldSerializer());
         this.gsonProvider.registerTypeAdapter(FilterExpression.class, new FilterExpressionSerializer());
         this.gsonProvider.registerTypeAdapter(Tag.class, new TagSerializer());
@@ -69,7 +68,7 @@ public class LoggerPreferenceFactory extends PreferenceFactory {
 
     @Override
     protected void registerSettings() {
-        prefs.registerSetting(PREF_LOG_LEVEL, Level.class, Level.INFO);
+        prefs.registerSetting(PREF_LOG_LEVEL, LogLevel.class, LogLevel.INFO);
         prefs.registerSetting(PREF_LOG_TO_CONSOLE, Boolean.class, false);
         prefs.registerSetting(PREF_LOG_TABLE_SETTINGS, new TypeToken<List<LogTableColumn>>() {
         }.getType(), defaultlogTableColumns);

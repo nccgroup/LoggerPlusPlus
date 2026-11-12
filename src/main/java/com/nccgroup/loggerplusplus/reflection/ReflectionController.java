@@ -9,6 +9,7 @@ import com.nccgroup.loggerplusplus.reflection.filter.BlacklistFilter;
 import com.nccgroup.loggerplusplus.reflection.filter.LengthFilter;
 import com.nccgroup.loggerplusplus.reflection.filter.ParameterFilter;
 import com.nccgroup.loggerplusplus.reflection.transformer.*;
+import com.nccgroup.loggerplusplus.util.AsciiCase;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.BooleanRenderer;
 import com.nccgroup.loggerplusplus.util.userinterface.renderer.ButtonRenderer;
 
@@ -19,7 +20,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class ReflectionController {
 
@@ -61,25 +61,76 @@ public class ReflectionController {
         return false;
     }
     
+    /** Whether {@code responseBody} reflects the parameter's value; see {@link Scan#reflects}. */
     public boolean validReflection(String responseBody, HttpParameter param){
-        if(param.name().isEmpty() || param.value().isEmpty()) return false;
+        return new Scan(responseBody).reflects(param);
+    }
 
-        if(responseBody.contains(param.value())) return true;
+    /** A search of one response body, reused for every parameter of its request. */
+    public Scan scan(String responseBody){
+        return new Scan(responseBody);
+    }
 
-        for (ParameterValueTransformer transformer : transformerList) {
-            try {
-                if (transformer.isEnabled()){
-                    Pattern pattern = Pattern.compile("\\Q"+transformer.transform(param.value())+"\\E", Pattern.CASE_INSENSITIVE);
-                    if(pattern.matcher(responseBody).find()){
-                        return true;
-                    }
-                }
+    /**
+     * One response body searched for parameter values. The body is folded to lower case at most
+     * once, however many parameters and encodings are looked for, and each search is a plain
+     * substring search: compiling a pattern per value and encoding, and matching it against the
+     * whole body, was 96 % of the cost of logging a message.
+     */
+    public final class Scan {
+        private final String body;
+        private String loweredBody;
 
-            }catch (Exception e){
-                //Transformation failed. Ignore and continue.
-            }
+        private Scan(String body){
+            this.body = body;
         }
-        return false;
+
+        /**
+         * Whether the body contains the parameter's value as sent, or, without regard to the case
+         * of the letters A to Z, in one of the enabled encodings.
+         */
+        public boolean reflects(HttpParameter param){
+            String value = param.value();
+            if(param.name().isEmpty() || value.isEmpty()) return false;
+
+            if(body.contains(value)) return true;
+
+            //Most encodings leave most values as they are: each distinct form is searched for once.
+            String[] searched = new String[transformerList.size()];
+            int searchedCount = 0;
+            for (ParameterValueTransformer transformer : transformerList) {
+                if (!transformer.isEnabled()) continue;
+
+                String encoded;
+                try {
+                    encoded = AsciiCase.lower(transformer.transform(value));
+                }catch (Exception e){
+                    //Transformation failed. Ignore and continue.
+                    continue;
+                }
+                if (contains(searched, searchedCount, encoded)) continue;
+
+                searched[searchedCount++] = encoded;
+                if (loweredBody().contains(encoded)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private String loweredBody(){
+            if (loweredBody == null) {
+                loweredBody = AsciiCase.lower(body);
+            }
+            return loweredBody;
+        }
+
+        private static boolean contains(String[] values, int count, String value){
+            for (int i = 0; i < count; i++) {
+                if (values[i].equals(value)) return true;
+            }
+            return false;
+        }
     }
 
     public void showFilterConfigDialog(){

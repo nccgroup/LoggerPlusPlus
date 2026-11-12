@@ -11,6 +11,6 @@ public class JsonEscapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.escapeJson(string);
+        return needsNoEscaping(string) ? string : StringEscapeUtils.escapeJson(string);
     }
 }

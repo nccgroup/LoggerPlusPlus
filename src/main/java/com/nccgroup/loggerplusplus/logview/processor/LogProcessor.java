@@ -1,11 +1,21 @@
 package com.nccgroup.loggerplusplus.logview.processor;
 
+import static com.nccgroup.loggerplusplus.util.Globals.*;
+
 import burp.api.montoya.core.Annotations;
 import burp.api.montoya.core.ToolType;
-import burp.api.montoya.http.handler.*;
+import burp.api.montoya.http.handler.HttpHandler;
+import burp.api.montoya.http.handler.HttpRequestToBeSent;
+import burp.api.montoya.http.handler.HttpResponseReceived;
+import burp.api.montoya.http.handler.RequestToBeSentAction;
+import burp.api.montoya.http.handler.ResponseReceivedAction;
+import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.http.message.responses.HttpResponse;
 import burp.api.montoya.proxy.ProxyHttpRequestResponse;
-import burp.api.montoya.proxy.http.*;
+import burp.api.montoya.proxy.http.InterceptedResponse;
+import burp.api.montoya.proxy.http.ProxyResponseHandler;
+import burp.api.montoya.proxy.http.ProxyResponseReceivedAction;
+import burp.api.montoya.proxy.http.ProxyResponseToBeSentAction;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.exports.ExportController;
@@ -15,391 +25,411 @@ import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
+import com.nccgroup.loggerplusplus.logview.logtable.LogTableModel;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
 import com.nccgroup.loggerplusplus.util.PausableThreadPoolExecutor;
+import java.util.ConcurrentModificationException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import javax.swing.SwingUtilities;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import javax.swing.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static com.nccgroup.loggerplusplus.util.Globals.*;
 
 /**
- * Created by corey on 07/09/17.
+ * Turns the requests and responses Burp reports into log entries.
+ *
+ * <p>Burp calls the handlers on its own threads, once for each message of every tool, so they do
+ * the least possible: decide whether the message is logged, note when it arrived, and queue it. A
+ * fixed pool of worker threads reads the messages, tests the filters and feeds the exporters; a
+ * {@link TableFeed} then hands the entries to the table on the event dispatch thread.
+ *
+ * <p>A request and its response are reported separately. They are matched by an identifier that the
+ * request carries in its comment until its response arrives.
  */
-@Log4j2
 public class LogProcessor {
-    public static final SimpleDateFormat LOGGER_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    public static final SimpleDateFormat SERVER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
-    private final LogTableController logTableController;
+    public static final LogDateFormat LOGGER_DATE_FORMAT = new LogDateFormat();
+
     private final ExportController exportController;
     private final Preferences preferences;
-    private final ConcurrentHashMap<Integer, LogEntry> entriesPendingProcessing;
-    private final ConcurrentHashMap<Integer, Future<LogEntry>> entryProcessingFutures;
+    private final TableFeed tableFeed;
+
+    /** Entries whose request no worker has started reading; a response can still be attached. */
+    private final ConcurrentHashMap<Integer, LogEntry> entriesPendingProcessing =
+            new ConcurrentHashMap<>();
+
+    /** Entries being read, or read and waiting for their response, by identifier. */
+    private final ConcurrentHashMap<Integer, Future<LogEntry>> entryProcessingFutures =
+            new ConcurrentHashMap<>();
+
+    private final AtomicInteger lastIdentifier = new AtomicInteger();
     private final PausableThreadPoolExecutor entryProcessExecutor;
     private final PausableThreadPoolExecutor entryImportExecutor;
     private final ScheduledExecutorService cleanupExecutor;
 
-    @Getter
-    private final HttpHandler httpHandler;
-    @Getter
-    private final ProxyResponseHandler proxyResponseHandler;
+    @Getter private final HttpHandler httpHandler;
+    @Getter private final ProxyResponseHandler proxyResponseHandler;
 
-    Logger logger = LogManager.getLogger(this);
+    public LogProcessor(LogTableController logTableController, ExportController exportController) {
+        this(
+                logTableController.getLogTableModel(),
+                exportController,
+                LoggerPlusPlus.instance.getPreferencesController().getPreferences(),
+                SwingUtilities::invokeLater);
+    }
 
     /**
-     * Capture incoming requests and responses.
-     * Logic to allow requests independently and match them to responses once received.
-     * TODO SQLite integration
+     * @param eventThread runs a task on the event dispatch thread, later; a caller that has no
+     *     user interface passes its own
      */
-    public LogProcessor(LogTableController logTableController, ExportController exportController) {
-        this.logTableController = logTableController;
+    LogProcessor(
+            LogTableModel table,
+            ExportController exportController,
+            Preferences preferences,
+            Executor eventThread) {
         this.exportController = exportController;
-        this.preferences = LoggerPlusPlus.instance.getPreferencesController().getPreferences();
+        this.preferences = preferences;
+        this.tableFeed = new TableFeed(table, eventThread);
 
-        this.entriesPendingProcessing = new ConcurrentHashMap<>();
-        this.entryProcessingFutures = new ConcurrentHashMap<>();
-        this.entryProcessExecutor = new PausableThreadPoolExecutor(0, 2147483647,
-                30L, TimeUnit.SECONDS, new SynchronousQueue<>(), new NamedThreadFactory("LPP-LogManager"));
-        this.entryImportExecutor = new PausableThreadPoolExecutor(0, 10, 60L,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("LPP-Import"));
+        // As many workers as processors, and a queue. One thread per message in flight, as before,
+        // meant thousands of threads during a scan, each taking memory and processor time from
+        // Burp.
+        // Tasks start in the order they were queued, which the matching of responses relies on.
+        int workers = Math.max(2, Runtime.getRuntime().availableProcessors());
+        this.entryProcessExecutor =
+                new PausableThreadPoolExecutor(
+                        workers,
+                        workers,
+                        30L,
+                        TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(),
+                        new NamedThreadFactory("LPP-LogManager"));
+        this.entryProcessExecutor.allowCoreThreadTimeOut(true);
+        this.entryImportExecutor =
+                new PausableThreadPoolExecutor(
+                        0,
+                        10,
+                        60L,
+                        TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<>(),
+                        new NamedThreadFactory("LPP-Import"));
 
-        //Create incomplete request cleanup thread so map doesn't get too big.
-        this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LPP-LogManager-Cleanup"));
-        this.cleanupExecutor.scheduleAtFixedRate(new AbandonedRequestCleanupRunnable(),30, 30, TimeUnit.SECONDS);
+        // Forget requests whose response never came, so that the map of them does not grow forever.
+        this.cleanupExecutor =
+                Executors.newSingleThreadScheduledExecutor(
+                        new NamedThreadFactory("LPP-LogManager-Cleanup"));
+        this.cleanupExecutor.scheduleAtFixedRate(
+                this::forgetAbandonedRequests, 30, 30, TimeUnit.SECONDS);
 
-        //TODO Enable new logging API when support for matching requests and their responses improves...
         this.httpHandler = createHttpHandler();
         this.proxyResponseHandler = createProxyResponseHandler();
     }
 
-    private HttpHandler createHttpHandler(){
+    private HttpHandler createHttpHandler() {
         return new HttpHandler() {
             @Override
-            public RequestToBeSentAction handleHttpRequestToBeSent(HttpRequestToBeSent requestToBeSent) {
-                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(requestToBeSent.toolSource().toolType())
-                        || !LoggerPlusPlus.isUrlInScope(requestToBeSent.url())){
+            public RequestToBeSentAction handleHttpRequestToBeSent(
+                    HttpRequestToBeSent requestToBeSent) {
+                ToolType tool = requestToBeSent.toolSource().toolType();
+                if (!isLogged(tool, requestToBeSent.url())) {
                     return RequestToBeSentAction.continueWith(requestToBeSent);
                 }
-                Date arrivalTime = new Date();
-
-                //If we're handling a new request, create a log entry.
-                //We must also handle proxy messages here, since the HTTP listener operates after the proxy listener
-                final LogEntry logEntry = new LogEntry(requestToBeSent.toolSource().toolType(), requestToBeSent, arrivalTime);
-
-                //Set the entry's identifier to the HTTP request's hashcode.
-                // For non-proxy messages, this doesn't change when we receive the response
-                Integer identifier = System.identityHashCode(requestToBeSent);
-
-                logEntry.setIdentifier(identifier);
-                Annotations annotations = LogProcessorHelper.addIdentifierInComment(identifier, requestToBeSent.annotations());
-                //Submit a new task to process the entry
-                submitNewEntryProcessingRunnable(logEntry);
-
+                // Proxy requests are logged here too: this handler runs after the proxy's own.
+                Integer identifier = logRequest(tool, requestToBeSent, new Date());
+                Annotations annotations =
+                        LogProcessorHelper.addIdentifierInComment(
+                                identifier, requestToBeSent.annotations());
                 return RequestToBeSentAction.continueWith(requestToBeSent, annotations);
             }
 
             @Override
-            public ResponseReceivedAction handleHttpResponseReceived(HttpResponseReceived responseReceived) {
-                if (!(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(responseReceived.toolSource().toolType())
-                        || !LoggerPlusPlus.isUrlInScope(responseReceived.initiatingRequest().url())){
+            public ResponseReceivedAction handleHttpResponseReceived(
+                    HttpResponseReceived responseReceived) {
+                ToolType tool = responseReceived.toolSource().toolType();
+                if (!isLogged(tool, responseReceived.initiatingRequest().url())) {
                     return ResponseReceivedAction.continueWith(responseReceived);
                 }
                 Date arrivalTime = new Date();
-
                 Annotations annotations = responseReceived.annotations();
-                if (responseReceived.toolSource().isFromTool(ToolType.PROXY)) {
-                    //If the request came from the proxy, the response isn't final yet.
-                    //Instead, the response must be taken from the proxy response handler.
-                    //Just tag the comment with the identifier so we can match it up later.
-//                    Integer identifier = System.identityHashCode(responseReceived.initiatingRequest());
-//                    annotations = LogProcessorHelper.addIdentifierInComment(identifier, annotations);
-//                    return ResponseResult.responseResult(response, annotations); //Process proxy responses using processProxyMessage
-                } else {
-                    //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
-                    Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(responseReceived.annotations());
-                    Integer identifier = (Integer) identifierAndAnnotation[0]; //TODO Ew.
-                    annotations = (Annotations) identifierAndAnnotation[1];
-                    updateRequestWithResponse(identifier, arrivalTime, responseReceived);
+                // A proxy response is not final here: other extensions may still change it. It is
+                // logged by the proxy response handler below, and keeps its identifier until then.
+                if (!responseReceived.toolSource().isFromTool(ToolType.PROXY)) {
+                    Object[] identifierAndAnnotations =
+                            LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(
+                                    annotations);
+                    annotations = (Annotations) identifierAndAnnotations[1];
+                    logResponse(
+                            (Integer) identifierAndAnnotations[0], responseReceived, arrivalTime);
                 }
                 return ResponseReceivedAction.continueWith(responseReceived, annotations);
             }
         };
     }
 
-    private ProxyResponseHandler createProxyResponseHandler(){
+    private ProxyResponseHandler createProxyResponseHandler() {
         return new ProxyResponseHandler() {
             @Override
-            public ProxyResponseReceivedAction handleResponseReceived(InterceptedResponse interceptedResponse) {
-                return ProxyResponseReceivedAction.continueWith(interceptedResponse); //Do nothing
+            public ProxyResponseReceivedAction handleResponseReceived(
+                    InterceptedResponse interceptedResponse) {
+                return ProxyResponseReceivedAction.continueWith(interceptedResponse);
             }
 
             @Override
-            public ProxyResponseToBeSentAction handleResponseToBeSent(InterceptedResponse interceptedResponse) {
-                if(!((boolean) preferences.getSetting(PREF_ENABLED)) || !((boolean) preferences.getSetting(PREF_LOG_PROXY))
-                        || !LoggerPlusPlus.isUrlInScope(interceptedResponse.initiatingRequest().url())) {
+            public ProxyResponseToBeSentAction handleResponseToBeSent(
+                    InterceptedResponse interceptedResponse) {
+                if (!isLogged(ToolType.PROXY, interceptedResponse.initiatingRequest().url())) {
                     return ProxyResponseToBeSentAction.continueWith(interceptedResponse);
                 }
-
                 Date arrivalTime = new Date();
-                Object[] identifierAndAnnotation = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(interceptedResponse.annotations());
-                Integer identifier = (Integer) identifierAndAnnotation[0]; //TODO Ew.
-                Annotations annotations = (Annotations) identifierAndAnnotation[1];
-
-                updateRequestWithResponse(identifier, arrivalTime, interceptedResponse);
-                return ProxyResponseToBeSentAction.continueWith(interceptedResponse, annotations);
+                Object[] identifierAndAnnotations =
+                        LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(
+                                interceptedResponse.annotations());
+                logResponse(
+                        (Integer) identifierAndAnnotations[0], interceptedResponse, arrivalTime);
+                return ProxyResponseToBeSentAction.continueWith(
+                        interceptedResponse, (Annotations) identifierAndAnnotations[1]);
             }
         };
     }
 
-
-//    /**
-//     * Process messages from all tools.
-//     * Adds to queue for later processing.
-//     * Note: processProxyMessage runs *after* processHttpMessage, responses from the proxy tool are left for that method.
-//     *
-//     * @param toolFlag      Tool used to make request
-//     * @param isRequestOnly If the message is request only or complete with response
-//     * @param httpMessage   The request and potentially response received.
-//     */
-//    @Override
-//    public void processHttpMessage(final int toolFlag, final boolean isRequestOnly, final IHttpRequestResponse httpMessage) {
-//        if (httpMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
-//        Date arrivalTime = new Date();
-//
-//        if (isRequestOnly) {
-//            //If we're handling a new request, create a log entry.
-//            //We must also handle proxy messages here, since the HTTP listener operates after the proxy listener
-//            final LogEntry logEntry = new LogEntry(toolFlag, arrivalTime, httpMessage);
-//
-//            //Set the entry's identifier to the HTTP request's hashcode.
-//            // For non-proxy messages, this doesn't change when we receive the response
-//            logEntry.setIdentifier(System.identityHashCode(httpMessage.getRequest()));
-//            //Submit a new task to process the entry
-//            submitNewEntryProcessingRunnable(logEntry);
-//        } else {
-//            if (toolFlag == IBurpExtendermontoya.TOOL_PROXY) {
-//                //If the request came from the proxy, the response isn't final yet.
-//                //Just tag the comment with the identifier so we can match it up later.
-//                Integer identifier = System.identityHashCode(httpMessage.getRequest());
-//                LogProcessorHelper.addIdentifierInComment(identifier, httpMessage);
-//                return; //Process proxy responses using processProxyMessage
-//            } else {
-//                //Otherwise, we have the final HTTP response, and can use the request hashcode to match it up with the log entry.
-//                Integer identifier = System.identityHashCode(httpMessage.getRequest());
-//                updateRequestWithResponse(identifier, arrivalTime, httpMessage);
-//            }
-//        }
-//    }
-//
-//    /**
-//     * Since this method runs after processHttpMessage, we must use it to get the final response for proxy tool requests
-//     * otherwise, changes to the message by other tools using processProxyMessage would not be seen!
-//     *
-//     * @param isRequestOnly
-//     * @param proxyMessage
-//     */
-//    @Override
-//    public void processProxyMessage(final boolean isRequestOnly, final IInterceptedProxyMessage proxyMessage) {
-//        final int toolFlag = IBurpExtendermontoya.TOOL_PROXY;
-//        if (proxyMessage == null || !(Boolean) preferences.getSetting(PREF_ENABLED) || !isValidTool(toolFlag)) return;
-//        Date arrivalTime = new Date();
-//
-//        if (isRequestOnly) {
-//
-//        } else { //We only want to handle responses.
-//            Integer identifier = LogProcessorHelper.extractAndRemoveIdentifierFromRequestResponseComment(proxyMessage.getMessageInfo());
-//            updateRequestWithResponse(identifier, arrivalTime, proxyMessage.getMessageInfo());
-//        }
-//    }
+    private boolean isLogged(ToolType tool, String url) {
+        return (Boolean) preferences.getSetting(PREF_ENABLED)
+                && isValidTool(tool)
+                && LoggerPlusPlus.isUrlInScope(url);
+    }
 
     /**
-     * When a response comes in, determine if the request has already been processed or not.
-     * If it has not yet been processed, add the response information to the entry and let the original job handle it.
-     * Otherwise, create a new job to process the response.
-     * Unknown UUID's signify the response arrived after the pending request was cleaned up.
+     * Queues a request for logging.
      *
-     * @param entryIdentifier The unique UUID for the log entry.
-     * @param arrivalTime     The arrival time of the response.
-     * @param response The HTTP request response object.
+     * @return the identifier to pass to {@link #logResponse} when its response arrives
      */
-    private void updateRequestWithResponse(Integer entryIdentifier, Date arrivalTime, HttpResponse response) {
-        log.debug("Updating entry with response for ID: " + entryIdentifier);
-        if (entriesPendingProcessing.containsKey(entryIdentifier)) {
-            //Not yet started processing the entry, we can add the response so it is processed in the first pass
-            final LogEntry logEntry = entriesPendingProcessing.get(entryIdentifier);
+    Integer logRequest(ToolType tool, HttpRequest request, Date arrivalTime) {
+        LogEntry logEntry = new LogEntry(tool, request, arrivalTime);
+        // A counter, not the request object's identity hash as before: two live objects can share
+        // a hash, and two requests sharing an identifier would get each other's responses.
+        Integer identifier = lastIdentifier.incrementAndGet();
+        logEntry.setIdentifier(identifier);
 
-            if (response instanceof InterceptedResponse) {
-                // Raises java.lang.UnsupportedOperationException: Not yet implemented
-//                logEntry.setClientIP(String.valueOf(((InterceptedResponse) response).sourceIpAddress()));
-                logEntry.setListenerInterface(((InterceptedResponse) response).listenerInterface());
-            }
+        entriesPendingProcessing.put(identifier, logEntry);
+        FutureTask<LogEntry> processing = new FutureTask<>(() -> processNewEntry(logEntry));
+        entryProcessingFutures.put(identifier, processing);
+        entryProcessExecutor.execute(processing);
+        return identifier;
+    }
 
-            //Update the response with the new one, and tell it when it arrived.
-            logEntry.addResponse(response, arrivalTime);
-
-            //Do nothing now, there's already a runnable submitted to process it somewhere in the queue.
+    /**
+     * Attaches a response to the request logged under {@code identifier}. If no worker has started
+     * on the request, both are read in one pass; otherwise the response is read once the request
+     * has been. An identifier that is null or unknown (the request was not logged, or was given up
+     * on after the response timeout) is ignored.
+     */
+    void logResponse(Integer identifier, HttpResponse response, Date arrivalTime) {
+        if (identifier == null) {
             return;
+        }
+        // The map runs this while holding the entry's place in it, and the worker takes the entry
+        // out of the map before reading it: so either the worker has not started and will see the
+        // response, or the entry is no longer pending and the response is queued behind it below.
+        LogEntry stillPending =
+                entriesPendingProcessing.computeIfPresent(
+                        identifier,
+                        (id, pending) -> {
+                            attachResponse(pending, response, arrivalTime);
+                            return pending;
+                        });
+        if (stillPending != null) {
+            return;
+        }
+        Future<LogEntry> processing = entryProcessingFutures.get(identifier);
+        if (processing != null) {
+            entryProcessExecutor.execute(() -> processResponse(processing, response, arrivalTime));
+        }
+    }
 
-        } else if (entryProcessingFutures.containsKey(entryIdentifier)) {
-            //Already started processing.
+    /** Gives the entry its response and, for a proxied one, the proxy listener it came through. */
+    private static void attachResponse(LogEntry logEntry, HttpResponse response, Date arrivalTime) {
+        if (response instanceof InterceptedResponse intercepted) {
+            logEntry.setListenerInterface(intercepted.listenerInterface());
+        }
+        logEntry.addResponse(response, arrivalTime);
+    }
 
-            //Get the processing thread
-            Future<LogEntry> processingFuture = entryProcessingFutures.get(entryIdentifier);
+    /** On a worker: reads a new entry and, unless a filter says not to log it, shows it. */
+    private LogEntry processNewEntry(LogEntry logEntry) {
+        Integer identifier = logEntry.getIdentifier();
+        try {
+            entriesPendingProcessing.remove(identifier);
+            LogEntry result = processEntry(logEntry);
+            if (result == null) {
+                entryProcessingFutures.remove(identifier);
+                return null;
+            }
+            addNewEntry(logEntry, true);
+            if (result.getStatus() == Status.PROCESSED) {
+                entryProcessingFutures.remove(identifier);
+            }
+            // Otherwise the future stays, for the response to find the entry by.
+            return result;
+        } catch (RuntimeException e) {
+            entryProcessingFutures.remove(identifier);
+            Log.error("Could not log a request to " + logEntry.getUrlString(), e);
+            return null;
+        }
+    }
 
-            //Submit a job for the processing of its response.
-            //This will block on the request finishing processing, then update the response and process it separately.
-            entryProcessExecutor.submit(createEntryUpdateRunnable(processingFuture, response, arrivalTime));
-        } else {
-            //Unknown Identifier. Potentially for a request which was ignored or cleaned up already?
+    /** On a worker: reads the response of an entry whose request another task has read. */
+    private void processResponse(
+            Future<LogEntry> processing, HttpResponse response, Date arrivalTime) {
+        LogEntry logEntry;
+        try {
+            logEntry = processing.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        } catch (ExecutionException e) {
+            return;
+        }
+        if (logEntry == null) {
+            return; // The request was filtered out, so its response is not wanted either.
+        }
+
+        Integer identifier = logEntry.getIdentifier();
+        try {
+            LogEntry updated;
+            synchronized (logEntry) {
+                attachResponse(logEntry, response, arrivalTime);
+                updated = processEntry(logEntry);
+            }
+            if (updated == null) {
+                // With its response, the entry now matches the do-not-log filter.
+                removeExistingEntry(logEntry);
+                entryProcessingFutures.remove(identifier);
+                return;
+            }
+            if (logEntry.getStatus() == Status.PROCESSED) {
+                entryProcessingFutures.remove(identifier);
+            }
+            updateExistingEntry(logEntry);
+        } catch (RuntimeException e) {
+            entryProcessingFutures.remove(identifier);
+            Log.error("Could not log the response from " + logEntry.getUrlString(), e);
         }
     }
 
     /**
-     * Create a runnable to be used in an executor which will process a
-     * HTTP object and store the results in the provided LogEntry object.
-     * @param logEntry The LogEntry object which will store the processed results
-     * @return LogEntry Stores the processed results
+     * Reads what has arrived of an entry and tests it against the do-not-log filter, the colour
+     * rules and the tags.
+     *
+     * @return the entry, or null if the do-not-log filter matches it
      */
-    LogEntry processEntry(final LogEntry logEntry){
+    LogEntry processEntry(final LogEntry logEntry) {
         synchronized (logEntry) {
             logEntry.process();
 
-            //If the status has been changed
             if (logEntry.getStatus() != logEntry.getPreviousStatus()) {
-                FilterExpression doNotLogExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
-                if(doNotLogExpression != null){
-                    if (logEntry.getStatus() == Status.PROCESSED || !doNotLogExpression.getRequiredContexts().contains(FieldGroup.RESPONSE)) {
-                        //If we're dealing with a complete entry, or if the filter doesn't need the response.
-                        if(doNotLogExpression.matches(logEntry)){
-                            return null;
-                        }
-                    }
+                FilterExpression doNotLogExpression =
+                        preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
+                // A filter that looks at the response can only be tested once the response is here.
+                if (doNotLogExpression != null
+                        && (logEntry.getStatus() == Status.PROCESSED
+                                || !doNotLogExpression
+                                        .getRequiredContexts()
+                                        .contains(FieldGroup.RESPONSE))
+                        && doNotLogExpression.matches(logEntry)) {
+                    return null;
                 }
 
-                //Check against color filters
-                HashMap<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
-                for (TableColorRule tableColorRule : colorFilters.values()) {
-                    logEntry.testColorFilter(tableColorRule, true);
-                }
-
-                //Check against tags
-                HashMap<UUID, Tag> tagMap = preferences.getSetting(PREF_TAG_FILTERS);
-                for (Tag tag : tagMap.values()) {
-                    logEntry.testTag(tag, true);
-                }
+                Map<UUID, TableColorRule> colorFilters = preferences.getSetting(PREF_COLOR_FILTERS);
+                forEachRule(colorFilters, rule -> logEntry.testColorFilter(rule, true));
+                Map<UUID, Tag> tags = preferences.getSetting(PREF_TAG_FILTERS);
+                forEachRule(tags, tag -> logEntry.testTag(tag, true));
             }
         }
         return logEntry;
     }
 
-    private void submitNewEntryProcessingRunnable(final LogEntry logEntry){
-        log.debug("Adding log process request for ID: " + logEntry.getIdentifier());
-        entriesPendingProcessing.put(logEntry.getIdentifier(), logEntry);
-        RunnableFuture<LogEntry> processingRunnable = new FutureTask<>(() -> {
-            entriesPendingProcessing.remove(logEntry.getIdentifier());
-            LogEntry result = processEntry(logEntry);
-
-            if(result == null) {
-                entryProcessingFutures.remove(logEntry.getIdentifier());
-                return null; //Ignored entry. Skip it.
-            }else{
-                addNewEntry(logEntry, true);
-
-                if(result.getStatus() == Status.PROCESSED){
-                    //If the entry was fully processed, remove it from the processing list.
-                    entryProcessingFutures.remove(logEntry.getIdentifier());
-                }else{
-                    //We're waiting on the response, we'll use this future to know we're done later.
+    /**
+     * Applies a test to every rule. The user may add or remove a rule on another thread while this
+     * runs; the tests can safely be repeated, so they are, a few times at most.
+     */
+    private static <T> void forEachRule(Map<UUID, T> rules, Consumer<T> test) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                for (T rule : rules.values()) {
+                    test.accept(rule);
                 }
-                return result;
+                return;
+            } catch (ConcurrentModificationException editedMeanwhile) {
+                // Try again with the rules as they are now.
             }
-        });
-        entryProcessingFutures.put(logEntry.getIdentifier(), processingRunnable);
-        entryProcessExecutor.submit(processingRunnable);
+        }
     }
 
-    private RunnableFuture<LogEntry> createEntryUpdateRunnable(final Future<LogEntry> processingFuture,
-                                                              final HttpResponse requestResponse,
-                                                              final Date arrivalTime){
-        return new FutureTask<>(() -> {
-            //Block until initial processing is complete.
-            LogEntry logEntry = processingFuture.get();
-            if (logEntry == null) {
-                //Request was filtered during response processing. We can just ignore the response.
-                return null;
-            }
-
-            //Request was processed successfully... now process the response.
-            if (requestResponse instanceof InterceptedResponse) {
-                // Raises java.lang.UnsupportedOperationException: Not yet implemented
-//                logEntry.setClientIP(String.valueOf(((InterceptedResponse) requestResponse).sourceIpAddress()));
-                logEntry.setListenerInterface(((InterceptedResponse) requestResponse).listenerInterface());
-            }
-
-            logEntry.addResponse(requestResponse, arrivalTime);
-            LogEntry updatedEntry = processEntry(logEntry);
-
-            if(updatedEntry == null){
-                //Response must have been filtered out. Delete the existing entry and stop processing
-                removeExistingEntry(logEntry);
-                entryProcessingFutures.remove(logEntry.getIdentifier());
-                return null;
-            }
-
-            if (logEntry.getStatus() == Status.PROCESSED) {
-                //If the entry was fully processed, remove it from the processing list.
-                entryProcessingFutures.remove(logEntry.getIdentifier());
-            }
-
-            updateExistingEntry(logEntry);
-
-            return logEntry;
-        });
-    }
-
-    public EntryImportWorker.Builder createEntryImportBuilder(){
+    public EntryImportWorker.Builder createEntryImportBuilder() {
         return new EntryImportWorker.Builder(this);
     }
 
     public void importProxyHistory(boolean sendToAutoExporters) {
-        //TODO Fix time bug for imported results. Multithreading means results will likely end up mixed.
-        //TODO Remove to more suitable UI class and show dialog
-
-        //Build list of entries to import
         List<ProxyHttpRequestResponse> proxyHistory = LoggerPlusPlus.montoya.proxy().history();
         int maxEntries = preferences.getSetting(PREF_MAXIMUM_ENTRIES);
         int startIndex = Math.max(proxyHistory.size() - maxEntries, 0);
-        List<ProxyHttpRequestResponse> entriesToImport = proxyHistory.subList(startIndex, proxyHistory.size());
+        List<ProxyHttpRequestResponse> entriesToImport =
+                proxyHistory.subList(startIndex, proxyHistory.size());
 
-        //Build and start import worker
-        EntryImportWorker importWorker = new EntryImportWorker.Builder(this)
-                .setOriginatingTool(ToolType.PROXY)
-                .setProxyEntries(entriesToImport)
-                .setSendToAutoExporters(sendToAutoExporters).build();
+        EntryImportWorker importWorker =
+                new EntryImportWorker.Builder(this)
+                        .setOriginatingTool(ToolType.PROXY)
+                        .setProxyEntries(entriesToImport)
+                        .setSendToAutoExporters(sendToAutoExporters)
+                        .build();
 
         importWorker.execute();
     }
 
-    private boolean isValidTool(ToolType toolType){
-        if(preferences.getSetting(PREF_LOG_GLOBAL)) return true;
+    private boolean isValidTool(ToolType toolType) {
+        if (preferences.getSetting(PREF_LOG_GLOBAL)) return true;
 
-        switch (toolType){
-            case PROXY -> {return preferences.getSetting(PREF_LOG_PROXY);}
-            case INTRUDER -> {return preferences.getSetting(PREF_LOG_INTRUDER);}
-            case REPEATER -> {return preferences.getSetting(PREF_LOG_REPEATER);}
-            case EXTENSIONS -> {return preferences.getSetting(PREF_LOG_EXTENSIONS);}
-            case SCANNER -> {return preferences.getSetting(PREF_LOG_SCANNER);}
-            case SEQUENCER -> {return preferences.getSetting(PREF_LOG_SEQUENCER);}
-            case SUITE -> {return preferences.getSetting(PREF_LOG_SUITE);}
-            case RECORDED_LOGIN_REPLAYER -> {return preferences.getSetting(PREF_LOG_RECORDED_LOGINS);}
-            default -> {return false;}
+        switch (toolType) {
+            case PROXY -> {
+                return preferences.getSetting(PREF_LOG_PROXY);
+            }
+            case INTRUDER -> {
+                return preferences.getSetting(PREF_LOG_INTRUDER);
+            }
+            case REPEATER -> {
+                return preferences.getSetting(PREF_LOG_REPEATER);
+            }
+            case EXTENSIONS -> {
+                return preferences.getSetting(PREF_LOG_EXTENSIONS);
+            }
+            case SCANNER -> {
+                return preferences.getSetting(PREF_LOG_SCANNER);
+            }
+            case SEQUENCER -> {
+                return preferences.getSetting(PREF_LOG_SEQUENCER);
+            }
+            case SUITE -> {
+                return preferences.getSetting(PREF_LOG_SUITE);
+            }
+            case RECORDED_LOGIN_REPLAYER -> {
+                return preferences.getSetting(PREF_LOG_RECORDED_LOGINS);
+            }
+            default -> {
+                return false;
+            }
         }
     }
 
@@ -409,25 +439,21 @@ public class LogProcessor {
         this.entryImportExecutor.shutdownNow();
     }
 
+    /** From a worker: hands a new entry to the exporters that run by themselves, and the table. */
     void addNewEntry(LogEntry logEntry, boolean sendToAutoExporters) {
-        FilterExpression doNotLogExpression = preferences.getSetting(PREF_DO_NOT_LOG_IF_MATCH);
-        SwingUtilities.invokeLater(() -> {
-            if (sendToAutoExporters) exportController.exportNewEntry(logEntry);
-            logTableController.getLogTableModel().addEntry(logEntry);
-        });
+        if (sendToAutoExporters) {
+            exportController.exportNewEntry(logEntry);
+        }
+        tableFeed.added(logEntry);
     }
 
     void updateExistingEntry(LogEntry logEntry) {
         exportController.exportUpdatedEntry(logEntry);
-        SwingUtilities.invokeLater(() -> {
-            logTableController.getLogTableModel().updateEntry(logEntry);
-        });
+        tableFeed.updated(logEntry);
     }
 
-    void removeExistingEntry(LogEntry logEntry){
-        SwingUtilities.invokeLater(() -> {
-            logTableController.getLogTableModel().removeLogEntry(logEntry);
-        });
+    void removeExistingEntry(LogEntry logEntry) {
+        tableFeed.removed(logEntry);
     }
 
     PausableThreadPoolExecutor getEntryImportExecutor() {
@@ -438,49 +464,41 @@ public class LogProcessor {
         return entryProcessExecutor;
     }
 
+    /** How many requests are waiting for a worker or for their response. */
+    int requestsInFlight() {
+        return entryProcessingFutures.size();
+    }
 
-    /*************************
-     *
-     * Private worker implementations
-     *
-     *************************/
-
-    private class AbandonedRequestCleanupRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            long timeNow = new Date().getTime();
-            synchronized (entryProcessingFutures){
-                try {
-                    Iterator<Map.Entry<Integer, Future<LogEntry>>> iter
-                            = entryProcessingFutures.entrySet().iterator();
-
-                    while (iter.hasNext()) {
-                        Map.Entry<Integer, Future<LogEntry>> abandonedEntry = iter.next();
-                        if(abandonedEntry.getValue().isDone()){
-                            LogEntry logEntry = abandonedEntry.getValue().get();
-                            if (logEntry.getRequestDateTime() == null) {
-                                //Should never be the case.
-                                //Entries should always have request times unless they are imported,
-                                //In which case they will never be awaiting a response so never in this list.
-                                continue;
-                            }
-                            long entryTime = logEntry.getRequestDateTime().getTime();
-                            long responseTimeout = 1000 * ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)).longValue();
-                            if (timeNow - entryTime > responseTimeout) {
-                                iter.remove();
-                                if (logEntry.getTool() == ToolType.PROXY) {
-                                    //Remove the identifier from the comment.
-                                    //TODO Fix Comment cleanup
-//                                    LogEntry.extractAndRemoveIdentifierFromComment(logEntry);
-                                }
-                                logEntry.setComment(logEntry.getComment() + " Timed Out");
-                            }
-                        }
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+    /**
+     * Gives up on requests that were read longer ago than the response timeout and still have no
+     * response: they are marked as timed out, and a response arriving later is ignored.
+     */
+    void forgetAbandonedRequests() {
+        long now = System.currentTimeMillis();
+        long responseTimeout =
+                TimeUnit.SECONDS.toMillis(
+                        ((Integer) preferences.getSetting(PREF_RESPONSE_TIMEOUT)));
+        for (Map.Entry<Integer, Future<LogEntry>> waiting : entryProcessingFutures.entrySet()) {
+            Future<LogEntry> processing = waiting.getValue();
+            if (!processing.isDone()) {
+                continue;
+            }
+            LogEntry logEntry;
+            try {
+                logEntry = processing.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (ExecutionException e) {
+                logEntry = null;
+            }
+            if (logEntry == null) {
+                entryProcessingFutures.remove(waiting.getKey(), processing);
+            } else if (now - logEntry.getRequestDateTime().getTime() > responseTimeout) {
+                entryProcessingFutures.remove(waiting.getKey(), processing);
+                String comment = logEntry.getComment();
+                logEntry.setComment(comment == null ? "Timed Out" : comment + " Timed Out");
+                tableFeed.updated(logEntry);
             }
         }
     }

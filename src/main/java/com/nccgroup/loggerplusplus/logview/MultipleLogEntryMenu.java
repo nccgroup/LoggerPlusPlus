@@ -15,7 +15,6 @@ import com.nccgroup.loggerplusplus.exports.LogExporter;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
-import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.datatransfer.Clipboard;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 /**
  * Created by corey on 24/08/17.
  */
-@Log4j2
 public class MultipleLogEntryMenu extends JPopupMenu {
 
     public MultipleLogEntryMenu(final LogTableController logTableController, final List<LogEntry> selectedEntries){

@@ -5,10 +5,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
-import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -17,7 +17,6 @@ import java.io.FileWriter;
 import java.lang.reflect.Type;
 import java.util.List;
 
-@Log4j2
 public class HARExporter extends LogExporter implements ExportPanelProvider, ContextMenuExportProvider {
 
     private final HARExporterControlPanel controlPanel;
@@ -49,7 +48,7 @@ public class HARExporter extends LogExporter implements ExportPanelProvider, Con
                         Gson gson = new GsonBuilder().registerTypeAdapter(logEntryListType, new HarSerializer(String.valueOf(Globals.VERSION), "LoggerPlusPlus")).create();
                         gson.toJson(entries, logEntryListType, fileWriter);
                     }catch (Exception e){
-                        log.error(e);
+                        Log.error(e);
                     }
 
                     return null;
@@ -67,7 +66,7 @@ public class HARExporter extends LogExporter implements ExportPanelProvider, Con
 
         } catch (Exception e) {
             // Cancelled.
-            log.error(e);
+            Log.error(e);
         }
     }
 

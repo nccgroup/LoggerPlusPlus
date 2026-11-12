@@ -4,12 +4,11 @@ import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
-import lombok.extern.log4j.Log4j2;
+import com.nccgroup.loggerplusplus.logging.Log;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Log4j2
 public class AliasCheckVisitor implements FilterParserVisitor{
 
   private FilterLibraryController filterLibraryController;
@@ -29,7 +28,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
   }
 
   public VisitorData visit(String alias, SimpleNode node){
-    log.debug("Starting sanity check on expression (%s) alias (%s) ".formatted(node.toString(), alias));
+    Log.debug("Starting sanity check on expression (%s) alias (%s) ".formatted(node.toString(), alias));
     VisitorData visitorData = new VisitorData();
     visitorData.setData("dependencies", new HashSet<String>());
     visitorData.setData("contexts", new HashSet<FieldGroup>());
@@ -60,7 +59,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
     //Add this alias to our dependencies
     Stack<String> aliasVisitList = (Stack<String>) data.getData().get("aliasVisitList");
     try {
-      log.debug("Visiting " + node.identifier);
+      Log.debug("Visiting " + node.identifier);
       if (aliasVisitList.contains(node.identifier.toUpperCase())) {
         //We're recursing, don't continue!
         aliasVisitList.push(node.identifier.toUpperCase());
@@ -70,7 +69,7 @@ public class AliasCheckVisitor implements FilterParserVisitor{
       }
 
       aliasVisitList.push(node.identifier.toUpperCase());
-      log.debug("Current Visit Queue " + aliasVisitList.toString());
+      Log.debug("Current Visit Queue " + aliasVisitList.toString());
 
 
       ((HashSet<String>) data.getData().get("dependencies")).add(node.identifier.toUpperCase());
@@ -86,9 +85,9 @@ public class AliasCheckVisitor implements FilterParserVisitor{
 
       return data;
     }finally {
-      log.debug("Leaving " + node.identifier);
+      Log.debug("Leaving " + node.identifier);
       aliasVisitList.pop();
-      log.debug("Current Visit Queue " + aliasVisitList.toString());
+      Log.debug("Current Visit Queue " + aliasVisitList.toString());
     }
   }
 }

@@ -24,9 +24,8 @@ import burp.api.montoya.utilities.Base64Utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.logview.processor.EntryImportWorker;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.util.Base64Util;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
@@ -40,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Iterator;
 
-@Log4j2
 public class LoggerImport {
 
     public static String getLoadFile() {
@@ -63,7 +61,7 @@ public class LoggerImport {
         try {
             reader = new BufferedReader(new FileReader(filename));
         } catch (FileNotFoundException e) {
-            log.error("LoggerImport-readFile: Error Opening File " + filename);
+            Log.error("LoggerImport-readFile: Error Opening File " + filename);
             return new ArrayList<String>();
         }
         try {
@@ -72,7 +70,7 @@ public class LoggerImport {
                 lines.add(line);
             }
         } catch (IOException e) {
-            log.error("LoggerImport-readFile: Error Reading Line");
+            Log.error("LoggerImport-readFile: Error Reading Line");
             return new ArrayList<String>();
         }
 
@@ -106,7 +104,7 @@ public class LoggerImport {
                 requests.add(requestResponse);
 
             } catch (Exception e) {
-                log.error("LoggerImport-importWStalker: Error Parsing Content");
+                Log.error("LoggerImport-importWStalker: Error Parsing Content");
                 return new ArrayList<>();
             }
         }
@@ -180,7 +178,7 @@ public class LoggerImport {
                     line = x[0] + " " + path + " " + x[2]; // fix the path in the request
 
                 } catch (Exception e) {
-                    log.error("importZAP: Wrong Path Format");
+                    Log.error("importZAP: Wrong Path Format");
                     return new ArrayList<>();
                 }
             }
@@ -215,7 +213,7 @@ public class LoggerImport {
         try {
             reader = new BufferedReader(new FileReader(filename));
         } catch (FileNotFoundException e) {
-            log.error("LoggerImport-readFile: Error Opening File " + filename);
+            Log.error("LoggerImport-readFile: Error Opening File " + filename);
             return new ArrayList<>();
         }
 
@@ -249,7 +247,7 @@ public class LoggerImport {
 
                 requests.add(requestResponse);
             } catch (Exception e) {
-                log.error("LoggerImport-importFromExportedJson: Error Parsing Content", e);
+                Log.error("LoggerImport-importFromExportedJson: Error Parsing Content", e);
 
             }
         }

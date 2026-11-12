@@ -11,6 +11,6 @@ public class HTMLEscapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.escapeHtml4(string);
+        return needsNoEscaping(string) ? string : StringEscapeUtils.escapeHtml4(string);
     }
 }

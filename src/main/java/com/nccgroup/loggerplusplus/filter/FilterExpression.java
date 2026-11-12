@@ -2,7 +2,7 @@ package com.nccgroup.loggerplusplus.filter;
 
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
 import com.nccgroup.loggerplusplus.filter.parser.ASTExpression;
-import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluationVisitor;
+import com.nccgroup.loggerplusplus.filter.parser.FilterEvaluator;
 import com.nccgroup.loggerplusplus.filter.parser.FilterParser;
 import com.nccgroup.loggerplusplus.filter.parser.ParseException;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
@@ -36,8 +36,7 @@ public class FilterExpression {
     }
 
     public boolean matches(LogEntry entry){
-        FilterEvaluationVisitor visitor = new FilterEvaluationVisitor(LoggerPlusPlus.instance.getLibraryController());
-        return visitor.visit(ast, entry);
+        return FilterEvaluator.matches(ast, entry, LoggerPlusPlus.instance.getLibraryController());
     }
 
     public void addConditionToFilter(LogicalOperator logicalOperator, LogEntryField field,

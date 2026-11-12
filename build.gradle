@@ -18,11 +18,7 @@ dependencies {
     implementation 'net.portswigger.burp.extensions:montoya-api:2023.10.4'
     implementation 'org.swinglabs:swingx:1.6.1'
     implementation 'com.github.CoreyD97:Burp-Montoya-Utilities:54678c64'
-    implementation 'co.elastic.clients:elasticsearch-java:8.8.2'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
     implementation 'org.apache.commons:commons-text:1.10.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
 
     testRuntimeOnly files("${System.properties['user.home']}/BurpSuiteCommunity/burpsuite_community.jar")
 }
@@ -45,7 +41,13 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from {
-        (configurations.runtimeClasspath).collect { it.isDirectory() ? it : zipTree(it) }
+        // Burp provides the Montoya API when it loads the extension, so its jar is not packaged.
+        (configurations.runtimeClasspath).findAll { !it.name.startsWith('montoya-api-') }.collect {
+            if (it.isDirectory()) return it
+            // The utilities library's jar also holds Lombok, which only the compiler needs, and
+            // copies of Gson and of the Montoya API: only the library's own classes are packaged.
+            it.name.startsWith('Burp-Montoya-Utilities-') ? zipTree(it).matching { include 'com/coreyd97/**' } : zipTree(it)
+        }
     } {
         exclude "META-INF/*.SF"
         exclude "META-INF/*.DSA"

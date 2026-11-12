@@ -3,10 +3,9 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExportController {
     private final Preferences preferences;
@@ -17,7 +16,8 @@ public class ExportController {
         this.preferences = preferences;
 
         this.exporters = new HashMap<>();
-        this.enabledExporters = Collections.synchronizedList(new ArrayList<>());
+        // Read by every worker for every entry, changed only when the user turns an exporter on or off.
+        this.enabledExporters = new CopyOnWriteArrayList<>();
 
         initializeExporters();
     }

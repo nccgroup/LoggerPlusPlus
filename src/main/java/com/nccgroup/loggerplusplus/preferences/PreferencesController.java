@@ -5,12 +5,9 @@ import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logging.Log;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-@Log4j2
 public class PreferencesController {
 
     @Getter
@@ -28,12 +25,12 @@ public class PreferencesController {
                 new ILogProvider() {
                     @Override
                     public void logOutput(String message) {
-                        log.debug(message);
+                        Log.debug(message);
                     }
 
                     @Override
                     public void logError(String errorMessage) {
-                        log.error(errorMessage);
+                        Log.error(errorMessage);
                     }
                 }
         ).buildPreferences();

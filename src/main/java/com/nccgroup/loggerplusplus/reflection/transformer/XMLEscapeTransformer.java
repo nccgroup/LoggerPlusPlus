@@ -11,6 +11,6 @@ public class XMLEscapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.escapeXml11(string);
+        return needsNoEscaping(string) ? string : StringEscapeUtils.escapeXml11(string);
     }
 }

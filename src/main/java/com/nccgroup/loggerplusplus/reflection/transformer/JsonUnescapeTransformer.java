@@ -11,6 +11,7 @@ public class JsonUnescapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.unescapeJson(string);
+        // Every JSON escape starts with a backslash.
+        return string.indexOf('\\') < 0 ? string : StringEscapeUtils.unescapeJson(string);
     }
 }
