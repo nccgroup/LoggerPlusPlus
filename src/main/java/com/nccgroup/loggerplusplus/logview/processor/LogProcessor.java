@@ -25,6 +25,7 @@ import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.logentry.FieldGroup;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.Status;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableModel;
 import com.nccgroup.loggerplusplus.util.NamedThreadFactory;
@@ -47,7 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
 
 /**
  * Turns the requests and responses Burp reports into log entries.
@@ -60,7 +60,6 @@ import lombok.extern.log4j.Log4j2;
  * <p>A request and its response are reported separately. They are matched by an identifier that the
  * request carries in its comment until its response arrives.
  */
-@Log4j2
 public class LogProcessor {
     public static final LogDateFormat LOGGER_DATE_FORMAT = new LogDateFormat();
 
@@ -286,7 +285,7 @@ public class LogProcessor {
             return result;
         } catch (RuntimeException e) {
             entryProcessingFutures.remove(identifier);
-            log.error("Could not log a request to " + logEntry.getUrlString(), e);
+            Log.error("Could not log a request to " + logEntry.getUrlString(), e);
             return null;
         }
     }
@@ -326,7 +325,7 @@ public class LogProcessor {
             updateExistingEntry(logEntry);
         } catch (RuntimeException e) {
             entryProcessingFutures.remove(identifier);
-            log.error("Could not log the response from " + logEntry.getUrlString(), e);
+            Log.error("Could not log the response from " + logEntry.getUrlString(), e);
         }
     }
 

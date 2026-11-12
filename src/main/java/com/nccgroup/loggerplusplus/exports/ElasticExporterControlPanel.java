@@ -3,9 +3,8 @@ package com.nccgroup.loggerplusplus.exports;
 import com.coreyd97.BurpExtenderUtilities.Alignment;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.nccgroup.loggerplusplus.LoggerPlusPlus;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.util.Globals;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,8 +18,6 @@ public class ElasticExporterControlPanel extends JPanel {
     private static final String STOPPING_TEXT = "Stopping Elastic Exporter...";
     private static final String START_TEXT = "Start Elastic Exporter";
     private static final String STOP_TEXT = "Stop Elastic Exporter";
-
-    Logger logger = LogManager.getLogger(this);
 
     public ElasticExporterControlPanel(ElasticExporter elasticExporter) {
         this.elasticExporter = elasticExporter;
@@ -70,7 +67,7 @@ public class ElasticExporterControlPanel extends JPanel {
                             if(exception != null) {
                                 JOptionPane.showMessageDialog(exportButton, "Could not start elastic exporter: " +
                                         exception.getMessage() + "\nSee the logs for more information.", "Elastic Exporter", JOptionPane.ERROR_MESSAGE);
-                                logger.error("Could not start elastic exporter.", exception);
+                                Log.error("Could not start elastic exporter.", exception);
                             }
                             Boolean success = get();
                             boolean isRunning = buttonNowActive ^ !success;

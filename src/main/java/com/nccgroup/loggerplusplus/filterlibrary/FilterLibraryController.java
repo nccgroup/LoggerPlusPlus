@@ -8,16 +8,15 @@ import com.nccgroup.loggerplusplus.filter.logfilter.LogTableFilter;
 import com.nccgroup.loggerplusplus.filter.savedfilter.SavedFilter;
 import com.nccgroup.loggerplusplus.filter.tag.Tag;
 import com.nccgroup.loggerplusplus.filter.tag.TagListener;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.preferences.PreferencesController;
 import com.nccgroup.loggerplusplus.util.Globals;
-import lombok.extern.log4j.Log4j2;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
-@Log4j2
 public class FilterLibraryController {
 
     private final Preferences preferences;
@@ -111,7 +110,7 @@ public class FilterLibraryController {
             try {
                 colorFilterListener.onColorFilterAdd(tableColorRule);
             } catch (Exception e) {
-                log.error(e);
+                Log.error(e);
             }
         }
         saveColorFilters();
@@ -125,7 +124,7 @@ public class FilterLibraryController {
             try{
                 listener.onColorFilterRemove(tableColorRule);
             }catch (Exception e){
-                log.error(e);
+                Log.error(e);
             }
         }
         saveColorFilters();
@@ -137,7 +136,7 @@ public class FilterLibraryController {
             try{
                 listener.onColorFilterChange(tableColorRule);
             }catch (Exception e){
-                log.error(e);
+                Log.error(e);
             }
         }
         saveColorFilters();
@@ -166,7 +165,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagAdd(tag);
             } catch (Exception error) {
-                log.error(error);
+                Log.error(error);
             }
         }
         saveTags();
@@ -180,7 +179,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagRemove(tag);
             } catch (Exception error) {
-                log.error(error);
+                Log.error(error);
             }
         }
         saveTags();
@@ -192,7 +191,7 @@ public class FilterLibraryController {
             try {
                 listener.onTagChange(tag);
             } catch (Exception e) {
-                log.error(e);
+                Log.error(e);
             }
         }
         saveTags();

@@ -9,6 +9,8 @@ import com.nccgroup.loggerplusplus.exports.ExportController;
 import com.nccgroup.loggerplusplus.filterlibrary.FilterLibraryController;
 import com.nccgroup.loggerplusplus.grepper.GrepperController;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
+import com.nccgroup.loggerplusplus.logging.Log;
+import com.nccgroup.loggerplusplus.logging.LogLevel;
 import com.nccgroup.loggerplusplus.logging.LoggingController;
 import com.nccgroup.loggerplusplus.logview.LogViewController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
@@ -17,8 +19,6 @@ import com.nccgroup.loggerplusplus.reflection.ReflectionController;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.userinterface.LoggerMenu;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Level;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +30,6 @@ import static com.nccgroup.loggerplusplus.util.Globals.PREF_RESTRICT_TO_SCOPE;
 /**
  * Created by corey on 07/09/17.
  */
-@Log4j2
 @Getter
 public class LoggerPlusPlus implements BurpExtension {
 
@@ -68,14 +67,14 @@ public class LoggerPlusPlus implements BurpExtension {
 
         //TODO Set Logging Level from prefs
         loggingController = new LoggingController(gsonProvider, montoya);
-        log.info("Logger++ " + Globals.VERSION + " by @CoreyD97.");
-        log.info("Please submit any bug reports or feature requests via GitHub.");
-        log.info("Feel free to reach out on Twitter (@CoreyD97) with any questions.");
+        Log.info("Logger++ " + Globals.VERSION + " by @CoreyD97.");
+        Log.info("Please submit any bug reports or feature requests via GitHub.");
+        Log.info("Feel free to reach out on Twitter (@CoreyD97) with any questions.");
 
         preferencesController = new PreferencesController(montoya);
         preferencesController.getPreferences().addSettingListener((source, settingName, newValue) -> {
             if (settingName.equals(Globals.PREF_LOG_LEVEL)) {
-                loggingController.setLogLevel((Level) newValue);
+                loggingController.setLogLevel((LogLevel) newValue);
             }
         });
         reflectionController = new ReflectionController(preferencesController.getPreferences());

@@ -21,7 +21,6 @@ import com.nccgroup.loggerplusplus.logview.logtable.LogTable;
 import com.nccgroup.loggerplusplus.logview.logtable.LogTableController;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import com.nccgroup.loggerplusplus.util.userinterface.dialog.ColorFilterDialog;
-import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -33,7 +32,6 @@ import java.util.Date;
 /**
  * Created by corey on 24/08/17.
  */
-@Log4j2
 public class SingleLogEntryMenu extends JPopupMenu {
 
     public SingleLogEntryMenu(final LogTableController logTableController, final LogEntry entry, final LogEntryField selectedField) {

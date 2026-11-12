@@ -4,12 +4,11 @@ import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.nccgroup.loggerplusplus.logentry.LogEntry;
 import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logentry.Status;
+import com.nccgroup.loggerplusplus.logging.Log;
 import com.nccgroup.loggerplusplus.util.Globals;
 import com.nccgroup.loggerplusplus.util.MoreHelp;
 import com.nccgroup.loggerplusplus.util.SwingWorkerWithProgressDialog;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -29,8 +28,6 @@ public class CSVExporter extends AutomaticLogExporter implements ContextMenuExpo
     private List<LogEntryField> fields;
     private Thread exporterThread;
     private LinkedBlockingQueue<LogEntry> awaitingExport;
-
-    Logger logger = LogManager.getLogger(this);
 
     public CSVExporter(ExportController exportController, Preferences preferences){
         super(exportController, preferences);
@@ -220,7 +217,7 @@ public class CSVExporter extends AutomaticLogExporter implements ContextMenuExpo
             importWorker.execute();
 
         }catch (Exception e){
-            logger.error(e);
+            Log.error(e);
         }
     }
 
