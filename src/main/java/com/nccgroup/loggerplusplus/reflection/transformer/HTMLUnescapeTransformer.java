@@ -11,6 +11,7 @@ public class HTMLUnescapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.unescapeHtml4(string);
+        // Every HTML entity starts with an ampersand.
+        return string.indexOf('&') < 0 ? string : StringEscapeUtils.unescapeHtml4(string);
     }
 }

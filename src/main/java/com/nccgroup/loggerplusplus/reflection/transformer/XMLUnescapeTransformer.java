@@ -11,6 +11,7 @@ public class XMLUnescapeTransformer extends ParameterValueTransformer {
 
     @Override
     public String transform(String string) {
-        return StringEscapeUtils.unescapeXml(string);
+        // Every XML entity starts with an ampersand.
+        return string.indexOf('&') < 0 ? string : StringEscapeUtils.unescapeXml(string);
     }
 }

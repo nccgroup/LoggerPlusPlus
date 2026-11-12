@@ -116,9 +116,8 @@ public class LogTable extends JTable
 
         Component c = super.prepareRenderer(renderer, row, column);
 
-        IntStream selectedRows = IntStream.of(this.getSelectedRows());
-
-        if(selectedRows.anyMatch(i -> i == row)){
+        // Asked of the selection model directly: this runs for every cell painted.
+        if(isRowSelected(row)){
             c.setBackground(this.getSelectionBackground());
             c.setForeground(this.getSelectionForeground());
         }else {

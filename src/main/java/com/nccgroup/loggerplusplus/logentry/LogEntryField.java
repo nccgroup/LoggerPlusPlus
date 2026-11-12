@@ -37,7 +37,7 @@ public enum LogEntryField {
     USES_COOKIE_JAR(FieldGroup.REQUEST, String.class, "Compares the cookies with the cookie jar to see if any of them are in use.", "UsesCookieJar", "CookieJar"),
     HOSTNAME(FieldGroup.REQUEST, String.class, "The hostname component of the requested URL.", "Hostname"),
     HOST(FieldGroup.REQUEST, String.class, "The protocol and hostname of the requested URL.", "Host"),
-    PORT(FieldGroup.REQUEST, Short.class, "The port the request was sent to.", "Port"),
+    PORT(FieldGroup.REQUEST, Integer.class, "The port the request was sent to.", "Port"),
     REQUEST_CONTENT_TYPE(FieldGroup.REQUEST, String.class, "The content-type header sent to the server.", "ContentType", "Content_Type"),
     REQUEST_HTTP_VERSION(FieldGroup.REQUEST, String.class, "The HTTP version sent in the request.", "RequestHttpVersion", "RequestHttpVersion"),
     EXTENSION(FieldGroup.REQUEST, String.class, "The URL extension used in the request.", "Extension"),

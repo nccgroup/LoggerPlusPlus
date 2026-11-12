@@ -7,6 +7,7 @@ import com.nccgroup.loggerplusplus.logentry.LogEntryField;
 import com.nccgroup.loggerplusplus.logview.processor.LogProcessor;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -17,6 +18,9 @@ class ASTComparison extends SimpleNode {
 
   Object left, right;
   ComparisonOperator comparisonOperator;
+
+  /** The text of each item of an IN list, worked out on first use: see {@link #rightItems}. */
+  private String[] rightItems;
 
   public ASTComparison(int id) {
     super(id);
@@ -32,6 +36,32 @@ class ASTComparison extends SimpleNode {
   public Object jjtAccept(FilterParserVisitor visitor, VisitorData data) {
 
     return visitor.visit(this, data);
+  }
+
+  /**
+   * The text of each item of the list on the right of an IN comparison. A list written in the
+   * filter never changes, so its items are turned into text once instead of on every evaluation; a
+   * list that is a field's value is turned into text each time.
+   */
+  String[] rightItems(Collection<?> items) {
+    if (items != right) {
+      return textOf(items);
+    }
+    String[] cached = rightItems;
+    if (cached == null) {
+      cached = textOf(items);
+      rightItems = cached;
+    }
+    return cached;
+  }
+
+  private static String[] textOf(Collection<?> items) {
+    String[] text = new String[items.size()];
+    int next = 0;
+    for (Object item : items) {
+      text[next++] = String.valueOf(item);
+    }
+    return text;
   }
 
   public ComparisonOperator getComparisonOperator() {
